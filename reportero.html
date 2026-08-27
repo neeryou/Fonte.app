@@ -95,7 +95,7 @@
 
     <div class="card">
       <div class="field-label">Lo que capturaste</div>
-      <textarea id="rawInput" placeholder="Pegá el texto tal cual, no hace falta prolijo..."></textarea>
+      <textarea id="rawInput" placeholder="Pegá el texto tal cual, no hace falta prolijo... o pegá SOLO un link y Fonte va a buscar la nota sola."></textarea>
 
       <div class="field-label" style="margin-top:14px">¿De qué fuente lo sacaste?</div>
       <div class="srcchips" id="srcChips">
@@ -112,7 +112,7 @@
     </div>
 
     <div class="card hide" id="previewCard">
-      <div class="preview-head"><span class="badge">Vista previa</span></div>
+      <div class="preview-head"><span class="badge">Vista previa</span><span id="pvMedia" style="font-family:var(--sans);font-size:.7rem;color:var(--ink-soft)"></span></div>
       <div class="pv-field" style="margin-bottom:12px">
         <div class="field-label">Título<span class="auto">auto</span></div>
         <input class="inp" id="pvTitulo">
@@ -181,6 +181,8 @@
   const consoleView = document.getElementById("consoleView");
   let sesion = null;
   let fuenteElegida = "Facebook vecinal";
+  let imagenDetectada = null;
+  let videoDetectado = null;
 
   function toast(msg){
     const t = document.getElementById("toast"); t.textContent = msg; t.classList.add("show");
@@ -270,6 +272,12 @@
       document.getElementById("pvOnda").value = b.onda || "ciudad";
       document.getElementById("pvLugar").value = b.lugar || "Quitilipi";
       document.getElementById("pvUrgente").checked = !!b.urgente;
+      imagenDetectada = b.imagen_url || null;
+      videoDetectado = b.video_url || null;
+      const avisos = [];
+      if(imagenDetectada) avisos.push("📷 foto encontrada");
+      if(videoDetectado) avisos.push("🎬 video encontrado");
+      document.getElementById("pvMedia").textContent = avisos.join(" · ");
       document.getElementById("previewCard").classList.remove("hide");
       document.getElementById("previewCard").scrollIntoView({ behavior: "smooth", block: "center" });
     }catch(e){
@@ -299,6 +307,8 @@
       urgente: document.getElementById("pvUrgente").checked,
       fuente_etiqueta: "vía " + fuenteElegida,
       origen: "reportero",
+      imagen_url: imagenDetectada,
+      video_url: videoDetectado,
       publicada: true,
       creada_por: sesion.user.id,
     };
