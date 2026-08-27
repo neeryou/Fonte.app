@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fonte</title>
+<style>
+  :root{
+    --paper:#F5F0E4; --paper-2:#EFE9DA; --paper-3:#EAE3D1;
+    --ink:#22201A; --ink-soft:#574F42; --ink-faint:#8B8271;
+    --line:#D8D0BE; --line-strong:#C7BDA6;
+    --barrio:#234A32; --ciudad:#4A8B5C; --region:#35678F; --pais:#6B5B95; --mundo:#9C7B41;
+    --urgente:#B23A2E; --int:#8A6A22;
+    --serif:Georgia,'Times New Roman',Times,serif;
+    --sans:-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue',Arial,sans-serif;
+    --wrap:1140px;
+  }
+  *{ box-sizing:border-box; }
+  html{ scroll-behavior:smooth; }
+  body{ margin:0; color:var(--ink); background-color:var(--paper);
+    background-image:radial-gradient(circle at 18% 6%,rgba(255,255,255,.30),transparent 42%),
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/></filter><rect width='120' height='120' filter='url(%23n)' opacity='0.035'/></svg>");
+    font-family:var(--serif); line-height:1.42; -webkit-font-smoothing:antialiased; }
+  .wrap{ max-width:var(--wrap); margin:0 auto; padding:0 18px; }
+  a,button{ cursor:pointer; }
+  .h{ font-family:var(--serif); font-weight:700; margin:0; letter-spacing:-.008em; color:var(--ink); }
+  .kicker{ font-family:var(--sans); text-transform:uppercase; letter-spacing:.1em; font-size:.6rem; font-weight:700; color:var(--ink-faint); display:flex; align-items:center; gap:6px; }
+  .kicker .dot{ width:8px; height:8px; border-radius:50%; background:var(--w,var(--ink-faint)); }
+  .src{ font-family:var(--sans); font-size:.6rem; font-weight:600; color:var(--ink-soft); background:var(--paper-3); border:1px solid var(--line); padding:1px 7px; border-radius:999px; }
+  .why{ font-family:var(--sans); font-size:.56rem; font-weight:700; padding:2px 8px; border-radius:999px; display:inline-flex; align-items:center; gap:4px; }
+  .why.urg{ color:#fff; background:var(--urgente); }
+
+  /* nameplate */
+  .plate{ padding:14px 0 10px; border-bottom:2px solid var(--ink); }
+  .plate-row{ display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:10px; }
+  .plate .side{ font-family:var(--sans); font-size:.68rem; color:var(--ink-soft); line-height:1.35; }
+  .plate .side.right{ text-align:right; }
+  .brand{ font-family:var(--serif); font-weight:700; font-size:clamp(1.9rem,7vw,2.9rem); letter-spacing:.01em; line-height:1; text-align:center; }
+  .plate .tag{ display:block; font-family:var(--serif); font-style:italic; font-weight:400; font-size:.72rem; color:var(--ink-soft); margin-top:3px; text-align:center; }
+
+  /* nav ondas */
+  .waves{ position:sticky; top:0; z-index:150; background:color-mix(in srgb,var(--paper) 90%,transparent);
+    backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); border-bottom:1px solid var(--line); padding:8px 0; }
+  .waves-in{ display:flex; gap:7px; overflow-x:auto; padding:0 18px; scrollbar-width:none; }
+  .waves-in::-webkit-scrollbar{ display:none; }
+  .wpill{ flex:0 0 auto; font-family:var(--sans); font-size:.75rem; font-weight:600; color:var(--ink-soft);
+    background:transparent; border:1px solid var(--line); padding:6px 12px; border-radius:999px; display:flex; align-items:center; gap:6px; white-space:nowrap; }
+  .wpill .bd{ width:8px; height:8px; border-radius:50%; background:var(--w); }
+  .wpill.active{ background:var(--w); border-color:var(--w); color:#fff; }
+  .wpill.active .bd{ background:#fff; }
+
+  /* categorías */
+  .cats{ padding:9px 0 2px; }
+  .cats-in{ display:flex; gap:6px; overflow-x:auto; padding:0 18px; scrollbar-width:none; }
+  .cats-in::-webkit-scrollbar{ display:none; }
+  .cat{ flex:0 0 auto; font-family:var(--sans); font-size:.72rem; font-weight:500; color:var(--ink-soft);
+    background:var(--paper-2); border:1px solid transparent; padding:5px 12px; border-radius:999px; white-space:nowrap; }
+  .cat.active{ background:var(--int); color:#fff; }
+
+  .fav-row{ padding:6px 0 2px; }
+  .fav-title{ font-family:var(--sans); font-size:.6rem; font-weight:700; text-transform:uppercase; letter-spacing:.1em; color:var(--ink-faint); padding:0 18px 5px; }
+  .fav-in{ display:flex; gap:6px; overflow-x:auto; padding:0 18px; scrollbar-width:none; }
+  .fav-in::-webkit-scrollbar{ display:none; }
+  .fav{ flex:0 0 auto; font-family:var(--sans); font-size:.7rem; font-weight:600; color:var(--ink-soft);
+    background:transparent; border:1px solid var(--line-strong); padding:5px 11px; border-radius:999px; white-space:nowrap; display:flex; align-items:center; gap:4px; }
+  .fav.on{ background:var(--int); color:#fff; border-color:var(--int); }
+  .why.int{ color:var(--int); background:color-mix(in srgb,var(--int) 15%,transparent); }
+
+  .ph-img{ position:relative; overflow:hidden; border-radius:2px; background:var(--g,#ccc); aspect-ratio:16/9; }
+  .ph-img::after{ content:''; position:absolute; inset:0; background:linear-gradient(180deg,transparent 42%,rgba(0,0,0,.18)); }
+  .ph-img.sq{ aspect-ratio:1/1; }
+
+  /* PRIMERA PLANA */
+  .pp{ padding:20px 0 8px; scroll-margin-top:60px; }
+  .section-eyebrow{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:12px; }
+  .section-eyebrow .t{ font-family:var(--sans); text-transform:uppercase; letter-spacing:.14em; font-weight:700; font-size:.72rem; color:var(--ink); }
+  .pp-grid{ display:grid; grid-template-columns:1fr; gap:20px; }
+  .rail-title{ font-family:var(--sans); text-transform:uppercase; letter-spacing:.1em; font-size:.64rem; font-weight:700; color:var(--ink-faint); padding-bottom:7px; border-bottom:2px solid var(--ink); margin-bottom:2px; }
+  .rail-item{ display:block; padding:11px 0; border-top:1px solid var(--line); }
+  .rail-item:first-of-type{ border-top:0; }
+  .rail-item .h{ font-size:1rem; line-height:1.2; margin-top:5px; }
+  .lead .h{ font-size:clamp(1.55rem,5.4vw,2.2rem); line-height:1.08; margin-top:12px; }
+  .lead .dek{ color:var(--ink-soft); font-size:1rem; margin:9px 0 0; }
+  .lead .byl{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:10px; }
+  .pp-sub{ display:grid; grid-template-columns:72px 1fr; gap:12px; align-items:start; margin-top:16px; padding-top:16px; border-top:1px solid var(--line); }
+  .pp-sub .h{ font-size:1.06rem; line-height:1.18; }
+  .pp-sub .dek{ font-size:.86rem; color:var(--ink-soft); margin:5px 0 0; }
+  .recientes .rail-item{ display:grid; grid-template-columns:auto 1fr; gap:11px; align-items:baseline; }
+  .recientes .tt{ font-family:var(--sans); font-size:.62rem; color:var(--ink-faint); white-space:nowrap; }
+  .recientes .h{ font-size:.96rem; margin-top:0; }
+
+  /* ZONAS densas */
+  .zone{ padding:26px 0 6px; scroll-margin-top:60px; }
+  .zlabel{ display:flex; align-items:center; gap:10px; padding-bottom:8px; border-bottom:2px solid var(--w); margin-bottom:16px; }
+  .zlabel .nm{ font-family:var(--sans); text-transform:uppercase; letter-spacing:.12em; font-weight:700; font-size:.78rem; color:var(--ink); }
+  .zlabel .km{ font-family:var(--sans); font-size:.68rem; color:var(--ink-faint); margin-left:auto; }
+  .zlabel .gl{ width:12px; height:12px; border-radius:50%; background:var(--w); box-shadow:0 0 0 4px color-mix(in srgb,var(--w) 16%,transparent); }
+  .zgrid{ display:grid; grid-template-columns:1fr; gap:20px; }
+  .z-lead .h{ font-size:1.34rem; line-height:1.14; margin-top:11px; }
+  .z-lead .dek{ color:var(--ink-soft); font-size:.92rem; margin:7px 0 0; }
+  .z-lead .byl{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:9px; }
+  .zlist{ display:grid; grid-template-columns:1fr; gap:0; }
+  .zlist .li{ display:block; padding:12px 0 12px 12px; border-top:1px solid var(--line); position:relative; }
+  .zlist .li:first-child{ border-top:0; }
+  .zlist .li::before{ content:''; position:absolute; left:0; top:12px; bottom:12px; width:3px; border-radius:2px; background:var(--ac,var(--ink-faint)); }
+  .zlist .li .h{ font-size:1.02rem; line-height:1.2; margin-top:5px; }
+  .zlist .li .meta-row{ display:flex; align-items:center; gap:6px; margin-top:6px; flex-wrap:wrap; }
+  .ctag{ font-family:var(--sans); font-size:.58rem; font-weight:700; padding:1px 8px; border-radius:999px; color:#fff; background:var(--ac,var(--ink-faint)); }
+  .pulse-dot{ width:6px; height:6px; border-radius:50%; background:var(--barrio); animation:pulse 1.8s ease infinite; display:inline-block; margin-right:3px; }
+  @keyframes pulse{ 0%,100%{opacity:1; transform:scale(1);} 50%{opacity:.35; transform:scale(.7);} }
+  /* variante destacada dentro de la lista: rompe el ritmo cada tantos ítems */
+  .zlist .li.feat{ padding-top:14px; padding-bottom:16px; }
+  .zlist .li.feat .ph-img{ margin-top:6px; margin-bottom:2px; }
+  .zlist .li.feat .h{ font-size:1.1rem; }
+  @media (prefers-reduced-motion:reduce){ .pulse-dot{ animation:none; } }
+
+  /* banda urgente */
+  .urgent-band{ margin-top:14px; border-left:3px solid var(--urgente); background:color-mix(in srgb,var(--urgente) 6%,transparent);
+    border-radius:0 12px 12px 0; padding:13px 15px; display:none; }
+  .urgent-band.show{ display:block; }
+  .band-head{ font-family:var(--sans); text-transform:uppercase; letter-spacing:.1em; font-weight:800; font-size:.74rem; color:var(--urgente); }
+  .u-item{ display:block; padding:11px 0; border-top:1px solid color-mix(in srgb,var(--urgente) 18%,transparent); }
+  .u-item:first-of-type{ border-top:0; margin-top:8px; }
+  .u-item .h{ font-size:1.02rem; line-height:1.2; margin-bottom:6px; }
+  .tags{ display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
+
+  .state{ text-align:center; padding:60px 20px; font-family:var(--sans); }
+  .state .big{ font-family:var(--serif); font-style:italic; font-size:1.2rem; color:var(--ink-soft); }
+  .state .sub{ font-size:.8rem; color:var(--ink-faint); margin-top:8px; }
+  .spinner{ width:26px; height:26px; margin:0 auto 14px; border:3px solid var(--line); border-top-color:var(--ink-soft); border-radius:50%; animation:spin .8s linear infinite; }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+
+  footer{ border-top:2px solid var(--ink); margin-top:22px; padding:18px 0 44px; }
+  .foot-note{ font-family:var(--sans); font-size:.7rem; color:var(--ink-faint); }
+  .refresh-btn{ position:fixed; right:16px; bottom:16px; z-index:40; font-family:var(--sans); font-size:.7rem; font-weight:700;
+    color:var(--paper); background:var(--ink); border:0; padding:10px 16px; border-radius:999px; box-shadow:0 6px 18px rgba(30,28,22,.25); }
+
+  /* desktop: columnas de diario */
+  @media (min-width:760px){
+    .pp-grid{ grid-template-columns:230px 1fr 230px; gap:0; }
+    .pp-left{ padding-right:20px; }
+    .pp-center{ padding:0 24px; border-left:1px solid var(--line); border-right:1px solid var(--line); }
+    .pp-right{ padding-left:20px; }
+    .zgrid{ grid-template-columns:1.35fr 1fr; gap:0; }
+    .z-lead{ padding-right:26px; }
+    .zlist{ padding-left:26px; border-left:1px solid var(--line); }
+  }
+  @media (min-width:1000px){ .zlist{ grid-template-columns:1fr 1fr; column-gap:26px; } }
+
+  /* sheet */
+  .backdrop{ position:fixed; inset:0; background:rgba(30,28,22,.42); z-index:170; opacity:0; pointer-events:none; transition:opacity .3s; }
+  .backdrop.show{ opacity:1; pointer-events:auto; }
+  .sheet{ position:fixed; left:0; right:0; bottom:0; z-index:180; max-width:640px; margin:0 auto; height:90vh;
+    background:var(--paper); border-radius:20px 20px 0 0; box-shadow:0 -14px 44px rgba(30,28,22,.28);
+    transform:translateY(100%); transition:transform .34s cubic-bezier(.22,.61,.36,1); display:flex; flex-direction:column; overflow:hidden; }
+  .sheet.show{ transform:translateY(0); }
+  .grip{ display:flex; justify-content:center; padding:10px 0 4px; }
+  .grip span{ width:42px; height:5px; border-radius:999px; background:var(--line-strong); }
+  .sheet-top{ display:flex; justify-content:space-between; align-items:center; padding:6px 18px 10px; border-bottom:1px solid var(--line); }
+  .sheet-top .b{ font-family:var(--serif); font-weight:700; font-size:1.1rem; }
+  .close{ font-family:var(--sans); font-size:.8rem; font-weight:600; color:var(--ink-soft); background:none; border:0; }
+  .sheet-body{ flex:1; overflow-y:auto; padding:18px; }
+  .sheet-body .h{ font-size:clamp(1.5rem,6vw,2rem); line-height:1.1; margin:8px 0 12px; }
+  .s-src{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; padding-bottom:14px; border-bottom:1px solid var(--line); margin-bottom:16px; }
+  .s-hero{ margin-bottom:16px; border-radius:6px; }
+  .s-p{ font-size:1.06rem; line-height:1.62; margin:0 0 14px; }
+  .verorig{ display:inline-flex; gap:8px; font-family:var(--sans); font-size:.8rem; font-weight:700; color:var(--paper); background:var(--ink); padding:11px 17px; border-radius:8px; border:0; text-decoration:none; }
+  .listen-btn, .share-btn{ font-family:var(--sans); font-size:.68rem; font-weight:700; color:var(--ink-soft);
+    background:var(--paper-2); border:1px solid var(--line); padding:5px 11px; border-radius:999px; }
+  .listen-btn.on{ background:var(--barrio); color:#fff; border-color:var(--barrio); }
+  .rel-block{ margin-top:30px; border-top:1px solid var(--line); padding-top:14px; }
+  .rel-title{ font-family:var(--sans); text-transform:uppercase; letter-spacing:.1em; font-size:.62rem; font-weight:700; color:var(--ink-faint); margin-bottom:8px; }
+  .rel-item{ display:block; padding:9px 0; border-top:1px solid var(--line); }
+  .rel-item:first-of-type{ border-top:0; }
+  .rel-item .h{ font-size:.92rem; line-height:1.2; margin-top:3px; }
+  @media (prefers-reduced-motion:reduce){ *{ transition:none !important; } .spinner{ animation:none; } }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="plate">
+    <div class="plate-row">
+      <div class="side" id="fechaIzq">Quitilipi, Chaco</div>
+      <div><div class="brand">Fonte</div><span class="tag">ordenado por cercanía</span></div>
+      <div class="side right" id="edicionDer"></div>
+    </div>
+  </div>
+</div>
+
+<nav class="waves"><div class="waves-in" id="waveNav"></div></nav>
+<div class="cats"><div class="cats-in" id="catNav"></div></div>
+<div class="fav-row">
+  <div class="fav-title">★ Tus temas — reordenan tu feed, no lo esconden</div>
+  <div class="fav-in" id="favNav"></div>
+</div>
+
+<div class="wrap"><div class="urgent-band" id="urgentBand"><div class="band-head">⚡ Cerca tuyo ahora</div><div class="band-list"></div></div></div>
+
+<main class="wrap" id="feed">
+  <div class="state"><div class="spinner"></div><div class="big">Cargando noticias…</div></div>
+</main>
+
+<footer><div class="wrap">
+  <p class="foot-note">Fonte · Fase 0 · un diario inteligente que ordena las noticias por cercanía. Las noticias se resumen automáticamente con IA; cada una enlaza a su fuente original.</p>
+</div></footer>
+
+<button class="refresh-btn" id="refreshBtn">↻ Actualizar</button>
+
+<div class="backdrop" id="backdrop"></div>
+<div class="sheet" id="sheet">
+  <div class="grip" id="grip"><span></span></div>
+  <div class="sheet-top"><span class="b">Fonte</span><button class="close" id="closeSheet">Cerrar ✕</button></div>
+  <div class="sheet-body">
+    <div class="kicker" id="s-kicker"><span class="dot"></span><span id="s-place"></span></div>
+    <h2 class="h" id="s-title" style="margin-top:8px"></h2>
+    <div class="s-src"><span class="src" id="s-src"></span><span id="s-urg"></span>
+      <button class="listen-btn" id="listenBtn">▶ Escuchar</button>
+      <button class="share-btn" id="shareBtn">↗ Compartir</button>
+    </div>
+    <div class="ph-img s-hero" id="s-hero"></div>
+    <div id="s-video" style="display:none;margin-bottom:16px;border-radius:6px;overflow:hidden;aspect-ratio:16/9;"></div>
+    <div style="font-family:var(--sans);font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--ink-faint);margin-bottom:8px">Resumen de Fonte</div>
+    <div id="s-body"></div>
+    <a class="verorig" id="s-orig" target="_blank" rel="noopener">Ver original ↗</a>
+    <div class="rel-block" id="relBlock"></div>
+  </div>
+</div>
+
+<script>
+  const SUPABASE_URL = "https://skpfycmkilahghvoxqxw.supabase.co";
+  const SUPABASE_KEY = "sb_publishable_3YK9XChJ8YeJzlXymHXUeQ_TbCPQReT";
+
+  const ONDAS = [
+    { id:"barrio", nombre:"Tu barrio",  color:"var(--barrio)" },
+    { id:"ciudad", nombre:"Tu ciudad",  color:"var(--ciudad)" },
+    { id:"region", nombre:"Tu región",  color:"var(--region)" },
+    { id:"pais",   nombre:"Argentina",  color:"var(--pais)"   },
+    { id:"mundo",  nombre:"Mundo",      color:"var(--mundo)"  },
+  ];
+  const CAT_NOMBRE = {
+    local:"Local", economia:"Economía", cripto:"Cripto", geopolitica:"Geopolítica",
+    tecnologia:"Tecnología", desastres:"Desastres", deportes:"Deportes",
+    espectaculos:"Espectáculos", politica:"Política", religion:"Religión",
+    policiales:"Policiales", obras:"Obras y servicios", educacion:"Educación", otros:"Otros"
+  };
+  const CAT_COLOR = {
+    local:"#4A8B5C", economia:"#8A6A22", cripto:"#8A6A22", geopolitica:"#5B4A8A",
+    tecnologia:"#2F5A78", desastres:"#B23A2E", deportes:"#2F6B4A", espectaculos:"#2F6B4A",
+    politica:"#5B4A8A", religion:"#7A5C3E", policiales:"#A6432E", obras:"#2F5A78",
+    educacion:"#7A5C3E", otros:"#8B8271"
+  };
+  const GRADIENTES = [
+    "linear-gradient(135deg,#3a6b48,#1c3527)", "linear-gradient(135deg,#4d9061,#2c5c3d)",
+    "linear-gradient(135deg,#3f7ba8,#264c70)", "linear-gradient(135deg,#77689f,#493e68)",
+    "linear-gradient(135deg,#a9884b,#755a2d)", "linear-gradient(135deg,#a6446a,#5f2740)",
+  ];
+  const colorDe = (o) => (ONDAS.find(x=>x.id===o)||{}).color || "var(--ink-faint)";
+  const nombreDe = (o) => (ONDAS.find(x=>x.id===o)||{}).nombre || "Argentina";
+  const gradDe = (id) => GRADIENTES[Math.abs(String(id).split("").reduce((a,c)=>a+c.charCodeAt(0),0)) % GRADIENTES.length];
+  const esc = (s) => (s||"").replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const bgDe = (n) => n.imagen_url ? "background-image:url('"+esc(n.imagen_url)+"');background-size:cover;background-position:center;" : "background:"+gradDe(n.id)+";";
+  const tiempoDesde = (iso) => {
+    if(!iso) return "";
+    const diffMin = Math.round((Date.now() - new Date(iso).getTime())/60000);
+    if(diffMin < 1) return "recién";
+    if(diffMin < 60) return "hace " + diffMin + " min";
+    const h = Math.round(diffMin/60);
+    if(h < 24) return "hace " + h + " h";
+    return "hace " + Math.round(h/24) + " d";
+  };
+  const RANGO_KM = { barrio:1, ciudad:2, region:3, pais:4, mundo:5 }; // orden de cercanía para "Cerca tuyo"
+
+  let NOTICIAS = [];
+  let catActiva = "todo";
+  let favoritos = [];
+  try{ favoritos = JSON.parse(localStorage.getItem("fonte_favoritos") || "[]"); }catch(e){ favoritos = []; }
+  function guardarFavoritos(){ try{ localStorage.setItem("fonte_favoritos", JSON.stringify(favoritos)); }catch(e){} }
+
+  async function cargar(silencioso){
+    if(!silencioso){
+      document.getElementById("feed").innerHTML = '<div class="state"><div class="spinner"></div><div class="big">Cargando noticias…</div></div>';
+    }
+    try{
+      const url = SUPABASE_URL + "/rest/v1/noticias"
+        + "?select=*&publicada=eq.true&order=created_at.desc&limit=200";
+      const res = await fetch(url, {
+        headers: { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + SUPABASE_KEY }
+      });
+      if(!res.ok){ throw new Error("HTTP " + res.status); }
+      NOTICIAS = await res.json();
+      render();
+    }catch(e){
+      document.getElementById("feed").innerHTML =
+        '<div class="state"><div class="big">No se pudieron cargar las noticias.</div><div class="sub">'+esc(e.message)+'</div></div>';
+    }
+  }
+
+  function tarjeta(n, tipoHtml){ return tipoHtml; }
+
+  function render(){
+    const feed = document.getElementById("feed");
+    if(!NOTICIAS.length){
+      feed.innerHTML = '<div class="state"><div class="big">Todavía no hay noticias publicadas.</div><div class="sub">El motor está trabajando — volvé a mirar en un rato.</div></div>';
+      document.getElementById("waveNav").innerHTML = "";
+      document.getElementById("catNav").innerHTML = "";
+      document.getElementById("urgentBand").classList.remove("show");
+      return;
+    }
+
+    const filtradas = catActiva === "todo" ? NOTICIAS : NOTICIAS.filter(n => n.categoria === catActiva);
+
+    // categorías presentes
+    const catsPresentes = [...new Set(NOTICIAS.map(n=>n.categoria).filter(Boolean))];
+    document.getElementById("catNav").innerHTML =
+      '<button class="cat'+(catActiva==="todo"?' active':'')+'" data-cat="todo">Todo</button>' +
+      catsPresentes.map(c => '<button class="cat'+(catActiva===c?' active':'')+'" data-cat="'+c+'">'+(CAT_NOMBRE[c]||c)+'</button>').join("");
+    document.querySelectorAll(".cat").forEach(b=>{
+      b.addEventListener("click", ()=>{ catActiva = b.getAttribute("data-cat"); render(); });
+    });
+
+    // fila de temas favoritos (no filtra, solo reordena)
+    document.getElementById("favNav").innerHTML = catsPresentes.map(c =>
+      '<button class="fav'+(favoritos.includes(c)?' on':'')+'" data-cat="'+c+'">'+(favoritos.includes(c)?'★':'☆')+' '+(CAT_NOMBRE[c]||c)+'</button>'
+    ).join("");
+    document.querySelectorAll(".fav").forEach(b=>{
+      b.addEventListener("click", ()=>{
+        const c = b.getAttribute("data-cat");
+        favoritos = favoritos.includes(c) ? favoritos.filter(x=>x!==c) : [...favoritos, c];
+        guardarFavoritos();
+        render();
+      });
+    });
+
+    // banda urgente
+    const urgentes = NOTICIAS.filter(n => n.urgente).slice(0,4);
+    const band = document.getElementById("urgentBand");
+    if(urgentes.length){
+      band.classList.add("show");
+      band.querySelector(".band-list").innerHTML = urgentes.map(n=>{
+        const lugar = n.lugar ? esc(n.lugar) : nombreDe(n.onda);
+        return '<a class="u-item article" data-id="'+esc(n.id)+'">'
+          + '<h3 class="h">'+esc(n.titulo)+'</h3>'
+          + '<div class="tags"><span class="why urg">⚡ '+lugar+'</span>'
+          + (n.fuente_etiqueta?'<span class="src">'+esc(n.fuente_etiqueta)+'</span>':'') + '</div></a>';
+      }).join("");
+    } else { band.classList.remove("show"); }
+
+    const conNoticias = ONDAS.filter(o => filtradas.some(n => n.onda === o.id));
+    document.getElementById("waveNav").innerHTML = conNoticias.length ? conNoticias.map((o,i)=>
+      '<button class="wpill'+(i===0?' active':'')+'" data-onda="'+o.id+'" style="--w:'+o.color+'"><span class="bd"></span>'+o.nombre+'</button>'
+    ).join("") : '';
+
+    if(!filtradas.length){
+      feed.innerHTML = '<div class="state"><div class="big">No hay noticias de esta categoría todavía.</div></div>';
+      return;
+    }
+
+    // ordenar por cercanía real (barrio primero, mundo último) y por fecha dentro de cada onda
+    const ordenadas = [...filtradas].sort((a,b)=>{
+      const ra = RANGO_KM[a.onda]||9, rb = RANGO_KM[b.onda]||9;
+      if(ra !== rb) return ra - rb;
+      return new Date(b.created_at) - new Date(a.created_at);
+    });
+
+    let html = "";
+
+    // ===== PRIMERA PLANA (arma con las noticias más cercanas de todas las que hay) =====
+    const cercanas = ordenadas.slice(0, 6);       // riel izquierdo "Cerca tuyo"
+    const lead = ordenadas[0];                     // nota principal
+    const subLead = ordenadas[1];                   // segunda nota central
+    const recientes = [...filtradas].sort((a,b)=> new Date(b.created_at)-new Date(a.created_at)).slice(0,5); // riel derecho
+
+    if(lead){
+      html += '<section class="pp" id="pp">';
+      html += '<div class="section-eyebrow"><span class="t">Primera plana</span><span class="src">'+ (filtradas.length) +' noticias</span></div>';
+      html += '<div class="pp-grid">';
+
+      // riel izquierdo: cerca tuyo
+      html += '<aside class="pp-left"><div class="rail-title">Cerca tuyo</div>';
+      cercanas.slice(2,6).forEach(n=>{
+        const lugar = n.lugar ? esc(n.lugar) : nombreDe(n.onda);
+        html += '<a class="article rail-item" data-id="'+esc(n.id)+'" style="--w:'+colorDe(n.onda)+'">'
+          + '<span class="kicker"><span class="dot"></span>'+lugar+'</span>'
+          + '<h3 class="h">'+esc(n.titulo)+'</h3></a>';
+      });
+      html += '</aside>';
+
+      // centro: lead + sub
+      html += '<div class="pp-center">';
+      const leadLugar = lead.lugar ? esc(lead.lugar) : nombreDe(lead.onda);
+      html += '<a class="article lead" data-id="'+esc(lead.id)+'" style="--w:'+colorDe(lead.onda)+'">'
+        + '<div class="ph-img" style="'+bgDe(lead)+'"></div>'
+        + '<span class="kicker"><span class="dot"></span>'+leadLugar+'</span>'
+        + '<h2 class="h">'+esc(lead.titulo)+'</h2>'
+        + (lead.resumen_corto?'<p class="dek">'+esc(lead.resumen_corto)+'</p>':'')
+        + '<div class="byl">'+(lead.fuente_etiqueta?'<span class="src">'+esc(lead.fuente_etiqueta)+'</span>':'')+'<span class="src">'+tiempoDesde(lead.created_at)+'</span></div></a>';
+      if(subLead){
+        const subLugar = subLead.lugar ? esc(subLead.lugar) : nombreDe(subLead.onda);
+        html += '<a class="article pp-sub" data-id="'+esc(subLead.id)+'" style="--w:'+colorDe(subLead.onda)+'">'
+          + '<div class="ph-img sq" style="'+bgDe(subLead)+'"></div>'
+          + '<div><span class="kicker"><span class="dot"></span>'+subLugar+'</span>'
+          + '<h3 class="h">'+esc(subLead.titulo)+'</h3>'
+          + (subLead.resumen_corto?'<p class="dek">'+esc(subLead.resumen_corto)+'</p>':'') + '</div></a>';
+      }
+      html += '</div>';
+
+      // riel derecho: recientes (honesto — no "más leído", que sería inventado)
+      html += '<aside class="pp-right recientes"><div class="rail-title">Últimas</div>';
+      recientes.forEach(n=>{
+        html += '<a class="article rail-item" data-id="'+esc(n.id)+'">'
+          + '<span class="tt">'+tiempoDesde(n.created_at)+'</span>'
+          + '<h3 class="h">'+esc(n.titulo)+'</h3></a>';
+      });
+      html += '</aside>';
+
+      html += '</div></section>';
+    }
+
+    // ===== ONDAS densas debajo =====
+    for(const o of conNoticias){
+      const notas = filtradas.filter(n => n.onda === o.id).sort((a,b)=>{
+        const fa = favoritos.includes(a.categoria) ? 1 : 0;
+        const fb = favoritos.includes(b.categoria) ? 1 : 0;
+        if(fa !== fb) return fb - fa; // favoritos primero
+        return new Date(b.created_at) - new Date(a.created_at);
+      });
+      if(!notas.length) continue;
+      html += '<section class="zone" id="z-'+o.id+'" style="--w:'+o.color+'">';
+      html += '<div class="zlabel"><span class="gl"></span><span class="nm">'+esc(o.nombre)+'</span><span class="km">'+notas.length+' '+(notas.length===1?'noticia':'noticias')+'</span></div>';
+      html += '<div class="zgrid">';
+      const zLead = notas[0];
+      const zLugar = zLead.lugar ? esc(zLead.lugar) : o.nombre;
+      const zFav = favoritos.includes(zLead.categoria) ? '<span class="why int">★ '+(CAT_NOMBRE[zLead.categoria]||"")+'</span>' : '';
+      const zColor = CAT_COLOR[zLead.categoria] || "#8B8271";
+      const zCatTag = (!favoritos.includes(zLead.categoria) && zLead.categoria) ? '<span class="ctag" style="--ac:'+zColor+'">'+(CAT_NOMBRE[zLead.categoria]||zLead.categoria)+'</span>' : '';
+      html += '<a class="article z-lead" data-id="'+esc(zLead.id)+'">'
+        + '<div class="ph-img" style="'+bgDe(zLead)+'"></div>'
+        + '<h3 class="h">'+esc(zLead.titulo)+'</h3>'
+        + (zLead.resumen_corto?'<p class="dek">'+esc(zLead.resumen_corto)+'</p>':'')
+        + '<div class="byl">'+zFav+zCatTag+(zLead.fuente_etiqueta?'<span class="src">'+esc(zLead.fuente_etiqueta)+'</span>':'')+'<span class="src">'+tiempoDesde(zLead.created_at)+'</span></div></a>';
+      html += '<div class="zlist">';
+      notas.slice(1).forEach((n, i)=>{
+        const lugar = n.lugar ? esc(n.lugar) : o.nombre;
+        const fav = favoritos.includes(n.categoria) ? ' <span class="why int" style="margin-left:5px">★</span>' : '';
+        const color = CAT_COLOR[n.categoria] || "#8B8271";
+        const catTag = n.categoria ? '<span class="ctag" style="--ac:'+color+'">'+(CAT_NOMBRE[n.categoria]||n.categoria)+'</span>' : '';
+        const esReciente = (Date.now() - new Date(n.created_at).getTime()) < 15*60000;
+        const tiempo = (esReciente ? '<span class="pulse-dot"></span>' : '') + tiempoDesde(n.created_at);
+        // cada 4 ítems, uno "respira" con foto para romper el ritmo apilado
+        const destacada = (i % 4 === 3);
+        if(destacada){
+          html += '<a class="article li feat" data-id="'+esc(n.id)+'" style="--ac:'+color+'">'
+            + '<div class="ph-img" style="'+bgDe(n)+'"></div>'
+            + '<h4 class="h">'+esc(n.titulo)+'</h4>'
+            + (n.resumen_corto?'<p class="dek" style="font-size:.82rem;margin-top:4px">'+esc(n.resumen_corto)+'</p>':'')
+            + '<div class="meta-row">'+catTag+fav+'<span class="src">'+lugar+'</span><span class="src">'+tiempo+'</span></div></a>';
+        } else {
+          html += '<a class="article li" data-id="'+esc(n.id)+'" style="--ac:'+color+'">'
+            + '<h4 class="h">'+esc(n.titulo)+'</h4>'
+            + '<div class="meta-row">'+catTag+fav+'<span class="src">'+lugar+'</span><span class="src">'+tiempo+'</span></div></a>';
+        }
+      });
+      html += '</div></div></section>';
+    }
+
+    feed.innerHTML = html;
+
+    document.querySelectorAll(".article").forEach(el=>{
+      el.addEventListener("click", ()=> abrir(el.getAttribute("data-id")));
+    });
+    document.querySelectorAll(".wpill").forEach(p=>{
+      p.addEventListener("click", ()=>{
+        const el = document.getElementById("z-"+p.getAttribute("data-onda"));
+        if(el) el.scrollIntoView({behavior:"smooth", block:"start"});
+        document.querySelectorAll(".wpill").forEach(x=>x.classList.remove("active"));
+        p.classList.add("active");
+      });
+    });
+  }
+
+  let notaAbierta = null;
+
+  function abrir(id){
+    const n = NOTICIAS.find(x=>String(x.id)===String(id));
+    if(!n) return;
+    notaAbierta = n;
+    pararAudio();
+    document.getElementById("s-kicker").style.setProperty("--w", colorDe(n.onda));
+    document.getElementById("s-place").textContent = nombreDe(n.onda) + (n.lugar ? " · " + n.lugar : "");
+    document.getElementById("s-title").textContent = n.titulo || "";
+    document.getElementById("s-src").textContent = n.fuente_etiqueta || "";
+    document.getElementById("s-urg").innerHTML = n.urgente ? '<span class="why urg">⚡ Urgente</span>' : '';
+    const heroEl = document.getElementById("s-hero");
+    const videoEl = document.getElementById("s-video");
+    if(n.video_url){
+      heroEl.style.display = "none";
+      videoEl.style.display = "block";
+      const esYoutube = n.video_url.includes("youtube.com/embed");
+      videoEl.innerHTML = esYoutube
+        ? '<iframe src="'+esc(n.video_url)+'" width="100%" height="100%" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>'
+        : '<video src="'+esc(n.video_url)+'" width="100%" height="100%" controls playsinline style="object-fit:cover"></video>';
+    } else {
+      videoEl.style.display = "none";
+      videoEl.innerHTML = "";
+      heroEl.style.display = "block";
+      heroEl.setAttribute("style", "aspect-ratio:16/9;" + bgDe(n));
+    }
+    const body = document.getElementById("s-body");
+    const texto = n.resumen_extendido || n.resumen_corto || "";
+    body.innerHTML = texto.split(/\n+/).filter(p=>p.trim()).map(p=>'<p class="s-p">'+esc(p)+'</p>').join("");
+    const orig = document.getElementById("s-orig");
+    if(n.url_original){ orig.href = n.url_original; orig.style.display="inline-flex"; }
+    else { orig.style.display="none"; }
+
+    // relacionadas: reales, misma onda o categoría, sin inventar nada
+    const rel = NOTICIAS.filter(x => x.id !== n.id && (x.onda === n.onda || x.categoria === n.categoria)).slice(0,3);
+    const relBlock = document.getElementById("relBlock");
+    if(rel.length){
+      relBlock.innerHTML = '<div class="rel-title">Más cerca tuyo</div>' + rel.map(r=>{
+        const lugar = r.lugar ? esc(r.lugar) : nombreDe(r.onda);
+        return '<a class="rel-item" data-id="'+esc(r.id)+'"><span class="kicker" style="--w:'+colorDe(r.onda)+'"><span class="dot"></span>'+lugar+'</span><h4 class="h">'+esc(r.titulo)+'</h4></a>';
+      }).join("");
+      relBlock.querySelectorAll(".rel-item").forEach(el=>{
+        el.addEventListener("click", ()=> abrir(el.getAttribute("data-id")));
+      });
+    } else { relBlock.innerHTML = ""; }
+
+    document.getElementById("backdrop").classList.add("show");
+    document.getElementById("sheet").classList.add("show");
+    document.body.style.overflow="hidden";
+    document.querySelector(".sheet-body").scrollTop=0;
+  }
+  function cerrar(){
+    pararAudio();
+    document.getElementById("s-video").innerHTML = ""; // corta el video/iframe si estaba sonando
+    document.getElementById("backdrop").classList.remove("show");
+    document.getElementById("sheet").classList.remove("show");
+    document.body.style.overflow="";
+  }
+  document.getElementById("closeSheet").addEventListener("click", cerrar);
+  document.getElementById("backdrop").addEventListener("click", cerrar);
+
+  // ---- Escuchar (voz del navegador, gratis) ----
+  function pararAudio(){
+    if("speechSynthesis" in window) window.speechSynthesis.cancel();
+    const btn = document.getElementById("listenBtn");
+    if(btn){ btn.textContent = "▶ Escuchar"; btn.classList.remove("on"); }
+  }
+  document.getElementById("listenBtn").addEventListener("click", ()=>{
+    if(!notaAbierta || !("speechSynthesis" in window)) return;
+    const btn = document.getElementById("listenBtn");
+    if(window.speechSynthesis.speaking){ pararAudio(); return; }
+    const texto = (notaAbierta.titulo||"") + ". " + (notaAbierta.resumen_extendido || notaAbierta.resumen_corto || "");
+    const u = new SpeechSynthesisUtterance(texto);
+    u.lang = "es-AR";
+    u.rate = 0.98;
+    u.onend = pararAudio;
+    u.onerror = pararAudio;
+    window.speechSynthesis.speak(u);
+    btn.textContent = "■ Detener";
+    btn.classList.add("on");
+  });
+
+  // ---- Compartir (nativo si existe, si no copia el link) ----
+  document.getElementById("shareBtn").addEventListener("click", async ()=>{
+    if(!notaAbierta) return;
+    const url = notaAbierta.url_original || location.href;
+    const texto = notaAbierta.titulo + " — vía Fonte";
+    try{
+      if(navigator.share){ await navigator.share({ title: notaAbierta.titulo, text: texto, url }); }
+      else { await navigator.clipboard.writeText(texto + " " + url); alert("Copiado: " + texto); }
+    }catch(e){ /* el usuario canceló el share, no hacemos nada */ }
+  });
+
+  document.getElementById("refreshBtn").addEventListener("click", ()=>cargar(false));
+
+  (function(){
+    const grip=document.getElementById("grip"), sheet=document.getElementById("sheet");
+    const body=document.querySelector(".sheet-body");
+    let sy=0,dy=0,drag=false,vb=false;
+    function s(y,fromBody){ vb=fromBody; if(fromBody&&body.scrollTop>0){drag=false;return;} drag=true; sy=y; sheet.style.transition="none"; }
+    function m(y,e){ if(!drag)return; const d=y-sy; if(vb&&(body.scrollTop>0||d<0)){drag=false;sheet.style.transition="";sheet.style.transform="";return;}
+      dy=Math.max(0,d); if(dy>0){ if(e&&e.cancelable)e.preventDefault(); sheet.style.transform="translateY("+dy+"px)"; } }
+    function en(){ if(!drag)return; drag=false; sheet.style.transition=""; if(dy>110)cerrar(); sheet.style.transform=""; dy=0; }
+    grip.addEventListener("touchstart",e=>s(e.touches[0].clientY,false),{passive:true});
+    grip.addEventListener("touchmove",e=>m(e.touches[0].clientY,e),{passive:false});
+    grip.addEventListener("touchend",en);
+    body.addEventListener("touchstart",e=>s(e.touches[0].clientY,true),{passive:true});
+    body.addEventListener("touchmove",e=>m(e.touches[0].clientY,e),{passive:false});
+    body.addEventListener("touchend",en);
+  })();
+
+  try{
+    const f = new Date().toLocaleDateString("es-AR",{weekday:"long",day:"numeric",month:"long"});
+    document.getElementById("fechaIzq").textContent = "Quitilipi, Chaco · " + f;
+    const hh = new Date().getHours();
+    document.getElementById("edicionDer").textContent = "Edición " + String(hh).padStart(2,"0") + ":00";
+  }catch(e){}
+
+  cargar(false);
+  setInterval(()=>cargar(true), 120000);
+</script>
+</body>
+</html>
