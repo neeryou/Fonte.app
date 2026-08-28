@@ -211,10 +211,13 @@
   .gloss-pop.open{ display:block; }
 
   /* ===== aportes del pueblo ===== */
-  .aportes-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:10px; }
-  .aporte-card{ background:var(--paper-2); border-radius:10px; overflow:hidden; }
+  .avisos-wrap{ padding:14px 0 4px; }
+  .avisos-label{ font-family:var(--sans); font-size:.68rem; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:var(--ink-faint); display:flex; align-items:center; gap:6px; padding:0 0 9px; }
+  .avisos-row{ display:flex; gap:9px; overflow-x:auto; scrollbar-width:none; padding-bottom:2px; }
+  .avisos-row::-webkit-scrollbar{ display:none; }
+  .aporte-card{ flex:0 0 auto; width:132px; background:var(--paper-2); border-radius:10px; overflow:hidden; }
   .aporte-card .ph-img{ aspect-ratio:4/3; border-radius:0; }
-  .aporte-card .txt{ padding:8px 9px 10px; }
+  .aporte-card .txt{ padding:7px 8px 9px; }
   .aporte-cat{ font-family:var(--sans); font-size:.6rem; font-weight:700; color:var(--ink-soft); }
   .aporte-tit{ font-family:var(--serif); font-size:.84rem; margin-top:2px; }
   .fab{ position:fixed; right:16px; bottom:66px; background:var(--barrio); color:#fff; font-family:var(--sans); font-weight:700; font-size:.8rem; padding:12px 16px; border-radius:999px; border:none; box-shadow:0 6px 18px rgba(30,28,22,.28); z-index:190; }
@@ -247,7 +250,7 @@
   <div class="plate">
     <div class="plate-row">
       <div class="side" id="fechaIzq">Quitilipi, Chaco</div>
-      <div><div class="brand">Fonte</div><span class="tag">ordenado por cercanía</span></div>
+      <div><div class="brand">Fonte</div><span class="tag">¿qué está pasando hoy en tu ciudad?</span></div>
       <div class="side right" id="edicionDer"></div>
     </div>
   </div>
@@ -267,17 +270,20 @@
 
 <div class="wrap"><div class="urgent-band" id="urgentBand"><div class="band-head">⚡ Cerca tuyo ahora</div><div class="band-list"></div></div></div>
 
+<div class="wrap avisos-wrap" id="avisosWrap" style="display:none">
+  <div class="avisos-label">📍 Avisos de vecinos <span id="aportesCount"></span></div>
+  <div class="avisos-row" id="aportesGrid"></div>
+</div>
+
 <main class="wrap" id="feed">
   <div class="state"><div class="spinner"></div><div class="big">Cargando noticias…</div></div>
 </main>
 
-<section class="zone wrap" id="z-aportes" style="--w:var(--barrio)">
-  <div class="zlabel"><span class="gl"></span><span class="nm">Aportes del pueblo</span><span class="km" id="aportesCount"></span></div>
-  <div class="aportes-grid" id="aportesGrid"><div class="state" style="padding:20px 0"><div class="sub">Cargando…</div></div></div>
-</section>
-
 <footer><div class="wrap">
   <p class="foot-note">Fonte · Fase 0 · un diario inteligente que ordena las noticias por cercanía. Las noticias se resumen automáticamente con IA; cada una enlaza a su fuente original.</p>
+  <div style="display:flex;gap:14px;margin-top:12px">
+    <a href="reportero.html" style="font-family:var(--sans);font-size:.68rem;color:var(--ink-soft);font-weight:600;border-bottom:1px dotted var(--line-strong)">🔑 Reportero</a>
+  </div>
 </div></footer>
 
 <button class="fab" id="fabAportar">+ Aportá un dato</button>
@@ -435,6 +441,26 @@
   try{ favoritos = JSON.parse(localStorage.getItem("fonte_favoritos") || "[]"); }catch(e){ favoritos = []; }
   function guardarFavoritos(){ try{ localStorage.setItem("fonte_favoritos", JSON.stringify(favoritos)); }catch(e){} }
 
+  // no-leídos primero + orden que rota cada 25 min, para que el feed no se sienta
+  // clavado en el mismo lugar si volvés a abrir la app poco después
+  function getLeidos(){
+    try{ return new Set(JSON.parse(localStorage.getItem("fonte_leidos") || "[]")); }catch(e){ return new Set(); }
+  }
+  function marcarLeido(id){
+    try{
+      const leidos = getLeidos();
+      leidos.add(String(id));
+      localStorage.setItem("fonte_leidos", JSON.stringify(Array.from(leidos).slice(-300)));
+    }catch(e){}
+  }
+  function semillaRotativa(){ return Math.floor(Date.now() / (25*60*1000)); } // cambia cada 25 min
+  function ordenRotativo(id, seed){
+    let h = 2166136261 ^ seed;
+    const s = String(id) + "-" + seed;
+    for(let i=0;i<s.length;i++){ h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+    return h >>> 0;
+  }
+
   async function cargar(silencioso){
     if(!silencioso){
       document.getElementById("feed").innerHTML = '<div class="state"><div class="spinner"></div><div class="big">Cargando noticias…</div></div>';
@@ -576,12 +602,17 @@
     }
 
     // ===== ONDAS densas debajo =====
+    const leidos = getLeidos();
+    const seed = semillaRotativa();
     for(const o of conNoticias){
       const notas = filtradas.filter(n => n.onda === o.id).sort((a,b)=>{
         const fa = favoritos.includes(a.categoria) ? 1 : 0;
         const fb = favoritos.includes(b.categoria) ? 1 : 0;
         if(fa !== fb) return fb - fa; // favoritos primero
-        return new Date(b.created_at) - new Date(a.created_at);
+        const la = leidos.has(String(a.id)) ? 1 : 0;
+        const lb = leidos.has(String(b.id)) ? 1 : 0;
+        if(la !== lb) return la - lb; // no leídas primero
+        return ordenRotativo(a.id, seed) - ordenRotativo(b.id, seed); // varía cada 25 min, no siempre el mismo orden
       });
       if(!notas.length) continue;
       html += '<section class="zone" id="z-'+o.id+'" style="--w:'+o.color+'">';
@@ -654,6 +685,7 @@
   function abrir(id){
     const n = NOTICIAS.find(x=>String(x.id)===String(id));
     if(!n) return;
+    marcarLeido(n.id);
     notaAbierta = n;
     pararAudio();
     document.getElementById("s-kicker").style.setProperty("--w", colorDe(n.onda));
@@ -780,12 +812,11 @@
       const res = await fetch(url, { headers: { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + SUPABASE_KEY } });
       APORTES = res.ok ? await res.json() : [];
     }catch(e){ APORTES = []; }
+    const wrap = document.getElementById("avisosWrap");
     const grid = document.getElementById("aportesGrid");
-    document.getElementById("aportesCount").textContent = APORTES.length ? (APORTES.length + (APORTES.length===1?" aporte":" aportes")) : "";
-    if(!APORTES.length){
-      grid.innerHTML = '<div class="state" style="padding:16px 0"><div class="sub">Todavía no hay aportes publicados. ¡Sé el primero!</div></div>';
-      return;
-    }
+    if(!APORTES.length){ wrap.style.display = "none"; return; }
+    wrap.style.display = "block";
+    document.getElementById("aportesCount").textContent = "· " + APORTES.length + (APORTES.length===1?" aviso":" avisos");
     grid.innerHTML = APORTES.map(a=>{
       const cat = CAT_APORTE.find(c=>c.id===a.categoria) || {label:"Aporte", icon:"📍"};
       const foto = a.foto_url ? "background-image:url('"+esc(a.foto_url)+"');background-size:cover;background-position:center;" : "background:var(--paper-3);";
