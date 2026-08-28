@@ -64,6 +64,29 @@
   .today-item .h{ font-family:var(--serif); font-weight:700; font-size:.95rem; }
   .toast{ position:fixed; left:50%; bottom:26px; transform:translateX(-50%) translateY(20px); background:var(--ink); color:var(--paper); font-family:var(--sans); font-size:.8rem; font-weight:600; padding:11px 18px; border-radius:999px; opacity:0; transition:all .3s ease; z-index:300; pointer-events:none; }
   .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+  /* ===== tabs ===== */
+  .rep-tabs{ display:flex; gap:0; margin-bottom:20px; border:1px solid var(--line-strong); border-radius:999px; padding:3px; background:var(--paper-2); }
+  .rep-tab{ flex:1; text-align:center; font-family:var(--sans); font-size:.78rem; font-weight:700; padding:9px 4px; border-radius:999px; color:var(--ink-soft); background:none; border:0; }
+  .rep-tab.on{ background:var(--ink); color:var(--paper); }
+  .rep-view{ display:none; }
+  .rep-view.on{ display:block; }
+  .tab-badge{ font-family:var(--sans); font-size:.62rem; font-weight:700; background:var(--urgente); color:#fff; padding:1px 6px; border-radius:999px; margin-left:4px; }
+
+  /* ===== foto propia en el form de nota ===== */
+  .foto-preview{ width:100%; aspect-ratio:16/9; object-fit:cover; border-radius:8px; margin-top:8px; display:none; background:var(--paper-3); }
+
+  /* ===== aportes pendientes ===== */
+  .aporte-review{ display:flex; gap:12px; }
+  .aporte-review img{ width:84px; height:84px; object-fit:cover; border-radius:8px; background:var(--paper-3); flex:0 0 auto; }
+  .aporte-review .info{ flex:1; min-width:0; }
+  .aporte-review .cat{ font-family:var(--sans); font-size:.66rem; font-weight:700; color:var(--barrio); }
+  .aporte-review .desc{ font-family:var(--sans); font-size:.82rem; color:var(--ink-soft); margin:4px 0; }
+  .aporte-review .meta{ font-family:var(--sans); font-size:.66rem; color:var(--ink-faint); }
+  .aporte-review .acts{ display:flex; gap:8px; margin-top:10px; }
+  .aporte-review .acts button{ flex:1; font-family:var(--sans); font-size:.76rem; font-weight:700; padding:9px; border-radius:8px; border:0; }
+  .btn-aprobar{ background:var(--barrio); color:#fff; }
+  .btn-rechazar{ background:transparent; color:var(--ink-soft); border:1px solid var(--line) !important; }
 </style>
 </head>
 <body>
@@ -90,6 +113,12 @@
   </div></div>
 
   <div class="rep-wrap">
+    <div class="rep-tabs">
+      <button class="rep-tab on" id="tabCargar">Cargar noticia</button>
+      <button class="rep-tab" id="tabAportes">Aportes pendientes<span class="tab-badge hide" id="badgeAportes">0</span></button>
+    </div>
+
+    <div class="rep-view on" id="viewCargar">
     <h2 class="rep-h">Cargar una noticia</h2>
     <p class="rep-sub">Pegá lo que viste (Facebook, radio, lo que sea) y Fonte lo convierte en una nota lista para revisar y publicar.</p>
 
@@ -106,6 +135,10 @@
         <button class="srcchip" data-src="__otra">Otra</button>
       </div>
       <input class="inp src-custom" id="srcCustom" placeholder="Escribí la fuente">
+
+      <div class="field-label" style="margin-top:14px">Foto propia (opcional — si no subís nada, se usa la que Fonte encuentre del link)</div>
+      <input class="inp" type="file" id="fotoPropia" accept="image/*" capture="environment" style="padding:9px">
+      <img class="foto-preview" id="fotoPreview">
 
       <button class="btn-gen" id="genBtn">✨ Generar con Fonte</button>
       <div class="err-msg hide" id="genErr"></div>
@@ -165,6 +198,13 @@
 
     <h2 class="rep-h" style="font-size:1.1rem;margin-top:26px">Publicado hoy</h2>
     <div id="todayList"><p style="font-family:var(--sans);font-size:.78rem;color:var(--ink-faint)">Nada todavía.</p></div>
+    </div>
+
+    <div class="rep-view" id="viewAportes">
+      <h2 class="rep-h">Aportes pendientes</h2>
+      <p class="rep-sub">Categorías fijas, con foto y ubicación — revisalos antes de que aparezcan en Fonte.</p>
+      <div id="aportesList"><p style="font-family:var(--sans);font-size:.78rem;color:var(--ink-faint)">Cargando…</p></div>
+    </div>
   </div>
 </div>
 
@@ -183,6 +223,49 @@
   let fuenteElegida = "Facebook vecinal";
   let imagenDetectada = null;
   let videoDetectado = null;
+  let fotoPropiaUrl = null;
+
+  const CAT_APORTE = [
+    {id:"agua_estancada", label:"Agua estancada", icon:"💧"},
+    {id:"calle_mal_estado", label:"Calle en mal estado", icon:"🕳️"},
+    {id:"corte_luz", label:"Corte de luz", icon:"⚡"},
+    {id:"corte_agua", label:"Corte de agua", icon:"🚱"},
+    {id:"alumbrado", label:"Alumbrado público", icon:"💡"},
+    {id:"residuos", label:"Basural / residuos", icon:"🗑️"},
+    {id:"arbol_caido", label:"Árbol o poste caído", icon:"🌳"},
+    {id:"otro_riesgo", label:"Otro riesgo", icon:"⚠️"}
+  ];
+
+  document.getElementById("tabCargar").addEventListener("click", ()=>{
+    document.getElementById("tabCargar").classList.add("on");
+    document.getElementById("tabAportes").classList.remove("on");
+    document.getElementById("viewCargar").classList.add("on");
+    document.getElementById("viewAportes").classList.remove("on");
+  });
+  document.getElementById("tabAportes").addEventListener("click", ()=>{
+    document.getElementById("tabAportes").classList.add("on");
+    document.getElementById("tabCargar").classList.remove("on");
+    document.getElementById("viewAportes").classList.add("on");
+    document.getElementById("viewCargar").classList.remove("on");
+    cargarAportesPendientes();
+  });
+
+  document.getElementById("fotoPropia").addEventListener("change", async (e)=>{
+    const file = e.target.files[0];
+    fotoPropiaUrl = null;
+    if(!file) return;
+    const preview = document.getElementById("fotoPreview");
+    preview.src = URL.createObjectURL(file);
+    preview.style.display = "block";
+    try{
+      const nombre = Date.now() + "." + (file.name.split(".").pop() || "jpg");
+      const { error } = await sb.storage.from("notas-fotos").upload(nombre, file);
+      if(!error){
+        const { data } = sb.storage.from("notas-fotos").getPublicUrl(nombre);
+        fotoPropiaUrl = data.publicUrl;
+      }
+    }catch(err){ /* si falla la subida, se publica igual con la imagen que haya detectado Fonte */ }
+  });
 
   function toast(msg){
     const t = document.getElementById("toast"); t.textContent = msg; t.classList.add("show");
@@ -197,6 +280,7 @@
       consoleView.classList.remove("hide");
       document.getElementById("userEmail").textContent = sesion.user.email;
       cargarPublicadoHoy();
+      cargarAportesPendientes();
     } else {
       loginView.classList.remove("hide");
       consoleView.classList.add("hide");
@@ -307,7 +391,7 @@
       urgente: document.getElementById("pvUrgente").checked,
       fuente_etiqueta: "vía " + fuenteElegida,
       origen: "reportero",
-      imagen_url: imagenDetectada,
+      imagen_url: fotoPropiaUrl || imagenDetectada,
       video_url: videoDetectado,
       publicada: true,
       creada_por: sesion.user.id,
@@ -322,6 +406,9 @@
     toast("Publicado en Fonte ✓");
     document.getElementById("previewCard").classList.add("hide");
     document.getElementById("rawInput").value = "";
+    document.getElementById("fotoPropia").value = "";
+    document.getElementById("fotoPreview").style.display = "none";
+    fotoPropiaUrl = null;
     cargarPublicadoHoy();
   });
 
@@ -342,6 +429,46 @@
       '<div class="today-item"><span class="st">'+(NOMBRE_ONDA[n.onda]||n.onda)+'</span><span class="h">'+
       n.titulo.replace(/[<>&]/g, c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]))+'</span></div>'
     ).join("");
+  }
+
+  const escA = (s) => (s||"").toString().replace(/[<>&]/g, c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));
+
+  async function cargarAportesPendientes(){
+    const { data, error } = await sb.from("aportes").select("*").eq("estado","pendiente").order("created_at",{ascending:true});
+    const cont = document.getElementById("aportesList");
+    const badge = document.getElementById("badgeAportes");
+    if(data && data.length){ badge.textContent = data.length; badge.classList.remove("hide"); }
+    else { badge.classList.add("hide"); }
+    if(error || !data || !data.length){
+      cont.innerHTML = '<p style="font-family:var(--sans);font-size:.78rem;color:var(--ink-faint)">No hay aportes pendientes de revisión.</p>';
+      return;
+    }
+    cont.innerHTML = data.map(a=>{
+      const cat = CAT_APORTE.find(c=>c.id===a.categoria) || {label:a.categoria, icon:"📍"};
+      const mapa = (a.lat && a.lng) ? '<a href="https://www.google.com/maps?q='+a.lat+','+a.lng+'" target="_blank">Ver ubicación</a>' : "sin ubicación";
+      const fecha = a.created_at ? new Date(a.created_at).toLocaleString("es-AR") : "";
+      return '<div class="card aporte-review" data-id="'+escA(a.id)+'">'
+        + '<img src="'+escA(a.foto_url||"")+'">'
+        + '<div class="info">'
+        + '<div class="cat">'+cat.icon+' '+escA(cat.label)+'</div>'
+        + '<div class="desc">'+(a.titulo?('<b>'+escA(a.titulo)+'</b> — '):'')+escA(a.descripcion||"sin descripción")+'</div>'
+        + '<div class="meta">'+mapa+' · '+fecha+'</div>'
+        + '<div class="acts"><button class="btn-aprobar" data-accion="aprobado">Publicar</button><button class="btn-rechazar" data-accion="rechazado">Descartar</button></div>'
+        + '</div></div>';
+    }).join("");
+    cont.querySelectorAll(".aporte-review").forEach(card=>{
+      const id = card.getAttribute("data-id");
+      card.querySelectorAll("button[data-accion]").forEach(btn=>{
+        btn.addEventListener("click", async ()=>{
+          btn.disabled = true;
+          const estado = btn.getAttribute("data-accion");
+          const { error } = await sb.from("aportes").update({ estado, revisado_por: sesion.user.id }).eq("id", id);
+          if(error){ toast("No se pudo actualizar el aporte."); btn.disabled=false; return; }
+          toast(estado === "aprobado" ? "Aporte publicado ✓" : "Aporte descartado");
+          cargarAportesPendientes();
+        });
+      });
+    });
   }
 
   revisarSesion();

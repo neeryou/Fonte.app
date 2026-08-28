@@ -180,6 +180,64 @@
   .rel-item{ display:block; padding:9px 0; border-top:1px solid var(--line); }
   .rel-item:first-of-type{ border-top:0; }
   .rel-item .h{ font-size:.92rem; line-height:1.2; margin-top:3px; }
+
+  /* ===== ticker clima/dólar ===== */
+  .ticker{ display:flex; gap:0; overflow-x:auto; scrollbar-width:none; border-bottom:1px solid var(--line); background:var(--paper-3); }
+  .ticker::-webkit-scrollbar{ display:none; }
+  .tick{ flex:0 0 auto; display:flex; align-items:baseline; gap:6px; padding:7px 18px; border-right:1px solid var(--line); font-family:var(--sans); white-space:nowrap; }
+  .tick .lbl{ font-size:.58rem; text-transform:uppercase; letter-spacing:.08em; color:var(--ink-faint); font-weight:700; }
+  .tick .val{ font-size:.78rem; font-weight:700; color:var(--ink); }
+
+  /* ===== variantes de nota dentro de zlist (cita / dato destacado) ===== */
+  .li-quote{ font-family:var(--serif); font-style:italic; font-size:.98rem; line-height:1.32; color:var(--ink); margin:6px 0 4px; padding-left:14px; border-left:2px solid var(--ac,var(--ink-faint)); }
+  .li-quote-who{ display:block; font-family:var(--sans); font-style:normal; font-size:.64rem; color:var(--ink-faint); margin-top:5px; }
+  .li-databig{ text-align:center; background:var(--paper-2); border-radius:10px; padding:14px 12px !important; margin-left:0; }
+  .li-databig::before{ display:none; }
+  .databig-num{ font-family:var(--serif); font-weight:700; font-size:1.7rem; color:var(--urgente); line-height:1; }
+  .databig-lbl{ font-family:var(--sans); font-size:.62rem; color:var(--ink-faint); text-transform:uppercase; letter-spacing:.05em; margin-top:3px; }
+
+  /* ===== panel de nota escaneable ===== */
+  .s-lede::first-letter{ font-size:2.3rem; font-weight:700; float:left; line-height:.85; padding:4px 6px 0 0; color:var(--urgente); }
+  .data-box{ background:var(--paper-2); border-radius:10px; padding:14px 16px; margin:16px 0; display:flex; gap:14px; }
+  .data-item{ flex:1; text-align:center; }
+  .data-num{ font-family:var(--serif); font-weight:700; font-size:1.3rem; color:var(--urgente); line-height:1; }
+  .data-lbl{ font-family:var(--sans); font-size:.58rem; color:var(--ink-faint); text-transform:uppercase; letter-spacing:.05em; margin-top:4px; }
+  .subhead{ font-family:var(--sans); font-size:.64rem; font-weight:800; text-transform:uppercase; letter-spacing:.1em; color:var(--ciudad); margin:18px 0 8px; }
+  .pull{ position:relative; margin:16px 4px; padding:2px 4px 2px 18px; border-left:3px solid var(--urgente); }
+  .pull .q{ font-style:italic; font-size:1rem; line-height:1.3; color:var(--ink); }
+  .pull .who{ font-family:var(--sans); font-size:.62rem; color:var(--ink-faint); margin-top:6px; }
+  .gloss{ border-bottom:1.5px dotted var(--ink-faint); cursor:pointer; }
+  .gloss-pop{ display:none; background:var(--paper-2); border:1px solid var(--line); border-radius:8px; padding:8px 10px; margin:4px 0 8px; font-family:var(--sans); font-size:.76rem; color:var(--ink-soft); }
+  .gloss-pop.open{ display:block; }
+
+  /* ===== aportes del pueblo ===== */
+  .aportes-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:10px; }
+  .aporte-card{ background:var(--paper-2); border-radius:10px; overflow:hidden; }
+  .aporte-card .ph-img{ aspect-ratio:4/3; border-radius:0; }
+  .aporte-card .txt{ padding:8px 9px 10px; }
+  .aporte-cat{ font-family:var(--sans); font-size:.6rem; font-weight:700; color:var(--ink-soft); }
+  .aporte-tit{ font-family:var(--serif); font-size:.84rem; margin-top:2px; }
+  .fab{ position:fixed; right:16px; bottom:66px; background:var(--barrio); color:#fff; font-family:var(--sans); font-weight:700; font-size:.8rem; padding:12px 16px; border-radius:999px; border:none; box-shadow:0 6px 18px rgba(30,28,22,.28); z-index:190; }
+
+  /* ===== sheet 2: aporte / formulario (mismo lenguaje visual que .sheet) ===== */
+  .sheet2{ position:fixed; left:0; right:0; bottom:0; z-index:200; max-width:640px; margin:0 auto; max-height:88vh;
+    background:var(--paper); border-radius:20px 20px 0 0; box-shadow:0 -14px 44px rgba(30,28,22,.28);
+    transform:translateY(100%); transition:transform .3s cubic-bezier(.22,.61,.36,1); overflow-y:auto; }
+  .sheet2.show{ transform:translateY(0); }
+  .sheet2-top{ display:flex; justify-content:space-between; align-items:center; padding:14px 18px 10px; border-bottom:1px solid var(--line); }
+  .sheet2-top .b{ font-family:var(--serif); font-weight:700; font-size:1.1rem; }
+  .sheet2-body{ padding:16px 18px 30px; }
+  .field-lbl{ font-family:var(--sans); font-size:.66rem; font-weight:700; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.06em; margin:14px 0 7px; }
+  .cat-grid{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .cat-opt{ font-family:var(--sans); font-size:.78rem; border:1.5px solid var(--line-strong); border-radius:10px; padding:9px; text-align:center; cursor:pointer; }
+  .cat-opt.sel{ background:var(--barrio); border-color:var(--barrio); color:#fff; }
+  .fld{ width:100%; font-family:var(--sans); font-size:.88rem; border:1px solid var(--line-strong); border-radius:8px; padding:9px 10px; background:var(--paper); color:var(--ink); }
+  textarea.fld{ resize:vertical; min-height:70px; }
+  .geo-status{ font-family:var(--sans); font-size:.74rem; color:var(--ink-soft); margin-top:6px; }
+  .submit-btn{ width:100%; margin-top:18px; background:var(--barrio); color:#fff; font-family:var(--sans); font-weight:700; font-size:.9rem; padding:12px; border:none; border-radius:10px; }
+  .submit-btn:disabled{ opacity:.5; }
+  .form-msg{ font-family:var(--sans); font-size:.8rem; margin-top:10px; }
+
   @media (prefers-reduced-motion:reduce){ *{ transition:none !important; } .spinner{ animation:none; } }
 </style>
 </head>
@@ -195,6 +253,11 @@
   </div>
 </div>
 
+<div class="ticker" id="ticker">
+  <div class="tick"><span class="lbl">Quitilipi</span><span class="val" id="tickClima">—</span></div>
+  <div class="tick"><span class="lbl">Dólar oficial</span><span class="val" id="tickDolar">—</span></div>
+</div>
+
 <nav class="waves"><div class="waves-in" id="waveNav"></div></nav>
 <div class="cats"><div class="cats-in" id="catNav"></div></div>
 <div class="fav-row">
@@ -208,10 +271,16 @@
   <div class="state"><div class="spinner"></div><div class="big">Cargando noticias…</div></div>
 </main>
 
+<section class="zone wrap" id="z-aportes" style="--w:var(--barrio)">
+  <div class="zlabel"><span class="gl"></span><span class="nm">Aportes del pueblo</span><span class="km" id="aportesCount"></span></div>
+  <div class="aportes-grid" id="aportesGrid"><div class="state" style="padding:20px 0"><div class="sub">Cargando…</div></div></div>
+</section>
+
 <footer><div class="wrap">
   <p class="foot-note">Fonte · Fase 0 · un diario inteligente que ordena las noticias por cercanía. Las noticias se resumen automáticamente con IA; cada una enlaza a su fuente original.</p>
 </div></footer>
 
+<button class="fab" id="fabAportar">+ Aportá un dato</button>
 <button class="refresh-btn" id="refreshBtn">↻ Actualizar</button>
 
 <div class="backdrop" id="backdrop"></div>
@@ -231,6 +300,46 @@
     <div id="s-body"></div>
     <a class="verorig" id="s-orig" target="_blank" rel="noopener">Ver original ↗</a>
     <div class="rel-block" id="relBlock"></div>
+  </div>
+</div>
+
+<!-- sheet: detalle de un aporte -->
+<div class="backdrop" id="backdropAporte"></div>
+<div class="sheet2" id="sheetAporte">
+  <div class="sheet2-top"><span class="b">Aporte de un vecino</span><button class="close" id="closeAporte">Cerrar ✕</button></div>
+  <div class="sheet2-body">
+    <div class="ph-img" id="aporteFoto" style="margin-bottom:12px;display:none"></div>
+    <div class="kicker" id="aporteCatLbl"><span class="dot" style="background:var(--barrio)"></span><span></span></div>
+    <h3 class="h" id="aporteTitulo" style="margin-top:8px"></h3>
+    <p class="s-p" id="aporteDesc"></p>
+    <p class="s-p" id="aporteLugar"></p>
+    <a class="verorig" id="aporteMapa" target="_blank" rel="noopener" style="display:none">Ver ubicación ↗</a>
+    <div class="foot-note" style="margin-top:14px">Aporte enviado por un vecino, revisado antes de publicarse.</div>
+  </div>
+</div>
+
+<!-- sheet: formulario para aportar un dato -->
+<div class="backdrop" id="backdropForm"></div>
+<div class="sheet2" id="sheetForm">
+  <div class="sheet2-top"><span class="b">Aportá un dato</span><button class="close" id="closeForm">Cerrar ✕</button></div>
+  <div class="sheet2-body">
+    <div class="field-lbl">¿Qué querés reportar?</div>
+    <div class="cat-grid" id="catGridForm"></div>
+
+    <div class="field-lbl">Título breve (opcional)</div>
+    <input class="fld" id="fTitulo" maxlength="60" placeholder="Ej: pozo en calle San Martín">
+
+    <div class="field-lbl">Contanos un poco más (opcional)</div>
+    <textarea class="fld" id="fDesc" maxlength="300" placeholder="Detalles que ayuden a entender la situación"></textarea>
+
+    <div class="field-lbl">Foto (opcional, ayuda mucho)</div>
+    <input class="fld" type="file" id="fFoto" accept="image/*" capture="environment">
+
+    <div class="field-lbl">Ubicación</div>
+    <div class="geo-status" id="geoStatus">Te la vamos a pedir al enviar.</div>
+
+    <button class="submit-btn" id="fSubmit">Enviar aporte</button>
+    <div class="form-msg" id="formMsg"></div>
   </div>
 </div>
 
@@ -266,6 +375,18 @@
   const nombreDe = (o) => (ONDAS.find(x=>x.id===o)||{}).nombre || "Argentina";
   const gradDe = (id) => GRADIENTES[Math.abs(String(id).split("").reduce((a,c)=>a+c.charCodeAt(0),0)) % GRADIENTES.length];
   const esc = (s) => (s||"").replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  // glosario estilo Wikipedia: subraya el término y agrega una tarjetita con la definición, sin salir de la nota
+  function conGlosario(texto, terminos){
+    let out = esc(texto);
+    (terminos||[]).forEach(t=>{
+      if(!t || !t.termino) return;
+      const marcado = esc(t.termino);
+      const idx = out.indexOf(marcado);
+      if(idx === -1) return;
+      out = out.slice(0, idx) + '<span class="gloss">'+marcado+'</span><span class="gloss-pop">'+esc(t.definicion||"")+'</span>' + out.slice(idx + marcado.length);
+    });
+    return out;
+  }
   const bgDe = (n) => n.imagen_url ? "background-image:url('"+esc(n.imagen_url)+"');background-size:cover;background-position:center;" : "background:"+gradDe(n.id)+";";
   const tiempoDesde = (iso) => {
     if(!iso) return "";
@@ -277,6 +398,36 @@
     return "hace " + Math.round(h/24) + " d";
   };
   const RANGO_KM = { barrio:1, ciudad:2, region:3, pais:4, mundo:5 }; // orden de cercanía para "Cerca tuyo"
+
+  // ---- ticker: clima (Open-Meteo, sin key) y dólar oficial (dolarapi, sin key) ----
+  const CLIMA_COD = {0:['Despejado','☀️'],1:['Parcial','⛅'],2:['Parcial','⛅'],3:['Nublado','☁️'],45:['Niebla','🌫️'],48:['Niebla','🌫️'],51:['Llovizna','🌦️'],53:['Llovizna','🌦️'],55:['Llovizna','🌦️'],61:['Lluvia','🌧️'],63:['Lluvia','🌧️'],65:['Lluvia','🌧️'],80:['Chubascos','🌦️'],81:['Chubascos','🌦️'],82:['Chubascos','🌦️'],95:['Tormenta','⛈️'],96:['Tormenta','⛈️'],99:['Tormenta','⛈️']};
+  fetch("https://api.open-meteo.com/v1/forecast?latitude=-26.8667&longitude=-60.2167&current_weather=true")
+    .then(r=>r.json()).then(d=>{
+      const c = d.current_weather;
+      const par = CLIMA_COD[c.weathercode] || ['—','🌡️'];
+      document.getElementById("tickClima").textContent = Math.round(c.temperature) + "° " + par[1] + " " + par[0];
+    }).catch(()=>{ document.getElementById("tickClima").textContent = "no disponible"; });
+  fetch("https://dolarapi.com/v1/dolares/oficial")
+    .then(r=>r.json()).then(d=>{ document.getElementById("tickDolar").textContent = "$" + Math.round(d.venta); })
+    .catch(()=>{ document.getElementById("tickDolar").textContent = "no disponible"; });
+
+  // ---- aportes del pueblo ----
+  const CAT_APORTE = [
+    {id:"agua_estancada", label:"Agua estancada", icon:"💧"},
+    {id:"calle_mal_estado", label:"Calle en mal estado", icon:"🕳️"},
+    {id:"corte_luz", label:"Corte de luz", icon:"⚡"},
+    {id:"corte_agua", label:"Corte de agua", icon:"🚱"},
+    {id:"alumbrado", label:"Alumbrado público", icon:"💡"},
+    {id:"residuos", label:"Basural / residuos", icon:"🗑️"},
+    {id:"arbol_caido", label:"Árbol o poste caído", icon:"🌳"},
+    {id:"otro_riesgo", label:"Otro riesgo", icon:"⚠️"}
+  ];
+  let APORTES = [];
+  function getDispositivoId(){
+    let id = localStorage.getItem("fonte_dispositivo_id");
+    if(!id){ id = (crypto.randomUUID ? crypto.randomUUID() : (Date.now()+"-"+Math.random())); localStorage.setItem("fonte_dispositivo_id", id); }
+    return id;
+  }
 
   let NOTICIAS = [];
   let catActiva = "todo";
@@ -456,7 +607,19 @@
         const tiempo = (esReciente ? '<span class="pulse-dot"></span>' : '') + tiempoDesde(n.created_at);
         // cada 4 ítems, uno "respira" con foto para romper el ritmo apilado
         const destacada = (i % 4 === 3);
-        if(destacada){
+        const est = n.resumen_estructurado;
+        if(est && est.cita && est.cita.texto){
+          html += '<a class="article li" data-id="'+esc(n.id)+'" style="--ac:'+color+'">'
+            + '<h4 class="h">'+esc(n.titulo)+'</h4>'
+            + '<blockquote class="li-quote">“'+esc(est.cita.texto)+'”<span class="li-quote-who">— '+esc(est.cita.quien||"")+'</span></blockquote>'
+            + '<div class="meta-row">'+catTag+fav+'<span class="src">'+lugar+'</span><span class="src">'+tiempo+'</span></div></a>';
+        } else if(est && est.datos && est.datos[0] && est.datos[0].numero){
+          const d = est.datos[0];
+          html += '<a class="article li li-databig" data-id="'+esc(n.id)+'" style="--ac:'+color+'">'
+            + '<div class="databig-num">'+esc(d.numero)+'</div><div class="databig-lbl">'+esc(d.etiqueta||"")+'</div>'
+            + '<h4 class="h" style="margin-top:6px">'+esc(n.titulo)+'</h4>'
+            + '<div class="meta-row" style="justify-content:center">'+catTag+fav+'<span class="src">'+lugar+'</span></div></a>';
+        } else if(destacada){
           html += '<a class="article li feat" data-id="'+esc(n.id)+'" style="--ac:'+color+'">'
             + '<div class="ph-img" style="'+bgDe(n)+'"></div>'
             + '<h4 class="h">'+esc(n.titulo)+'</h4>'
@@ -514,8 +677,31 @@
       heroEl.setAttribute("style", "aspect-ratio:16/9;" + bgDe(n));
     }
     const body = document.getElementById("s-body");
-    const texto = n.resumen_extendido || n.resumen_corto || "";
-    body.innerHTML = texto.split(/\n+/).filter(p=>p.trim()).map(p=>'<p class="s-p">'+esc(p)+'</p>').join("");
+    const est = n.resumen_estructurado;
+    if(est && est.lede){
+      let h = '<p class="s-p s-lede">'+conGlosario(est.lede, n.terminos)+'</p>';
+      if(est.datos && est.datos.length){
+        h += '<div class="data-box">'+est.datos.slice(0,3).map(d=>'<div class="data-item"><div class="data-num">'+esc(d.numero)+'</div><div class="data-lbl">'+esc(d.etiqueta||"")+'</div></div>').join("")+'</div>';
+      }
+      (est.subtitulos||[]).forEach(s=>{
+        h += '<div class="subhead">'+esc(s.titulo)+'</div><p class="s-p">'+conGlosario(s.texto||"", n.terminos)+'</p>';
+      });
+      if(est.cita && est.cita.texto){
+        h += '<div class="pull"><div class="q">'+esc(est.cita.texto)+'</div><div class="who">— '+esc(est.cita.quien||"")+'</div></div>';
+      }
+      body.innerHTML = h;
+    } else {
+      // notas viejas sin resumen_estructurado: mismo comportamiento de siempre
+      const texto = n.resumen_extendido || n.resumen_corto || "";
+      body.innerHTML = texto.split(/\n+/).filter(p=>p.trim()).map(p=>'<p class="s-p">'+conGlosario(p, n.terminos)+'</p>').join("");
+    }
+    body.querySelectorAll(".gloss").forEach(g=>{
+      g.addEventListener("click", (e)=>{
+        e.stopPropagation();
+        const pop = g.nextElementSibling;
+        if(pop && pop.classList.contains("gloss-pop")) pop.classList.toggle("open");
+      });
+    });
     const orig = document.getElementById("s-orig");
     if(n.url_original){ orig.href = n.url_original; orig.style.display="inline-flex"; }
     else { orig.style.display="none"; }
@@ -582,6 +768,151 @@
 
   document.getElementById("refreshBtn").addEventListener("click", ()=>cargar(false));
 
+  // ================= APORTES DEL PUEBLO =================
+  async function cargarAportes(){
+    try{
+      const url = SUPABASE_URL + "/rest/v1/aportes?select=*&estado=eq.aprobado&order=created_at.desc&limit=20";
+      const res = await fetch(url, { headers: { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + SUPABASE_KEY } });
+      APORTES = res.ok ? await res.json() : [];
+    }catch(e){ APORTES = []; }
+    const grid = document.getElementById("aportesGrid");
+    document.getElementById("aportesCount").textContent = APORTES.length ? (APORTES.length + (APORTES.length===1?" aporte":" aportes")) : "";
+    if(!APORTES.length){
+      grid.innerHTML = '<div class="state" style="padding:16px 0"><div class="sub">Todavía no hay aportes publicados. ¡Sé el primero!</div></div>';
+      return;
+    }
+    grid.innerHTML = APORTES.map(a=>{
+      const cat = CAT_APORTE.find(c=>c.id===a.categoria) || {label:"Aporte", icon:"📍"};
+      const foto = a.foto_url ? "background-image:url('"+esc(a.foto_url)+"');background-size:cover;background-position:center;" : "background:var(--paper-3);";
+      return '<a class="article aporte-card" data-aporte-id="'+esc(a.id)+'">'
+        + '<div class="ph-img" style="'+foto+'"></div>'
+        + '<div class="txt"><div class="aporte-cat">'+cat.icon+' '+esc(cat.label)+'</div><div class="aporte-tit">'+esc(a.titulo || cat.label)+'</div></div></a>';
+    }).join("");
+    grid.querySelectorAll(".aporte-card").forEach(el=>{
+      el.addEventListener("click", ()=> abrirAporte(el.getAttribute("data-aporte-id")));
+    });
+  }
+  function abrirAporte(id){
+    const a = APORTES.find(x=>String(x.id)===String(id));
+    if(!a) return;
+    const cat = CAT_APORTE.find(c=>c.id===a.categoria) || {label:"Aporte", icon:"📍"};
+    const fotoEl = document.getElementById("aporteFoto");
+    if(a.foto_url){ fotoEl.style.display="block"; fotoEl.setAttribute("style","display:block;aspect-ratio:16/9;background-image:url('"+esc(a.foto_url)+"');background-size:cover;background-position:center;"); }
+    else { fotoEl.style.display="none"; }
+    document.getElementById("aporteCatLbl").querySelector("span:last-child").textContent = cat.icon + " " + cat.label;
+    document.getElementById("aporteTitulo").textContent = a.titulo || cat.label;
+    document.getElementById("aporteDesc").textContent = a.descripcion || "Sin descripción adicional.";
+    document.getElementById("aporteLugar").textContent = a.lugar_texto ? ("Lugar: " + a.lugar_texto) : "";
+    const mapa = document.getElementById("aporteMapa");
+    if(a.lat && a.lng){ mapa.href = "https://www.google.com/maps?q="+a.lat+","+a.lng; mapa.style.display="inline-flex"; }
+    else { mapa.style.display="none"; }
+    document.getElementById("backdropAporte").classList.add("show");
+    document.getElementById("sheetAporte").classList.add("show");
+  }
+  function cerrarAporte(){
+    document.getElementById("backdropAporte").classList.remove("show");
+    document.getElementById("sheetAporte").classList.remove("show");
+  }
+  document.getElementById("closeAporte").addEventListener("click", cerrarAporte);
+  document.getElementById("backdropAporte").addEventListener("click", cerrarAporte);
+
+  // ================= FORMULARIO: APORTÁ UN DATO =================
+  let categoriaSeleccionada = null;
+  document.getElementById("catGridForm").innerHTML = CAT_APORTE.map(c=>
+    '<div class="cat-opt" data-id="'+c.id+'">'+c.icon+'<br>'+c.label+'</div>'
+  ).join("");
+  document.querySelectorAll("#catGridForm .cat-opt").forEach(el=>{
+    el.addEventListener("click", ()=>{
+      categoriaSeleccionada = el.getAttribute("data-id");
+      document.querySelectorAll("#catGridForm .cat-opt").forEach(x=>x.classList.toggle("sel", x===el));
+    });
+  });
+  function abrirForm(){
+    document.getElementById("backdropForm").classList.add("show");
+    document.getElementById("sheetForm").classList.add("show");
+  }
+  function cerrarForm(){
+    document.getElementById("backdropForm").classList.remove("show");
+    document.getElementById("sheetForm").classList.remove("show");
+  }
+  document.getElementById("fabAportar").addEventListener("click", abrirForm);
+  document.getElementById("closeForm").addEventListener("click", cerrarForm);
+  document.getElementById("backdropForm").addEventListener("click", cerrarForm);
+
+  document.getElementById("fSubmit").addEventListener("click", async ()=>{
+    const msg = document.getElementById("formMsg");
+    const btn = document.getElementById("fSubmit");
+    msg.textContent = "";
+    if(!categoriaSeleccionada){ msg.textContent = "Elegí una categoría."; return; }
+
+    btn.disabled = true;
+    msg.textContent = "Verificando…";
+    const disp = getDispositivoId();
+    try{
+      const rpcRes = await fetch(SUPABASE_URL + "/rest/v1/rpc/contar_aportes_hoy", {
+        method: "POST",
+        headers: { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + SUPABASE_KEY, "content-type": "application/json" },
+        body: JSON.stringify({ disp })
+      });
+      const cuenta = rpcRes.ok ? await rpcRes.json() : 0;
+      if((cuenta||0) >= 5){ msg.textContent = "Ya enviaste el máximo de aportes por hoy. Probá mañana."; btn.disabled=false; return; }
+    }catch(e){ /* si falla la verificación, seguimos igual — no bloqueamos por un error de red */ }
+
+    msg.textContent = "Pidiendo tu ubicación…";
+    document.getElementById("geoStatus").textContent = "Pidiendo permiso de ubicación…";
+    navigator.geolocation.getCurrentPosition(async (pos)=>{
+      const lat = pos.coords.latitude, lng = pos.coords.longitude;
+      document.getElementById("geoStatus").textContent = "Ubicación obtenida ✓";
+
+      let foto_url = null;
+      const fileInput = document.getElementById("fFoto");
+      if(fileInput.files[0]){
+        msg.textContent = "Subiendo foto…";
+        const file = fileInput.files[0];
+        const nombre = disp + "-" + Date.now() + "." + (file.name.split(".").pop() || "jpg");
+        try{
+          const upRes = await fetch(SUPABASE_URL + "/storage/v1/object/aportes-fotos/" + nombre, {
+            method: "POST",
+            headers: { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + SUPABASE_KEY, "content-type": file.type || "image/jpeg" },
+            body: file
+          });
+          if(upRes.ok){ foto_url = SUPABASE_URL + "/storage/v1/object/public/aportes-fotos/" + nombre; }
+        }catch(e){ /* si falla la foto, mandamos el aporte igual sin foto */ }
+      }
+
+      msg.textContent = "Enviando…";
+      try{
+        const insRes = await fetch(SUPABASE_URL + "/rest/v1/aportes", {
+          method: "POST",
+          headers: { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + SUPABASE_KEY, "content-type": "application/json", "Prefer": "return=minimal" },
+          body: JSON.stringify({
+            categoria: categoriaSeleccionada,
+            titulo: document.getElementById("fTitulo").value.trim() || null,
+            descripcion: document.getElementById("fDesc").value.trim() || null,
+            foto_url, lat, lng,
+            dispositivo_id: disp
+          })
+        });
+        btn.disabled = false;
+        if(!insRes.ok){ msg.textContent = "No se pudo enviar. Probá de nuevo."; return; }
+        msg.textContent = "¡Gracias! Tu aporte va a revisión antes de publicarse.";
+        setTimeout(()=>{
+          cerrarForm();
+          document.getElementById("fTitulo").value = "";
+          document.getElementById("fDesc").value = "";
+          fileInput.value = "";
+          categoriaSeleccionada = null;
+          document.querySelectorAll("#catGridForm .cat-opt").forEach(x=>x.classList.remove("sel"));
+          msg.textContent = "";
+        }, 1800);
+      }catch(e){ btn.disabled=false; msg.textContent = "No se pudo enviar. Probá de nuevo."; }
+    }, (err)=>{
+      document.getElementById("geoStatus").textContent = "Necesitamos tu ubicación para poder publicar el aporte.";
+      msg.textContent = "Activá la ubicación e intentá de nuevo.";
+      btn.disabled = false;
+    });
+  });
+
   (function(){
     const grip=document.getElementById("grip"), sheet=document.getElementById("sheet");
     const body=document.querySelector(".sheet-body");
@@ -606,7 +937,8 @@
   }catch(e){}
 
   cargar(false);
-  setInterval(()=>cargar(true), 120000);
+  cargarAportes();
+  setInterval(()=>{ cargar(true); cargarAportes(); }, 120000);
 </script>
 </body>
 </html>
