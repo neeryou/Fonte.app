@@ -691,9 +691,14 @@
       }
       body.innerHTML = h;
     } else {
-      // notas viejas sin resumen_estructurado: mismo comportamiento de siempre
+      // notas sin resumen_estructurado (todas, por ahora): mismo texto de resumen_extendido
+      // de siempre, sin tocar una palabra — solo el primer párrafo lleva la letra capital
+      // para que se lea como el diseño "completo", en vez de un bloque de texto plano.
       const texto = n.resumen_extendido || n.resumen_corto || "";
-      body.innerHTML = texto.split(/\n+/).filter(p=>p.trim()).map(p=>'<p class="s-p">'+conGlosario(p, n.terminos)+'</p>').join("");
+      const parrafos = texto.split(/\n+/).filter(p=>p.trim());
+      body.innerHTML = parrafos.map((p,idx)=>
+        '<p class="s-p'+(idx===0?' s-lede':'')+'">'+conGlosario(p, n.terminos)+'</p>'
+      ).join("");
     }
     body.querySelectorAll(".gloss").forEach(g=>{
       g.addEventListener("click", (e)=>{
