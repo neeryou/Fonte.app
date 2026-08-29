@@ -1,14 +1,13 @@
 {
   "name": "Fonte",
   "short_name": "Fonte",
-  "description": "La información, ordenada por cercanía",
+  "description": "Noticias ordenadas por cercanía — Quitilipi, Chaco",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#F5F0E4",
+  "background_color": "#22201A",
   "theme_color": "#22201A",
-  "orientation": "portrait",
   "icons": [
-    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
-    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+    { "src": "/web-app-manifest-192x192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "/web-app-manifest-512x512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ]
 }
