@@ -119,6 +119,20 @@
   .zlist .li.feat{ padding-top:14px; padding-bottom:16px; }
   .zlist .li.feat .ph-img{ margin-top:6px; margin-bottom:2px; }
   .zlist .li.feat .h{ font-size:1.1rem; }
+
+  /* ===== pares lado a lado (técnica "enfrentadas") ===== */
+  .li-pair-grid{ display:grid; grid-template-columns:1fr 1px 1fr; gap:12px; }
+  .li-pair-divider{ background:var(--line-strong); }
+  .li-pair-item .h{ font-size:.92rem; line-height:1.2; margin-top:4px; }
+  .li-pair-item .meta-row{ margin-top:5px; flex-wrap:wrap; }
+
+  /* ===== cierre en mosaico ===== */
+  .mosaic-label{ font-family:var(--sans); font-size:.68rem; font-weight:700; text-transform:uppercase; letter-spacing:.1em; color:var(--ink-faint); padding:22px 0 10px; }
+  .mosaic-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px; }
+  .mosaic-card{ background:var(--paper-2); border-radius:10px; overflow:hidden; }
+  .mosaic-card .ph-img{ aspect-ratio:1/1; border-radius:0; }
+  .mosaic-card .txt{ padding:9px 10px 11px; }
+  .mosaic-card .h{ font-size:.84rem; line-height:1.16; margin-top:4px; }
   @media (prefers-reduced-motion:reduce){ .pulse-dot{ animation:none; } }
 
   /* banda urgente */
@@ -339,7 +353,7 @@
     <textarea class="fld" id="fDesc" maxlength="300" placeholder="Detalles que ayuden a entender la situación"></textarea>
 
     <div class="field-lbl">Foto (opcional, ayuda mucho)</div>
-    <input class="fld" type="file" id="fFoto" accept="image/*" capture="environment">
+    <input class="fld" type="file" id="fFoto" accept="image/*">
 
     <div class="field-lbl">Ubicación</div>
     <div class="geo-status" id="geoStatus">Te la vamos a pedir al enviar.</div>
@@ -482,6 +496,20 @@
 
   function tarjeta(n, tipoHtml){ return tipoHtml; }
 
+  function tplLiSingle(it){
+    return '<a class="article li" data-id="'+esc(it.id)+'" style="--ac:'+it.color+'">'
+      + '<h4 class="h">'+esc(it.titulo)+'</h4>'
+      + '<div class="meta-row">'+it.catTag+it.fav+'<span class="src">'+it.lugar+'</span><span class="src">'+it.tiempo+'</span></div></a>';
+  }
+  function tplLiPair(a,b){
+    return '<div class="li li-pair" style="--ac:'+a.color+'">'
+      + '<div class="li-pair-grid">'
+      + '<a class="article li-pair-item" data-id="'+esc(a.id)+'"><h4 class="h">'+esc(a.titulo)+'</h4><div class="meta-row">'+a.catTag+a.fav+'<span class="src">'+a.lugar+'</span></div></a>'
+      + '<div class="li-pair-divider"></div>'
+      + '<a class="article li-pair-item" data-id="'+esc(b.id)+'"><h4 class="h">'+esc(b.titulo)+'</h4><div class="meta-row">'+b.catTag+b.fav+'<span class="src">'+b.lugar+'</span></div></a>'
+      + '</div></div>';
+  }
+
   function render(){
     const feed = document.getElementById("feed");
     if(!NOTICIAS.length){
@@ -605,8 +633,11 @@
     const leidos = getLeidos();
     const seed = semillaRotativa();
     let contadorDatos = 0; // para que el "dato destacado" salga salteado, no en cada nota que tenga cifras
+    // con volumen suficiente, reservamos 2 notas para un cierre en mosaico ("también pasó hoy")
+    const paraMosaico = filtradas.length >= 8 ? ordenadas.slice(-2) : [];
+    const idsMosaico = new Set(paraMosaico.map(n=>String(n.id)));
     for(const o of conNoticias){
-      const notas = filtradas.filter(n => n.onda === o.id).sort((a,b)=>{
+      const notas = filtradas.filter(n => n.onda === o.id && !idsMosaico.has(String(n.id))).sort((a,b)=>{
         const fa = favoritos.includes(a.categoria) ? 1 : 0;
         const fb = favoritos.includes(b.categoria) ? 1 : 0;
         if(fa !== fb) return fb - fa; // favoritos primero
@@ -630,6 +661,7 @@
         + (zLead.resumen_corto?'<p class="dek">'+esc(zLead.resumen_corto)+'</p>':'')
         + '<div class="byl">'+zFav+zCatTag+(zLead.fuente_etiqueta?'<span class="src">'+esc(zLead.fuente_etiqueta)+'</span>':'')+'<span class="src">'+tiempoDesde(zLead.created_at)+'</span></div></a>';
       html += '<div class="zlist">';
+      let pendientePar = null;
       notas.slice(1).forEach((n, i)=>{
         const lugar = n.lugar ? esc(n.lugar) : o.nombre;
         const fav = favoritos.includes(n.categoria) ? ' <span class="why int" style="margin-left:5px">★</span>' : '';
@@ -640,30 +672,50 @@
         // cada 4 ítems, uno "respira" con foto para romper el ritmo apilado
         const destacada = (i % 4 === 3);
         const est = n.resumen_estructurado;
+        let especial = "";
         if(est && est.cita && est.cita.texto){
-          html += '<a class="article li" data-id="'+esc(n.id)+'" style="--ac:'+color+'">'
+          especial = '<a class="article li" data-id="'+esc(n.id)+'" style="--ac:'+color+'">'
             + '<h4 class="h">'+esc(n.titulo)+'</h4>'
             + '<blockquote class="li-quote">“'+esc(est.cita.texto)+'”<span class="li-quote-who">— '+esc(est.cita.quien||"")+'</span></blockquote>'
             + '<div class="meta-row">'+catTag+fav+'<span class="src">'+lugar+'</span><span class="src">'+tiempo+'</span></div></a>';
         } else if(est && est.datos && est.datos[0] && est.datos[0].numero && (contadorDatos++ % 3 === 0)){
           const d = est.datos[0];
-          html += '<a class="article li li-databig" data-id="'+esc(n.id)+'" style="--ac:'+color+'">'
+          especial = '<a class="article li li-databig" data-id="'+esc(n.id)+'" style="--ac:'+color+'">'
             + '<div class="databig-num">'+esc(d.numero)+'</div><div class="databig-lbl">'+esc(d.etiqueta||"")+'</div>'
             + '<h4 class="h" style="margin-top:6px">'+esc(n.titulo)+'</h4>'
             + '<div class="meta-row" style="justify-content:center">'+catTag+fav+'<span class="src">'+lugar+'</span></div></a>';
         } else if(destacada){
-          html += '<a class="article li feat" data-id="'+esc(n.id)+'" style="--ac:'+color+'">'
+          especial = '<a class="article li feat" data-id="'+esc(n.id)+'" style="--ac:'+color+'">'
             + '<div class="ph-img" style="'+bgDe(n)+'"></div>'
             + '<h4 class="h">'+esc(n.titulo)+'</h4>'
             + (n.resumen_corto?'<p class="dek" style="font-size:.82rem;margin-top:4px">'+esc(n.resumen_corto)+'</p>':'')
             + '<div class="meta-row">'+catTag+fav+'<span class="src">'+lugar+'</span><span class="src">'+tiempo+'</span></div></a>';
+        }
+
+        if(especial){
+          // si había un ítem esperando pareja, lo saco solo antes de meter el especial
+          if(pendientePar){ html += tplLiSingle(pendientePar); pendientePar = null; }
+          html += especial;
         } else {
-          html += '<a class="article li" data-id="'+esc(n.id)+'" style="--ac:'+color+'">'
-            + '<h4 class="h">'+esc(n.titulo)+'</h4>'
-            + '<div class="meta-row">'+catTag+fav+'<span class="src">'+lugar+'</span><span class="src">'+tiempo+'</span></div></a>';
+          const item = { id:n.id, titulo:n.titulo, catTag, fav, lugar, tiempo, color };
+          if(pendientePar){ html += tplLiPair(pendientePar, item); pendientePar = null; }
+          else { pendientePar = item; }
         }
       });
+      if(pendientePar){ html += tplLiSingle(pendientePar); }
       html += '</div></div></section>';
+    }
+
+    // ===== cierre en mosaico =====
+    if(paraMosaico.length === 2){
+      html += '<div class="mosaic-label">También pasó hoy</div><div class="mosaic-grid">';
+      paraMosaico.forEach(n=>{
+        const lugar = n.lugar ? esc(n.lugar) : nombreDe(n.onda);
+        html += '<a class="article mosaic-card" data-id="'+esc(n.id)+'">'
+          + '<div class="ph-img" style="'+bgDe(n)+'"></div>'
+          + '<div class="txt"><span class="kicker"><span class="dot" style="background:'+colorDe(n.onda)+'"></span>'+lugar+'</span><h4 class="h">'+esc(n.titulo)+'</h4></div></a>';
+      });
+      html += '</div>';
     }
 
     feed.innerHTML = html;
