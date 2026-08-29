@@ -144,6 +144,16 @@
   .u-item{ display:block; padding:11px 0; border-top:1px solid color-mix(in srgb,var(--urgente) 18%,transparent); }
   .u-item:first-of-type{ border-top:0; margin-top:8px; }
   .u-item .h{ font-size:1.02rem; line-height:1.2; margin-bottom:6px; }
+
+  /* ===== timeline de actualizaciones (solo si la nota urgente realmente trae horarios) ===== */
+  .u-timeline{ margin:10px 0 2px; padding-left:2px; }
+  .u-tl-item{ position:relative; padding:0 0 11px 17px; border-left:2px solid var(--line-strong); }
+  .u-tl-item:last-child{ border-left:2px solid transparent; padding-bottom:0; }
+  .u-tl-item::before{ content:''; position:absolute; left:-5px; top:2px; width:8px; height:8px; border-radius:50%; background:var(--urgente); }
+  .u-tl-item.old::before{ background:var(--ink-faint); }
+  .u-tl-hour{ font-family:var(--sans); font-size:.62rem; font-weight:700; color:var(--urgente); }
+  .u-tl-item.old .u-tl-hour{ color:var(--ink-faint); }
+  .u-tl-txt{ font-family:var(--sans); font-size:.8rem; color:var(--ink-soft); margin-top:2px; line-height:1.35; }
   .tags{ display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
 
   .state{ text-align:center; padding:60px 20px; font-family:var(--sans); }
@@ -560,12 +570,20 @@
     const band = document.getElementById("urgentBand");
     if(urgentes.length){
       band.classList.add("show");
-      band.querySelector(".band-list").innerHTML = urgentes.map(n=>{
+      band.querySelector(".band-list").innerHTML = urgentes.map((n,idx)=>{
         const lugar = n.lugar ? esc(n.lugar) : nombreDe(n.onda);
+        const actualizaciones = (idx === 0 && n.resumen_estructurado && Array.isArray(n.resumen_estructurado.actualizaciones))
+          ? n.resumen_estructurado.actualizaciones : null;
+        const timelineHtml = (actualizaciones && actualizaciones.length)
+          ? '<div class="u-timeline">' + actualizaciones.map((a,i)=>
+              '<div class="u-tl-item'+(i===0?'':' old')+'"><div class="u-tl-hour">'+esc(a.hora||"")+'</div><div class="u-tl-txt">'+esc(a.texto||"")+'</div></div>'
+            ).join("") + '</div>'
+          : '';
         return '<a class="u-item article" data-id="'+esc(n.id)+'">'
           + '<h3 class="h">'+esc(n.titulo)+'</h3>'
           + '<div class="tags"><span class="why urg">⚡ '+lugar+'</span>'
-          + (n.fuente_etiqueta?'<span class="src">'+esc(n.fuente_etiqueta)+'</span>':'') + '</div></a>';
+          + (n.fuente_etiqueta?'<span class="src">'+esc(n.fuente_etiqueta)+'</span>':'') + '</div>'
+          + timelineHtml + '</a>';
       }).join("");
     } else { band.classList.remove("show"); }
 
