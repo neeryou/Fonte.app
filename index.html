@@ -604,6 +604,7 @@
     // ===== ONDAS densas debajo =====
     const leidos = getLeidos();
     const seed = semillaRotativa();
+    let contadorDatos = 0; // para que el "dato destacado" salga salteado, no en cada nota que tenga cifras
     for(const o of conNoticias){
       const notas = filtradas.filter(n => n.onda === o.id).sort((a,b)=>{
         const fa = favoritos.includes(a.categoria) ? 1 : 0;
@@ -644,7 +645,7 @@
             + '<h4 class="h">'+esc(n.titulo)+'</h4>'
             + '<blockquote class="li-quote">“'+esc(est.cita.texto)+'”<span class="li-quote-who">— '+esc(est.cita.quien||"")+'</span></blockquote>'
             + '<div class="meta-row">'+catTag+fav+'<span class="src">'+lugar+'</span><span class="src">'+tiempo+'</span></div></a>';
-        } else if(est && est.datos && est.datos[0] && est.datos[0].numero){
+        } else if(est && est.datos && est.datos[0] && est.datos[0].numero && (contadorDatos++ % 3 === 0)){
           const d = est.datos[0];
           html += '<a class="article li li-databig" data-id="'+esc(n.id)+'" style="--ac:'+color+'">'
             + '<div class="databig-num">'+esc(d.numero)+'</div><div class="databig-lbl">'+esc(d.etiqueta||"")+'</div>'
