@@ -128,8 +128,9 @@
 
   /* ===== cierre en mosaico ===== */
   .mosaic-label{ font-family:var(--sans); font-size:.68rem; font-weight:700; text-transform:uppercase; letter-spacing:.1em; color:var(--ink-faint); padding:22px 0 10px; }
-  .mosaic-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px; }
-  .mosaic-card{ background:var(--paper-2); border-radius:10px; overflow:hidden; }
+  .mosaic-grid{ display:flex; gap:10px; overflow-x:auto; scrollbar-width:none; margin-bottom:12px; padding-bottom:2px; }
+  .mosaic-grid::-webkit-scrollbar{ display:none; }
+  .mosaic-card{ flex:0 0 auto; width:148px; background:var(--paper-2); border-radius:10px; overflow:hidden; }
   .mosaic-card .ph-img{ aspect-ratio:1/1; border-radius:0; }
   .mosaic-card .txt{ padding:9px 10px 11px; }
   .mosaic-card .h{ font-size:.84rem; line-height:1.16; margin-top:4px; }
@@ -510,6 +511,16 @@
       + '</div></div>';
   }
 
+  function tplMosaicRow(items){
+    if(!items.length) return "";
+    return '<div class="mosaic-grid">' + items.map(n=>{
+      const lugar = n.lugar ? esc(n.lugar) : nombreDe(n.onda);
+      return '<a class="article mosaic-card" data-id="'+esc(n.id)+'">'
+        + '<div class="ph-img" style="'+bgDe(n)+'"></div>'
+        + '<div class="txt"><span class="kicker"><span class="dot" style="background:'+colorDe(n.onda)+'"></span>'+lugar+'</span><h4 class="h">'+esc(n.titulo)+'</h4></div></a>';
+    }).join("") + '</div>';
+  }
+
   function render(){
     const feed = document.getElementById("feed");
     if(!NOTICIAS.length){
@@ -634,7 +645,7 @@
     const seed = semillaRotativa();
     let contadorDatos = 0; // para que el "dato destacado" salga salteado, no en cada nota que tenga cifras
     // con volumen suficiente, reservamos 2 notas para un cierre en mosaico ("también pasó hoy")
-    const paraMosaico = filtradas.length >= 8 ? ordenadas.slice(-2) : [];
+    const paraMosaico = filtradas.length >= 8 ? ordenadas.slice(-Math.min(8, Math.floor(filtradas.length/3))) : [];
     const idsMosaico = new Set(paraMosaico.map(n=>String(n.id)));
     for(const o of conNoticias){
       const notas = filtradas.filter(n => n.onda === o.id && !idsMosaico.has(String(n.id))).sort((a,b)=>{
@@ -660,9 +671,15 @@
         + '<h3 class="h">'+esc(zLead.titulo)+'</h3>'
         + (zLead.resumen_corto?'<p class="dek">'+esc(zLead.resumen_corto)+'</p>':'')
         + '<div class="byl">'+zFav+zCatTag+(zLead.fuente_etiqueta?'<span class="src">'+esc(zLead.fuente_etiqueta)+'</span>':'')+'<span class="src">'+tiempoDesde(zLead.created_at)+'</span></div></a>';
+      // con suficiente volumen en la zona, una mini-tira deslizable justo después del lead —
+      // la misma técnica del cierre, pero como parte normal de la interfaz, no solo al final
+      const miniN = notas.length >= 7 ? Math.min(3, notas.length - 5) : 0;
+      const miniMosaico = miniN > 0 ? notas.slice(1, 1+miniN) : [];
+      const restoZona = notas.slice(1 + miniMosaico.length);
+      if(miniMosaico.length){ html += tplMosaicRow(miniMosaico); }
       html += '<div class="zlist">';
       let pendientePar = null;
-      notas.slice(1).forEach((n, i)=>{
+      restoZona.forEach((n, i)=>{
         const lugar = n.lugar ? esc(n.lugar) : o.nombre;
         const fav = favoritos.includes(n.categoria) ? ' <span class="why int" style="margin-left:5px">★</span>' : '';
         const color = CAT_COLOR[n.categoria] || "#8B8271";
@@ -706,16 +723,9 @@
       html += '</div></div></section>';
     }
 
-    // ===== cierre en mosaico =====
-    if(paraMosaico.length === 2){
-      html += '<div class="mosaic-label">También pasó hoy</div><div class="mosaic-grid">';
-      paraMosaico.forEach(n=>{
-        const lugar = n.lugar ? esc(n.lugar) : nombreDe(n.onda);
-        html += '<a class="article mosaic-card" data-id="'+esc(n.id)+'">'
-          + '<div class="ph-img" style="'+bgDe(n)+'"></div>'
-          + '<div class="txt"><span class="kicker"><span class="dot" style="background:'+colorDe(n.onda)+'"></span>'+lugar+'</span><h4 class="h">'+esc(n.titulo)+'</h4></div></a>';
-      });
-      html += '</div>';
+    // ===== cierre en mosaico (deslizable al costado) =====
+    if(paraMosaico.length >= 2){
+      html += '<div class="mosaic-label">También pasó hoy</div>' + tplMosaicRow(paraMosaico);
     }
 
     feed.innerHTML = html;
