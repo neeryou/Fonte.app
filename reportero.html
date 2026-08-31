@@ -535,7 +535,7 @@
         + '<div class="cat">'+cat.icon+' '+escA(cat.label)+'</div>'
         + '<div class="desc">'+(a.titulo?('<b>'+escA(a.titulo)+'</b> — '):'')+escA(a.descripcion||"sin descripción")+'</div>'
         + '<div class="meta">'+mapa+' · '+fecha+'</div>'
-        + '<div class="acts"><button class="btn-aprobar" data-accion="aprobado">Publicar</button><button class="btn-rechazar" data-accion="rechazado">Descartar</button></div>'
+        + '<div class="acts"><button class="btn-aprobar" data-accion="revisado">Publicar</button><button class="btn-rechazar" data-accion="descartado">Descartar</button></div>'
         + '</div></div>';
     }).join("");
     cont.querySelectorAll(".aporte-review").forEach(card=>{
@@ -546,7 +546,7 @@
           const estado = btn.getAttribute("data-accion");
           const { error } = await sb.from("aportes").update({ estado, revisado_por: sesion.user.id }).eq("id", id);
           if(error){ toast("No se pudo actualizar: " + error.message); console.error("Fonte / error al actualizar aporte:", error); btn.disabled=false; return; }
-          toast(estado === "aprobado" ? "Aporte publicado ✓" : "Aporte descartado");
+          toast(estado === "revisado" ? "Aporte publicado ✓" : "Aporte descartado");
           cargarAportesPendientes();
         });
       });

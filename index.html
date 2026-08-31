@@ -272,25 +272,33 @@
     color:var(--int); display:flex; align-items:center; gap:6px; padding:0 0 9px; }
   .ofertas-row{ display:flex; gap:9px; overflow-x:auto; scrollbar-width:none; padding-bottom:2px; }
   .ofertas-row::-webkit-scrollbar{ display:none; }
-  .oferta-card{ flex:0 0 auto; width:154px; background:var(--surface); border:1px solid var(--line); border-radius:14px; overflow:hidden; box-shadow:0 2px 10px rgba(80,60,40,.08); position:relative; }
-  .oferta-card .ph-img{ aspect-ratio:4/3; border-radius:0; }
+  .oferta-card{ flex:0 0 auto; width:120px; background:var(--surface); border:1px solid var(--line); border-radius:12px; overflow:hidden; box-shadow:0 2px 8px rgba(80,60,40,.08); position:relative; }
+  .oferta-card .ph-img{ aspect-ratio:1/1; }
   .verif-badge{ width:16px; height:16px; border-radius:50%; background:var(--int); display:inline-flex; align-items:center; justify-content:center; flex:0 0 auto; }
   .verif-badge svg{ width:9px; height:9px; }
   .oferta-card .verif-badge{ position:absolute; top:8px; right:8px; box-shadow:0 1px 4px rgba(0,0,0,.25); }
-  .oferta-txt{ padding:9px 10px 11px; }
-  .oferta-neg{ font-family:var(--sans); font-size:.6rem; font-weight:700; color:var(--ink-faint); text-transform:uppercase; letter-spacing:.03em; }
-  .oferta-tit{ font-family:var(--serif); font-weight:700; font-size:.84rem; margin-top:3px; line-height:1.2; }
-  .oferta-chip{ display:inline-block; margin-top:7px; font-family:var(--sans); font-size:.56rem; font-weight:700; color:var(--int);
-    border:1px solid var(--int); padding:1px 8px; border-radius:999px; }
+  .oferta-txt{ padding:7px 8px 9px; }
+  .oferta-neg{ font-family:var(--sans); font-size:.56rem; font-weight:700; color:var(--ink-faint); text-transform:uppercase; letter-spacing:.02em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .oferta-tit{ font-family:var(--serif); font-weight:700; font-size:.76rem; margin-top:2px; line-height:1.2; }
+  .oferta-chip{ display:none; }
 
   /* ===== comunicados oficiales (municipio/instituciones verificadas) ===== */
   .comunicados-wrap{ padding:14px 0 4px; }
-  .comunicado{ margin-bottom:12px; background:color-mix(in srgb,var(--barrio) 8%,var(--paper-2)); border:1px solid color-mix(in srgb,var(--barrio) 35%,var(--line)); border-radius:14px; padding:15px; }
+  .comunicado{ background:color-mix(in srgb,var(--barrio) 8%,var(--paper-2)); border:1px solid color-mix(in srgb,var(--barrio) 35%,var(--line)); border-radius:14px; padding:15px; margin-bottom:2px; }
   .com-eyebrow{ font-family:var(--sans); font-size:.6rem; font-weight:800; text-transform:uppercase; letter-spacing:.06em; color:var(--barrio); display:flex; align-items:center; gap:6px; }
-  .com-eyebrow .verif-badge{ background:var(--barrio); }
-  .com-h{ font-family:var(--serif); font-size:1.02rem; font-weight:700; margin:9px 0 6px; color:var(--ink); }
-  .com-txt{ font-family:var(--sans); font-size:.82rem; color:var(--ink-soft); line-height:1.48; }
-  .com-foot{ font-family:var(--sans); font-size:.62rem; color:var(--ink-faint); margin-top:9px; }
+  .com-eyebrow .verif-badge{ background:var(--barrio); width:15px; height:15px; }
+  .com-h{ font-family:var(--serif); font-size:1rem; font-weight:700; margin:8px 0 5px; color:var(--ink); }
+  .com-txt{ font-family:var(--sans); font-size:.8rem; color:var(--ink-soft); line-height:1.46; }
+  .com-foot{ font-family:var(--sans); font-size:.6rem; color:var(--ink-faint); margin-top:8px; }
+  .com-list{ border:1px solid color-mix(in srgb,var(--barrio) 30%,var(--line)); border-top:0; border-radius:0 0 14px 14px; overflow:hidden; }
+  .com-row{ display:flex; align-items:center; gap:9px; padding:10px 14px; border-top:1px solid var(--line); background:var(--surface); }
+  .com-row .verif-badge{ width:13px; height:13px; background:var(--barrio); }
+  .com-row .tx{ flex:1; min-width:0; }
+  .com-row .inst{ font-family:var(--sans); font-size:.58rem; font-weight:700; color:var(--ink-faint); text-transform:uppercase; }
+  .com-row .tit{ font-family:var(--sans); font-size:.78rem; font-weight:600; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .com-row .chev{ color:var(--ink-faint); font-size:.9rem; flex:0 0 auto; }
+  .com-more{ display:block; width:100%; text-align:center; font-family:var(--sans); font-size:.7rem; font-weight:700; color:var(--int);
+    padding:9px; background:var(--paper-2); border:1px solid var(--line); border-top:0; border-radius:0 0 14px 14px; }
 
   /* ===== sheet: detalle de oferta ===== */
   .oferta-hero{ aspect-ratio:16/9; border-radius:10px; position:relative; margin-bottom:14px; }
@@ -451,6 +459,18 @@
       <button class="act-btn ghost" id="ofertaCompartirBtn">↗ Compartir</button>
     </div>
     <div class="disclosure">Este espacio es publicidad paga por el comercio — Fonte no participa en la promoción ni se responsabiliza por sus condiciones.</div>
+  </div>
+</div>
+
+<!-- sheet: detalle de un comunicado oficial -->
+<div class="backdrop" id="backdropComunicado"></div>
+<div class="sheet2" id="sheetComunicado">
+  <div class="sheet2-top"><span class="b">Comunicado oficial</span><button class="close" id="closeComunicado">Cerrar ✕</button></div>
+  <div class="sheet2-body">
+    <div class="kicker" id="comunicadoInst"><span class="verif-badge" style="background:var(--barrio)"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span></span></div>
+    <h3 class="h" id="comunicadoTitulo" style="margin-top:8px"></h3>
+    <p class="s-p" id="comunicadoTexto"></p>
+    <div class="foot-note" style="margin-top:14px">Contenido publicado directamente por la institución, marcado como tal — no es una nota de Fonte.</div>
   </div>
 </div>
 
@@ -1012,7 +1032,7 @@
   // ================= APORTES DEL PUEBLO =================
   async function cargarAportes(){
     try{
-      const url = SUPABASE_URL + "/rest/v1/aportes?select=*&estado=eq.aprobado&order=created_at.desc&limit=20";
+      const url = SUPABASE_URL + "/rest/v1/aportes?select=*&estado=eq.revisado&order=created_at.desc&limit=20";
       const res = await fetch(url, { headers: { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + SUPABASE_KEY } });
       APORTES = res.ok ? await res.json() : [];
     }catch(e){ APORTES = []; }
@@ -1116,26 +1136,63 @@
   });
 
   // ================= COMUNICADOS OFICIALES (municipio / instituciones verificadas) =================
+  let COMUNICADOS = [];
+  const check = '<svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   async function cargarComunicados(){
-    let comunicados = [];
     try{
-      const url = SUPABASE_URL + "/rest/v1/comunicados?select=*&order=created_at.desc&limit=6";
+      const url = SUPABASE_URL + "/rest/v1/comunicados?select=*&order=created_at.desc&limit=30";
       const res = await fetch(url, { headers: { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + SUPABASE_KEY } });
-      comunicados = res.ok ? await res.json() : [];
-    }catch(e){ comunicados = []; }
+      COMUNICADOS = res.ok ? await res.json() : [];
+    }catch(e){ COMUNICADOS = []; }
     const wrap = document.getElementById("comunicadosWrap");
-    if(!comunicados.length){ wrap.style.display = "none"; return; }
+    if(!COMUNICADOS.length){ wrap.style.display = "none"; wrap.innerHTML=""; return; }
     wrap.style.display = "block";
-    const check = '<svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-    wrap.innerHTML = comunicados.map(c=>
-      '<div class="comunicado">'
-      + '<div class="com-eyebrow"><span class="verif-badge">'+check+'</span>Comunicado oficial · '+esc(c.institucion||"Municipalidad de Quitilipi")+'</div>'
-      + '<div class="com-h">'+esc(c.titulo||"")+'</div>'
-      + '<div class="com-txt">'+esc(c.texto||"")+'</div>'
-      + '<div class="com-foot">Contenido publicado directamente por la institución, marcado como tal — no es una nota de Fonte.</div>'
-      + '</div>'
-    ).join("");
+    renderComunicados(false);
   }
+  function renderComunicados(expandido){
+    const wrap = document.getElementById("comunicadosWrap");
+    const [destacado, ...resto] = COMUNICADOS;
+    const TOPE = 4;
+    const visibles = expandido ? resto : resto.slice(0, TOPE);
+    const restantes = resto.length - visibles.length;
+    let html = '<div class="comunicado">'
+      + '<div class="com-eyebrow"><span class="verif-badge">'+check+'</span>Comunicado oficial · '+esc(destacado.institucion||"Municipalidad de Quitilipi")+'</div>'
+      + '<div class="com-h">'+esc(destacado.titulo||"")+'</div>'
+      + '<div class="com-txt">'+esc(destacado.texto||"")+'</div>'
+      + '<div class="com-foot">Contenido publicado directamente por la institución, marcado como tal — no es una nota de Fonte.</div>'
+      + '</div>';
+    if(visibles.length){
+      html += '<div class="com-list">' + visibles.map(c=>
+        '<a class="com-row" data-com-id="'+esc(c.id)+'"><span class="verif-badge">'+check+'</span>'
+        + '<div class="tx"><div class="inst">'+esc(c.institucion||"")+'</div><div class="tit">'+esc(c.titulo||"")+'</div></div>'
+        + '<span class="chev">›</span></a>'
+      ).join("") + '</div>';
+    }
+    if(restantes > 0){
+      html += '<a class="com-more" id="comVerMas">Ver '+restantes+' comunicado'+(restantes===1?"":"s")+' más</a>';
+    }
+    wrap.innerHTML = html;
+    wrap.querySelectorAll(".com-row").forEach(el=>{
+      el.addEventListener("click", ()=> abrirComunicado(el.getAttribute("data-com-id")));
+    });
+    const masBtn = document.getElementById("comVerMas");
+    if(masBtn) masBtn.addEventListener("click", ()=> renderComunicados(true));
+  }
+  function abrirComunicado(id){
+    const c = COMUNICADOS.find(x=>String(x.id)===String(id));
+    if(!c) return;
+    document.getElementById("comunicadoInst").querySelector("span:last-child").textContent = c.institucion || "";
+    document.getElementById("comunicadoTitulo").textContent = c.titulo || "";
+    document.getElementById("comunicadoTexto").textContent = c.texto || "";
+    document.getElementById("backdropComunicado").classList.add("show");
+    document.getElementById("sheetComunicado").classList.add("show");
+  }
+  function cerrarComunicado(){
+    document.getElementById("backdropComunicado").classList.remove("show");
+    document.getElementById("sheetComunicado").classList.remove("show");
+  }
+  document.getElementById("closeComunicado").addEventListener("click", cerrarComunicado);
+  document.getElementById("backdropComunicado").addEventListener("click", cerrarComunicado);
 
   // ================= FORMULARIO: APORTÁ UN DATO =================
   let categoriaSeleccionada = null;
