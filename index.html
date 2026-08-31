@@ -81,13 +81,13 @@
     border:1px solid transparent; padding:7px 14px; border-radius:8px; white-space:nowrap; }
   .cat.active{ background:var(--ink); color:var(--paper); }
 
-  .fav-row{ padding:6px 0 2px; }
-  .fav-title{ font-family:var(--sans); font-size:.6rem; font-weight:700; text-transform:uppercase; letter-spacing:.1em; color:var(--ink-faint); padding:0 18px 5px; }
-  .fav-in{ display:flex; gap:6px; overflow-x:auto; padding:0 18px; scrollbar-width:none; }
+  .fav-row{ padding:8px 0 4px; border-top:1px solid var(--line); margin-top:2px; }
+  .fav-title{ font-family:var(--sans); font-size:.6rem; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:var(--ink-faint); padding:8px 18px 6px; }
+  .fav-in{ display:flex; gap:5px; overflow-x:auto; padding:0 18px; scrollbar-width:none; }
   .fav-in::-webkit-scrollbar{ display:none; }
-  .fav{ flex:0 0 auto; font-family:var(--sans); font-size:.7rem; font-weight:600; color:var(--ink-soft);
-    background:transparent; border:1px solid var(--line-strong); padding:5px 11px; border-radius:999px; white-space:nowrap; display:flex; align-items:center; gap:4px; }
-  .fav.on{ background:var(--int); color:#fff; border-color:var(--int); }
+  .fav{ flex:0 0 auto; font-family:var(--sans); font-size:.68rem; font-weight:500; color:var(--ink-faint);
+    background:none; border:1px solid var(--line); padding:4px 10px; border-radius:999px; white-space:nowrap; display:flex; align-items:center; gap:4px; }
+  .fav.on{ background:none; color:var(--terracota); border-color:var(--terracota); font-weight:600; }
   .why.int{ color:var(--int); background:color-mix(in srgb,var(--int) 15%,transparent); }
 
   .ph-img{ position:relative; overflow:hidden; border-radius:12px; background:var(--g,#ccc); aspect-ratio:16/9; }
@@ -292,13 +292,14 @@
   .bottom-nav{ position:fixed; left:0; right:0; bottom:0; z-index:150; display:flex; justify-content:space-around; align-items:flex-end;
     background:color-mix(in srgb,var(--paper) 94%,transparent); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
     border-top:1px solid var(--line); padding:8px 6px calc(6px + env(safe-area-inset-bottom)); }
-  .bn-item{ flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; background:none; border:none; font-family:var(--sans);
+  .bn-item{ flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; background:none; border:none; font-family:var(--sans);
     color:var(--ink-faint); font-size:.62rem; font-weight:600; padding:4px 2px; }
-  .bn-item .ic{ font-size:1.1rem; line-height:1; }
+  .bn-item .ic{ width:21px; height:21px; }
   .bn-item.active{ color:var(--ink); }
   .bn-item.center{ margin-top:-22px; }
-  .bn-item.center .ic{ width:46px; height:46px; border-radius:50%; background:var(--ciudad); color:#fff; display:flex; align-items:center; justify-content:center;
-    font-size:1.3rem; box-shadow:0 6px 16px rgba(30,60,40,.32); border:3px solid var(--paper); }
+  .bn-item.center .ic-circle{ width:46px; height:46px; border-radius:50%; background:var(--terracota); display:flex; align-items:center; justify-content:center;
+    box-shadow:0 6px 16px color-mix(in srgb,var(--terracota) 45%,transparent); border:3px solid var(--paper); }
+  .bn-item.center .ic-circle .ic{ width:20px; height:20px; }
   .bn-item.center span:last-child{ margin-top:1px; color:var(--ink-soft); }
 </style>
 </head>
@@ -411,11 +412,21 @@
 </div>
 
 <nav class="bottom-nav">
-  <button class="bn-item active" id="navInicio"><span class="ic">🏠</span><span>Inicio</span></button>
-  <button class="bn-item" id="navAlertas"><span class="ic">⚡</span><span>Alertas</span></button>
-  <button class="bn-item center" id="navPublicar"><span class="ic">✚</span><span>Publicar</span></button>
-  <button class="bn-item" id="navVecinos"><span class="ic">📍</span><span>Vecinos</span></button>
-  <button class="bn-item" id="navReportero"><span class="ic">🔑</span><span>Reportero</span></button>
+  <button class="bn-item active" id="navInicio">
+    <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
+    <span>Inicio</span></button>
+  <button class="bn-item" id="navAlertas">
+    <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z"/></svg>
+    <span>Alertas</span></button>
+  <button class="bn-item center" id="navPublicar">
+    <span class="ic-circle"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span>
+    <span>Publicar</span></button>
+  <button class="bn-item" id="navVecinos">
+    <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6.2 7-11a7 7 0 10-14 0c0 4.8 7 11 7 11z"/><circle cx="12" cy="10" r="2.4"/></svg>
+    <span>Vecinos</span></button>
+  <button class="bn-item" id="navReportero">
+    <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M17 6l3 3M14 9l2 2"/></svg>
+    <span>Reportero</span></button>
 </nav>
 
 <script>
