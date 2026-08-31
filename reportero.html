@@ -87,6 +87,13 @@
   .aporte-review .acts button{ flex:1; font-family:var(--sans); font-size:.76rem; font-weight:700; padding:9px; border-radius:8px; border:0; }
   .btn-aprobar{ background:var(--barrio); color:#fff; }
   .btn-rechazar{ background:transparent; color:var(--ink-soft); border:1px solid var(--line) !important; }
+
+  /* ===== ofertas y comunicados (admin) ===== */
+  .admin-item{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px 0; border-top:1px solid var(--line); }
+  .admin-item:first-child{ border-top:0; }
+  .admin-item .h{ font-family:var(--serif); font-weight:700; font-size:.92rem; }
+  .admin-item .sub2{ font-family:var(--sans); font-size:.68rem; color:var(--ink-faint); margin-top:2px; }
+  .admin-item .del{ font-family:var(--sans); font-size:.66rem; font-weight:700; color:#B23A2E; background:none; border:1px solid #B23A2E; padding:6px 11px; border-radius:8px; flex:0 0 auto; }
 </style>
 </head>
 <body>
@@ -116,6 +123,7 @@
     <div class="rep-tabs">
       <button class="rep-tab on" id="tabCargar">Cargar noticia</button>
       <button class="rep-tab" id="tabAportes">Aportes pendientes<span class="tab-badge hide" id="badgeAportes">0</span></button>
+      <button class="rep-tab" id="tabOfertas">Ofertas y avisos</button>
     </div>
 
     <div class="rep-view on" id="viewCargar">
@@ -205,6 +213,48 @@
       <p class="rep-sub">Categorías fijas, con foto y ubicación — revisalos antes de que aparezcan en Fonte.</p>
       <div id="aportesList"><p style="font-family:var(--sans);font-size:.78rem;color:var(--ink-faint)">Cargando…</p></div>
     </div>
+
+    <div class="rep-view" id="viewOfertas">
+      <h2 class="rep-h">Ofertas y avisos verificados</h2>
+      <p class="rep-sub">Por ahora es gratis para el comercio — más adelante puede pasar a ser un espacio pago. Lo que cargues acá sale en Fonte con la insignia de verificado.</p>
+
+      <div class="card">
+        <div class="field-label">Comercio</div>
+        <input class="inp" id="ofNegocio" placeholder="Ej: Panadería San Martín">
+        <div class="field-label">Oferta / título</div>
+        <input class="inp" id="ofTitulo" placeholder="Ej: 2x1 en facturas los sábados">
+        <div class="field-label">Detalle (opcional)</div>
+        <textarea id="ofDesc" style="min-height:64px" placeholder="Condiciones, horarios, lo que haga falta aclarar"></textarea>
+        <div class="field-label" style="margin-top:14px">Dirección (opcional)</div>
+        <input class="inp" id="ofDireccion" placeholder="Av. San Martín 340, Quitilipi">
+        <div class="field-label">Válido hasta (opcional)</div>
+        <input class="inp" id="ofValido" placeholder="Ej: 31 de agosto">
+        <div class="field-label">Foto (opcional)</div>
+        <input class="inp" type="file" id="ofFoto" accept="image/*" style="padding:9px">
+        <img class="foto-preview" id="ofFotoPreview">
+        <button class="btn-gen" id="ofPublicarBtn">Publicar oferta</button>
+        <div class="err-msg hide" id="ofErr"></div>
+      </div>
+
+      <h2 class="rep-h" style="font-size:1.05rem">Ofertas activas</h2>
+      <div class="card" id="ofertasAdminList"><p style="font-family:var(--sans);font-size:.78rem;color:var(--ink-faint)">Cargando…</p></div>
+
+      <h2 class="rep-h" style="margin-top:28px">Comunicado oficial</h2>
+      <p class="rep-sub">Para avisos del municipio u otras instituciones ya verificadas.</p>
+      <div class="card">
+        <div class="field-label">Institución</div>
+        <input class="inp" id="coInstitucion" value="Municipalidad de Quitilipi">
+        <div class="field-label">Título</div>
+        <input class="inp" id="coTitulo" placeholder="Ej: Corte de agua programado el viernes">
+        <div class="field-label">Texto</div>
+        <textarea id="coTexto" style="min-height:84px" placeholder="Contenido completo del comunicado"></textarea>
+        <button class="btn-gen" id="coPublicarBtn">Publicar comunicado</button>
+        <div class="err-msg hide" id="coErr"></div>
+      </div>
+
+      <h2 class="rep-h" style="font-size:1.05rem">Comunicados publicados</h2>
+      <div class="card" id="comunicadosAdminList"><p style="font-family:var(--sans);font-size:.78rem;color:var(--ink-faint)">Cargando…</p></div>
+    </div>
   </div>
 </div>
 
@@ -239,15 +289,29 @@
   document.getElementById("tabCargar").addEventListener("click", ()=>{
     document.getElementById("tabCargar").classList.add("on");
     document.getElementById("tabAportes").classList.remove("on");
+    document.getElementById("tabOfertas").classList.remove("on");
     document.getElementById("viewCargar").classList.add("on");
     document.getElementById("viewAportes").classList.remove("on");
+    document.getElementById("viewOfertas").classList.remove("on");
   });
   document.getElementById("tabAportes").addEventListener("click", ()=>{
     document.getElementById("tabAportes").classList.add("on");
     document.getElementById("tabCargar").classList.remove("on");
+    document.getElementById("tabOfertas").classList.remove("on");
     document.getElementById("viewAportes").classList.add("on");
     document.getElementById("viewCargar").classList.remove("on");
+    document.getElementById("viewOfertas").classList.remove("on");
     cargarAportesPendientes();
+  });
+  document.getElementById("tabOfertas").addEventListener("click", ()=>{
+    document.getElementById("tabOfertas").classList.add("on");
+    document.getElementById("tabCargar").classList.remove("on");
+    document.getElementById("tabAportes").classList.remove("on");
+    document.getElementById("viewOfertas").classList.add("on");
+    document.getElementById("viewCargar").classList.remove("on");
+    document.getElementById("viewAportes").classList.remove("on");
+    cargarOfertasAdmin();
+    cargarComunicadosAdmin();
   });
 
   document.getElementById("fotoPropia").addEventListener("change", async (e)=>{
@@ -265,6 +329,24 @@
         fotoPropiaUrl = data.publicUrl;
       }
     }catch(err){ /* si falla la subida, se publica igual con la imagen que haya detectado Fonte */ }
+  });
+
+  let ofFotoUrl = null;
+  document.getElementById("ofFoto").addEventListener("change", async (e)=>{
+    const file = e.target.files[0];
+    ofFotoUrl = null;
+    if(!file) return;
+    const preview = document.getElementById("ofFotoPreview");
+    preview.src = URL.createObjectURL(file);
+    preview.style.display = "block";
+    try{
+      const nombre = Date.now() + "." + (file.name.split(".").pop() || "jpg");
+      const { error } = await sb.storage.from("ofertas-fotos").upload(nombre, file);
+      if(!error){
+        const { data } = sb.storage.from("ofertas-fotos").getPublicUrl(nombre);
+        ofFotoUrl = data.publicUrl;
+      }
+    }catch(err){ /* si falla la subida, se publica igual sin foto */ }
   });
 
   function toast(msg){
@@ -470,6 +552,122 @@
       });
     });
   }
+
+  // ================= OFERTAS DE COMERCIOS =================
+  async function cargarOfertasAdmin(){
+    const { data, error } = await sb.from("ofertas").select("*").eq("activa", true).order("created_at", { ascending:false });
+    const cont = document.getElementById("ofertasAdminList");
+    if(error || !data || !data.length){
+      cont.innerHTML = '<p style="font-family:var(--sans);font-size:.78rem;color:var(--ink-faint)">Todavía no cargaste ninguna oferta.</p>';
+      return;
+    }
+    cont.innerHTML = data.map(o=>
+      '<div class="admin-item" data-id="'+escA(o.id)+'">'
+      + '<div><div class="h">'+escA(o.negocio||"")+'</div><div class="sub2">'+escA(o.titulo||"")+'</div></div>'
+      + '<button class="del">Quitar</button></div>'
+    ).join("");
+    cont.querySelectorAll(".admin-item .del").forEach(btn=>{
+      btn.addEventListener("click", async ()=>{
+        const id = btn.closest(".admin-item").getAttribute("data-id");
+        if(!confirm("¿Quitar esta oferta de Fonte?")) return;
+        btn.disabled = true;
+        const { error } = await sb.from("ofertas").delete().eq("id", id);
+        if(error){ toast("No se pudo quitar."); btn.disabled=false; return; }
+        toast("Oferta quitada");
+        cargarOfertasAdmin();
+      });
+    });
+  }
+
+  document.getElementById("ofPublicarBtn").addEventListener("click", async ()=>{
+    const errEl = document.getElementById("ofErr");
+    errEl.classList.add("hide");
+    const negocio = document.getElementById("ofNegocio").value.trim();
+    const titulo = document.getElementById("ofTitulo").value.trim();
+    if(!negocio || !titulo){
+      errEl.textContent = "Completá al menos el comercio y el título de la oferta.";
+      errEl.classList.remove("hide");
+      return;
+    }
+    const btn = document.getElementById("ofPublicarBtn");
+    btn.textContent = "Publicando...";
+    btn.disabled = true;
+    const registro = {
+      negocio, titulo,
+      descripcion: document.getElementById("ofDesc").value.trim() || null,
+      direccion: document.getElementById("ofDireccion").value.trim() || null,
+      valido_hasta: document.getElementById("ofValido").value.trim() || null,
+      imagen_url: ofFotoUrl,
+      activa: true,
+    };
+    const { error } = await sb.from("ofertas").insert(registro);
+    btn.textContent = "Publicar oferta";
+    btn.disabled = false;
+    if(error){ toast("No se pudo publicar: " + error.message); return; }
+    toast("Oferta publicada ✓");
+    document.getElementById("ofNegocio").value = "";
+    document.getElementById("ofTitulo").value = "";
+    document.getElementById("ofDesc").value = "";
+    document.getElementById("ofDireccion").value = "";
+    document.getElementById("ofValido").value = "";
+    document.getElementById("ofFoto").value = "";
+    document.getElementById("ofFotoPreview").style.display = "none";
+    ofFotoUrl = null;
+    cargarOfertasAdmin();
+  });
+
+  // ================= COMUNICADOS OFICIALES =================
+  async function cargarComunicadosAdmin(){
+    const { data, error } = await sb.from("comunicados").select("*").order("created_at", { ascending:false });
+    const cont = document.getElementById("comunicadosAdminList");
+    if(error || !data || !data.length){
+      cont.innerHTML = '<p style="font-family:var(--sans);font-size:.78rem;color:var(--ink-faint)">Todavía no publicaste ningún comunicado.</p>';
+      return;
+    }
+    cont.innerHTML = data.map(c=>
+      '<div class="admin-item" data-id="'+escA(c.id)+'">'
+      + '<div><div class="h">'+escA(c.titulo||"")+'</div><div class="sub2">'+escA(c.institucion||"")+'</div></div>'
+      + '<button class="del">Quitar</button></div>'
+    ).join("");
+    cont.querySelectorAll(".admin-item .del").forEach(btn=>{
+      btn.addEventListener("click", async ()=>{
+        const id = btn.closest(".admin-item").getAttribute("data-id");
+        if(!confirm("¿Quitar este comunicado de Fonte?")) return;
+        btn.disabled = true;
+        const { error } = await sb.from("comunicados").delete().eq("id", id);
+        if(error){ toast("No se pudo quitar."); btn.disabled=false; return; }
+        toast("Comunicado quitado");
+        cargarComunicadosAdmin();
+      });
+    });
+  }
+
+  document.getElementById("coPublicarBtn").addEventListener("click", async ()=>{
+    const errEl = document.getElementById("coErr");
+    errEl.classList.add("hide");
+    const titulo = document.getElementById("coTitulo").value.trim();
+    const texto = document.getElementById("coTexto").value.trim();
+    if(!titulo || !texto){
+      errEl.textContent = "Completá el título y el texto del comunicado.";
+      errEl.classList.remove("hide");
+      return;
+    }
+    const btn = document.getElementById("coPublicarBtn");
+    btn.textContent = "Publicando...";
+    btn.disabled = true;
+    const registro = {
+      institucion: document.getElementById("coInstitucion").value.trim() || "Municipalidad de Quitilipi",
+      titulo, texto,
+    };
+    const { error } = await sb.from("comunicados").insert(registro);
+    btn.textContent = "Publicar comunicado";
+    btn.disabled = false;
+    if(error){ toast("No se pudo publicar: " + error.message); return; }
+    toast("Comunicado publicado ✓");
+    document.getElementById("coTitulo").value = "";
+    document.getElementById("coTexto").value = "";
+    cargarComunicadosAdmin();
+  });
 
   revisarSesion();
 </script>
