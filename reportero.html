@@ -545,7 +545,7 @@
           btn.disabled = true;
           const estado = btn.getAttribute("data-accion");
           const { error } = await sb.from("aportes").update({ estado, revisado_por: sesion.user.id }).eq("id", id);
-          if(error){ toast("No se pudo actualizar el aporte."); btn.disabled=false; return; }
+          if(error){ toast("No se pudo actualizar: " + error.message); console.error("Fonte / error al actualizar aporte:", error); btn.disabled=false; return; }
           toast(estado === "aprobado" ? "Aporte publicado ✓" : "Aporte descartado");
           cargarAportesPendientes();
         });
