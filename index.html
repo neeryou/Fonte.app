@@ -1037,6 +1037,7 @@
             categoria: categoriaSeleccionada,
             titulo: document.getElementById("fTitulo").value.trim() || null,
             descripcion: document.getElementById("fDesc").value.trim() || null,
+            texto: document.getElementById("fDesc").value.trim() || document.getElementById("fTitulo").value.trim() || (CAT_APORTE.find(c=>c.id===categoriaSeleccionada)||{}).label || "Aporte de un vecino",
             foto_url, lat, lng,
             dispositivo_id: disp,
             estado: "pendiente"
