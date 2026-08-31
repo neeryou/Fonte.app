@@ -1042,7 +1042,13 @@
           })
         });
         btn.disabled = false;
-        if(!insRes.ok){ msg.textContent = "No se pudo enviar. Probá de nuevo."; return; }
+        if(!insRes.ok){
+          let detalle = "";
+          try{ const j = await insRes.json(); detalle = j.message || j.hint || j.details || ""; }catch(e){}
+          console.error("Fonte / error al insertar aporte:", insRes.status, detalle);
+          msg.textContent = "No se pudo enviar (" + insRes.status + "). " + (detalle || "Probá de nuevo.");
+          return;
+        }
         msg.textContent = "¡Gracias! Tu aporte va a revisión antes de publicarse.";
         setTimeout(()=>{
           cerrarForm();
@@ -1053,7 +1059,7 @@
           document.querySelectorAll("#catGridForm .cat-opt").forEach(x=>x.classList.remove("sel"));
           msg.textContent = "";
         }, 1800);
-      }catch(e){ btn.disabled=false; msg.textContent = "No se pudo enviar. Probá de nuevo."; }
+      }catch(e){ btn.disabled=false; console.error("Fonte / error de red al enviar aporte:", e); msg.textContent = "No se pudo enviar: " + e.message; }
     }, (err)=>{
       document.getElementById("geoStatus").textContent = "Necesitamos tu ubicación para poder publicar el aporte.";
       msg.textContent = "Activá la ubicación e intentá de nuevo.";
