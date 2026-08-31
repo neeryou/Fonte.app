@@ -212,6 +212,10 @@
       <h2 class="rep-h">Aportes pendientes</h2>
       <p class="rep-sub">Categorías fijas, con foto y ubicación — revisalos antes de que aparezcan en Fonte.</p>
       <div id="aportesList"><p style="font-family:var(--sans);font-size:.78rem;color:var(--ink-faint)">Cargando…</p></div>
+
+      <h2 class="rep-h" style="font-size:1.05rem;margin-top:28px">Avisos publicados</h2>
+      <p class="rep-sub">Lo que aprobaste y ya se ve en Fonte. Podés quitarlo cuando deje de ser relevante.</p>
+      <div class="card" id="avisosPublicadosList"><p style="font-family:var(--sans);font-size:.78rem;color:var(--ink-faint)">Cargando…</p></div>
     </div>
 
     <div class="rep-view" id="viewOfertas">
@@ -302,6 +306,7 @@
     document.getElementById("viewCargar").classList.remove("on");
     document.getElementById("viewOfertas").classList.remove("on");
     cargarAportesPendientes();
+    cargarAvisosPublicados();
   });
   document.getElementById("tabOfertas").addEventListener("click", ()=>{
     document.getElementById("tabOfertas").classList.add("on");
@@ -549,6 +554,32 @@
           toast(estado === "revisado" ? "Aporte publicado ✓" : "Aporte descartado");
           cargarAportesPendientes();
         });
+      });
+    });
+  }
+
+  async function cargarAvisosPublicados(){
+    const { data, error } = await sb.from("aportes").select("*").eq("estado","revisado").order("created_at",{ascending:false});
+    const cont = document.getElementById("avisosPublicadosList");
+    if(error || !data || !data.length){
+      cont.innerHTML = '<p style="font-family:var(--sans);font-size:.78rem;color:var(--ink-faint)">Todavía no publicaste ningún aviso.</p>';
+      return;
+    }
+    cont.innerHTML = data.map(a=>{
+      const cat = CAT_APORTE.find(c=>c.id===a.categoria) || {label:a.categoria, icon:"📍"};
+      return '<div class="admin-item" data-id="'+escA(a.id)+'">'
+        + '<div><div class="h">'+escA(a.titulo || cat.label)+'</div><div class="sub2">'+cat.icon+' '+escA(cat.label)+'</div></div>'
+        + '<button class="del">Quitar</button></div>';
+    }).join("");
+    cont.querySelectorAll(".admin-item .del").forEach(btn=>{
+      btn.addEventListener("click", async ()=>{
+        const id = btn.closest(".admin-item").getAttribute("data-id");
+        if(!confirm("¿Quitar este aviso de Fonte?")) return;
+        btn.disabled = true;
+        const { error } = await sb.from("aportes").update({ estado: "descartado" }).eq("id", id);
+        if(error){ toast("No se pudo quitar: " + error.message); btn.disabled=false; return; }
+        toast("Aviso quitado");
+        cargarAvisosPublicados();
       });
     });
   }
