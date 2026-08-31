@@ -267,6 +267,44 @@
   .aporte-tit{ font-family:var(--serif); font-size:.84rem; margin-top:2px; }
   .fab{ display:none; }
 
+  /* ===== ofertas de comercios locales (contenido pago, marcado como tal) ===== */
+  .ofertas-label{ font-family:var(--sans); font-size:.66rem; font-weight:700; text-transform:uppercase; letter-spacing:.08em;
+    color:var(--int); display:flex; align-items:center; gap:6px; padding:0 0 9px; }
+  .ofertas-row{ display:flex; gap:9px; overflow-x:auto; scrollbar-width:none; padding-bottom:2px; }
+  .ofertas-row::-webkit-scrollbar{ display:none; }
+  .oferta-card{ flex:0 0 auto; width:154px; background:var(--surface); border:1px solid var(--line); border-radius:14px; overflow:hidden; box-shadow:0 2px 10px rgba(80,60,40,.08); position:relative; }
+  .oferta-card .ph-img{ aspect-ratio:4/3; border-radius:0; }
+  .verif-badge{ width:16px; height:16px; border-radius:50%; background:var(--int); display:inline-flex; align-items:center; justify-content:center; flex:0 0 auto; }
+  .verif-badge svg{ width:9px; height:9px; }
+  .oferta-card .verif-badge{ position:absolute; top:8px; right:8px; box-shadow:0 1px 4px rgba(0,0,0,.25); }
+  .oferta-txt{ padding:9px 10px 11px; }
+  .oferta-neg{ font-family:var(--sans); font-size:.6rem; font-weight:700; color:var(--ink-faint); text-transform:uppercase; letter-spacing:.03em; }
+  .oferta-tit{ font-family:var(--serif); font-weight:700; font-size:.84rem; margin-top:3px; line-height:1.2; }
+  .oferta-chip{ display:inline-block; margin-top:7px; font-family:var(--sans); font-size:.56rem; font-weight:700; color:var(--int);
+    border:1px solid var(--int); padding:1px 8px; border-radius:999px; }
+
+  /* ===== comunicados oficiales (municipio/instituciones verificadas) ===== */
+  .comunicados-wrap{ padding:14px 0 4px; }
+  .comunicado{ margin-bottom:12px; background:color-mix(in srgb,var(--barrio) 8%,var(--paper-2)); border:1px solid color-mix(in srgb,var(--barrio) 35%,var(--line)); border-radius:14px; padding:15px; }
+  .com-eyebrow{ font-family:var(--sans); font-size:.6rem; font-weight:800; text-transform:uppercase; letter-spacing:.06em; color:var(--barrio); display:flex; align-items:center; gap:6px; }
+  .com-eyebrow .verif-badge{ background:var(--barrio); }
+  .com-h{ font-family:var(--serif); font-size:1.02rem; font-weight:700; margin:9px 0 6px; color:var(--ink); }
+  .com-txt{ font-family:var(--sans); font-size:.82rem; color:var(--ink-soft); line-height:1.48; }
+  .com-foot{ font-family:var(--sans); font-size:.62rem; color:var(--ink-faint); margin-top:9px; }
+
+  /* ===== sheet: detalle de oferta ===== */
+  .oferta-hero{ aspect-ratio:16/9; border-radius:10px; position:relative; margin-bottom:14px; }
+  .oferta-hero .badge-float{ position:absolute; bottom:10px; left:10px; background:var(--int); color:#fff; font-family:var(--sans); font-size:.66rem; font-weight:700; padding:4px 10px; border-radius:999px; display:flex; align-items:center; gap:5px; }
+  .oferta-hero .badge-float svg{ width:9px; height:9px; }
+  .meta-box{ margin-top:16px; background:var(--paper-2); border-radius:10px; padding:12px 14px; font-family:var(--sans); font-size:.82rem; color:var(--ink-soft); }
+  .meta-box div{ padding:4px 0; }
+  .meta-box b{ color:var(--ink); }
+  .acts-row{ display:flex; gap:10px; margin-top:16px; }
+  .act-btn{ flex:1; font-family:var(--sans); font-weight:700; font-size:.82rem; text-align:center; padding:11px; border-radius:10px; border:0; }
+  .act-btn.primary{ background:var(--barrio); color:#fff; }
+  .act-btn.ghost{ border:1px solid var(--line-strong); color:var(--ink-soft); background:none; }
+  .disclosure{ font-family:var(--sans); font-size:.66rem; color:var(--ink-faint); margin-top:16px; padding-top:12px; border-top:1px solid var(--line); }
+
   /* ===== sheet 2: aporte / formulario (mismo lenguaje visual que .sheet) ===== */
   .sheet2{ position:fixed; left:0; right:0; bottom:0; z-index:200; max-width:640px; margin:0 auto; max-height:88vh;
     background:var(--paper); border-radius:20px 20px 0 0; box-shadow:0 -14px 44px rgba(30,28,22,.28);
@@ -337,6 +375,16 @@
   <div class="avisos-row" id="aportesGrid"></div>
 </div>
 
+<div class="wrap" id="ofertasWrap" style="display:none">
+  <div class="ofertas-label">
+    <span class="verif-badge"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+    Comercios de Quitilipi esta semana
+  </div>
+  <div class="ofertas-row" id="ofertasGrid"></div>
+</div>
+
+<div class="wrap comunicados-wrap" id="comunicadosWrap" style="display:none"></div>
+
 <main class="wrap" id="feed">
   <div class="state"><div class="spinner"></div><div class="big">Cargando noticias…</div></div>
 </main>
@@ -383,6 +431,26 @@
     <p class="s-p" id="aporteLugar"></p>
     <a class="verorig" id="aporteMapa" target="_blank" rel="noopener" style="display:none">Ver ubicación ↗</a>
     <div class="foot-note" style="margin-top:14px">Aporte enviado por un vecino, revisado antes de publicarse.</div>
+  </div>
+</div>
+
+<!-- sheet: detalle de una oferta de comercio local -->
+<div class="backdrop" id="backdropOferta"></div>
+<div class="sheet2" id="sheetOferta">
+  <div class="sheet2-top"><span class="b">Oferta local</span><button class="close" id="closeOferta">Cerrar ✕</button></div>
+  <div class="sheet2-body">
+    <div class="oferta-hero" id="ofertaHero">
+      <span class="badge-float"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>Auspiciante verificado</span>
+    </div>
+    <div class="kicker" id="ofertaNeg"><span class="verif-badge" style="background:var(--int)"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span></span></div>
+    <h3 class="h" id="ofertaTitulo" style="margin-top:8px"></h3>
+    <p class="s-p" id="ofertaDesc"></p>
+    <div class="meta-box" id="ofertaMetaBox"></div>
+    <div class="acts-row">
+      <a class="act-btn primary" id="ofertaMapaBtn" target="_blank" rel="noopener">📍 Ver en el mapa</a>
+      <button class="act-btn ghost" id="ofertaCompartirBtn">↗ Compartir</button>
+    </div>
+    <div class="disclosure">Este espacio es publicidad paga por el comercio — Fonte no participa en la promoción ni se responsabiliza por sus condiciones.</div>
   </div>
 </div>
 
@@ -939,7 +1007,7 @@
     }catch(e){ /* el usuario canceló el share, no hacemos nada */ }
   });
 
-  document.getElementById("refreshBtn").addEventListener("click", ()=>cargar(false));
+  document.getElementById("refreshBtn").addEventListener("click", ()=>{ cargar(false); cargarOfertas(); cargarComunicados(); });
 
   // ================= APORTES DEL PUEBLO =================
   async function cargarAportes(){
@@ -987,6 +1055,87 @@
   }
   document.getElementById("closeAporte").addEventListener("click", cerrarAporte);
   document.getElementById("backdropAporte").addEventListener("click", cerrarAporte);
+
+  // ================= OFERTAS DE COMERCIOS LOCALES =================
+  let OFERTAS = [];
+  async function cargarOfertas(){
+    try{
+      const url = SUPABASE_URL + "/rest/v1/ofertas?select=*&activa=eq.true&order=orden.asc,created_at.desc&limit=12";
+      const res = await fetch(url, { headers: { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + SUPABASE_KEY } });
+      OFERTAS = res.ok ? await res.json() : [];
+    }catch(e){ OFERTAS = []; }
+    const wrap = document.getElementById("ofertasWrap");
+    if(!OFERTAS.length){ wrap.style.display = "none"; return; }
+    wrap.style.display = "block";
+    const check = '<svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    document.getElementById("ofertasGrid").innerHTML = OFERTAS.map(o=>{
+      const foto = o.imagen_url ? "background-image:url('"+esc(o.imagen_url)+"');background-size:cover;background-position:center;" : "background:var(--paper-3);";
+      return '<a class="article oferta-card" data-oferta-id="'+esc(o.id)+'">'
+        + '<div class="ph-img" style="'+foto+'"></div>'
+        + '<span class="verif-badge">'+check+'</span>'
+        + '<div class="oferta-txt"><div class="oferta-neg">'+esc(o.negocio||"")+'</div><div class="oferta-tit">'+esc(o.titulo||"")+'</div>'
+        + '<span class="oferta-chip">Auspicia esta edición</span></div></a>';
+    }).join("");
+    document.querySelectorAll(".oferta-card").forEach(el=>{
+      el.addEventListener("click", ()=> abrirOferta(el.getAttribute("data-oferta-id")));
+    });
+  }
+  function abrirOferta(id){
+    const o = OFERTAS.find(x=>String(x.id)===String(id));
+    if(!o) return;
+    const check = '<svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    const foto = o.imagen_url ? "background-image:url('"+esc(o.imagen_url)+"');background-size:cover;background-position:center;" : "background:var(--paper-3);";
+    document.getElementById("ofertaHero").setAttribute("style", foto);
+    document.getElementById("ofertaHero").innerHTML = '<span class="badge-float">'+check+'Auspiciante verificado</span>';
+    document.getElementById("ofertaNeg").querySelector("span:last-child").textContent = o.negocio || "";
+    document.getElementById("ofertaTitulo").textContent = o.titulo || "";
+    document.getElementById("ofertaDesc").textContent = o.descripcion || "";
+    let meta = "";
+    if(o.direccion) meta += '<div>📍 <b>Dónde:</b> '+esc(o.direccion)+'</div>';
+    if(o.valido_hasta) meta += '<div>🕐 <b>Válido hasta:</b> '+esc(o.valido_hasta)+'</div>';
+    document.getElementById("ofertaMetaBox").innerHTML = meta;
+    document.getElementById("ofertaMetaBox").style.display = meta ? "block" : "none";
+    const mapaBtn = document.getElementById("ofertaMapaBtn");
+    if(o.lat && o.lng){ mapaBtn.href = "https://www.google.com/maps?q="+o.lat+","+o.lng; mapaBtn.style.display = "block"; }
+    else if(o.direccion){ mapaBtn.href = "https://www.google.com/maps?q="+encodeURIComponent(o.direccion+", Quitilipi, Chaco"); mapaBtn.style.display = "block"; }
+    else { mapaBtn.style.display = "none"; }
+    document.getElementById("backdropOferta").classList.add("show");
+    document.getElementById("sheetOferta").classList.add("show");
+  }
+  function cerrarOferta(){
+    document.getElementById("backdropOferta").classList.remove("show");
+    document.getElementById("sheetOferta").classList.remove("show");
+  }
+  document.getElementById("closeOferta").addEventListener("click", cerrarOferta);
+  document.getElementById("backdropOferta").addEventListener("click", cerrarOferta);
+  document.getElementById("ofertaCompartirBtn").addEventListener("click", async ()=>{
+    try{
+      if(navigator.share){ await navigator.share({ title: document.getElementById("ofertaTitulo").textContent, url: location.href }); }
+      else { await navigator.clipboard.writeText(location.href); }
+    }catch(e){}
+  });
+
+  // ================= COMUNICADOS OFICIALES (municipio / instituciones verificadas) =================
+  async function cargarComunicados(){
+    let comunicados = [];
+    try{
+      const url = SUPABASE_URL + "/rest/v1/comunicados?select=*&order=created_at.desc&limit=6";
+      const res = await fetch(url, { headers: { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + SUPABASE_KEY } });
+      comunicados = res.ok ? await res.json() : [];
+    }catch(e){ comunicados = []; }
+    const wrap = document.getElementById("comunicadosWrap");
+    if(!comunicados.length){ wrap.style.display = "none"; return; }
+    wrap.style.display = "block";
+    const check = '<svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    wrap.innerHTML = comunicados.map(c=>
+      '<div class="comunicado">'
+      + '<div class="com-eyebrow"><span class="verif-badge">'+check+'</span>Comunicado oficial · '+esc(c.institucion||"Municipalidad de Quitilipi")+'</div>'
+      + '<div class="com-h">'+esc(c.titulo||"")+'</div>'
+      + '<div class="com-txt">'+esc(c.texto||"")+'</div>'
+      + '<div class="com-foot">Contenido publicado directamente por la institución, marcado como tal — no es una nota de Fonte.</div>'
+      + '</div>'
+    ).join("");
+  }
 
   // ================= FORMULARIO: APORTÁ UN DATO =================
   let categoriaSeleccionada = null;
@@ -1137,7 +1286,9 @@
 
   cargar(false);
   cargarAportes();
-  setInterval(()=>{ cargar(true); cargarAportes(); }, 120000);
+  cargarOfertas();
+  cargarComunicados();
+  setInterval(()=>{ cargar(true); cargarAportes(); cargarOfertas(); cargarComunicados(); }, 120000);
 
   // ================= BARRA INFERIOR =================
   (function(){
