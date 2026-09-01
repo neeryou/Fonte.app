@@ -94,6 +94,25 @@
   .admin-item .h{ font-family:var(--serif); font-weight:700; font-size:.92rem; }
   .admin-item .sub2{ font-family:var(--sans); font-size:.68rem; color:var(--ink-faint); margin-top:2px; }
   .admin-item .del{ font-family:var(--sans); font-size:.66rem; font-weight:700; color:#B23A2E; background:none; border:1px solid #B23A2E; padding:6px 11px; border-radius:8px; flex:0 0 auto; }
+
+  /* ===== instituciones: fechas ===== */
+  .inst-block{ border-top:1px solid var(--line); padding:12px 0; }
+  .inst-block:first-child{ border-top:0; }
+  .inst-block-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  .inst-block-head .h{ font-family:var(--serif); font-weight:700; font-size:.92rem; }
+  .inst-block-head .sub2{ font-family:var(--sans); font-size:.68rem; color:var(--ink-faint); margin-top:2px; }
+  .inst-block-btns{ display:flex; gap:6px; flex:0 0 auto; }
+  .btn-mini{ font-family:var(--sans); font-size:.66rem; font-weight:700; padding:6px 10px; border-radius:8px; border:1px solid var(--line-strong); background:none; color:var(--ink-soft); }
+  .fechas-panel{ margin-top:10px; background:var(--paper); border:1px solid var(--line); border-radius:10px; padding:12px; }
+  .fecha-row{ display:flex; align-items:center; justify-content:space-between; gap:8px; padding:7px 0; border-top:1px solid var(--line); }
+  .fecha-row:first-child{ border-top:0; }
+  .fecha-row .t{ font-family:var(--sans); font-size:.78rem; font-weight:600; color:var(--ink); }
+  .fecha-row .m{ font-family:var(--sans); font-size:.66rem; color:var(--ink-faint); }
+  .fecha-add{ display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
+  .fecha-add input{ font-family:var(--sans); font-size:.78rem; border:1px solid var(--line-strong); border-radius:7px; padding:8px; background:var(--paper); color:var(--ink); }
+  .fecha-add input[name=titulo]{ flex:1 1 100%; }
+  .fecha-add input[name=fecha]{ flex:1 1 40%; }
+  .fecha-add input[name=lugar],.fecha-add input[name=horario]{ flex:1 1 45%; }
 </style>
 </head>
 <body>
@@ -124,6 +143,7 @@
       <button class="rep-tab on" id="tabCargar">Cargar noticia</button>
       <button class="rep-tab" id="tabAportes">Aportes pendientes<span class="tab-badge hide" id="badgeAportes">0</span></button>
       <button class="rep-tab" id="tabOfertas">Ofertas y avisos</button>
+      <button class="rep-tab" id="tabInstituciones">Instituciones</button>
     </div>
 
     <div class="rep-view on" id="viewCargar">
@@ -247,7 +267,10 @@
       <p class="rep-sub">Para avisos del municipio u otras instituciones ya verificadas.</p>
       <div class="card">
         <div class="field-label">Institución</div>
-        <input class="inp" id="coInstitucion" value="Municipalidad de Quitilipi">
+        <select class="inp" id="coInstitucionSel">
+          <option value="">— Otra / sin vincular —</option>
+        </select>
+        <input class="inp" id="coInstitucion" placeholder="Nombre de la institución" value="Municipalidad de Quitilipi">
         <div class="field-label">Título</div>
         <input class="inp" id="coTitulo" placeholder="Ej: Corte de agua programado el viernes">
         <div class="field-label">Texto</div>
@@ -258,6 +281,45 @@
 
       <h2 class="rep-h" style="font-size:1.05rem">Comunicados publicados</h2>
       <div class="card" id="comunicadosAdminList"><p style="font-family:var(--sans);font-size:.78rem;color:var(--ink-faint)">Cargando…</p></div>
+    </div>
+
+    <div class="rep-view" id="viewInstituciones">
+      <h2 class="rep-h">Instituciones verificadas</h2>
+      <p class="rep-sub">Hospital, desarrollo social, municipio, etc. Cargá la ficha una vez; después solo actualizás la fecha cuando cambie (ej: la próxima entrega de mercadería).</p>
+
+      <div class="card">
+        <div class="field-label">Nombre</div>
+        <input class="inp" id="inNombre" placeholder="Ej: Hospital Municipal">
+        <div class="field-label">Tipo (define el ícono)</div>
+        <select class="inp" id="inTipo">
+          <option value="salud">🏥 Salud</option>
+          <option value="social">📦 Desarrollo social</option>
+          <option value="municipio">🏛️ Municipio</option>
+          <option value="seguridad">🚓 Seguridad</option>
+          <option value="educacion">🏫 Educación</option>
+          <option value="cultura">🎭 Cultura</option>
+          <option value="deporte">⚽ Deporte</option>
+          <option value="otro">📍 Otro</option>
+        </select>
+        <div class="field-label">Descripción (opcional)</div>
+        <textarea id="inDesc" style="min-height:60px" placeholder="Qué hace esta institución"></textarea>
+        <div class="field-label" style="margin-top:14px">Dirección (opcional)</div>
+        <input class="inp" id="inDireccion" placeholder="Av. San Martín 210, Quitilipi">
+        <div class="field-label">Horario de atención (opcional)</div>
+        <input class="inp" id="inHorario" placeholder="Lunes a viernes, 7 a 13 hs">
+        <div class="field-label">Teléfono (opcional)</div>
+        <input class="inp" id="inTelefono" placeholder="(03731) 42-0000">
+        <div class="field-label">Link externo (opcional)</div>
+        <input class="inp" id="inLink" placeholder="https://...">
+        <div class="field-label">Foto / logo (opcional)</div>
+        <input class="inp" type="file" id="inFoto" accept="image/*" style="padding:9px">
+        <img class="foto-preview" id="inFotoPreview">
+        <button class="btn-gen" id="inPublicarBtn">Guardar institución</button>
+        <div class="err-msg hide" id="inErr"></div>
+      </div>
+
+      <h2 class="rep-h" style="font-size:1.05rem">Instituciones cargadas</h2>
+      <div class="card" id="institucionesAdminList"><p style="font-family:var(--sans);font-size:.78rem;color:var(--ink-faint)">Cargando…</p></div>
     </div>
   </div>
 </div>
@@ -290,33 +352,23 @@
     {id:"otro_riesgo", label:"Otro riesgo", icon:"⚠️"}
   ];
 
-  document.getElementById("tabCargar").addEventListener("click", ()=>{
-    document.getElementById("tabCargar").classList.add("on");
-    document.getElementById("tabAportes").classList.remove("on");
-    document.getElementById("tabOfertas").classList.remove("on");
-    document.getElementById("viewCargar").classList.add("on");
-    document.getElementById("viewAportes").classList.remove("on");
-    document.getElementById("viewOfertas").classList.remove("on");
-  });
-  document.getElementById("tabAportes").addEventListener("click", ()=>{
-    document.getElementById("tabAportes").classList.add("on");
-    document.getElementById("tabCargar").classList.remove("on");
-    document.getElementById("tabOfertas").classList.remove("on");
-    document.getElementById("viewAportes").classList.add("on");
-    document.getElementById("viewCargar").classList.remove("on");
-    document.getElementById("viewOfertas").classList.remove("on");
-    cargarAportesPendientes();
-    cargarAvisosPublicados();
-  });
-  document.getElementById("tabOfertas").addEventListener("click", ()=>{
-    document.getElementById("tabOfertas").classList.add("on");
-    document.getElementById("tabCargar").classList.remove("on");
-    document.getElementById("tabAportes").classList.remove("on");
-    document.getElementById("viewOfertas").classList.add("on");
-    document.getElementById("viewCargar").classList.remove("on");
-    document.getElementById("viewAportes").classList.remove("on");
-    cargarOfertasAdmin();
-    cargarComunicadosAdmin();
+  const TABS = {
+    tabCargar: "viewCargar",
+    tabAportes: "viewAportes",
+    tabOfertas: "viewOfertas",
+    tabInstituciones: "viewInstituciones",
+  };
+  function irAPestana(tabId){
+    Object.keys(TABS).forEach(t=>{
+      document.getElementById(t).classList.toggle("on", t===tabId);
+      document.getElementById(TABS[t]).classList.toggle("on", t===tabId);
+    });
+    if(tabId === "tabAportes"){ cargarAportesPendientes(); cargarAvisosPublicados(); }
+    if(tabId === "tabOfertas"){ cargarOfertasAdmin(); cargarComunicadosAdmin(); }
+    if(tabId === "tabInstituciones"){ cargarInstitucionesAdmin(); }
+  }
+  Object.keys(TABS).forEach(t=>{
+    document.getElementById(t).addEventListener("click", ()=> irAPestana(t));
   });
 
   document.getElementById("fotoPropia").addEventListener("change", async (e)=>{
@@ -352,6 +404,24 @@
         ofFotoUrl = data.publicUrl;
       }
     }catch(err){ /* si falla la subida, se publica igual sin foto */ }
+  });
+
+  let inFotoUrl = null;
+  document.getElementById("inFoto").addEventListener("change", async (e)=>{
+    const file = e.target.files[0];
+    inFotoUrl = null;
+    if(!file) return;
+    const preview = document.getElementById("inFotoPreview");
+    preview.src = URL.createObjectURL(file);
+    preview.style.display = "block";
+    try{
+      const nombre = Date.now() + "." + (file.name.split(".").pop() || "jpg");
+      const { error } = await sb.storage.from("instituciones-fotos").upload(nombre, file);
+      if(!error){
+        const { data } = sb.storage.from("instituciones-fotos").getPublicUrl(nombre);
+        inFotoUrl = data.publicUrl;
+      }
+    }catch(err){ /* si falla la subida, se guarda igual sin foto */ }
   });
 
   function toast(msg){
@@ -688,6 +758,7 @@
     btn.disabled = true;
     const registro = {
       institucion: document.getElementById("coInstitucion").value.trim() || "Municipalidad de Quitilipi",
+      institucion_id: document.getElementById("coInstitucionSel").value || null,
       titulo, texto,
     };
     const { error } = await sb.from("comunicados").insert(registro);
@@ -698,6 +769,129 @@
     document.getElementById("coTitulo").value = "";
     document.getElementById("coTexto").value = "";
     cargarComunicadosAdmin();
+  });
+
+  // ================= INSTITUCIONES VERIFICADAS =================
+  const ICONS_INST = { salud:"🏥", social:"📦", municipio:"🏛️", seguridad:"🚓", educacion:"🏫", cultura:"🎭", deporte:"⚽", otro:"📍" };
+  async function cargarInstitucionesAdmin(){
+    const { data, error } = await sb.from("instituciones").select("*").eq("activa", true).order("created_at", { ascending:false });
+    const sel = document.getElementById("coInstitucionSel");
+    sel.innerHTML = '<option value="">— Otra / sin vincular —</option>' +
+      (data||[]).map(i=>'<option value="'+i.id+'">'+(ICONS_INST[i.tipo]||"📍")+" "+escA(i.nombre)+'</option>').join("");
+    const cont = document.getElementById("institucionesAdminList");
+    if(error || !data || !data.length){
+      cont.innerHTML = '<p style="font-family:var(--sans);font-size:.78rem;color:var(--ink-faint)">Todavía no cargaste ninguna institución.</p>';
+      return;
+    }
+    cont.innerHTML = data.map(i=>
+      '<div class="inst-block" data-id="'+escA(i.id)+'">'
+      + '<div class="inst-block-head"><div><div class="h">'+(ICONS_INST[i.tipo]||"📍")+" "+escA(i.nombre)+'</div><div class="sub2">'+escA(i.direccion||"")+'</div></div>'
+      + '<div class="inst-block-btns"><button class="btn-mini fechas-toggle">Fechas</button><button class="del">Quitar</button></div></div>'
+      + '<div class="fechas-panel hide" id="fechasPanel-'+escA(i.id)+'"></div>'
+      + '</div>'
+    ).join("");
+    cont.querySelectorAll(".inst-block .del").forEach(btn=>{
+      btn.addEventListener("click", async ()=>{
+        const id = btn.closest(".inst-block").getAttribute("data-id");
+        if(!confirm("¿Quitar esta institución (y todas sus fechas) de Fonte?")) return;
+        btn.disabled = true;
+        const { error } = await sb.from("instituciones").delete().eq("id", id);
+        if(error){ toast("No se pudo quitar."); btn.disabled=false; return; }
+        toast("Institución quitada");
+        cargarInstitucionesAdmin();
+      });
+    });
+    cont.querySelectorAll(".fechas-toggle").forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        const id = btn.closest(".inst-block").getAttribute("data-id");
+        const panel = document.getElementById("fechasPanel-"+id);
+        panel.classList.toggle("hide");
+        if(!panel.classList.contains("hide")) cargarFechasDe(id, panel);
+      });
+    });
+  }
+
+  async function cargarFechasDe(institucionId, panel){
+    panel.innerHTML = "Cargando…";
+    const { data, error } = await sb.from("institucion_fechas").select("*").eq("institucion_id", institucionId).eq("activa", true).order("fecha", { ascending:true });
+    const fechas = error ? [] : data;
+    panel.innerHTML =
+      (fechas.length ? fechas.map(f=>
+        '<div class="fecha-row" data-fecha-id="'+escA(f.id)+'"><div><div class="t">'+escA(f.titulo)+'</div><div class="m">'+escA(f.fecha)+(f.lugar?" · "+escA(f.lugar):"")+'</div></div><button class="del" style="padding:4px 8px">✕</button></div>'
+      ).join("") : '<p style="font-family:var(--sans);font-size:.72rem;color:var(--ink-faint);margin:0 0 8px">Sin fechas cargadas.</p>')
+      + '<div class="fecha-add">'
+      + '<input name="titulo" placeholder="Ej: Entrega de mercadería">'
+      + '<input name="fecha" type="date">'
+      + '<input name="lugar" placeholder="Lugar (opcional)">'
+      + '<input name="horario" placeholder="Horario (opcional)">'
+      + '<button class="btn-mini" style="width:100%;background:var(--barrio);color:#fff;border-color:var(--barrio)" data-add="'+escA(institucionId)+'">+ Agregar fecha</button>'
+      + '</div>';
+    panel.querySelectorAll(".fecha-row .del").forEach(btn=>{
+      btn.addEventListener("click", async ()=>{
+        const id = btn.closest(".fecha-row").getAttribute("data-fecha-id");
+        btn.disabled = true;
+        const { error } = await sb.from("institucion_fechas").delete().eq("id", id);
+        if(error){ toast("No se pudo quitar la fecha."); btn.disabled=false; return; }
+        cargarFechasDe(institucionId, panel);
+      });
+    });
+    panel.querySelector("[data-add]").addEventListener("click", async (e)=>{
+      const btn = e.target;
+      const titulo = panel.querySelector('[name="titulo"]').value.trim();
+      const fecha = panel.querySelector('[name="fecha"]').value;
+      if(!titulo || !fecha){ toast("Completá el título y la fecha."); return; }
+      btn.disabled = true;
+      const registro = {
+        institucion_id: institucionId, titulo, fecha,
+        lugar: panel.querySelector('[name="lugar"]').value.trim() || null,
+        horario: panel.querySelector('[name="horario"]').value.trim() || null,
+      };
+      const { error } = await sb.from("institucion_fechas").insert(registro);
+      btn.disabled = false;
+      if(error){ toast("No se pudo agregar: " + error.message); return; }
+      toast("Fecha agregada ✓");
+      cargarFechasDe(institucionId, panel);
+    });
+  }
+
+  document.getElementById("inPublicarBtn").addEventListener("click", async ()=>{
+    const errEl = document.getElementById("inErr");
+    errEl.classList.add("hide");
+    const nombre = document.getElementById("inNombre").value.trim();
+    if(!nombre){
+      errEl.textContent = "Completá al menos el nombre de la institución.";
+      errEl.classList.remove("hide");
+      return;
+    }
+    const btn = document.getElementById("inPublicarBtn");
+    btn.textContent = "Guardando...";
+    btn.disabled = true;
+    const registro = {
+      nombre,
+      tipo: document.getElementById("inTipo").value,
+      descripcion: document.getElementById("inDesc").value.trim() || null,
+      direccion: document.getElementById("inDireccion").value.trim() || null,
+      horario: document.getElementById("inHorario").value.trim() || null,
+      telefono: document.getElementById("inTelefono").value.trim() || null,
+      link_url: document.getElementById("inLink").value.trim() || null,
+      foto_url: inFotoUrl,
+      activa: true,
+    };
+    const { error } = await sb.from("instituciones").insert(registro);
+    btn.textContent = "Guardar institución";
+    btn.disabled = false;
+    if(error){ toast("No se pudo guardar: " + error.message); return; }
+    toast("Institución guardada ✓");
+    document.getElementById("inNombre").value = "";
+    document.getElementById("inDesc").value = "";
+    document.getElementById("inDireccion").value = "";
+    document.getElementById("inHorario").value = "";
+    document.getElementById("inTelefono").value = "";
+    document.getElementById("inLink").value = "";
+    document.getElementById("inFoto").value = "";
+    document.getElementById("inFotoPreview").style.display = "none";
+    inFotoUrl = null;
+    cargarInstitucionesAdmin();
   });
 
   revisarSesion();

@@ -283,6 +283,48 @@
   .oferta-chip{ display:none; }
 
   /* ===== comunicados oficiales (municipio/instituciones verificadas) ===== */
+  /* ===== instituciones y servicios verificados ===== */
+  .inst-row{ display:flex; gap:9px; overflow-x:auto; scrollbar-width:none; padding:2px 0 2px; }
+  .inst-row::-webkit-scrollbar{ display:none; }
+  .inst-chip{ flex:0 0 auto; display:flex; align-items:center; gap:8px; background:var(--surface); border:1px solid var(--line);
+    border-radius:999px; padding:8px 13px 8px 8px; box-shadow:0 1px 4px rgba(80,60,40,.06); }
+  .inst-chip .ic{ width:30px; height:30px; border-radius:50%; background:var(--paper-2); display:flex; align-items:center; justify-content:center; font-size:.95rem; flex:0 0 auto; }
+  .inst-chip .nm{ font-family:var(--sans); font-size:.76rem; font-weight:700; color:var(--ink); white-space:nowrap; }
+  .inst-more{ flex:0 0 auto; display:flex; align-items:center; font-family:var(--sans); font-size:.72rem; font-weight:700; color:var(--int); padding:0 4px; white-space:nowrap; }
+
+  .ficha-head{ display:flex; align-items:center; gap:12px; }
+  .ficha-head .ic{ width:52px; height:52px; border-radius:14px; background:var(--paper-2); display:flex; align-items:center; justify-content:center; font-size:1.5rem; flex:0 0 auto; }
+  .ficha-head .nm{ font-family:var(--serif); font-weight:700; font-size:1.15rem; color:var(--ink); }
+  .ficha-head .sub{ display:flex; align-items:center; gap:5px; font-family:var(--sans); font-size:.68rem; color:var(--ink-faint); margin-top:2px; }
+  .date-box{ margin-top:16px; background:color-mix(in srgb,var(--terracota) 8%,var(--paper-2)); border:1.5px solid color-mix(in srgb,var(--terracota) 35%,var(--line)); border-radius:14px; padding:14px 16px; }
+  .date-box .lbl{ font-family:var(--sans); font-size:.62rem; font-weight:800; text-transform:uppercase; letter-spacing:.06em; color:var(--terracota); display:flex; align-items:center; justify-content:space-between; }
+  .date-box .cd{ background:var(--terracota); color:#fff; font-size:.6rem; font-weight:800; padding:2px 8px; border-radius:999px; }
+  .date-box .fecha{ font-family:var(--serif); font-weight:700; font-size:1.15rem; color:var(--ink); margin-top:5px; }
+  .date-box .lugar{ font-family:var(--sans); font-size:.78rem; color:var(--ink-soft); margin-top:4px; }
+  .ficha-sec{ margin-top:18px; }
+  .ficha-sec .h{ font-family:var(--sans); font-size:.68rem; font-weight:800; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-faint); margin-bottom:8px; }
+  .f-svc{ display:flex; align-items:center; gap:10px; padding:9px 0; border-top:1px solid var(--line); }
+  .f-svc:first-child{ border-top:0; }
+  .f-svc .d{ width:6px; height:6px; border-radius:50%; background:var(--region); flex:0 0 auto; }
+  .f-svc .t{ font-family:var(--sans); font-size:.82rem; color:var(--ink); font-weight:600; }
+  .f-svc .m{ font-family:var(--sans); font-size:.68rem; color:var(--ink-faint); margin-top:1px; }
+  .ficha-contact{ margin-top:16px; background:var(--paper-2); border-radius:12px; padding:12px 14px; font-family:var(--sans); font-size:.78rem; color:var(--ink-soft); }
+  .ficha-contact div{ padding:3px 0; }
+  .ficha-contact b{ color:var(--ink); }
+  .ficha-contact a{ color:var(--region); }
+  .ficha-desc{ font-family:var(--sans); font-size:.82rem; color:var(--ink-soft); line-height:1.5; margin-top:12px; }
+
+  .ag-row{ display:flex; align-items:center; gap:12px; padding:12px 0; border-top:1px solid var(--line); }
+  .ag-row:first-child{ border-top:0; }
+  .ag-date{ width:46px; flex:0 0 auto; text-align:center; background:var(--paper-2); border-radius:10px; padding:6px 0; }
+  .ag-date .d{ font-family:var(--serif); font-weight:700; font-size:1.05rem; color:var(--ink); line-height:1; }
+  .ag-date .m{ font-family:var(--sans); font-size:.56rem; font-weight:700; text-transform:uppercase; color:var(--ink-faint); }
+  .ag-tx{ flex:1; min-width:0; }
+  .ag-tx .inst{ font-family:var(--sans); font-size:.6rem; font-weight:700; color:var(--barrio); display:flex; align-items:center; gap:4px; text-transform:uppercase; }
+  .ag-tx .t{ font-family:var(--sans); font-weight:700; font-size:.84rem; color:var(--ink); margin-top:2px; }
+  .ag-tx .l{ font-family:var(--sans); font-size:.68rem; color:var(--ink-faint); margin-top:1px; }
+  .ag-cd{ flex:0 0 auto; font-family:var(--sans); font-size:.6rem; font-weight:800; padding:3px 8px; border-radius:999px; background:var(--paper-2); color:var(--ink-faint); }
+
   .comunicados-wrap{ padding:14px 0 4px; }
   .comunicado{ background:color-mix(in srgb,var(--barrio) 8%,var(--paper-2)); border:1px solid color-mix(in srgb,var(--barrio) 35%,var(--line)); border-radius:14px; padding:15px; margin-bottom:2px; }
   .com-eyebrow{ font-family:var(--sans); font-size:.6rem; font-weight:800; text-transform:uppercase; letter-spacing:.06em; color:var(--barrio); display:flex; align-items:center; gap:6px; }
@@ -393,6 +435,14 @@
 
 <div class="wrap comunicados-wrap" id="comunicadosWrap" style="display:none"></div>
 
+<div class="wrap" id="institucionesWrap" style="display:none;padding:14px 0 4px;">
+  <div class="ofertas-label" style="color:var(--barrio)">
+    <span class="verif-badge" style="background:var(--barrio)"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+    Servicios e instituciones
+  </div>
+  <div class="inst-row" id="institucionesRow"></div>
+</div>
+
 <main class="wrap" id="feed">
   <div class="state"><div class="spinner"></div><div class="big">Cargando noticias…</div></div>
 </main>
@@ -470,8 +520,23 @@
     <div class="kicker" id="comunicadoInst"><span class="verif-badge" style="background:var(--barrio)"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span></span></div>
     <h3 class="h" id="comunicadoTitulo" style="margin-top:8px"></h3>
     <p class="s-p" id="comunicadoTexto"></p>
+    <a class="verorig" id="comunicadoFichaLink" style="display:none">Ver ficha de la institución ↗</a>
     <div class="foot-note" style="margin-top:14px">Contenido publicado directamente por la institución, marcado como tal — no es una nota de Fonte.</div>
   </div>
+</div>
+
+<!-- sheet: ficha de institución -->
+<div class="backdrop" id="backdropInstitucion"></div>
+<div class="sheet2" id="sheetInstitucion">
+  <div class="sheet2-top"><span class="b">Institución verificada</span><button class="close" id="closeInstitucion">Cerrar ✕</button></div>
+  <div class="sheet2-body" id="institucionBody"></div>
+</div>
+
+<!-- sheet: próximas fechas (agenda agregada) -->
+<div class="backdrop" id="backdropFechas"></div>
+<div class="sheet2" id="sheetFechas">
+  <div class="sheet2-top"><span class="b">Próximas fechas</span><button class="close" id="closeFechas">Cerrar ✕</button></div>
+  <div class="sheet2-body" id="fechasBody"></div>
 </div>
 
 <!-- sheet: formulario para aportar un dato -->
@@ -1027,7 +1092,7 @@
     }catch(e){ /* el usuario canceló el share, no hacemos nada */ }
   });
 
-  document.getElementById("refreshBtn").addEventListener("click", ()=>{ cargar(false); cargarOfertas(); cargarComunicados(); });
+  document.getElementById("refreshBtn").addEventListener("click", ()=>{ cargar(false); cargarOfertas(); cargarComunicados(); cargarInstituciones(); });
 
   // ================= APORTES DEL PUEBLO =================
   async function cargarAportes(){
@@ -1184,6 +1249,14 @@
     document.getElementById("comunicadoInst").querySelector("span:last-child").textContent = c.institucion || "";
     document.getElementById("comunicadoTitulo").textContent = c.titulo || "";
     document.getElementById("comunicadoTexto").textContent = c.texto || "";
+    const fichaLink = document.getElementById("comunicadoFichaLink");
+    if(c.institucion_id && INSTITUCIONES.find(x=>String(x.id)===String(c.institucion_id))){
+      fichaLink.style.display = "inline-block";
+      fichaLink.onclick = (e)=>{ e.preventDefault(); cerrarComunicado(); abrirInstitucion(c.institucion_id); };
+    } else {
+      fichaLink.style.display = "none";
+      fichaLink.onclick = null;
+    }
     document.getElementById("backdropComunicado").classList.add("show");
     document.getElementById("sheetComunicado").classList.add("show");
   }
@@ -1193,6 +1266,110 @@
   }
   document.getElementById("closeComunicado").addEventListener("click", cerrarComunicado);
   document.getElementById("backdropComunicado").addEventListener("click", cerrarComunicado);
+
+  // ================= INSTITUCIONES Y SERVICIOS VERIFICADOS =================
+  const ICONS_INST = { salud:"🏥", social:"📦", municipio:"🏛️", seguridad:"🚓", educacion:"🏫", cultura:"🎭", deporte:"⚽", otro:"📍" };
+  let INSTITUCIONES = [];
+  let FECHAS_INST = [];
+  function fmtFecha(iso){
+    if(!iso) return "";
+    const [y,m,d] = iso.split("-");
+    const meses = ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
+    return { d: parseInt(d,10), m: meses[parseInt(m,10)-1], full: parseInt(d,10)+" de "+["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"][parseInt(m,10)-1] };
+  }
+  function diasHasta(iso){
+    const hoy = new Date(); hoy.setHours(0,0,0,0);
+    const f = new Date(iso+"T00:00:00");
+    const dif = Math.round((f-hoy)/86400000);
+    if(dif < 0) return null;
+    if(dif === 0) return "HOY";
+    if(dif === 1) return "MAÑANA";
+    return "EN "+dif+" DÍAS";
+  }
+  async function cargarInstituciones(){
+    try{
+      const hoyIso = new Date().toISOString().slice(0,10);
+      const [rI, rF] = await Promise.all([
+        fetch(SUPABASE_URL + "/rest/v1/instituciones?select=*&activa=eq.true&order=orden.asc", { headers: { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + SUPABASE_KEY } }),
+        fetch(SUPABASE_URL + "/rest/v1/institucion_fechas?select=*&activa=eq.true&fecha=gte."+hoyIso+"&order=fecha.asc", { headers: { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + SUPABASE_KEY } })
+      ]);
+      INSTITUCIONES = rI.ok ? await rI.json() : [];
+      FECHAS_INST = rF.ok ? await rF.json() : [];
+    }catch(e){ INSTITUCIONES = []; FECHAS_INST = []; }
+    const wrap = document.getElementById("institucionesWrap");
+    if(!INSTITUCIONES.length){ wrap.style.display = "none"; return; }
+    wrap.style.display = "block";
+    document.getElementById("institucionesRow").innerHTML =
+      INSTITUCIONES.map(i => '<a class="inst-chip" data-inst-id="'+esc(i.id)+'"><span class="ic">'+(ICONS_INST[i.tipo]||"📍")+'</span><span class="nm">'+esc(i.nombre)+'</span></a>').join("")
+      + (FECHAS_INST.length ? '<a class="inst-more" id="verFechasBtn">📅 Próximas fechas ›</a>' : "");
+    document.querySelectorAll(".inst-chip").forEach(el=>{
+      el.addEventListener("click", ()=> abrirInstitucion(el.getAttribute("data-inst-id")));
+    });
+    const vf = document.getElementById("verFechasBtn");
+    if(vf) vf.addEventListener("click", abrirProximasFechas);
+  }
+  function abrirInstitucion(id){
+    const inst = INSTITUCIONES.find(x=>String(x.id)===String(id));
+    if(!inst) return;
+    const fechas = FECHAS_INST.filter(f=>String(f.institucion_id)===String(id));
+    const proxima = fechas[0];
+    const resto = fechas.slice(1);
+    let html = '<div class="ficha-head"><span class="ic">'+(ICONS_INST[inst.tipo]||"📍")+'</span>'
+      + '<div><div class="nm">'+esc(inst.nombre)+'</div><div class="sub"><span class="verif-badge" style="background:var(--barrio);width:14px;height:14px"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Institución verificada</div></div></div>';
+    if(inst.descripcion) html += '<div class="ficha-desc">'+esc(inst.descripcion)+'</div>';
+    if(proxima){
+      const f = fmtFecha(proxima.fecha);
+      html += '<div class="date-box"><div class="lbl">'+esc(proxima.titulo)+' <span class="cd">'+diasHasta(proxima.fecha)+'</span></div>'
+        + '<div class="fecha">'+f.full+'</div>'
+        + (proxima.lugar || proxima.horario ? '<div class="lugar">📍 '+esc(proxima.lugar||"")+(proxima.horario?" · "+esc(proxima.horario):"")+'</div>' : '')
+        + '</div>';
+    }
+    if(resto.length){
+      html += '<div class="ficha-sec"><div class="h">Otras fechas / servicios</div>' + resto.map(f=>{
+        const fm = fmtFecha(f.fecha);
+        return '<div class="f-svc"><span class="d"></span><div><div class="t">'+esc(f.titulo)+'</div><div class="m">'+fm.full+(f.lugar?" · "+esc(f.lugar):"")+'</div></div></div>';
+      }).join("") + '</div>';
+    }
+    let contact = "";
+    if(inst.direccion) contact += '<div>📍 <b>Dónde:</b> '+esc(inst.direccion)+'</div>';
+    if(inst.horario) contact += '<div>🕐 <b>Atención:</b> '+esc(inst.horario)+'</div>';
+    if(inst.telefono) contact += '<div>☎️ <b>Contacto:</b> '+esc(inst.telefono)+'</div>';
+    if(inst.link_url) contact += '<div>🔗 <a href="'+esc(inst.link_url)+'" target="_blank" rel="noopener">Más información</a></div>';
+    if(contact) html += '<div class="ficha-contact">'+contact+'</div>';
+    document.getElementById("institucionBody").innerHTML = html;
+    document.getElementById("backdropInstitucion").classList.add("show");
+    document.getElementById("sheetInstitucion").classList.add("show");
+  }
+  function cerrarInstitucion(){
+    document.getElementById("backdropInstitucion").classList.remove("show");
+    document.getElementById("sheetInstitucion").classList.remove("show");
+  }
+  document.getElementById("closeInstitucion").addEventListener("click", cerrarInstitucion);
+  document.getElementById("backdropInstitucion").addEventListener("click", cerrarInstitucion);
+
+  function abrirProximasFechas(){
+    const html = FECHAS_INST.map(f=>{
+      const inst = INSTITUCIONES.find(x=>String(x.id)===String(f.institucion_id)) || {};
+      const fm = fmtFecha(f.fecha);
+      return '<a class="ag-row" data-inst-id="'+esc(f.institucion_id)+'">'
+        + '<div class="ag-date"><div class="d">'+fm.d+'</div><div class="m">'+fm.m+'</div></div>'
+        + '<div class="ag-tx"><div class="inst">'+(ICONS_INST[inst.tipo]||"📍")+' '+esc(inst.nombre||"")+'</div><div class="t">'+esc(f.titulo)+'</div>'
+        + (f.lugar||f.horario ? '<div class="l">'+esc(f.lugar||"")+(f.horario?" · "+esc(f.horario):"")+'</div>' : '') + '</div>'
+        + '<span class="ag-cd">'+diasHasta(f.fecha)+'</span></a>';
+    }).join("");
+    document.getElementById("fechasBody").innerHTML = html || '<p class="foot-note">No hay fechas próximas cargadas.</p>';
+    document.querySelectorAll("#fechasBody .ag-row").forEach(el=>{
+      el.addEventListener("click", ()=>{ cerrarFechas(); abrirInstitucion(el.getAttribute("data-inst-id")); });
+    });
+    document.getElementById("backdropFechas").classList.add("show");
+    document.getElementById("sheetFechas").classList.add("show");
+  }
+  function cerrarFechas(){
+    document.getElementById("backdropFechas").classList.remove("show");
+    document.getElementById("sheetFechas").classList.remove("show");
+  }
+  document.getElementById("closeFechas").addEventListener("click", cerrarFechas);
+  document.getElementById("backdropFechas").addEventListener("click", cerrarFechas);
 
   // ================= FORMULARIO: APORTÁ UN DATO =================
   let categoriaSeleccionada = null;
@@ -1345,7 +1522,8 @@
   cargarAportes();
   cargarOfertas();
   cargarComunicados();
-  setInterval(()=>{ cargar(true); cargarAportes(); cargarOfertas(); cargarComunicados(); }, 120000);
+  cargarInstituciones();
+  setInterval(()=>{ cargar(true); cargarAportes(); cargarOfertas(); cargarComunicados(); cargarInstituciones(); }, 120000);
 
   // ================= BARRA INFERIOR =================
   (function(){
