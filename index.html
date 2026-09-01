@@ -290,6 +290,16 @@
     border-radius:999px; padding:8px 13px 8px 8px; box-shadow:0 1px 4px rgba(80,60,40,.06); }
   .inst-chip .ic{ width:30px; height:30px; border-radius:50%; background:var(--paper-2); display:flex; align-items:center; justify-content:center; font-size:.95rem; flex:0 0 auto; }
   .inst-chip .nm{ font-family:var(--sans); font-size:.76rem; font-weight:700; color:var(--ink); white-space:nowrap; }
+  .inst-chip .badge{ min-width:18px; height:18px; padding:0 5px; border-radius:999px; background:var(--terracota); color:#fff;
+    font-family:var(--sans); font-size:.62rem; font-weight:800; display:flex; align-items:center; justify-content:center; flex:0 0 auto; }
+  .com-destacado{ cursor:pointer; }
+  .f-com{ display:flex; align-items:flex-start; gap:9px; padding:10px 0; border-top:1px solid var(--line); }
+  .f-com:first-child{ border-top:0; }
+  .f-com .verif-badge{ width:14px; height:14px; background:var(--barrio); margin-top:2px; }
+  .f-com .tx{ flex:1; min-width:0; }
+  .f-com .t{ font-family:var(--sans); font-weight:700; font-size:.82rem; color:var(--ink); }
+  .f-com .p{ font-family:var(--sans); font-size:.74rem; color:var(--ink-soft); margin-top:2px; line-height:1.4; }
+  .f-com .m{ font-family:var(--sans); font-size:.64rem; color:var(--ink-faint); margin-top:3px; }
   .inst-more{ flex:0 0 auto; display:flex; align-items:center; font-family:var(--sans); font-size:.72rem; font-weight:700; color:var(--int); padding:0 4px; white-space:nowrap; }
 
   .ficha-head{ display:flex; align-items:center; gap:12px; }
@@ -1138,7 +1148,7 @@
     }catch(e){ /* el usuario canceló el share, no hacemos nada */ }
   });
 
-  document.getElementById("refreshBtn").addEventListener("click", ()=>{ cargar(false); cargarOfertas(); cargarComunicados(); cargarInstituciones(); });
+  document.getElementById("refreshBtn").addEventListener("click", ()=>{ cargar(false); cargarOfertas(); cargarComunicados().then(cargarInstituciones); });
 
   // ================= APORTES DEL PUEBLO =================
   async function cargarAportes(){
@@ -1284,7 +1294,7 @@
     const TOPE = 4;
     const visibles = expandido ? resto : resto.slice(0, TOPE);
     const restantes = resto.length - visibles.length;
-    let html = '<div class="comunicado">'
+    let html = '<div class="comunicado com-destacado" data-com-id="'+esc(destacado.id)+'">'
       + '<div class="com-eyebrow"><span class="verif-badge">'+check+'</span>Comunicado oficial · '+esc(destacado.institucion||"Municipalidad de Quitilipi")+'</div>'
       + '<div class="com-h">'+esc(destacado.titulo||"")+'</div>'
       + '<div class="com-txt">'+esc(destacado.texto||"")+'</div>'
@@ -1301,7 +1311,7 @@
       html += '<a class="com-more" id="comVerMas">Ver '+restantes+' comunicado'+(restantes===1?"":"s")+' más</a>';
     }
     wrap.innerHTML = html;
-    wrap.querySelectorAll(".com-row").forEach(el=>{
+    wrap.querySelectorAll(".com-row, .com-destacado").forEach(el=>{
       el.addEventListener("click", ()=> abrirComunicado(el.getAttribute("data-com-id")));
     });
     const masBtn = wrap.querySelector("#comVerMas");
@@ -1350,6 +1360,15 @@
     if(dif === 1) return "MAÑANA";
     return "EN "+dif+" DÍAS";
   }
+  function comunicadosDe(institucionId){
+    const inst = INSTITUCIONES.find(x=>String(x.id)===String(institucionId));
+    if(!inst) return [];
+    const nombreNorm = (inst.nombre||"").trim().toLowerCase();
+    return (COMUNICADOS||[]).filter(c=>
+      (c.institucion_id && String(c.institucion_id)===String(institucionId)) ||
+      (!c.institucion_id && (c.institucion||"").trim().toLowerCase() === nombreNorm)
+    );
+  }
   async function cargarInstituciones(){
     try{
       const hoyIso = new Date().toISOString().slice(0,10);
@@ -1364,7 +1383,11 @@
     if(!INSTITUCIONES.length){ wrap.style.display = "none"; return; }
     wrap.style.display = "block";
     document.getElementById("institucionesRow").innerHTML =
-      INSTITUCIONES.map(i => '<a class="inst-chip" data-inst-id="'+esc(i.id)+'"><span class="ic">'+(ICONS_INST[i.tipo]||"📍")+'</span><span class="nm">'+esc(i.nombre)+'</span></a>').join("")
+      INSTITUCIONES.map(i => {
+        const n = comunicadosDe(i.id).length;
+        return '<a class="inst-chip" data-inst-id="'+esc(i.id)+'"><span class="ic">'+(ICONS_INST[i.tipo]||"📍")+'</span><span class="nm">'+esc(i.nombre)+'</span>'
+          + (n ? '<span class="badge">'+n+'</span>' : '') + '</a>';
+      }).join("")
       + (FECHAS_INST.length ? '<a class="inst-more" id="verFechasBtn">📅 Próximas fechas ›</a>' : "");
     document.querySelectorAll(".inst-chip").forEach(el=>{
       el.addEventListener("click", ()=> abrirInstitucion(el.getAttribute("data-inst-id")));
@@ -1394,6 +1417,17 @@
         return '<div class="f-svc"><span class="d"></span><div><div class="t">'+esc(f.titulo)+'</div><div class="m">'+fm.full+(f.lugar?" · "+esc(f.lugar):"")+'</div></div></div>';
       }).join("") + '</div>';
     }
+    const comInst = comunicadosDe(id);
+    if(comInst.length){
+      html += '<div class="ficha-sec"><div class="h">Comunicados de esta institución</div>' + comInst.slice(0,5).map(c=>{
+        const cuando = c.created_at ? new Date(c.created_at).toLocaleDateString("es-AR",{day:"numeric",month:"short"}) : "";
+        const prev = (c.texto||"").length > 110 ? (c.texto||"").slice(0,110)+"…" : (c.texto||"");
+        return '<a class="f-com" data-com-id="'+esc(c.id)+'"><span class="verif-badge">'+check+'</span>'
+          + '<div class="tx"><div class="t">'+esc(c.titulo||"")+'</div>'
+          + (prev ? '<div class="p">'+esc(prev)+'</div>' : '')
+          + (cuando ? '<div class="m">'+cuando+'</div>' : '') + '</div></a>';
+      }).join("") + '</div>';
+    }
     let contact = "";
     if(inst.direccion) contact += '<div>📍 <b>Dónde:</b> '+esc(inst.direccion)+'</div>';
     if(inst.horario) contact += '<div>🕐 <b>Atención:</b> '+esc(inst.horario)+'</div>';
@@ -1401,6 +1435,9 @@
     if(inst.link_url) contact += '<div>🔗 <a href="'+esc(inst.link_url)+'" target="_blank" rel="noopener">Más información</a></div>';
     if(contact) html += '<div class="ficha-contact">'+contact+'</div>';
     document.getElementById("institucionBody").innerHTML = html;
+    document.querySelectorAll("#institucionBody .f-com").forEach(el=>{
+      el.addEventListener("click", ()=>{ cerrarInstitucion(); abrirComunicado(el.getAttribute("data-com-id")); });
+    });
     document.getElementById("backdropInstitucion").classList.add("show");
     document.getElementById("sheetInstitucion").classList.add("show");
   }
@@ -1585,9 +1622,8 @@
   cargar(false);
   cargarAportes();
   cargarOfertas();
-  cargarComunicados();
-  cargarInstituciones();
-  setInterval(()=>{ cargar(true); cargarAportes(); cargarOfertas(); cargarComunicados(); cargarInstituciones(); }, 120000);
+  cargarComunicados().then(cargarInstituciones);
+  setInterval(()=>{ cargar(true); cargarAportes(); cargarOfertas(); cargarComunicados().then(cargarInstituciones); }, 120000);
 
   // ================= BARRA INFERIOR =================
   (function(){
