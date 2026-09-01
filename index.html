@@ -1796,6 +1796,42 @@
     primeraPasada = false;
   }
 
+  // ================= ANALÍTICA: registro de visita =================
+  // Registra una visita por dispositivo por día. Sirve para medir usuarios
+  // recurrentes, que es la métrica que define si Fonte está funcionando.
+  async function registrarVisita(){
+    const hoy = new Date().toISOString().slice(0,10);
+    let ultima = null;
+    try{ ultima = localStorage.getItem("fonte_ultima_visita"); }catch(e){}
+    if(ultima === hoy) return;           // ya quedó registrada la de hoy
+    const disp = getDispositivoId();
+    let primera = null;
+    try{ primera = localStorage.getItem("fonte_primera_visita"); }catch(e){}
+    const esNuevo = !primera;
+    try{
+      const res = await fetch(SUPABASE_URL + "/rest/v1/visitas", {
+        method: "POST",
+        headers: {
+          "apikey": SUPABASE_KEY, "Authorization": "Bearer " + SUPABASE_KEY,
+          "Content-Type": "application/json", "Prefer": "return=minimal,resolution=ignore-duplicates"
+        },
+        body: JSON.stringify({
+          dispositivo_id: disp,
+          fecha: hoy,
+          es_nuevo: esNuevo,
+          instalada: window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true
+        })
+      });
+      if(res.ok){
+        try{
+          localStorage.setItem("fonte_ultima_visita", hoy);
+          if(esNuevo) localStorage.setItem("fonte_primera_visita", hoy);
+        }catch(e){}
+      }
+    }catch(e){ /* si falla, no molestamos al vecino */ }
+  }
+  registrarVisita();
+
   cargar(false);
   cargarAportes();
   cargarOfertas();

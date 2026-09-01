@@ -113,6 +113,24 @@
   .fecha-add input[name=titulo]{ flex:1 1 100%; }
   .fecha-add input[name=fecha]{ flex:1 1 40%; }
   .fecha-add input[name=lugar],.fecha-add input[name=horario]{ flex:1 1 45%; }
+
+  /* ===== métricas ===== */
+  .kpi-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:18px; }
+  .kpi{ background:var(--paper); border:1px solid var(--line); border-radius:12px; padding:13px 14px; }
+  .kpi .n{ font-family:var(--serif); font-weight:700; font-size:1.7rem; color:var(--ink); line-height:1; }
+  .kpi .l{ font-family:var(--sans); font-size:.68rem; font-weight:600; color:var(--ink-faint); margin-top:5px; line-height:1.3; }
+  .kpi.destacado{ background:color-mix(in srgb,var(--barrio) 8%,var(--paper)); border-color:color-mix(in srgb,var(--barrio) 35%,var(--line)); }
+  .kpi.destacado .n{ color:var(--barrio); }
+  .meta-bar{ margin:4px 0 18px; }
+  .meta-bar .track{ height:9px; background:var(--paper-2); border-radius:999px; overflow:hidden; }
+  .meta-bar .fill{ height:100%; background:var(--barrio); border-radius:999px; transition:width .4s; }
+  .meta-bar .cap{ font-family:var(--sans); font-size:.7rem; color:var(--ink-soft); margin-top:7px; }
+  .chart{ display:flex; align-items:flex-end; gap:3px; height:110px; padding:8px 0; }
+  .chart .col{ flex:1; display:flex; flex-direction:column; justify-content:flex-end; align-items:center; gap:4px; }
+  .chart .bar{ width:100%; background:var(--barrio); border-radius:3px 3px 0 0; min-height:2px; }
+  .chart .bar.hoy{ background:var(--int); }
+  .chart .d{ font-family:var(--sans); font-size:.54rem; color:var(--ink-faint); }
+  .chart-lbl{ font-family:var(--sans); font-size:.68rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-faint); margin-bottom:2px; }
 </style>
 </head>
 <body>
@@ -143,6 +161,7 @@
       <button class="rep-tab on" id="tabCargar">Cargar noticia</button>
       <button class="rep-tab" id="tabAportes">Aportes pendientes<span class="tab-badge hide" id="badgeAportes">0</span></button>
       <button class="rep-tab" id="tabOfertas">Ofertas y avisos</button>
+      <button class="rep-tab" id="tabMetricas">Métricas</button>
       <button class="rep-tab" id="tabInstituciones">Instituciones</button>
     </div>
 
@@ -283,6 +302,12 @@
       <div class="card" id="comunicadosAdminList"><p style="font-family:var(--sans);font-size:.78rem;color:var(--ink-faint)">Cargando…</p></div>
     </div>
 
+    <div class="rep-view" id="viewMetricas">
+      <h2 class="rep-h">Métricas</h2>
+      <p class="rep-sub">La cifra que importa es <b>usuarios recurrentes</b>: gente que volvió 3 o más días distintos. Es la señal de que Fonte se volvió un hábito, no una visita suelta.</p>
+      <div id="metricasBody"><p style="font-family:var(--sans);font-size:.78rem;color:var(--ink-faint)">Cargando…</p></div>
+    </div>
+
     <div class="rep-view" id="viewInstituciones">
       <div id="avisoVencidas" class="hide" style="background:color-mix(in srgb,#B23A2E 10%,var(--paper));border:1px solid color-mix(in srgb,#B23A2E 30%,var(--line));border-radius:10px;padding:12px 14px;margin-bottom:16px;font-family:var(--sans);font-size:.8rem;color:#B23A2E;font-weight:600"></div>
       <h2 class="rep-h">Instituciones verificadas</h2>
@@ -357,6 +382,7 @@
     tabCargar: "viewCargar",
     tabAportes: "viewAportes",
     tabOfertas: "viewOfertas",
+    tabMetricas: "viewMetricas",
     tabInstituciones: "viewInstituciones",
   };
   function irAPestana(tabId){
@@ -367,6 +393,7 @@
     if(tabId === "tabAportes"){ cargarAportesPendientes(); cargarAvisosPublicados(); }
     if(tabId === "tabOfertas"){ cargarOfertasAdmin(); cargarComunicadosAdmin(); }
     if(tabId === "tabInstituciones"){ cargarInstitucionesAdmin(); }
+    if(tabId === "tabMetricas"){ cargarMetricas(); }
   }
   Object.keys(TABS).forEach(t=>{
     document.getElementById(t).addEventListener("click", ()=> irAPestana(t));
@@ -926,6 +953,59 @@
     inFotoUrl = null;
     cargarInstitucionesAdmin();
   });
+
+  // ================= MÉTRICAS =================
+  async function cargarMetricas(){
+    const cont = document.getElementById("metricasBody");
+    const desde = new Date(Date.now() - 29*86400000).toISOString().slice(0,10);
+    const { data, error } = await sb.from("visitas").select("dispositivo_id,fecha,es_nuevo,instalada").gte("fecha", desde);
+    if(error){
+      cont.innerHTML = '<p style="font-family:var(--sans);font-size:.78rem;color:#B23A2E">No se pudieron cargar las métricas: '+escA(error.message)+'</p>';
+      return;
+    }
+    const filas = data || [];
+    const hoy = new Date().toISOString().slice(0,10);
+    const hace7 = new Date(Date.now() - 6*86400000).toISOString().slice(0,10);
+
+    const diasPorDisp = {};
+    filas.forEach(f=>{
+      (diasPorDisp[f.dispositivo_id] = diasPorDisp[f.dispositivo_id] || new Set()).add(f.fecha);
+    });
+    const dispositivos = Object.keys(diasPorDisp);
+    const recurrentes = dispositivos.filter(d=> diasPorDisp[d].size >= 3).length;
+    const hoyUnicos = new Set(filas.filter(f=>f.fecha===hoy).map(f=>f.dispositivo_id)).size;
+    const semanaUnicos = new Set(filas.filter(f=>f.fecha>=hace7).map(f=>f.dispositivo_id)).size;
+    const instalada = new Set(filas.filter(f=>f.instalada).map(f=>f.dispositivo_id)).size;
+    const nuevosSemana = new Set(filas.filter(f=>f.es_nuevo && f.fecha>=hace7).map(f=>f.dispositivo_id)).size;
+    const META = 50;
+    const pct = Math.min(100, Math.round(recurrentes / META * 100));
+
+    const dias = [];
+    for(let i=13;i>=0;i--){
+      const f = new Date(Date.now() - i*86400000).toISOString().slice(0,10);
+      dias.push({ fecha:f, n: new Set(filas.filter(x=>x.fecha===f).map(x=>x.dispositivo_id)).size });
+    }
+    const maxN = Math.max(1, ...dias.map(d=>d.n));
+
+    cont.innerHTML =
+      '<div class="kpi-grid">'
+      + '<div class="kpi destacado"><div class="n">'+recurrentes+'</div><div class="l">Usuarios recurrentes<br>(3+ días en el último mes)</div></div>'
+      + '<div class="kpi"><div class="n">'+hoyUnicos+'</div><div class="l">Personas hoy</div></div>'
+      + '<div class="kpi"><div class="n">'+semanaUnicos+'</div><div class="l">Personas esta semana</div></div>'
+      + '<div class="kpi"><div class="n">'+dispositivos.length+'</div><div class="l">Personas en 30 días</div></div>'
+      + '<div class="kpi"><div class="n">'+nuevosSemana+'</div><div class="l">Nuevos esta semana</div></div>'
+      + '<div class="kpi"><div class="n">'+instalada+'</div><div class="l">La instalaron como app</div></div>'
+      + '</div>'
+      + '<div class="meta-bar"><div class="track"><div class="fill" style="width:'+pct+'%"></div></div>'
+      + '<div class="cap"><b>'+recurrentes+' de '+META+'</b> usuarios recurrentes — la meta antes de activar el contacto en la Provincia.</div></div>'
+      + '<div class="chart-lbl">Personas por día (últimos 14)</div>'
+      + '<div class="chart">' + dias.map(d=>{
+          const alto = Math.round(d.n / maxN * 92);
+          const dd = d.fecha.slice(8,10);
+          return '<div class="col"><div class="bar'+(d.fecha===hoy?" hoy":"")+'" style="height:'+alto+'px" title="'+d.fecha+': '+d.n+'"></div><div class="d">'+dd+'</div></div>';
+        }).join("") + '</div>'
+      + (dispositivos.length === 0 ? '<p style="font-family:var(--sans);font-size:.78rem;color:var(--ink-faint);margin-top:14px">Todavía no hay visitas registradas. Van a aparecer a partir de que subas esta versión y la gente entre a Fonte.</p>' : '');
+  }
 
   revisarSesion();
 </script>
