@@ -322,6 +322,57 @@
   .bn-item .dot-nuevo{ position:absolute; top:2px; right:calc(50% - 15px); width:8px; height:8px; border-radius:50%;
     background:var(--terracota); border:2px solid var(--paper); }
   .bn-item{ position:relative; }
+
+  /* ===== noticia ya leída ===== */
+  .article.leida .h, .article.leida .zh{ color:var(--ink-faint); }
+  .article.leida .ph-img{ opacity:.55; }
+  .leida-tag{ font-family:var(--sans); font-size:.58rem; font-weight:700; color:var(--ink-faint); text-transform:uppercase; letter-spacing:.04em; }
+  .nueva-dot{ display:inline-block; width:7px; height:7px; border-radius:50%; background:var(--terracota); margin-right:5px; vertical-align:middle; }
+
+  /* ===== onboarding ===== */
+  .onb-back{ position:fixed; inset:0; z-index:300; background:rgba(20,18,14,.55); backdrop-filter:blur(3px); display:none; }
+  .onb-back.show{ display:block; }
+  .onb{ position:fixed; left:0; right:0; bottom:0; z-index:301; max-width:640px; margin:0 auto;
+    background:var(--paper); border-radius:22px 22px 0 0; padding:26px 22px calc(22px + env(safe-area-inset-bottom));
+    transform:translateY(100%); transition:transform .34s cubic-bezier(.22,.61,.36,1); }
+  .onb.show{ transform:translateY(0); }
+  .onb-ico{ font-size:2.4rem; text-align:center; }
+  .onb-h{ font-family:var(--serif); font-weight:700; font-size:1.35rem; text-align:center; margin:12px 0 8px; color:var(--ink); }
+  .onb-p{ font-family:var(--sans); font-size:.88rem; color:var(--ink-soft); text-align:center; line-height:1.5; }
+  .onb-dots{ display:flex; justify-content:center; gap:6px; margin:20px 0 16px; }
+  .onb-dots i{ width:7px; height:7px; border-radius:50%; background:var(--line-strong); }
+  .onb-dots i.on{ background:var(--terracota); width:20px; border-radius:999px; }
+  .onb-btns{ display:flex; gap:10px; }
+  .onb-btn{ flex:1; font-family:var(--sans); font-weight:700; font-size:.88rem; padding:13px; border-radius:11px; border:0; }
+  .onb-btn.p{ background:var(--ink); color:var(--paper); }
+  .onb-btn.s{ background:none; color:var(--ink-faint); }
+  .onb-ondas{ display:flex; flex-direction:column; gap:7px; margin:16px 0 4px; }
+  .onb-onda{ display:flex; align-items:center; gap:9px; font-family:var(--sans); font-size:.8rem; color:var(--ink-soft); }
+  .onb-onda .b{ width:10px; height:10px; border-radius:50%; flex:0 0 auto; }
+  .onb-voz{ display:flex; align-items:flex-start; gap:9px; margin-top:11px; text-align:left; }
+  .onb-voz .tg{ font-family:var(--sans); font-size:.56rem; font-weight:800; padding:3px 7px; border-radius:5px; flex:0 0 auto; margin-top:2px; }
+  .onb-voz .tx{ font-family:var(--sans); font-size:.78rem; color:var(--ink-soft); line-height:1.4; }
+
+  /* ===== mis aportes ===== */
+  .mio-row{ display:flex; gap:11px; padding:13px 0; border-top:1px solid var(--line); align-items:flex-start; }
+  .mio-row:first-child{ border-top:0; }
+  .mio-ico{ width:36px; height:36px; border-radius:9px; background:var(--paper-2); display:flex; align-items:center; justify-content:center; font-size:1.05rem; flex:0 0 auto; }
+  .mio-tx{ flex:1; min-width:0; }
+  .mio-tx .t{ font-family:var(--sans); font-weight:700; font-size:.86rem; color:var(--ink); }
+  .mio-tx .m{ font-family:var(--sans); font-size:.68rem; color:var(--ink-faint); margin-top:3px; }
+  .mio-estado{ font-family:var(--sans); font-size:.6rem; font-weight:800; text-transform:uppercase; letter-spacing:.04em; padding:3px 9px; border-radius:999px; display:inline-block; margin-top:6px; }
+  .mio-estado.pendiente{ color:var(--int); background:color-mix(in srgb,var(--int) 14%,var(--paper)); }
+  .mio-estado.revisado{ color:var(--region); background:color-mix(in srgb,var(--region) 14%,var(--paper)); }
+  .mio-estado.resuelto{ color:var(--ciudad); background:color-mix(in srgb,var(--ciudad) 14%,var(--paper)); }
+  .mio-estado.descartado{ color:var(--ink-faint); background:var(--paper-2); }
+
+  /* ===== estado vacío ===== */
+  .vacio{ text-align:center; padding:30px 22px; }
+  .vacio .ic{ font-size:2rem; opacity:.5; }
+  .vacio .t{ font-family:var(--serif); font-weight:700; font-size:1.05rem; color:var(--ink); margin-top:10px; }
+  .vacio .p{ font-family:var(--sans); font-size:.82rem; color:var(--ink-soft); line-height:1.5; margin-top:7px; }
+  .vacio .b{ font-family:var(--sans); font-weight:700; font-size:.84rem; color:#fff; background:var(--ciudad);
+    border:0; padding:12px 20px; border-radius:11px; margin-top:16px; }
   .f-com{ display:flex; align-items:flex-start; gap:9px; padding:10px 0; border-top:1px solid var(--line); }
   .f-com:first-child{ border-top:0; }
   .f-com .verif-badge{ width:14px; height:14px; background:var(--barrio); margin-top:2px; }
@@ -659,6 +710,23 @@
     <input class="fld" id="buscarInput" type="search" placeholder="Buscar noticias, avisos, comercios…" autocomplete="off">
     <div id="buscarResultados" style="margin-top:14px"></div>
   </div>
+</div>
+
+<div class="onb-back" id="onbBack"></div>
+<div class="onb" id="onb">
+  <div id="onbCont"></div>
+  <div class="onb-dots" id="onbDots"></div>
+  <div class="onb-btns">
+    <button class="onb-btn s" id="onbSaltar">Saltar</button>
+    <button class="onb-btn p" id="onbSiguiente">Siguiente</button>
+  </div>
+</div>
+
+<!-- sheet: mis aportes -->
+<div class="backdrop" id="backdropMios"></div>
+<div class="sheet2" id="sheetMios">
+  <div class="sheet2-top"><span class="b">Mis aportes</span><button class="close" id="closeMios">Cerrar ✕</button></div>
+  <div class="sheet2-body" id="miosBody"></div>
 </div>
 
 <nav class="bottom-nav">
@@ -1053,6 +1121,12 @@
 
     feed.innerHTML = html;
 
+    // marca visual de lo ya leído (el orden ya las manda abajo; esto lo hace visible)
+    const yaLeidas = getLeidos();
+    feed.querySelectorAll(".article[data-id]").forEach(el=>{
+      if(yaLeidas.has(String(el.getAttribute("data-id")))) el.classList.add("leida");
+    });
+
     document.querySelectorAll(".article").forEach(el=>{
       el.addEventListener("click", ()=> abrir(el.getAttribute("data-id")));
     });
@@ -1072,6 +1146,7 @@
     const n = NOTICIAS.find(x=>String(x.id)===String(id));
     if(!n) return;
     marcarLeido(n.id);
+    document.querySelectorAll('.article[data-id="'+String(n.id).replace(/"/g,'')+'"]').forEach(el=> el.classList.add("leida"));
     notaAbierta = n;
     pararAudio();
     document.getElementById("s-kicker").style.setProperty("--w", colorDe(n.onda));
@@ -1201,7 +1276,23 @@
     }catch(e){ APORTES = []; }
     const wrap = document.getElementById("avisosWrap");
     const grid = document.getElementById("aportesGrid");
-    if(!APORTES.length){ wrap.style.display = "none"; return; }
+    const barraMios = '<div style="text-align:right;padding:10px 0 0"><button id="verMisAportes" style="font-family:var(--sans);font-size:.74rem;font-weight:700;color:var(--region);background:none;border:0;padding:6px 2px">📋 Mis aportes ›</button></div>';
+    function engancharMios(){
+      const b = document.getElementById("verMisAportes");
+      if(b) b.addEventListener("click", abrirMisAportes);
+    }
+    if(!APORTES.length){
+      wrap.style.display = "none";
+      document.getElementById("tabVecinosN").textContent = "";
+      document.getElementById("feedVecinos").innerHTML = barraMios
+        + '<div class="vacio"><div class="ic">📍</div><div class="t">Todavía no hay reportes</div>'
+        + '<div class="p">Acá van a aparecer los avisos de vecinos de Quitilipi: baches, cortes de luz, agua estancada, alumbrado.<br><br>Si viste algo, podés ser el primero en avisar.</div>'
+        + '<button class="b" id="vacioAportar">+ Aportá un dato</button></div>';
+      engancharMios();
+      const va = document.getElementById("vacioAportar");
+      if(va) va.addEventListener("click", ()=> document.getElementById("fabAportar").click());
+      return;
+    }
     wrap.style.display = "block";
     document.getElementById("aportesCount").textContent = "· " + APORTES.length + (APORTES.length===1?" aviso":" avisos");
     grid.innerHTML = APORTES.map(a=>{
@@ -1221,7 +1312,7 @@
     });
     document.getElementById("tabVecinosN").textContent = "· " + APORTES.length;
     const feedV = document.getElementById("feedVecinos");
-    feedV.innerHTML = '<div class="pp-head" style="margin-top:18px"><h2 class="pp-title">Todos los reportes</h2></div>'
+    feedV.innerHTML = barraMios + '<div class="pp-head" style="margin-top:6px"><h2 class="pp-title">Todos los reportes</h2></div>'
       + APORTES.map(a=>{
         const cat = CAT_APORTE.find(c=>c.id===a.categoria) || {label:"Aporte", icon:"📍"};
         const cuando = a.created_at ? new Date(a.created_at).toLocaleString("es-AR",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}) : "";
@@ -1234,6 +1325,7 @@
           + (a.estado === "resuelto" ? '<span class="estado-pill resuelto" style="margin-top:6px">Resuelto</span>' : '')
           + '</div></a>';
       }).join("");
+    engancharMios();
     feedV.querySelectorAll(".aporte-full").forEach(el=>{
       el.addEventListener("click", ()=> abrirAporte(el.getAttribute("data-aporte-id")));
     });
@@ -1830,6 +1922,118 @@
       }
     }catch(e){ /* si falla, no molestamos al vecino */ }
   }
+  // ================= ONBOARDING (primera visita) =================
+  const ONB = [
+    {
+      ico: "📍",
+      h: "Lo de acá primero",
+      p: "Fonte ordena las noticias por cercanía: primero lo que pasa en tu ciudad, después lo demás.",
+      extra: '<div class="onb-ondas">'
+        + '<div class="onb-onda"><span class="b" style="background:var(--ciudad)"></span>Tu ciudad — Quitilipi</div>'
+        + '<div class="onb-onda"><span class="b" style="background:var(--region)"></span>Tu región — Chaco y alrededores</div>'
+        + '<div class="onb-onda"><span class="b" style="background:var(--pais)"></span>Argentina</div>'
+        + '<div class="onb-onda"><span class="b" style="background:var(--mundo)"></span>Mundo</div>'
+        + '</div>'
+    },
+    {
+      ico: "✓",
+      h: "Siempre sabés quién lo dice",
+      p: "Cada cosa está marcada según de dónde viene. Nunca se mezclan.",
+      extra: '<div style="margin-top:4px">'
+        + '<div class="onb-voz"><span class="tg" style="color:var(--ciudad);background:color-mix(in srgb,var(--ciudad) 14%,var(--paper))">NOTICIA</span><span class="tx">Resumida por Fonte de un medio real, con link al original.</span></div>'
+        + '<div class="onb-voz"><span class="tg" style="color:var(--region);background:color-mix(in srgb,var(--region) 14%,var(--paper))">VECINO</span><span class="tx">Reportado por alguien del pueblo y revisado antes de publicarse.</span></div>'
+        + '<div class="onb-voz"><span class="tg" style="color:var(--barrio);background:color-mix(in srgb,var(--barrio) 14%,var(--paper))">OFICIAL</span><span class="tx">Publicado por el municipio u otra institución verificada.</span></div>'
+        + '<div class="onb-voz"><span class="tg" style="color:var(--int);background:color-mix(in srgb,var(--int) 14%,var(--paper))">COMERCIO</span><span class="tx">Espacio de un comercio local. Siempre marcado como tal.</span></div>'
+        + '</div>'
+    },
+    {
+      ico: "＋",
+      h: "Vos también contás",
+      p: "¿Un bache, un corte de luz, agua estancada? Tocá el botón + y avisale al resto del pueblo. Es anónimo.",
+      extra: '<p class="onb-p" style="margin-top:12px;font-size:.78rem;color:var(--ink-faint)">Podés seguir tus aportes desde “Mis aportes”, en Vecinos.</p>'
+    }
+  ];
+  let onbPaso = 0;
+  function pintarOnb(){
+    const o = ONB[onbPaso];
+    document.getElementById("onbCont").innerHTML =
+      '<div class="onb-ico">'+o.ico+'</div><div class="onb-h">'+o.h+'</div><div class="onb-p">'+o.p+'</div>'+(o.extra||"");
+    document.getElementById("onbDots").innerHTML = ONB.map((_,i)=>'<i class="'+(i===onbPaso?"on":"")+'"></i>').join("");
+    document.getElementById("onbSiguiente").textContent = (onbPaso === ONB.length-1) ? "Empezar" : "Siguiente";
+    document.getElementById("onbSaltar").style.visibility = (onbPaso === ONB.length-1) ? "hidden" : "visible";
+  }
+  function cerrarOnb(){
+    document.getElementById("onb").classList.remove("show");
+    document.getElementById("onbBack").classList.remove("show");
+    try{ localStorage.setItem("fonte_onboarding_visto","1"); }catch(e){}
+  }
+  document.getElementById("onbSiguiente").addEventListener("click", ()=>{
+    if(onbPaso === ONB.length-1){ cerrarOnb(); return; }
+    onbPaso++; pintarOnb();
+  });
+  document.getElementById("onbSaltar").addEventListener("click", cerrarOnb);
+  (function(){
+    let visto = null;
+    try{ visto = localStorage.getItem("fonte_onboarding_visto"); }catch(e){}
+    if(visto) return;
+    pintarOnb();
+    setTimeout(()=>{
+      document.getElementById("onbBack").classList.add("show");
+      document.getElementById("onb").classList.add("show");
+    }, 700);
+  })();
+
+  // ================= MIS APORTES (devolución al que aporta) =================
+  async function abrirMisAportes(){
+    const body = document.getElementById("miosBody");
+    body.innerHTML = '<p class="foot-note">Cargando…</p>';
+    document.getElementById("backdropMios").classList.add("show");
+    document.getElementById("sheetMios").classList.add("show");
+    let mios = [];
+    try{
+      const res = await fetch(SUPABASE_URL + "/rest/v1/rpc/mis_aportes", {
+        method: "POST",
+        headers: { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + SUPABASE_KEY, "Content-Type": "application/json" },
+        body: JSON.stringify({ disp: getDispositivoId() })
+      });
+      mios = res.ok ? await res.json() : [];
+    }catch(e){ mios = []; }
+    if(!mios.length){
+      body.innerHTML = '<div class="vacio"><div class="ic">📍</div><div class="t">Todavía no aportaste nada</div>'
+        + '<div class="p">Cuando reportes algo, acá vas a poder ver si se publicó y cuántos vecinos lo confirmaron.</div>'
+        + '<button class="b" id="miosAportar">+ Aportá un dato</button></div>';
+      const b = document.getElementById("miosAportar");
+      if(b) b.addEventListener("click", ()=>{ cerrarMios(); document.getElementById("fabAportar").click(); });
+      return;
+    }
+    const TXT = {
+      pendiente: { l:"En revisión", d:"Un reportero lo va a revisar antes de publicarlo." },
+      revisado:  { l:"Publicado",   d:"Ya se ve en Fonte." },
+      resuelto:  { l:"Resuelto",    d:"Se marcó como resuelto. ¡Gracias por avisar!" },
+      descartado:{ l:"No publicado",d:"No se publicó. Puede ser que estuviera repetido o faltaran datos." },
+    };
+    body.innerHTML = '<p class="foot-note" style="margin-bottom:6px">Solo vos ves esta lista, desde este celular.</p>'
+      + mios.map(a=>{
+        const cat = CAT_APORTE.find(c=>c.id===a.categoria) || {label:"Aporte", icon:"📍"};
+        const est = TXT[a.estado] || TXT.pendiente;
+        const nC = CONFIRMACIONES[a.id] || 0;
+        const cuando = a.created_at ? new Date(a.created_at).toLocaleDateString("es-AR",{day:"numeric",month:"short"}) : "";
+        return '<div class="mio-row"><span class="mio-ico">'+cat.icon+'</span><div class="mio-tx">'
+          + '<div class="t">'+esc(a.titulo || cat.label)+'</div>'
+          + '<div class="m">'+esc(cat.label)+(cuando?" · "+cuando:"")+'</div>'
+          + '<span class="mio-estado '+esc(a.estado)+'">'+est.l+'</span>'
+          + '<div class="m" style="margin-top:5px">'+est.d
+          + (nC ? ' <b style="color:var(--region)">· '+nC+(nC===1?" vecino confirmó":" vecinos confirmaron")+'</b>' : '')
+          + '</div></div></div>';
+      }).join("");
+  }
+  function cerrarMios(){
+    document.getElementById("backdropMios").classList.remove("show");
+    document.getElementById("sheetMios").classList.remove("show");
+  }
+  document.getElementById("closeMios").addEventListener("click", cerrarMios);
+  document.getElementById("backdropMios").addEventListener("click", cerrarMios);
+
   registrarVisita();
 
   cargar(false);
