@@ -294,6 +294,11 @@
         <input class="inp" id="coTitulo" placeholder="Ej: Corte de agua programado el viernes">
         <div class="field-label">Texto</div>
         <textarea id="coTexto" style="min-height:84px" placeholder="Contenido completo del comunicado"></textarea>
+        <label style="display:flex;gap:10px;align-items:flex-start;margin-top:14px;padding:12px;background:color-mix(in srgb,#B23A2E 6%,var(--paper));border:1px solid color-mix(in srgb,#B23A2E 25%,var(--line));border-radius:10px;cursor:pointer">
+          <input type="checkbox" id="coUrgente" style="margin-top:2px;width:18px;height:18px;flex:0 0 auto">
+          <span style="font-family:var(--sans);font-size:.8rem;color:var(--ink)"><b>Es un aviso urgente</b><br>
+          <span style="font-size:.72rem;color:var(--ink-soft)">Cortes de servicio, alertas, emergencias. Se muestra abierto en la portada durante 48 hs y dispara notificación. Los avisos comunes solo aparecen dentro de la ficha de la institución.</span></span>
+        </label>
         <button class="btn-gen" id="coPublicarBtn">Publicar comunicado</button>
         <div class="err-msg hide" id="coErr"></div>
       </div>
@@ -774,7 +779,7 @@
     }
     cont.innerHTML = data.map(c=>
       '<div class="admin-item" data-id="'+escA(c.id)+'">'
-      + '<div><div class="h">'+escA(c.titulo||"")+'</div><div class="sub2">'+escA(c.institucion||"")+'</div></div>'
+      + '<div><div class="h">'+escA(c.titulo||"")+(c.urgente?' <span style="font-size:.6rem;font-weight:800;color:#B23A2E">URGENTE</span>':'')+'</div><div class="sub2">'+escA(c.institucion||"")+'</div></div>'
       + '<button class="del">Quitar</button></div>'
     ).join("");
     cont.querySelectorAll(".admin-item .del").forEach(btn=>{
@@ -806,6 +811,7 @@
     const registro = {
       institucion: document.getElementById("coInstitucion").value.trim() || "Municipalidad de Quitilipi",
       institucion_id: document.getElementById("coInstitucionSel").value || null,
+      urgente: document.getElementById("coUrgente").checked,
       titulo, texto,
     };
     const { error } = await sb.from("comunicados").insert(registro);
@@ -815,6 +821,7 @@
     toast("Comunicado publicado ✓");
     document.getElementById("coTitulo").value = "";
     document.getElementById("coTexto").value = "";
+    document.getElementById("coUrgente").checked = false;
     cargarComunicadosAdmin();
   });
 

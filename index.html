@@ -294,6 +294,18 @@
     font-family:var(--sans); font-size:.62rem; font-weight:800; display:flex; align-items:center; justify-content:center; flex:0 0 auto; }
   .com-destacado{ cursor:pointer; }
 
+  /* ===== aviso urgente único (reemplaza la hilera de comunicados) ===== */
+  .aviso-hoy{ margin-top:11px; background:color-mix(in srgb,var(--urgente) 7%,var(--paper-2));
+    border:1px solid color-mix(in srgb,var(--urgente) 30%,var(--line)); border-radius:12px; padding:12px 13px; display:flex; gap:10px; align-items:flex-start; }
+  .aviso-hoy .ic{ width:30px; height:30px; border-radius:50%; background:var(--urgente); display:flex; align-items:center; justify-content:center; flex:0 0 auto; }
+  .aviso-hoy .ic svg{ width:14px; height:14px; }
+  .aviso-hoy .tx{ flex:1; min-width:0; }
+  .aviso-hoy .eyeb{ font-family:var(--sans); font-size:.57rem; font-weight:800; text-transform:uppercase; letter-spacing:.05em; color:var(--urgente); }
+  .aviso-hoy .h{ font-family:var(--serif); font-weight:700; font-size:.94rem; color:var(--ink); margin-top:3px; line-height:1.25; }
+  .aviso-hoy .p{ font-family:var(--sans); font-size:.76rem; color:var(--ink-soft); margin-top:3px; line-height:1.4; }
+  .aviso-hoy .x{ background:none; border:0; color:var(--ink-faint); font-size:.9rem; padding:0 2px; flex:0 0 auto; }
+  .inst-chip.destacada{ border-color:color-mix(in srgb,var(--terracota) 45%,var(--line)); background:color-mix(in srgb,var(--terracota) 5%,var(--surface)); }
+
   /* ===== confirmaciones "me pasa lo mismo" ===== */
   .confirmar-btn{ width:100%; margin-top:16px; font-family:var(--sans); font-weight:700; font-size:.86rem; padding:12px;
     border-radius:10px; border:1.5px solid var(--region); background:none; color:var(--region); }
@@ -1474,45 +1486,51 @@
     const enVecinos = document.getElementById("panelVecinos").style.display !== "none";
     renderComunicadosEn(enVecinos ? "comunicadosWrapV" : "comunicadosWrap");
   }
-  function renderComunicadosEn(wrapId, expandido){
+  // Regla: solo se muestra expandido UN comunicado, y solo si es urgente y reciente.
+  // El resto vive dentro de la ficha de su institución (contador rojo en la píldora).
+  const HORAS_RECIENTE = 48;
+  function comunicadoDestacado(){
+    const ahora = Date.now();
+    let descartado = null;
+    try{ descartado = localStorage.getItem("fonte_aviso_cerrado"); }catch(e){}
+    return (COMUNICADOS||[]).find(c=>{
+      if(!c.urgente) return false;
+      if(String(c.id) === descartado) return false;
+      if(!c.created_at) return true;
+      return (ahora - new Date(c.created_at).getTime()) < HORAS_RECIENTE*3600000;
+    }) || null;
+  }
+  function renderComunicadosEn(wrapId){
     ["comunicadosWrap","comunicadosWrapV"].forEach(id=>{
       const w = document.getElementById(id);
       if(w && id !== wrapId){ w.style.display = "none"; w.innerHTML = ""; }
     });
     const wrap = document.getElementById(wrapId);
     if(!wrap) return;
-    if(!COMUNICADOS.length){ wrap.style.display = "none"; wrap.innerHTML=""; return; }
+    const c = comunicadoDestacado();
+    if(!c){ wrap.style.display = "none"; wrap.innerHTML = ""; return; }
     wrap.style.display = "block";
-    const [destacado, ...resto] = COMUNICADOS;
-    const TOPE = 4;
-    const visibles = expandido ? resto : resto.slice(0, TOPE);
-    const restantes = resto.length - visibles.length;
-    let html = '<div class="comunicado com-destacado" data-com-id="'+esc(destacado.id)+'">'
-      + '<div class="com-eyebrow"><span class="verif-badge">'+check+'</span>Comunicado oficial · '+esc(destacado.institucion||"Municipalidad de Quitilipi")+'</div>'
-      + '<div class="com-h">'+esc(destacado.titulo||"")+'</div>'
-      + '<div class="com-txt">'+esc(destacado.texto||"")+'</div>'
-      + '<div class="com-foot">Contenido publicado directamente por la institución, marcado como tal — no es una nota de Fonte.</div>'
-      + '</div>';
-    if(visibles.length){
-      html += '<div class="com-list">' + visibles.map(c=>
-        '<a class="com-row" data-com-id="'+esc(c.id)+'"><span class="verif-badge">'+check+'</span>'
-        + '<div class="tx"><div class="inst">'+esc(c.institucion||"")+'</div><div class="tit">'+esc(c.titulo||"")+'</div></div>'
-        + '<span class="chev">›</span></a>'
-      ).join("") + '</div>';
-    }
-    if(restantes > 0){
-      html += '<a class="com-more" id="comVerMas">Ver '+restantes+' comunicado'+(restantes===1?"":"s")+' más</a>';
-    }
-    wrap.innerHTML = html;
-    wrap.querySelectorAll(".com-row, .com-destacado").forEach(el=>{
-      el.addEventListener("click", ()=> abrirComunicado(el.getAttribute("data-com-id")));
+    wrap.innerHTML = '<div class="aviso-hoy">'
+      + '<span class="ic">'+check+'</span>'
+      + '<div class="tx" data-com-id="'+esc(c.id)+'">'
+      + '<div class="eyeb">Aviso de hoy · '+esc(c.institucion||"Municipalidad de Quitilipi")+'</div>'
+      + '<div class="h">'+esc(c.titulo||"")+'</div>'
+      + '<div class="p">'+esc((c.texto||"").length > 120 ? (c.texto||"").slice(0,120)+"…" : (c.texto||""))+'</div>'
+      + '</div><button class="x" id="avisoCerrar" aria-label="Cerrar aviso">✕</button></div>';
+    const tx = wrap.querySelector(".aviso-hoy .tx");
+    if(tx) tx.addEventListener("click", ()=> abrirComunicado(c.id));
+    const x = document.getElementById("avisoCerrar");
+    if(x) x.addEventListener("click", (e)=>{
+      e.stopPropagation();
+      try{ localStorage.setItem("fonte_aviso_cerrado", String(c.id)); }catch(e2){}
+      wrap.style.display = "none"; wrap.innerHTML = "";
     });
-    const masBtn = wrap.querySelector("#comVerMas");
-    if(masBtn) masBtn.addEventListener("click", ()=> renderComunicadosEn(wrapId, true));
   }
   function abrirComunicado(id){
     const c = COMUNICADOS.find(x=>String(x.id)===String(id));
     if(!c) return;
+    marcarComunicadoVisto(id);
+    if(typeof pintarInstituciones === "function") pintarInstituciones();
     document.getElementById("comunicadoInst").querySelector("span:last-child").textContent = c.institucion || "";
     document.getElementById("comunicadoTitulo").textContent = c.titulo || "";
     document.getElementById("comunicadoTexto").textContent = c.texto || "";
@@ -1553,6 +1571,15 @@
     if(dif === 1) return "MAÑANA";
     return "EN "+dif+" DÍAS";
   }
+  function comunicadosVistos(){
+    try{ return new Set(JSON.parse(localStorage.getItem("fonte_com_vistos") || "[]")); }catch(e){ return new Set(); }
+  }
+  function marcarComunicadoVisto(id){
+    try{
+      const v = comunicadosVistos(); v.add(String(id));
+      localStorage.setItem("fonte_com_vistos", JSON.stringify(Array.from(v).slice(-200)));
+    }catch(e){}
+  }
   function comunicadosDe(institucionId){
     const inst = INSTITUCIONES.find(x=>String(x.id)===String(institucionId));
     if(!inst) return [];
@@ -1572,14 +1599,20 @@
       INSTITUCIONES = rI.ok ? await rI.json() : [];
       FECHAS_INST = rF.ok ? await rF.json() : [];
     }catch(e){ INSTITUCIONES = []; FECHAS_INST = []; }
+    pintarInstituciones();
+  }
+  function pintarInstituciones(){
     const wrap = document.getElementById("institucionesWrap");
     if(!INSTITUCIONES.length){ wrap.style.display = "none"; return; }
     wrap.style.display = "block";
     document.getElementById("institucionesRow").innerHTML =
       INSTITUCIONES.map(i => {
-        const n = comunicadosDe(i.id).length;
-        return '<a class="inst-chip" data-inst-id="'+esc(i.id)+'"><span class="ic">'+(ICONS_INST[i.tipo]||"📍")+'</span><span class="nm">'+esc(i.nombre)+'</span>'
-          + (n ? '<span class="badge">'+n+'</span>' : '') + '</a>';
+        const propios = comunicadosDe(i.id);
+        const vistos = comunicadosVistos();
+        const sinLeer = propios.filter(c=>!vistos.has(String(c.id))).length;
+        const tieneUrgente = propios.some(c=>c.urgente && !vistos.has(String(c.id)));
+        return '<a class="inst-chip'+(tieneUrgente?" destacada":"")+'" data-inst-id="'+esc(i.id)+'"><span class="ic">'+(ICONS_INST[i.tipo]||"📍")+'</span><span class="nm">'+esc(i.nombre)+'</span>'
+          + (sinLeer ? '<span class="badge">'+sinLeer+'</span>' : '') + '</a>';
       }).join("")
       + (FECHAS_INST.length ? '<a class="inst-more" id="verFechasBtn">📅 Próximas fechas ›</a>' : "");
     document.querySelectorAll(".inst-chip").forEach(el=>{
@@ -1860,7 +1893,7 @@
   function revisarNovedades(){
     const vistosCom = idsVistos("fonte_vistos_comunicados");
     const vistosUrg = idsVistos("fonte_vistos_urgentes");
-    const nuevosCom = (COMUNICADOS||[]).filter(c=>!vistosCom.has(String(c.id)));
+    const nuevosCom = (COMUNICADOS||[]).filter(c=>c.urgente && !vistosCom.has(String(c.id)));
     const urgentes = (NOTICIAS||[]).filter(n=>n.urgente);
     const nuevosUrg = urgentes.filter(n=>!vistosUrg.has(String(n.id)));
 
@@ -1883,7 +1916,7 @@
       if(!dot){ dot = document.createElement("span"); dot.className = "dot-nuevo"; alertasBtn.appendChild(dot); }
     } else if(dot && !hayNuevo){ dot.remove(); }
 
-    guardarVistos("fonte_vistos_comunicados", (COMUNICADOS||[]).map(c=>String(c.id)));
+    guardarVistos("fonte_vistos_comunicados", (COMUNICADOS||[]).filter(c=>c.urgente).map(c=>String(c.id)));
     guardarVistos("fonte_vistos_urgentes", urgentes.map(n=>String(n.id)));
     primeraPasada = false;
   }
