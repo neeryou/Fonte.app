@@ -284,6 +284,7 @@
     </div>
 
     <div class="rep-view" id="viewInstituciones">
+      <div id="avisoVencidas" class="hide" style="background:color-mix(in srgb,#B23A2E 10%,var(--paper));border:1px solid color-mix(in srgb,#B23A2E 30%,var(--line));border-radius:10px;padding:12px 14px;margin-bottom:16px;font-family:var(--sans);font-size:.8rem;color:#B23A2E;font-weight:600"></div>
       <h2 class="rep-h">Instituciones verificadas</h2>
       <p class="rep-sub">Hospital, desarrollo social, municipio, etc. Cargá la ficha una vez; después solo actualizás la fecha cuando cambie (ej: la próxima entrega de mercadería).</p>
 
@@ -629,7 +630,12 @@
   }
 
   async function cargarAvisosPublicados(){
-    const { data, error } = await sb.from("aportes").select("*").eq("estado","revisado").order("created_at",{ascending:false});
+    const [{ data, error }, confRes] = await Promise.all([
+      sb.from("aportes").select("*").in("estado",["revisado","resuelto"]).order("created_at",{ascending:false}),
+      sb.from("aporte_confirmaciones").select("aporte_id")
+    ]);
+    const conteo = {};
+    (confRes.data||[]).forEach(c=>{ conteo[c.aporte_id] = (conteo[c.aporte_id]||0)+1; });
     const cont = document.getElementById("avisosPublicadosList");
     if(error || !data || !data.length){
       cont.innerHTML = '<p style="font-family:var(--sans);font-size:.78rem;color:var(--ink-faint)">Todavía no publicaste ningún aviso.</p>';
@@ -637,19 +643,33 @@
     }
     cont.innerHTML = data.map(a=>{
       const cat = CAT_APORTE.find(c=>c.id===a.categoria) || {label:a.categoria, icon:"📍"};
-      return '<div class="admin-item" data-id="'+escA(a.id)+'">'
-        + '<div><div class="h">'+escA(a.titulo || cat.label)+'</div><div class="sub2">'+cat.icon+' '+escA(cat.label)+'</div></div>'
-        + '<button class="del">Quitar</button></div>';
+      const n = conteo[a.id] || 0;
+      const resuelto = a.estado === "resuelto";
+      return '<div class="admin-item" data-id="'+escA(a.id)+'" style="'+(resuelto?"opacity:.62":"")+'">'
+        + '<div><div class="h">'+escA(a.titulo || cat.label)+(resuelto?' <span style="font-size:.62rem;font-weight:800;color:var(--barrio)">✓ RESUELTO</span>':'')+'</div>'
+        + '<div class="sub2">'+cat.icon+' '+escA(cat.label)+(n?' · 👥 '+n+(n===1?' vecino':' vecinos'):'')+'</div></div>'
+        + '<div class="inst-block-btns">'
+        + (resuelto ? '<button class="btn-mini" data-reabrir="1">Reabrir</button>' : '<button class="btn-mini" data-resolver="1" style="border-color:var(--barrio);color:var(--barrio)">✓ Resuelto</button>')
+        + '<button class="del">Quitar</button></div></div>';
     }).join("");
+    async function cambiarEstado(btn, estado, msg){
+      const id = btn.closest(".admin-item").getAttribute("data-id");
+      btn.disabled = true;
+      const { error } = await sb.from("aportes").update({ estado }).eq("id", id);
+      if(error){ toast("No se pudo actualizar: " + error.message); btn.disabled=false; return; }
+      toast(msg);
+      cargarAvisosPublicados();
+    }
+    cont.querySelectorAll("[data-resolver]").forEach(btn=>{
+      btn.addEventListener("click", ()=> cambiarEstado(btn, "resuelto", "Marcado como resuelto ✓"));
+    });
+    cont.querySelectorAll("[data-reabrir]").forEach(btn=>{
+      btn.addEventListener("click", ()=> cambiarEstado(btn, "revisado", "Aviso reabierto"));
+    });
     cont.querySelectorAll(".admin-item .del").forEach(btn=>{
       btn.addEventListener("click", async ()=>{
-        const id = btn.closest(".admin-item").getAttribute("data-id");
         if(!confirm("¿Quitar este aviso de Fonte?")) return;
-        btn.disabled = true;
-        const { error } = await sb.from("aportes").update({ estado: "descartado" }).eq("id", id);
-        if(error){ toast("No se pudo quitar: " + error.message); btn.disabled=false; return; }
-        toast("Aviso quitado");
-        cargarAvisosPublicados();
+        cambiarEstado(btn, "descartado", "Aviso quitado");
       });
     });
   }
@@ -775,6 +795,7 @@
   const ICONS_INST = { salud:"🏥", social:"📦", municipio:"🏛️", seguridad:"🚓", educacion:"🏫", cultura:"🎭", deporte:"⚽", otro:"📍" };
   async function cargarInstitucionesAdmin(){
     const { data, error } = await sb.from("instituciones").select("*").eq("activa", true).order("created_at", { ascending:false });
+    revisarFechasVencidas();
     const sel = document.getElementById("coInstitucionSel");
     sel.innerHTML = '<option value="">— Otra / sin vincular —</option>' +
       (data||[]).map(i=>'<option value="'+i.id+'">'+(ICONS_INST[i.tipo]||"📍")+" "+escA(i.nombre)+'</option>').join("");
@@ -811,13 +832,25 @@
     });
   }
 
+  async function revisarFechasVencidas(){
+    const hoyStr = new Date().toISOString().slice(0,10);
+    const { data } = await sb.from("institucion_fechas").select("id,fecha,titulo,institucion_id").eq("activa", true).lt("fecha", hoyStr);
+    const el = document.getElementById("avisoVencidas");
+    if(!data || !data.length){ el.classList.add("hide"); return; }
+    el.classList.remove("hide");
+    el.textContent = "⚠️ Hay " + data.length + (data.length===1 ? " fecha vencida" : " fechas vencidas") + ". Abrí \u201CFechas\u201D en la institución y cargá la próxima para que la ficha no quede vacía en Fonte.";
+  }
+
   async function cargarFechasDe(institucionId, panel){
     panel.innerHTML = "Cargando…";
     const { data, error } = await sb.from("institucion_fechas").select("*").eq("institucion_id", institucionId).eq("activa", true).order("fecha", { ascending:true });
     const fechas = error ? [] : data;
+    const hoyStr = new Date().toISOString().slice(0,10);
+    const vencidas = fechas.filter(f=>f.fecha < hoyStr).length;
     panel.innerHTML =
-      (fechas.length ? fechas.map(f=>
-        '<div class="fecha-row" data-fecha-id="'+escA(f.id)+'"><div><div class="t">'+escA(f.titulo)+'</div><div class="m">'+escA(f.fecha)+(f.lugar?" · "+escA(f.lugar):"")+'</div></div><button class="del" style="padding:4px 8px">✕</button></div>'
+      (vencidas ? '<div style="background:color-mix(in srgb,#B23A2E 10%,var(--paper));border:1px solid color-mix(in srgb,#B23A2E 30%,var(--line));border-radius:8px;padding:9px 11px;margin-bottom:10px;font-family:var(--sans);font-size:.72rem;color:#B23A2E;font-weight:600">⚠️ '+vencidas+(vencidas===1?' fecha ya pasó':' fechas ya pasaron')+'. Actualizala o quitala para que la ficha no quede vacía.</div>' : '')
+      + (fechas.length ? fechas.map(f=>
+        '<div class="fecha-row" data-fecha-id="'+escA(f.id)+'"'+(f.fecha < hoyStr ? ' style="opacity:.55"' : '')+'><div><div class="t">'+escA(f.titulo)+(f.fecha < hoyStr ? ' <span style="font-size:.6rem;color:#B23A2E;font-weight:800">VENCIDA</span>' : '')+'</div><div class="m">'+escA(f.fecha)+(f.lugar?" · "+escA(f.lugar):"")+'</div></div><button class="del" style="padding:4px 8px">✕</button></div>'
       ).join("") : '<p style="font-family:var(--sans);font-size:.72rem;color:var(--ink-faint);margin:0 0 8px">Sin fechas cargadas.</p>')
       + '<div class="fecha-add">'
       + '<input name="titulo" placeholder="Ej: Entrega de mercadería">'

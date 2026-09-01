@@ -293,6 +293,35 @@
   .inst-chip .badge{ min-width:18px; height:18px; padding:0 5px; border-radius:999px; background:var(--terracota); color:#fff;
     font-family:var(--sans); font-size:.62rem; font-weight:800; display:flex; align-items:center; justify-content:center; flex:0 0 auto; }
   .com-destacado{ cursor:pointer; }
+
+  /* ===== confirmaciones "me pasa lo mismo" ===== */
+  .confirmar-btn{ width:100%; margin-top:16px; font-family:var(--sans); font-weight:700; font-size:.86rem; padding:12px;
+    border-radius:10px; border:1.5px solid var(--region); background:none; color:var(--region); }
+  .confirmar-btn.done{ background:color-mix(in srgb,var(--region) 12%,var(--paper)); border-style:solid; }
+  .confirmar-btn:disabled{ opacity:.65; }
+  .conf-count{ font-family:var(--sans); font-size:.68rem; color:var(--ink-faint); display:flex; align-items:center; gap:5px; margin-top:4px; }
+
+  /* ===== estado de un aviso ===== */
+  .estado-pill{ display:inline-block; font-family:var(--sans); font-size:.6rem; font-weight:800; text-transform:uppercase;
+    letter-spacing:.04em; padding:3px 9px; border-radius:999px; }
+  .estado-pill.activo{ color:var(--int); background:color-mix(in srgb,var(--int) 14%,var(--paper)); }
+  .estado-pill.resuelto{ color:var(--ciudad); background:color-mix(in srgb,var(--ciudad) 14%,var(--paper)); }
+  .aporte-card.es-resuelto .ph-img, .aporte-full.es-resuelto{ opacity:.62; }
+
+  /* ===== banner de notificaciones ===== */
+  .notif-banner{ display:none; align-items:center; gap:11px; margin:12px 18px 0; padding:12px 14px;
+    background:color-mix(in srgb,var(--terracota) 8%,var(--paper-2)); border:1px solid color-mix(in srgb,var(--terracota) 32%,var(--line));
+    border-radius:12px; }
+  .notif-banner.show{ display:flex; }
+  .notif-banner .tx{ flex:1; min-width:0; }
+  .notif-banner .t{ font-family:var(--sans); font-weight:700; font-size:.8rem; color:var(--ink); }
+  .notif-banner .s{ font-family:var(--sans); font-size:.7rem; color:var(--ink-soft); margin-top:2px; line-height:1.35; }
+  .notif-banner .ok{ font-family:var(--sans); font-weight:700; font-size:.72rem; color:#fff; background:var(--terracota);
+    border:0; padding:8px 13px; border-radius:8px; flex:0 0 auto; }
+  .notif-banner .no{ background:none; border:0; color:var(--ink-faint); font-size:.95rem; padding:2px 4px; flex:0 0 auto; }
+  .bn-item .dot-nuevo{ position:absolute; top:2px; right:calc(50% - 15px); width:8px; height:8px; border-radius:50%;
+    background:var(--terracota); border:2px solid var(--paper); }
+  .bn-item{ position:relative; }
   .f-com{ display:flex; align-items:flex-start; gap:9px; padding:10px 0; border-top:1px solid var(--line); }
   .f-com:first-child{ border-top:0; }
   .f-com .verif-badge{ width:14px; height:14px; background:var(--barrio); margin-top:2px; }
@@ -450,6 +479,16 @@
   </button>
 </div>
 
+<div class="notif-banner" id="notifBanner">
+  <span style="font-size:1.2rem">🔔</span>
+  <div class="tx">
+    <div class="t">Avisos importantes de tu ciudad</div>
+    <div class="s">Recibí un aviso cuando haya un corte, una alerta o un comunicado oficial.</div>
+  </div>
+  <button class="ok" id="notifActivar">Activar</button>
+  <button class="no" id="notifCerrar">✕</button>
+</div>
+
 <nav class="tabs-main">
   <button class="tab-main on" id="tabTodo">Todo</button>
   <button class="tab-main" id="tabVecinos">Vecinos <span class="n" id="tabVecinosN"></span></button>
@@ -530,6 +569,8 @@
     <p class="s-p" id="aporteDesc"></p>
     <p class="s-p" id="aporteLugar"></p>
     <a class="verorig" id="aporteMapa" target="_blank" rel="noopener" style="display:none">Ver ubicación ↗</a>
+    <button class="confirmar-btn" id="aporteConfirmar">👥 Me pasa lo mismo</button>
+    <div class="conf-count" id="aporteConfCount"></div>
     <div class="foot-note" style="margin-top:14px">Aporte enviado por un vecino, revisado antes de publicarse.</div>
   </div>
 </div>
@@ -1153,9 +1194,10 @@
   // ================= APORTES DEL PUEBLO =================
   async function cargarAportes(){
     try{
-      const url = SUPABASE_URL + "/rest/v1/aportes?select=*&estado=eq.revisado&order=created_at.desc&limit=20";
+      const url = SUPABASE_URL + "/rest/v1/aportes?select=*&estado=in.(revisado,resuelto)&order=created_at.desc&limit=30";
       const res = await fetch(url, { headers: { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + SUPABASE_KEY } });
       APORTES = res.ok ? await res.json() : [];
+      await cargarConfirmaciones();
     }catch(e){ APORTES = []; }
     const wrap = document.getElementById("avisosWrap");
     const grid = document.getElementById("aportesGrid");
@@ -1165,9 +1207,14 @@
     grid.innerHTML = APORTES.map(a=>{
       const cat = CAT_APORTE.find(c=>c.id===a.categoria) || {label:"Aporte", icon:"📍"};
       const foto = a.foto_url ? "background-image:url('"+esc(a.foto_url)+"');background-size:cover;background-position:center;" : "background:var(--paper-3);";
-      return '<a class="article aporte-card" data-aporte-id="'+esc(a.id)+'">'
+      const nC = CONFIRMACIONES[a.id] || 0;
+      const res = a.estado === "resuelto";
+      return '<a class="article aporte-card'+(res?" es-resuelto":"")+'" data-aporte-id="'+esc(a.id)+'">'
         + '<div class="ph-img" style="'+foto+'"></div>'
-        + '<div class="txt"><div class="aporte-cat">'+cat.icon+' '+esc(cat.label)+'</div><div class="aporte-tit">'+esc(a.titulo || cat.label)+'</div></div></a>';
+        + '<div class="txt"><div class="aporte-cat">'+cat.icon+' '+esc(cat.label)+'</div><div class="aporte-tit">'+esc(a.titulo || cat.label)+'</div>'
+        + (res ? '<span class="estado-pill resuelto" style="margin-top:5px">Resuelto</span>'
+               : (nC ? '<div class="conf-count" style="margin-top:5px">👥 '+nC+'</div>' : ''))
+        + '</div></a>';
     }).join("");
     grid.querySelectorAll(".aporte-card").forEach(el=>{
       el.addEventListener("click", ()=> abrirAporte(el.getAttribute("data-aporte-id")));
@@ -1178,16 +1225,64 @@
       + APORTES.map(a=>{
         const cat = CAT_APORTE.find(c=>c.id===a.categoria) || {label:"Aporte", icon:"📍"};
         const cuando = a.created_at ? new Date(a.created_at).toLocaleString("es-AR",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}) : "";
-        return '<a class="zitem aporte-full" data-aporte-id="'+esc(a.id)+'" style="display:flex;gap:12px;padding:14px 0;border-top:1px solid var(--line);align-items:flex-start">'
+        return '<a class="zitem aporte-full'+(a.estado==="resuelto"?" es-resuelto":"")+'" data-aporte-id="'+esc(a.id)+'" style="display:flex;gap:12px;padding:14px 0;border-top:1px solid var(--line);align-items:flex-start">'
           + '<span style="width:36px;height:36px;border-radius:9px;background:var(--paper-2);display:flex;align-items:center;justify-content:center;font-size:1.05rem;flex:0 0 auto">'+cat.icon+'</span>'
           + '<div style="flex:1;min-width:0"><div style="font-family:var(--sans);font-weight:700;font-size:.88rem;color:var(--ink)">'+esc(a.titulo || cat.label)+'</div>'
           + (a.descripcion ? '<div style="font-family:var(--sans);font-size:.76rem;color:var(--ink-soft);margin-top:3px;line-height:1.4">'+esc(a.descripcion)+'</div>' : '')
-          + '<div style="font-family:var(--sans);font-size:.66rem;color:var(--ink-faint);margin-top:4px">'+esc(cat.label)+(cuando?" · "+cuando:"")+'</div></div></a>';
+          + '<div style="font-family:var(--sans);font-size:.66rem;color:var(--ink-faint);margin-top:4px">'+esc(cat.label)+(cuando?" · "+cuando:"")
+          + ((CONFIRMACIONES[a.id]||0) ? ' · 👥 '+CONFIRMACIONES[a.id]+' vecinos' : '')+'</div>'
+          + (a.estado === "resuelto" ? '<span class="estado-pill resuelto" style="margin-top:6px">Resuelto</span>' : '')
+          + '</div></a>';
       }).join("");
     feedV.querySelectorAll(".aporte-full").forEach(el=>{
       el.addEventListener("click", ()=> abrirAporte(el.getAttribute("data-aporte-id")));
     });
   }
+  let CONFIRMACIONES = {};
+  let MIS_CONFIRMACIONES = new Set();
+  let aporteAbiertoId = null;
+  async function cargarConfirmaciones(){
+    try{
+      const url = SUPABASE_URL + "/rest/v1/aporte_confirmaciones?select=aporte_id,dispositivo_id";
+      const res = await fetch(url, { headers: { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + SUPABASE_KEY } });
+      const filas = res.ok ? await res.json() : [];
+      const disp = getDispositivoId();
+      CONFIRMACIONES = {}; MIS_CONFIRMACIONES = new Set();
+      filas.forEach(f=>{
+        CONFIRMACIONES[f.aporte_id] = (CONFIRMACIONES[f.aporte_id]||0) + 1;
+        if(f.dispositivo_id === disp) MIS_CONFIRMACIONES.add(String(f.aporte_id));
+      });
+    }catch(e){ CONFIRMACIONES = {}; }
+  }
+  function pintarConfirmacion(aporteId){
+    const n = CONFIRMACIONES[aporteId] || 0;
+    const yaConfirme = MIS_CONFIRMACIONES.has(String(aporteId));
+    const btn = document.getElementById("aporteConfirmar");
+    const cnt = document.getElementById("aporteConfCount");
+    btn.classList.toggle("done", yaConfirme);
+    btn.disabled = yaConfirme;
+    btn.textContent = yaConfirme ? "✓ Ya confirmaste este reporte" : "👥 Me pasa lo mismo";
+    cnt.textContent = n === 0 ? "Todavía nadie más lo confirmó."
+      : (n === 1 ? "1 vecino confirmó que le pasa lo mismo." : n + " vecinos confirmaron que les pasa lo mismo.");
+  }
+  document.getElementById("aporteConfirmar").addEventListener("click", async ()=>{
+    if(!aporteAbiertoId || MIS_CONFIRMACIONES.has(String(aporteAbiertoId))) return;
+    const btn = document.getElementById("aporteConfirmar");
+    btn.disabled = true;
+    try{
+      const res = await fetch(SUPABASE_URL + "/rest/v1/aporte_confirmaciones", {
+        method: "POST",
+        headers: { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + SUPABASE_KEY, "Content-Type": "application/json", "Prefer": "return=minimal" },
+        body: JSON.stringify({ aporte_id: aporteAbiertoId, dispositivo_id: getDispositivoId() })
+      });
+      if(!res.ok){ btn.disabled = false; return; }
+      CONFIRMACIONES[aporteAbiertoId] = (CONFIRMACIONES[aporteAbiertoId]||0) + 1;
+      MIS_CONFIRMACIONES.add(String(aporteAbiertoId));
+      pintarConfirmacion(aporteAbiertoId);
+      cargarAportes();
+    }catch(e){ btn.disabled = false; }
+  });
+
   function abrirAporte(id){
     const a = APORTES.find(x=>String(x.id)===String(id));
     if(!a) return;
@@ -1202,6 +1297,12 @@
     const mapa = document.getElementById("aporteMapa");
     if(a.lat && a.lng){ mapa.href = "https://www.google.com/maps?q="+a.lat+","+a.lng; mapa.style.display="inline-flex"; }
     else { mapa.style.display="none"; }
+    aporteAbiertoId = a.id;
+    pintarConfirmacion(a.id);
+    const esResuelto = a.estado === "resuelto";
+    document.getElementById("aporteConfirmar").style.display = esResuelto ? "none" : "block";
+    document.getElementById("aporteTitulo").innerHTML = esc(a.titulo || cat.label)
+      + (esResuelto ? ' <span class="estado-pill resuelto" style="vertical-align:middle">Resuelto</span>' : '');
     document.getElementById("backdropAporte").classList.add("show");
     document.getElementById("sheetAporte").classList.add("show");
   }
@@ -1619,11 +1720,96 @@
     aplicarTema(actual === "oscuro" ? "claro" : "oscuro");
   });
 
+  // ================= NOTIFICACIONES =================
+  let swReg = null;
+  if("serviceWorker" in navigator){
+    navigator.serviceWorker.register("/sw.js").then(r=>{ swReg = r; }).catch(()=>{});
+  }
+  function soportaNotif(){ return ("Notification" in window) && ("serviceWorker" in navigator); }
+  function mostrarBannerNotif(){
+    if(!soportaNotif()) return;
+    if(Notification.permission !== "default") return;
+    let oculto = null;
+    try{ oculto = localStorage.getItem("fonte_notif_banner_oculto"); }catch(e){}
+    if(oculto) return;
+    setTimeout(()=> document.getElementById("notifBanner").classList.add("show"), 2500);
+  }
+  document.getElementById("notifActivar").addEventListener("click", async ()=>{
+    document.getElementById("notifBanner").classList.remove("show");
+    try{
+      const p = await Notification.requestPermission();
+      if(p === "granted"){
+        notificar("Listo ✓", "Te vamos a avisar cuando haya algo importante en Quitilipi.", "fonte-bienvenida");
+      }
+    }catch(e){}
+  });
+  document.getElementById("notifCerrar").addEventListener("click", ()=>{
+    document.getElementById("notifBanner").classList.remove("show");
+    try{ localStorage.setItem("fonte_notif_banner_oculto","1"); }catch(e){}
+  });
+  function notificar(titulo, cuerpo, tag){
+    if(!soportaNotif() || Notification.permission !== "granted") return;
+    const enviar = (reg)=>{
+      if(reg && reg.active){ reg.active.postMessage({ type:"mostrar-notificacion", titulo, cuerpo, tag, url:"/" }); }
+      else { try{ new Notification(titulo, { body:cuerpo, icon:"/webappmanifest192x192.png", tag }); }catch(e){} }
+    };
+    if(swReg) enviar(swReg);
+    else if(navigator.serviceWorker) navigator.serviceWorker.ready.then(enviar).catch(()=>{});
+  }
+
+  // Detecta lo que apareció desde la última vez que el vecino abrió Fonte
+  function idsVistos(clave){
+    try{ return new Set(JSON.parse(localStorage.getItem(clave) || "[]")); }catch(e){ return new Set(); }
+  }
+  function guardarVistos(clave, ids){
+    try{ localStorage.setItem(clave, JSON.stringify(ids.slice(0,200))); }catch(e){}
+  }
+  let primeraPasada = true;
+  function revisarNovedades(){
+    const vistosCom = idsVistos("fonte_vistos_comunicados");
+    const vistosUrg = idsVistos("fonte_vistos_urgentes");
+    const nuevosCom = (COMUNICADOS||[]).filter(c=>!vistosCom.has(String(c.id)));
+    const urgentes = (NOTICIAS||[]).filter(n=>n.urgente);
+    const nuevosUrg = urgentes.filter(n=>!vistosUrg.has(String(n.id)));
+
+    if(!primeraPasada){
+      if(nuevosCom.length === 1){
+        notificar("📢 " + (nuevosCom[0].institucion || "Comunicado oficial"), nuevosCom[0].titulo || "", "com-"+nuevosCom[0].id);
+      } else if(nuevosCom.length > 1){
+        notificar("📢 " + nuevosCom.length + " comunicados oficiales nuevos", "Tocá para verlos en Fonte.", "com-varios");
+      }
+      if(nuevosUrg.length === 1){
+        notificar("⚡ Cerca tuyo ahora", nuevosUrg[0].titulo || "", "urg-"+nuevosUrg[0].id);
+      } else if(nuevosUrg.length > 1){
+        notificar("⚡ " + nuevosUrg.length + " alertas nuevas cerca tuyo", "Tocá para verlas en Fonte.", "urg-varias");
+      }
+    }
+    const hayNuevo = (nuevosCom.length + nuevosUrg.length) > 0;
+    const alertasBtn = document.getElementById("navAlertas");
+    let dot = alertasBtn.querySelector(".dot-nuevo");
+    if(hayNuevo && !primeraPasada){
+      if(!dot){ dot = document.createElement("span"); dot.className = "dot-nuevo"; alertasBtn.appendChild(dot); }
+    } else if(dot && !hayNuevo){ dot.remove(); }
+
+    guardarVistos("fonte_vistos_comunicados", (COMUNICADOS||[]).map(c=>String(c.id)));
+    guardarVistos("fonte_vistos_urgentes", urgentes.map(n=>String(n.id)));
+    primeraPasada = false;
+  }
+
   cargar(false);
   cargarAportes();
   cargarOfertas();
-  cargarComunicados().then(cargarInstituciones);
-  setInterval(()=>{ cargar(true); cargarAportes(); cargarOfertas(); cargarComunicados().then(cargarInstituciones); }, 120000);
+  cargarComunicados().then(()=>{ cargarInstituciones(); revisarNovedades(); });
+  mostrarBannerNotif();
+  setInterval(()=>{
+    cargar(true); cargarAportes(); cargarOfertas();
+    cargarComunicados().then(()=>{ cargarInstituciones(); revisarNovedades(); });
+  }, 120000);
+  document.addEventListener("visibilitychange", ()=>{
+    if(document.visibilityState === "visible"){
+      cargarComunicados().then(()=>{ cargarInstituciones(); revisarNovedades(); });
+    }
+  });
 
   // ================= BARRA INFERIOR =================
   (function(){
@@ -1633,6 +1819,7 @@
       window.scrollTo({ top:0, behavior:"smooth" }); marcar(this);
     });
     document.getElementById("navAlertas").addEventListener("click", function(){
+      const d = this.querySelector(".dot-nuevo"); if(d) d.remove();
       const band = document.getElementById("urgentBand");
       const destino = band.classList.contains("show") ? band : document.getElementById("pp");
       if(destino) destino.scrollIntoView({ behavior:"smooth", block:"start" });
