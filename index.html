@@ -376,6 +376,35 @@
 
   @media (prefers-reduced-motion:reduce){ *{ transition:none !important; } .spinner{ animation:none; } }
 
+  /* ===== pestañas principales: Todo / Vecinos ===== */
+  .tabs-main{ position:sticky; top:0; z-index:60; display:flex; background:color-mix(in srgb,var(--paper) 94%,transparent);
+    backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); border-bottom:1px solid var(--line); }
+  .tab-main{ flex:1; background:none; border:0; padding:13px 0 11px; font-family:var(--sans); font-weight:700; font-size:.86rem;
+    color:var(--ink-faint); position:relative; }
+  .tab-main.on{ color:var(--ink); }
+  .tab-main.on::after{ content:''; position:absolute; left:32%; right:32%; bottom:0; height:3px; border-radius:3px; background:var(--terracota); }
+  .tab-main .n{ font-size:.66rem; font-weight:600; color:var(--ink-faint); margin-left:2px; }
+
+  /* ===== barra flotante de ofertas (se esconde al bajar) ===== */
+  .ofertas-bar{ position:fixed; left:0; right:0; bottom:calc(64px + env(safe-area-inset-bottom)); z-index:140;
+    background:var(--surface); border-top:1px solid var(--line); box-shadow:0 -4px 12px rgba(80,60,40,.07);
+    transition:transform .28s ease; transform:translateY(0); }
+  .ofertas-bar.hide{ transform:translateY(140%); }
+  .ofertas-bar-in{ display:flex; gap:8px; padding:9px 14px; overflow-x:auto; scrollbar-width:none; }
+  .ofertas-bar-in::-webkit-scrollbar{ display:none; }
+  .ob-chip{ flex:0 0 auto; display:flex; align-items:center; gap:6px; background:var(--paper-2); border-radius:999px; padding:6px 11px; white-space:nowrap; }
+  .ob-chip .pc{ font-family:var(--sans); font-weight:800; font-size:.66rem; color:var(--int);
+    background:color-mix(in srgb,var(--int) 15%,var(--paper-2)); padding:2px 6px; border-radius:6px; }
+  .ob-chip .nm{ font-family:var(--sans); font-weight:600; font-size:.68rem; color:var(--ink-soft); }
+
+  /* ===== resultados de búsqueda ===== */
+  .res-row{ display:flex; gap:10px; padding:11px 0; border-top:1px solid var(--line); align-items:flex-start; }
+  .res-row:first-child{ border-top:0; }
+  .res-tag{ font-family:var(--sans); font-size:.56rem; font-weight:800; text-transform:uppercase; letter-spacing:.04em;
+    padding:2px 7px; border-radius:5px; flex:0 0 auto; margin-top:2px; }
+  .res-tx .t{ font-family:var(--serif); font-weight:700; font-size:.88rem; color:var(--ink); line-height:1.25; }
+  .res-tx .m{ font-family:var(--sans); font-size:.66rem; color:var(--ink-faint); margin-top:3px; }
+
   /* ===== barra inferior de navegación ===== */
   .bottom-nav{ position:fixed; left:0; right:0; bottom:0; z-index:150; display:flex; justify-content:space-around; align-items:flex-end;
     background:color-mix(in srgb,var(--paper) 94%,transparent); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
@@ -411,41 +440,44 @@
   </button>
 </div>
 
-<nav class="waves"><div class="waves-in" id="waveNav"></div></nav>
-<div class="cats"><div class="cats-in" id="catNav"></div></div>
-<div class="fav-row">
-  <div class="fav-title">★ Tus temas — reordenan tu feed, no lo esconden</div>
-  <div class="fav-in" id="favNav"></div>
-</div>
+<nav class="tabs-main">
+  <button class="tab-main on" id="tabTodo">Todo</button>
+  <button class="tab-main" id="tabVecinos">Vecinos <span class="n" id="tabVecinosN"></span></button>
+</nav>
 
-<div class="wrap"><div class="urgent-band" id="urgentBand"><div class="band-head">⚡ Cerca tuyo ahora</div><div class="band-list"></div></div></div>
-
-<div class="wrap avisos-wrap" id="avisosWrap" style="display:none">
-  <div class="avisos-label">📍 Avisos de vecinos <span id="aportesCount"></span></div>
-  <div class="avisos-row" id="aportesGrid"></div>
-</div>
-
-<div class="wrap" id="ofertasWrap" style="display:none">
-  <div class="ofertas-label">
-    <span class="verif-badge"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-    Comercios de Quitilipi esta semana
+<div id="panelTodo">
+  <nav class="waves"><div class="waves-in" id="waveNav"></div></nav>
+  <div class="cats"><div class="cats-in" id="catNav"></div></div>
+  <div class="fav-row">
+    <div class="fav-title">★ Tus temas — reordenan tu feed, no lo esconden</div>
+    <div class="fav-in" id="favNav"></div>
   </div>
-  <div class="ofertas-row" id="ofertasGrid"></div>
-</div>
 
-<div class="wrap comunicados-wrap" id="comunicadosWrap" style="display:none"></div>
+  <div class="wrap"><div class="urgent-band" id="urgentBand"><div class="band-head">⚡ Cerca tuyo ahora</div><div class="band-list"></div></div></div>
 
-<div class="wrap" id="institucionesWrap" style="display:none;padding:14px 0 4px;">
-  <div class="ofertas-label" style="color:var(--barrio)">
-    <span class="verif-badge" style="background:var(--barrio)"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-    Servicios e instituciones
+  <div class="wrap comunicados-wrap" id="comunicadosWrap" style="display:none"></div>
+
+  <div class="wrap" id="institucionesWrap" style="display:none;padding:14px 0 4px;">
+    <div class="ofertas-label" style="color:var(--barrio)">
+      <span class="verif-badge" style="background:var(--barrio)"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      Servicios e instituciones
+    </div>
+    <div class="inst-row" id="institucionesRow"></div>
   </div>
-  <div class="inst-row" id="institucionesRow"></div>
+
+  <main class="wrap" id="feed">
+    <div class="state"><div class="spinner"></div><div class="big">Cargando noticias…</div></div>
+  </main>
 </div>
 
-<main class="wrap" id="feed">
-  <div class="state"><div class="spinner"></div><div class="big">Cargando noticias…</div></div>
-</main>
+<div id="panelVecinos" style="display:none">
+  <div class="wrap comunicados-wrap" id="comunicadosWrapV" style="display:none"></div>
+  <div class="wrap avisos-wrap" id="avisosWrap" style="display:none">
+    <div class="avisos-label">📍 Reportes de vecinos <span id="aportesCount"></span></div>
+    <div class="avisos-row" id="aportesGrid"></div>
+  </div>
+  <main class="wrap" id="feedVecinos"></main>
+</div>
 
 <footer><div class="wrap">
   <p class="foot-note">Fonte · Fase 0 · un diario inteligente que ordena las noticias por cercanía. Las noticias se resumen automáticamente con IA; cada una enlaza a su fuente original.</p>
@@ -564,6 +596,20 @@
   </div>
 </div>
 
+<div class="ofertas-bar" id="ofertasBar" style="display:none">
+  <div class="ofertas-bar-in" id="ofertasGrid"></div>
+</div>
+
+<!-- sheet: buscador -->
+<div class="backdrop" id="backdropBuscar"></div>
+<div class="sheet2" id="sheetBuscar">
+  <div class="sheet2-top"><span class="b">Buscar</span><button class="close" id="closeBuscar">Cerrar ✕</button></div>
+  <div class="sheet2-body">
+    <input class="fld" id="buscarInput" type="search" placeholder="Buscar noticias, avisos, comercios…" autocomplete="off">
+    <div id="buscarResultados" style="margin-top:14px"></div>
+  </div>
+</div>
+
 <nav class="bottom-nav">
   <button class="bn-item active" id="navInicio">
     <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
@@ -574,9 +620,9 @@
   <button class="bn-item center" id="navPublicar">
     <span class="ic-circle"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span>
     <span>Publicar</span></button>
-  <button class="bn-item" id="navVecinos">
-    <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6.2 7-11a7 7 0 10-14 0c0 4.8 7 11 7 11z"/><circle cx="12" cy="10" r="2.4"/></svg>
-    <span>Vecinos</span></button>
+  <button class="bn-item" id="navBuscar">
+    <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
+    <span>Buscar</span></button>
   <button class="bn-item" id="navReportero">
     <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M17 6l3 3M14 9l2 2"/></svg>
     <span>Reportero</span></button>
@@ -1116,6 +1162,21 @@
     grid.querySelectorAll(".aporte-card").forEach(el=>{
       el.addEventListener("click", ()=> abrirAporte(el.getAttribute("data-aporte-id")));
     });
+    document.getElementById("tabVecinosN").textContent = "· " + APORTES.length;
+    const feedV = document.getElementById("feedVecinos");
+    feedV.innerHTML = '<div class="pp-head" style="margin-top:18px"><h2 class="pp-title">Todos los reportes</h2></div>'
+      + APORTES.map(a=>{
+        const cat = CAT_APORTE.find(c=>c.id===a.categoria) || {label:"Aporte", icon:"📍"};
+        const cuando = a.created_at ? new Date(a.created_at).toLocaleString("es-AR",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}) : "";
+        return '<a class="zitem aporte-full" data-aporte-id="'+esc(a.id)+'" style="display:flex;gap:12px;padding:14px 0;border-top:1px solid var(--line);align-items:flex-start">'
+          + '<span style="width:36px;height:36px;border-radius:9px;background:var(--paper-2);display:flex;align-items:center;justify-content:center;font-size:1.05rem;flex:0 0 auto">'+cat.icon+'</span>'
+          + '<div style="flex:1;min-width:0"><div style="font-family:var(--sans);font-weight:700;font-size:.88rem;color:var(--ink)">'+esc(a.titulo || cat.label)+'</div>'
+          + (a.descripcion ? '<div style="font-family:var(--sans);font-size:.76rem;color:var(--ink-soft);margin-top:3px;line-height:1.4">'+esc(a.descripcion)+'</div>' : '')
+          + '<div style="font-family:var(--sans);font-size:.66rem;color:var(--ink-faint);margin-top:4px">'+esc(cat.label)+(cuando?" · "+cuando:"")+'</div></div></a>';
+      }).join("");
+    feedV.querySelectorAll(".aporte-full").forEach(el=>{
+      el.addEventListener("click", ()=> abrirAporte(el.getAttribute("data-aporte-id")));
+    });
   }
   function abrirAporte(id){
     const a = APORTES.find(x=>String(x.id)===String(id));
@@ -1149,19 +1210,17 @@
       const res = await fetch(url, { headers: { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + SUPABASE_KEY } });
       OFERTAS = res.ok ? await res.json() : [];
     }catch(e){ OFERTAS = []; }
-    const wrap = document.getElementById("ofertasWrap");
-    if(!OFERTAS.length){ wrap.style.display = "none"; return; }
-    wrap.style.display = "block";
-    const check = '<svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    const bar = document.getElementById("ofertasBar");
+    if(!OFERTAS.length){ bar.style.display = "none"; return; }
+    bar.style.display = "block";
     document.getElementById("ofertasGrid").innerHTML = OFERTAS.map(o=>{
-      const foto = o.imagen_url ? "background-image:url('"+esc(o.imagen_url)+"');background-size:cover;background-position:center;" : "background:var(--paper-3);";
-      return '<a class="article oferta-card" data-oferta-id="'+esc(o.id)+'">'
-        + '<div class="ph-img" style="'+foto+'"></div>'
-        + '<span class="verif-badge">'+check+'</span>'
-        + '<div class="oferta-txt"><div class="oferta-neg">'+esc(o.negocio||"")+'</div><div class="oferta-tit">'+esc(o.titulo||"")+'</div>'
-        + '<span class="oferta-chip">Auspicia esta edición</span></div></a>';
+      const m = (o.titulo||"").match(/(\d+\s*%)/);
+      const destaque = m ? m[1].replace(/\s/g,"") : "★";
+      return '<a class="ob-chip" data-oferta-id="'+esc(o.id)+'">'
+        + '<span class="pc">'+esc(destaque)+'</span>'
+        + '<span class="nm">'+esc(o.negocio||o.titulo||"")+'</span></a>';
     }).join("");
-    document.querySelectorAll(".oferta-card").forEach(el=>{
+    document.querySelectorAll(".ob-chip").forEach(el=>{
       el.addEventListener("click", ()=> abrirOferta(el.getAttribute("data-oferta-id")));
     });
   }
@@ -1209,13 +1268,18 @@
       const res = await fetch(url, { headers: { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + SUPABASE_KEY } });
       COMUNICADOS = res.ok ? await res.json() : [];
     }catch(e){ COMUNICADOS = []; }
-    const wrap = document.getElementById("comunicadosWrap");
+    const enVecinos = document.getElementById("panelVecinos").style.display !== "none";
+    renderComunicadosEn(enVecinos ? "comunicadosWrapV" : "comunicadosWrap");
+  }
+  function renderComunicadosEn(wrapId, expandido){
+    ["comunicadosWrap","comunicadosWrapV"].forEach(id=>{
+      const w = document.getElementById(id);
+      if(w && id !== wrapId){ w.style.display = "none"; w.innerHTML = ""; }
+    });
+    const wrap = document.getElementById(wrapId);
+    if(!wrap) return;
     if(!COMUNICADOS.length){ wrap.style.display = "none"; wrap.innerHTML=""; return; }
     wrap.style.display = "block";
-    renderComunicados(false);
-  }
-  function renderComunicados(expandido){
-    const wrap = document.getElementById("comunicadosWrap");
     const [destacado, ...resto] = COMUNICADOS;
     const TOPE = 4;
     const visibles = expandido ? resto : resto.slice(0, TOPE);
@@ -1240,8 +1304,8 @@
     wrap.querySelectorAll(".com-row").forEach(el=>{
       el.addEventListener("click", ()=> abrirComunicado(el.getAttribute("data-com-id")));
     });
-    const masBtn = document.getElementById("comVerMas");
-    if(masBtn) masBtn.addEventListener("click", ()=> renderComunicados(true));
+    const masBtn = wrap.querySelector("#comVerMas");
+    if(masBtn) masBtn.addEventListener("click", ()=> renderComunicadosEn(wrapId, true));
   }
   function abrirComunicado(id){
     const c = COMUNICADOS.find(x=>String(x.id)===String(id));
@@ -1538,10 +1602,9 @@
       if(destino) destino.scrollIntoView({ behavior:"smooth", block:"start" });
       marcar(this);
     });
-    document.getElementById("navVecinos").addEventListener("click", function(){
-      const wrap = document.getElementById("avisosWrap");
-      if(wrap) wrap.scrollIntoView({ behavior:"smooth", block:"start" });
+    document.getElementById("navBuscar").addEventListener("click", function(){
       marcar(this);
+      abrirBuscar();
     });
     document.getElementById("navPublicar").addEventListener("click", function(){
       document.getElementById("fabAportar").click();
@@ -1550,6 +1613,105 @@
       window.location.href = "reportero.html";
     });
   })();
+
+  // ================= PESTAÑAS: TODO / VECINOS =================
+  function irAPestanaPrincipal(cual){
+    const esVecinos = cual === "vecinos";
+    document.getElementById("tabTodo").classList.toggle("on", !esVecinos);
+    document.getElementById("tabVecinos").classList.toggle("on", esVecinos);
+    document.getElementById("panelTodo").style.display = esVecinos ? "none" : "block";
+    document.getElementById("panelVecinos").style.display = esVecinos ? "block" : "none";
+    if(esVecinos) renderComunicadosEn("comunicadosWrapV");
+    else renderComunicadosEn("comunicadosWrap");
+    window.scrollTo({ top:0, behavior:"instant" });
+  }
+  document.getElementById("tabTodo").addEventListener("click", ()=> irAPestanaPrincipal("todo"));
+  document.getElementById("tabVecinos").addEventListener("click", ()=> irAPestanaPrincipal("vecinos"));
+
+  // ================= BARRA DE OFERTAS: ESCONDER AL BAJAR =================
+  (function(){
+    const bar = document.getElementById("ofertasBar");
+    let lastY = window.scrollY;
+    window.addEventListener("scroll", ()=>{
+      const y = window.scrollY;
+      if(y > lastY + 4 && y > 60){ bar.classList.add("hide"); }
+      else if(y < lastY - 4 || y < 60){ bar.classList.remove("hide"); }
+      lastY = y;
+    }, { passive:true });
+  })();
+
+  // ================= BUSCADOR =================
+  function abrirBuscar(){
+    document.getElementById("backdropBuscar").classList.add("show");
+    document.getElementById("sheetBuscar").classList.add("show");
+    setTimeout(()=> document.getElementById("buscarInput").focus(), 260);
+  }
+  function cerrarBuscar(){
+    document.getElementById("backdropBuscar").classList.remove("show");
+    document.getElementById("sheetBuscar").classList.remove("show");
+  }
+  document.getElementById("closeBuscar").addEventListener("click", cerrarBuscar);
+  document.getElementById("backdropBuscar").addEventListener("click", cerrarBuscar);
+
+  function normalizar(s){
+    return (s||"").toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+  }
+  function buscar(q){
+    const cont = document.getElementById("buscarResultados");
+    const term = normalizar(q).trim();
+    if(term.length < 2){ cont.innerHTML = '<p class="foot-note">Escribí al menos 2 letras.</p>'; return; }
+    const res = [];
+    (NOTICIAS||[]).forEach(n=>{
+      if(normalizar(n.titulo).includes(term) || normalizar(n.resumen).includes(term))
+        res.push({ tipo:"noticia", titulo:n.titulo, meta:(n.fuente||"")+" · "+(n.lugar||""), id:n.id });
+    });
+    (APORTES||[]).forEach(a=>{
+      const cat = (CAT_APORTE.find(c=>c.id===a.categoria)||{}).label || a.categoria;
+      if(normalizar(a.titulo).includes(term) || normalizar(a.descripcion).includes(term) || normalizar(cat).includes(term))
+        res.push({ tipo:"aviso", titulo:a.titulo||cat, meta:"Aviso de vecino · "+cat, id:a.id });
+    });
+    (OFERTAS||[]).forEach(o=>{
+      if(normalizar(o.negocio).includes(term) || normalizar(o.titulo).includes(term))
+        res.push({ tipo:"oferta", titulo:o.titulo, meta:o.negocio||"", id:o.id });
+    });
+    (COMUNICADOS||[]).forEach(c=>{
+      if(normalizar(c.titulo).includes(term) || normalizar(c.texto).includes(term))
+        res.push({ tipo:"comunicado", titulo:c.titulo, meta:c.institucion||"", id:c.id });
+    });
+    (INSTITUCIONES||[]).forEach(i=>{
+      if(normalizar(i.nombre).includes(term) || normalizar(i.descripcion).includes(term))
+        res.push({ tipo:"institucion", titulo:i.nombre, meta:i.direccion||"", id:i.id });
+    });
+    if(!res.length){ cont.innerHTML = '<p class="foot-note">Sin resultados para “'+esc(q)+'”.</p>'; return; }
+    const COLORES = {
+      noticia:{ c:"var(--ciudad)", t:"Noticia" }, aviso:{ c:"var(--region)", t:"Aviso" },
+      oferta:{ c:"var(--int)", t:"Comercio" }, comunicado:{ c:"var(--barrio)", t:"Oficial" },
+      institucion:{ c:"var(--barrio)", t:"Servicio" },
+    };
+    cont.innerHTML = res.slice(0,40).map((r,i)=>{
+      const col = COLORES[r.tipo];
+      return '<a class="res-row" data-i="'+i+'">'
+        + '<span class="res-tag" style="color:'+col.c+';background:color-mix(in srgb,'+col.c+' 14%,var(--paper))">'+col.t+'</span>'
+        + '<div class="res-tx"><div class="t">'+esc(r.titulo||"")+'</div><div class="m">'+esc(r.meta||"")+'</div></div></a>';
+    }).join("");
+    cont.querySelectorAll(".res-row").forEach(el=>{
+      el.addEventListener("click", ()=>{
+        const r = res[parseInt(el.getAttribute("data-i"),10)];
+        cerrarBuscar();
+        if(r.tipo === "noticia") abrir(r.id);
+        else if(r.tipo === "aviso") abrirAporte(r.id);
+        else if(r.tipo === "oferta") abrirOferta(r.id);
+        else if(r.tipo === "comunicado") abrirComunicado(r.id);
+        else if(r.tipo === "institucion") abrirInstitucion(r.id);
+      });
+    });
+  }
+  let buscarTimer = null;
+  document.getElementById("buscarInput").addEventListener("input", (e)=>{
+    clearTimeout(buscarTimer);
+    const v = e.target.value;
+    buscarTimer = setTimeout(()=> buscar(v), 180);
+  });
 </script>
 </body>
 </html>
