@@ -183,9 +183,13 @@
 
   footer{ border-top:2px solid var(--ink); margin-top:22px; padding:18px 0 96px; }
   .foot-note{ font-family:var(--sans); font-size:.7rem; color:var(--ink-faint); line-height:1.55; }
-  .refresh-btn{ position:fixed; right:16px; bottom:88px; z-index:40; font-family:var(--sans); font-size:.68rem; font-weight:700;
-    color:var(--paper); background:var(--ink); border:0; padding:9px 15px; border-radius:999px; box-shadow:0 6px 18px rgba(30,28,22,.25); }
-  body{ padding-bottom:calc(64px + env(safe-area-inset-bottom)); }
+  .refresh-btn{ position:fixed; right:14px; bottom:calc(126px + env(safe-area-inset-bottom)); z-index:130;
+    font-family:var(--sans); font-size:.66rem; font-weight:700;
+    color:var(--paper); background:var(--ink); border:0; padding:8px 13px; border-radius:999px;
+    box-shadow:0 3px 8px rgba(30,28,22,.16); transition:transform .28s ease, opacity .28s ease; }
+  .refresh-btn.hide{ transform:translateY(70px); opacity:0; pointer-events:none; }
+  [data-tema="oscuro"] .refresh-btn{ background:#2A251C; color:#F5F1E6; box-shadow:0 3px 8px rgba(0,0,0,.4); }
+  body{ padding-bottom:calc(132px + env(safe-area-inset-bottom)); }
 
   /* desktop: columnas de diario */
   @media (min-width:760px){
@@ -2211,8 +2215,9 @@
     let lastY = window.scrollY;
     window.addEventListener("scroll", ()=>{
       const y = window.scrollY;
-      if(y > lastY + 4 && y > 60){ bar.classList.add("hide"); }
-      else if(y < lastY - 4 || y < 60){ bar.classList.remove("hide"); }
+      const rb = document.getElementById("refreshBtn");
+      if(y > lastY + 4 && y > 60){ bar.classList.add("hide"); if(rb) rb.classList.add("hide"); }
+      else if(y < lastY - 4 || y < 60){ bar.classList.remove("hide"); if(rb) rb.classList.remove("hide"); }
       lastY = y;
     }, { passive:true });
   })();
