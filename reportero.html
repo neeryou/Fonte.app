@@ -101,6 +101,19 @@
     padding:3px 8px; border-radius:999px; margin-left:6px; }
   .aporte-review .estado-tag.pub{ color:var(--region); background:color-mix(in srgb,var(--region) 13%,var(--paper)); }
   .aporte-review .estado-tag.res{ color:var(--barrio); background:color-mix(in srgb,var(--barrio) 13%,var(--paper)); }
+  .aporte-review img{ cursor:pointer; }
+  .visor-back{ position:fixed; inset:0; z-index:400; background:rgba(20,18,14,.82); display:none;
+    align-items:center; justify-content:center; padding:18px; }
+  .visor-back.show{ display:flex; }
+  .visor{ max-width:640px; width:100%; max-height:92vh; overflow-y:auto; background:var(--paper); border-radius:16px; padding:0 0 18px; }
+  .visor img{ width:100%; max-height:52vh; object-fit:contain; background:#16140F; border-radius:16px 16px 0 0; display:block; }
+  .visor .cuerpo{ padding:16px 18px 0; }
+  .visor .cat{ font-family:var(--sans); font-size:.7rem; font-weight:700; color:var(--barrio); }
+  .visor h3{ font-family:var(--serif); font-size:1.2rem; margin:8px 0 6px; }
+  .visor .txt{ font-family:var(--sans); font-size:.88rem; color:var(--ink-soft); line-height:1.5; }
+  .visor .meta{ font-family:var(--sans); font-size:.72rem; color:var(--ink-faint); margin-top:12px; line-height:1.6; }
+  .visor .cerrar{ width:100%; margin-top:16px; font-family:var(--sans); font-weight:700; font-size:.86rem;
+    padding:12px; border-radius:10px; border:1px solid var(--line-strong); background:none; color:var(--ink-soft); }
   .btn-aprobar{ background:var(--barrio); color:#fff; }
   .btn-rechazar{ background:transparent; color:var(--ink-soft); border:1px solid var(--line) !important; }
 
@@ -375,6 +388,10 @@
 </div>
 
 <div class="toast" id="toast"></div>
+
+<div class="visor-back" id="visorBack">
+  <div class="visor" id="visor"></div>
+</div>
 
 <script>
   // ================= COMPRESIÓN DE IMÁGENES =================
@@ -704,6 +721,11 @@
     }).join("");
     cont.querySelectorAll(".aporte-review").forEach(card=>{
       const id = card.getAttribute("data-id");
+      card.addEventListener("click", (e)=>{
+        if(e.target.closest("button") || e.target.closest("a")) return;
+        const a = data.find(x=>String(x.id)===String(id));
+        if(a) abrirVisor(a);
+      });
       card.querySelectorAll("button[data-accion]").forEach(btn=>{
         btn.addEventListener("click", async ()=>{
           btn.disabled = true;
@@ -769,6 +791,14 @@
       btn.addEventListener("click", ()=>{
         if(!confirm("¿Quitar este aviso de Fonte?")) return;
         cambiarEstado(btn, "descartado", "Aviso quitado");
+      });
+    });
+    cont.querySelectorAll(".aporte-review").forEach(card=>{
+      card.addEventListener("click", (e)=>{
+        if(e.target.closest("button") || e.target.closest("a")) return;
+        const id = card.getAttribute("data-id");
+        const a = data.find(x=>String(x.id)===String(id));
+        if(a) abrirVisor(a);
       });
     });
   }
@@ -1086,6 +1116,32 @@
         }).join("") + '</div>'
       + (dispositivos.length === 0 ? '<p style="font-family:var(--sans);font-size:.78rem;color:var(--ink-faint);margin-top:14px">Todavía no hay visitas registradas. Van a aparecer a partir de que subas esta versión y la gente entre a Fonte.</p>' : '');
   }
+
+  // ================= VISOR DE AVISO =================
+  function abrirVisor(a){
+    const cat = CAT_APORTE.find(c=>c.id===a.categoria) || {label:a.categoria, icon:"📍"};
+    const fecha = a.created_at ? new Date(a.created_at).toLocaleString("es-AR") : "";
+    const mapa = (a.lat && a.lng)
+      ? '<a href="https://www.google.com/maps?q='+a.lat+','+a.lng+'" target="_blank" rel="noopener">Ver ubicación en el mapa ↗</a>'
+      : "Sin ubicación";
+    const estados = { pendiente:"En revisión", revisado:"Publicado", resuelto:"Resuelto", descartado:"No publicado" };
+    document.getElementById("visor").innerHTML =
+      (a.foto_url ? '<img src="'+escA(a.foto_url)+'" alt="">' : '')
+      + '<div class="cuerpo">'
+      + '<div class="cat">'+cat.icon+' '+escA(cat.label)+'</div>'
+      + '<h3>'+escA(a.titulo || cat.label)+'</h3>'
+      + '<div class="txt">'+escA(a.descripcion || a.texto || "Sin descripción.")+'</div>'
+      + '<div class="meta">'+mapa+'<br>'+fecha+'<br>Estado: <b>'+(estados[a.estado]||a.estado)+'</b></div>'
+      + (a.foto_url ? '<div class="meta"><a href="'+escA(a.foto_url)+'" target="_blank" rel="noopener">Abrir foto en tamaño completo ↗</a></div>' : '')
+      + '<button class="cerrar" id="visorCerrar">Cerrar</button>'
+      + '</div>';
+    document.getElementById("visorBack").classList.add("show");
+    document.getElementById("visorCerrar").addEventListener("click", cerrarVisor);
+  }
+  function cerrarVisor(){ document.getElementById("visorBack").classList.remove("show"); }
+  document.getElementById("visorBack").addEventListener("click", (e)=>{
+    if(e.target.id === "visorBack") cerrarVisor();
+  });
 
   document.querySelectorAll(".form-toggle").forEach(btn=>{
     btn.addEventListener("click", ()=>{
