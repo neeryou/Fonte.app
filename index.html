@@ -486,6 +486,7 @@
   .tab-main.on{ color:var(--ink); }
   .tab-main.on::after{ content:''; position:absolute; left:32%; right:32%; bottom:0; height:3px; border-radius:3px; background:var(--terracota); }
   .tab-main .n{ font-size:.66rem; font-weight:600; color:var(--ink-faint); margin-left:2px; }
+  .tab-main .n.nuevo{ background:var(--terracota); color:#fff; font-weight:800; padding:2px 7px; border-radius:999px; margin-left:5px; }
 
   /* ===== barra flotante de ofertas (se esconde al bajar) ===== */
   .ofertas-bar{ position:fixed; left:0; right:0; bottom:calc(64px + env(safe-area-inset-bottom)); z-index:140;
@@ -575,13 +576,6 @@
       Servicios e instituciones
     </div>
     <div class="inst-row" id="institucionesRow"></div>
-  </div>
-
-  <div class="wrap avisos-wrap" id="avisosWrap" style="display:none">
-    <div class="avisos-label">📍 Reportes de vecinos <span id="aportesCount"></span>
-      <button id="verTodosAvisos" style="float:right;font-family:var(--sans);font-size:.68rem;font-weight:700;color:var(--region);background:none;border:0;padding:0">Ver todos ›</button>
-    </div>
-    <div class="avisos-row" id="aportesGrid"></div>
   </div>
 
   <main class="wrap" id="feed">
@@ -1289,15 +1283,12 @@
       APORTES = res.ok ? await res.json() : [];
       await cargarConfirmaciones();
     }catch(e){ APORTES = []; }
-    const wrap = document.getElementById("avisosWrap");
-    const grid = document.getElementById("aportesGrid");
     const barraMios = '<div style="text-align:right;padding:10px 0 0"><button id="verMisAportes" style="font-family:var(--sans);font-size:.74rem;font-weight:700;color:var(--region);background:none;border:0;padding:6px 2px">📋 Mis aportes ›</button></div>';
     function engancharMios(){
       const b = document.getElementById("verMisAportes");
       if(b) b.addEventListener("click", abrirMisAportes);
     }
     if(!APORTES.length){
-      wrap.style.display = "none";
       document.getElementById("tabVecinosN").textContent = "";
       document.getElementById("feedVecinos").innerHTML = barraMios
         + '<div class="vacio"><div class="ic">📍</div><div class="t">Todavía no hay reportes</div>'
@@ -1308,26 +1299,12 @@
       if(va) va.addEventListener("click", ()=> document.getElementById("fabAportar").click());
       return;
     }
-    wrap.style.display = "block";
-    document.getElementById("aportesCount").textContent = "· " + APORTES.length + (APORTES.length===1?" aviso":" avisos");
-    grid.innerHTML = APORTES.map(a=>{
-      const cat = CAT_APORTE.find(c=>c.id===a.categoria) || {label:"Aporte", icon:"📍"};
-      const foto = a.foto_url ? "background-image:url('"+esc(a.foto_url)+"');background-size:cover;background-position:center;" : "background:var(--paper-3);";
-      const nC = CONFIRMACIONES[a.id] || 0;
-      const res = a.estado === "resuelto";
-      return '<a class="article aporte-card'+(res?" es-resuelto":"")+'" data-aporte-id="'+esc(a.id)+'">'
-        + '<div class="ph-img" style="'+foto+'"></div>'
-        + '<div class="txt"><div class="aporte-cat">'+cat.icon+' '+esc(cat.label)+'</div><div class="aporte-tit">'+esc(a.titulo || cat.label)+'</div>'
-        + (res ? '<span class="estado-pill resuelto" style="margin-top:5px">Resuelto</span>'
-               : (nC ? '<div class="conf-count" style="margin-top:5px">👥 '+nC+'</div>' : ''))
-        + '</div></a>';
-    }).join("");
-    grid.querySelectorAll(".aporte-card").forEach(el=>{
-      el.addEventListener("click", ()=> abrirAporte(el.getAttribute("data-aporte-id")));
-    });
-    const vt = document.getElementById("verTodosAvisos");
-    if(vt) vt.addEventListener("click", ()=> irAPestanaPrincipal("vecinos"));
-    document.getElementById("tabVecinosN").textContent = "· " + APORTES.length;
+    const nEl = document.getElementById("tabVecinosN");
+    let vistosAp = new Set();
+    try{ vistosAp = new Set(JSON.parse(localStorage.getItem("fonte_aportes_vistos") || "[]")); }catch(e){}
+    const sinVer = APORTES.filter(a=>!vistosAp.has(String(a.id))).length;
+    if(sinVer > 0){ nEl.textContent = sinVer; nEl.className = "n nuevo"; }
+    else { nEl.textContent = "· " + APORTES.length; nEl.className = "n"; }
     const feedV = document.getElementById("feedVecinos");
     feedV.innerHTML = barraMios + '<div class="pp-head" style="margin-top:6px"><h2 class="pp-title">Todos los reportes</h2></div>'
       + APORTES.map(a=>{
@@ -2125,6 +2102,11 @@
     document.getElementById("tabVecinos").classList.toggle("on", esVecinos);
     document.getElementById("panelTodo").style.display = esVecinos ? "none" : "block";
     document.getElementById("panelVecinos").style.display = esVecinos ? "block" : "none";
+    if(esVecinos){
+      try{ localStorage.setItem("fonte_aportes_vistos", JSON.stringify((APORTES||[]).map(a=>String(a.id)).slice(0,200))); }catch(e){}
+      const nEl = document.getElementById("tabVecinosN");
+      nEl.textContent = "· " + (APORTES||[]).length; nEl.className = "n";
+    }
     if(esVecinos) renderComunicadosEn("comunicadosWrapV");
     else renderComunicadosEn("comunicadosWrap");
     window.scrollTo({ top:0, behavior:"instant" });
