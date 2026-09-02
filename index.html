@@ -577,6 +577,13 @@
     <div class="inst-row" id="institucionesRow"></div>
   </div>
 
+  <div class="wrap avisos-wrap" id="avisosWrap" style="display:none">
+    <div class="avisos-label">📍 Reportes de vecinos <span id="aportesCount"></span>
+      <button id="verTodosAvisos" style="float:right;font-family:var(--sans);font-size:.68rem;font-weight:700;color:var(--region);background:none;border:0;padding:0">Ver todos ›</button>
+    </div>
+    <div class="avisos-row" id="aportesGrid"></div>
+  </div>
+
   <main class="wrap" id="feed">
     <div class="state"><div class="spinner"></div><div class="big">Cargando noticias…</div></div>
   </main>
@@ -584,10 +591,6 @@
 
 <div id="panelVecinos" style="display:none">
   <div class="wrap comunicados-wrap" id="comunicadosWrapV" style="display:none"></div>
-  <div class="wrap avisos-wrap" id="avisosWrap" style="display:none">
-    <div class="avisos-label">📍 Reportes de vecinos <span id="aportesCount"></span></div>
-    <div class="avisos-row" id="aportesGrid"></div>
-  </div>
   <main class="wrap" id="feedVecinos"></main>
 </div>
 
@@ -1322,14 +1325,19 @@
     grid.querySelectorAll(".aporte-card").forEach(el=>{
       el.addEventListener("click", ()=> abrirAporte(el.getAttribute("data-aporte-id")));
     });
+    const vt = document.getElementById("verTodosAvisos");
+    if(vt) vt.addEventListener("click", ()=> irAPestanaPrincipal("vecinos"));
     document.getElementById("tabVecinosN").textContent = "· " + APORTES.length;
     const feedV = document.getElementById("feedVecinos");
     feedV.innerHTML = barraMios + '<div class="pp-head" style="margin-top:6px"><h2 class="pp-title">Todos los reportes</h2></div>'
       + APORTES.map(a=>{
         const cat = CAT_APORTE.find(c=>c.id===a.categoria) || {label:"Aporte", icon:"📍"};
         const cuando = a.created_at ? new Date(a.created_at).toLocaleString("es-AR",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}) : "";
+        const mini = a.foto_url
+          ? '<span style="width:56px;height:56px;border-radius:10px;flex:0 0 auto;background-image:url(\''+esc(a.foto_url)+'\');background-size:cover;background-position:center"></span>'
+          : '<span style="width:56px;height:56px;border-radius:10px;background:var(--paper-2);display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex:0 0 auto">'+cat.icon+'</span>';
         return '<a class="zitem aporte-full'+(a.estado==="resuelto"?" es-resuelto":"")+'" data-aporte-id="'+esc(a.id)+'" style="display:flex;gap:12px;padding:14px 0;border-top:1px solid var(--line);align-items:flex-start">'
-          + '<span style="width:36px;height:36px;border-radius:9px;background:var(--paper-2);display:flex;align-items:center;justify-content:center;font-size:1.05rem;flex:0 0 auto">'+cat.icon+'</span>'
+          + mini
           + '<div style="flex:1;min-width:0"><div style="font-family:var(--sans);font-weight:700;font-size:.88rem;color:var(--ink)">'+esc(a.titulo || cat.label)+'</div>'
           + (a.descripcion ? '<div style="font-family:var(--sans);font-size:.76rem;color:var(--ink-soft);margin-top:3px;line-height:1.4">'+esc(a.descripcion)+'</div>' : '')
           + '<div style="font-family:var(--sans);font-size:.66rem;color:var(--ink-faint);margin-top:4px">'+esc(cat.label)+(cuando?" · "+cuando:"")
