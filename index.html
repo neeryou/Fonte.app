@@ -800,6 +800,40 @@
 </nav>
 
 <script>
+  // ================= COMPRESIÓN DE IMÁGENES =================
+  // Las fotos de celular pesan 3-8 MB. Se achican antes de subir para no
+  // quemar el ancho de banda y para que carguen rápido en el pueblo.
+  const FOTO_MAX_LADO = 1400;
+  const FOTO_CALIDAD = 0.72;
+  function comprimirImagen(file){
+    return new Promise((resolve)=>{
+      if(!file || !file.type || !file.type.startsWith("image/")) return resolve(file);
+      if(file.size < 300*1024) return resolve(file); // ya es chica, no vale la pena
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = ()=>{
+        URL.revokeObjectURL(url);
+        let { width:w, height:h } = img;
+        if(Math.max(w,h) > FOTO_MAX_LADO){
+          const f = FOTO_MAX_LADO / Math.max(w,h);
+          w = Math.round(w*f); h = Math.round(h*f);
+        }
+        try{
+          const c = document.createElement("canvas");
+          c.width = w; c.height = h;
+          const ctx = c.getContext("2d");
+          ctx.drawImage(img, 0, 0, w, h);
+          c.toBlob((blob)=>{
+            if(!blob || blob.size >= file.size) return resolve(file);
+            resolve(new File([blob], (file.name||"foto").replace(/\.[^.]+$/,"") + ".jpg", { type:"image/jpeg" }));
+          }, "image/jpeg", FOTO_CALIDAD);
+        }catch(e){ resolve(file); }
+      };
+      img.onerror = ()=>{ URL.revokeObjectURL(url); resolve(file); };
+      img.src = url;
+    });
+  }
+
   const SUPABASE_URL = "https://skpfycmkilahghvoxqxw.supabase.co";
   const SUPABASE_KEY = "sb_publishable_3YK9XChJ8YeJzlXymHXUeQ_TbCPQReT";
 
@@ -1803,10 +1837,11 @@
         const file = fileInput.files[0];
         const nombre = disp + "-" + Date.now() + "." + (file.name.split(".").pop() || "jpg");
         try{
+          const chico = await comprimirImagen(file);
           const upRes = await fetch(SUPABASE_URL + "/storage/v1/object/aportes-fotos/" + nombre, {
             method: "POST",
-            headers: { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + SUPABASE_KEY, "content-type": file.type || "image/jpeg" },
-            body: file
+            headers: { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + SUPABASE_KEY, "content-type": chico.type || "image/jpeg" },
+            body: chico
           });
           if(upRes.ok){ foto_url = SUPABASE_URL + "/storage/v1/object/public/aportes-fotos/" + nombre; }
         }catch(e){ /* si falla la foto, mandamos el aporte igual sin foto */ }

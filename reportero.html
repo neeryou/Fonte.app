@@ -93,6 +93,14 @@
   .aporte-review .meta{ font-family:var(--sans); font-size:.66rem; color:var(--ink-faint); }
   .aporte-review .acts{ display:flex; gap:8px; margin-top:10px; }
   .aporte-review .acts button{ flex:1; font-family:var(--sans); font-size:.76rem; font-weight:700; padding:9px; border-radius:8px; border:0; }
+  .aporte-review.publicado{ background:var(--paper); border:1px solid var(--line); }
+  .aporte-review.publicado.resuelto{ opacity:.68; }
+  .aporte-review .conf{ display:inline-block; font-family:var(--sans); font-size:.66rem; font-weight:700; color:var(--region);
+    background:color-mix(in srgb,var(--region) 12%,var(--paper)); padding:2px 8px; border-radius:999px; margin-top:6px; }
+  .aporte-review .estado-tag{ display:inline-block; font-family:var(--sans); font-size:.6rem; font-weight:800; text-transform:uppercase;
+    padding:3px 8px; border-radius:999px; margin-left:6px; }
+  .aporte-review .estado-tag.pub{ color:var(--region); background:color-mix(in srgb,var(--region) 13%,var(--paper)); }
+  .aporte-review .estado-tag.res{ color:var(--barrio); background:color-mix(in srgb,var(--barrio) 13%,var(--paper)); }
   .btn-aprobar{ background:var(--barrio); color:#fff; }
   .btn-rechazar{ background:transparent; color:var(--ink-soft); border:1px solid var(--line) !important; }
 
@@ -262,7 +270,7 @@
 
       <h2 class="rep-h" style="font-size:1.05rem;margin-top:28px">Avisos publicados</h2>
       <p class="rep-sub">Lo que aprobaste y ya se ve en Fonte. Podés quitarlo cuando deje de ser relevante.</p>
-      <div class="card" id="avisosPublicadosList"><p style="font-family:var(--sans);font-size:.78rem;color:var(--ink-faint)">Cargando…</p></div>
+      <div id="avisosPublicadosList"><p style="font-family:var(--sans);font-size:.78rem;color:var(--ink-faint)">Cargando…</p></div>
     </div>
 
     <div class="rep-view" id="viewOfertas">
@@ -369,6 +377,40 @@
 <div class="toast" id="toast"></div>
 
 <script>
+  // ================= COMPRESIÓN DE IMÁGENES =================
+  // Las fotos de celular pesan 3-8 MB. Se achican antes de subir para no
+  // quemar el ancho de banda y para que carguen rápido en el pueblo.
+  const FOTO_MAX_LADO = 1400;
+  const FOTO_CALIDAD = 0.72;
+  function comprimirImagen(file){
+    return new Promise((resolve)=>{
+      if(!file || !file.type || !file.type.startsWith("image/")) return resolve(file);
+      if(file.size < 300*1024) return resolve(file); // ya es chica, no vale la pena
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = ()=>{
+        URL.revokeObjectURL(url);
+        let { width:w, height:h } = img;
+        if(Math.max(w,h) > FOTO_MAX_LADO){
+          const f = FOTO_MAX_LADO / Math.max(w,h);
+          w = Math.round(w*f); h = Math.round(h*f);
+        }
+        try{
+          const c = document.createElement("canvas");
+          c.width = w; c.height = h;
+          const ctx = c.getContext("2d");
+          ctx.drawImage(img, 0, 0, w, h);
+          c.toBlob((blob)=>{
+            if(!blob || blob.size >= file.size) return resolve(file);
+            resolve(new File([blob], (file.name||"foto").replace(/\.[^.]+$/,"") + ".jpg", { type:"image/jpeg" }));
+          }, "image/jpeg", FOTO_CALIDAD);
+        }catch(e){ resolve(file); }
+      };
+      img.onerror = ()=>{ URL.revokeObjectURL(url); resolve(file); };
+      img.src = url;
+    });
+  }
+
   const SUPABASE_URL = "https://skpfycmkilahghvoxqxw.supabase.co";
   const SUPABASE_KEY = "sb_publishable_3YK9XChJ8YeJzlXymHXUeQ_TbCPQReT";
   const FUNCION_GENERAR = SUPABASE_URL + "/functions/v1/fonte-generar-nota";
@@ -423,8 +465,9 @@
     preview.src = URL.createObjectURL(file);
     preview.style.display = "block";
     try{
-      const nombre = Date.now() + "." + (file.name.split(".").pop() || "jpg");
-      const { error } = await sb.storage.from("notas-fotos").upload(nombre, file);
+      const chico = await comprimirImagen(file);
+      const nombre = Date.now() + "." + ((chico.name||file.name).split(".").pop() || "jpg");
+      const { error } = await sb.storage.from("notas-fotos").upload(nombre, chico);
       if(!error){
         const { data } = sb.storage.from("notas-fotos").getPublicUrl(nombre);
         fotoPropiaUrl = data.publicUrl;
@@ -441,8 +484,9 @@
     preview.src = URL.createObjectURL(file);
     preview.style.display = "block";
     try{
-      const nombre = Date.now() + "." + (file.name.split(".").pop() || "jpg");
-      const { error } = await sb.storage.from("ofertas-fotos").upload(nombre, file);
+      const chico = await comprimirImagen(file);
+      const nombre = Date.now() + "." + ((chico.name||file.name).split(".").pop() || "jpg");
+      const { error } = await sb.storage.from("ofertas-fotos").upload(nombre, chico);
       if(!error){
         const { data } = sb.storage.from("ofertas-fotos").getPublicUrl(nombre);
         ofFotoUrl = data.publicUrl;
@@ -459,8 +503,9 @@
     preview.src = URL.createObjectURL(file);
     preview.style.display = "block";
     try{
-      const nombre = Date.now() + "." + (file.name.split(".").pop() || "jpg");
-      const { error } = await sb.storage.from("instituciones-fotos").upload(nombre, file);
+      const chico = await comprimirImagen(file);
+      const nombre = Date.now() + "." + ((chico.name||file.name).split(".").pop() || "jpg");
+      const { error } = await sb.storage.from("instituciones-fotos").upload(nombre, chico);
       if(!error){
         const { data } = sb.storage.from("instituciones-fotos").getPublicUrl(nombre);
         inFotoUrl = data.publicUrl;
@@ -688,15 +733,26 @@
       const cat = CAT_APORTE.find(c=>c.id===a.categoria) || {label:a.categoria, icon:"📍"};
       const n = conteo[a.id] || 0;
       const resuelto = a.estado === "resuelto";
-      return '<div class="admin-item" data-id="'+escA(a.id)+'" style="'+(resuelto?"opacity:.62":"")+'">'
-        + '<div><div class="h">'+escA(a.titulo || cat.label)+(resuelto?' <span style="font-size:.62rem;font-weight:800;color:var(--barrio)">✓ RESUELTO</span>':'')+'</div>'
-        + '<div class="sub2">'+cat.icon+' '+escA(cat.label)+(n?' · 👥 '+n+(n===1?' vecino':' vecinos'):'')+'</div></div>'
-        + '<div class="inst-block-btns">'
-        + (resuelto ? '<button class="btn-mini" data-reabrir="1">Reabrir</button>' : '<button class="btn-mini" data-resolver="1" style="border-color:var(--barrio);color:var(--barrio)">✓ Resuelto</button>')
-        + '<button class="del">Quitar</button></div></div>';
+      const mapa = (a.lat && a.lng) ? '<a href="https://www.google.com/maps?q='+a.lat+','+a.lng+'" target="_blank">Ver ubicación</a>' : "sin ubicación";
+      const fecha = a.created_at ? new Date(a.created_at).toLocaleString("es-AR") : "";
+      const foto = a.foto_url ? '<img src="'+escA(a.foto_url)+'">' : '<img alt="sin foto">';
+      return '<div class="card aporte-review publicado'+(resuelto?" resuelto":"")+'" data-id="'+escA(a.id)+'">'
+        + foto
+        + '<div class="info">'
+        + '<div class="cat">'+cat.icon+' '+escA(cat.label)
+        + '<span class="estado-tag '+(resuelto?"res":"pub")+'">'+(resuelto?"✓ Resuelto":"Publicado")+'</span></div>'
+        + '<div class="desc">'+(a.titulo?('<b>'+escA(a.titulo)+'</b>'+(a.descripcion?" — ":"")):'')+escA(a.descripcion||"")+'</div>'
+        + '<div class="meta">'+mapa+' · '+fecha+'</div>'
+        + (n ? '<span class="conf">👥 '+n+(n===1?" vecino lo confirmó":" vecinos lo confirmaron")+'</span>' : '')
+        + '<div class="acts">'
+        + (resuelto
+            ? '<button class="btn-rechazar" data-reabrir="1">Reabrir</button>'
+            : '<button class="btn-aprobar" data-resolver="1">✓ Marcar resuelto</button>')
+        + '<button class="btn-rechazar del" style="color:#B23A2E;border-color:#B23A2E !important">Quitar</button>'
+        + '</div></div></div>';
     }).join("");
     async function cambiarEstado(btn, estado, msg){
-      const id = btn.closest(".admin-item").getAttribute("data-id");
+      const id = btn.closest(".aporte-review").getAttribute("data-id");
       btn.disabled = true;
       const { error } = await sb.from("aportes").update({ estado }).eq("id", id);
       if(error){ toast("No se pudo actualizar: " + error.message); btn.disabled=false; return; }
@@ -709,8 +765,8 @@
     cont.querySelectorAll("[data-reabrir]").forEach(btn=>{
       btn.addEventListener("click", ()=> cambiarEstado(btn, "revisado", "Aviso reabierto"));
     });
-    cont.querySelectorAll(".admin-item .del").forEach(btn=>{
-      btn.addEventListener("click", async ()=>{
+    cont.querySelectorAll(".aporte-review .del").forEach(btn=>{
+      btn.addEventListener("click", ()=>{
         if(!confirm("¿Quitar este aviso de Fonte?")) return;
         cambiarEstado(btn, "descartado", "Aviso quitado");
       });
