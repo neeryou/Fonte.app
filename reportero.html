@@ -66,9 +66,17 @@
   .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
 
   /* ===== tabs ===== */
-  .rep-tabs{ display:flex; gap:0; margin-bottom:20px; border:1px solid var(--line-strong); border-radius:999px; padding:3px; background:var(--paper-2); }
-  .rep-tab{ flex:1; text-align:center; font-family:var(--sans); font-size:.78rem; font-weight:700; padding:9px 4px; border-radius:999px; color:var(--ink-soft); background:none; border:0; }
+  .rep-tabs{ display:flex; gap:2px; margin-bottom:20px; border:1px solid var(--line-strong); border-radius:999px; padding:3px;
+    background:var(--paper-2); overflow-x:auto; scrollbar-width:none; -webkit-overflow-scrolling:touch; }
+  .rep-tabs::-webkit-scrollbar{ display:none; }
+  .rep-tab{ flex:0 0 auto; white-space:nowrap; text-align:center; font-family:var(--sans); font-size:.76rem; font-weight:700;
+    padding:9px 14px; border-radius:999px; color:var(--ink-soft); background:none; border:0; }
   .rep-tab.on{ background:var(--ink); color:var(--paper); }
+  .form-toggle{ width:100%; display:flex; align-items:center; justify-content:space-between; gap:10px;
+    font-family:var(--sans); font-size:.86rem; font-weight:700; color:var(--ink); background:var(--paper-2);
+    border:1px dashed var(--line-strong); border-radius:12px; padding:14px 16px; margin-bottom:16px; }
+  .form-toggle .chev{ font-size:.9rem; color:var(--ink-faint); transition:transform .2s; }
+  .form-toggle.abierto .chev{ transform:rotate(180deg); }
   .rep-view{ display:none; }
   .rep-view.on{ display:block; }
   .tab-badge{ font-family:var(--sans); font-size:.62rem; font-weight:700; background:var(--urgente); color:#fff; padding:1px 6px; border-radius:999px; margin-left:4px; }
@@ -261,7 +269,8 @@
       <h2 class="rep-h">Ofertas y avisos verificados</h2>
       <p class="rep-sub">Por ahora es gratis para el comercio — más adelante puede pasar a ser un espacio pago. Lo que cargues acá sale en Fonte con la insignia de verificado.</p>
 
-      <div class="card">
+      <button class="form-toggle" data-form="formOferta"><span>+ Cargar una oferta</span><span class="chev">⌄</span></button>
+      <div class="card hide" id="formOferta">
         <div class="field-label">Comercio</div>
         <input class="inp" id="ofNegocio" placeholder="Ej: Panadería San Martín">
         <div class="field-label">Oferta / título</div>
@@ -284,7 +293,8 @@
 
       <h2 class="rep-h" style="margin-top:28px">Comunicado oficial</h2>
       <p class="rep-sub">Para avisos del municipio u otras instituciones ya verificadas.</p>
-      <div class="card">
+      <button class="form-toggle" data-form="formComunicado"><span>+ Publicar un comunicado</span><span class="chev">⌄</span></button>
+      <div class="card hide" id="formComunicado">
         <div class="field-label">Institución</div>
         <select class="inp" id="coInstitucionSel">
           <option value="">— Otra / sin vincular —</option>
@@ -318,7 +328,8 @@
       <h2 class="rep-h">Instituciones verificadas</h2>
       <p class="rep-sub">Hospital, desarrollo social, municipio, etc. Cargá la ficha una vez; después solo actualizás la fecha cuando cambie (ej: la próxima entrega de mercadería).</p>
 
-      <div class="card">
+      <button class="form-toggle" data-form="formInstitucion"><span>+ Agregar una institución</span><span class="chev">⌄</span></button>
+      <div class="card hide" id="formInstitucion">
         <div class="field-label">Nombre</div>
         <input class="inp" id="inNombre" placeholder="Ej: Hospital Municipal">
         <div class="field-label">Tipo (define el ícono)</div>
@@ -758,6 +769,8 @@
     btn.disabled = false;
     if(error){ toast("No se pudo publicar: " + error.message); return; }
     toast("Oferta publicada ✓");
+    document.getElementById("formOferta").classList.add("hide");
+    document.querySelector('[data-form="formOferta"]').classList.remove("abierto");
     document.getElementById("ofNegocio").value = "";
     document.getElementById("ofTitulo").value = "";
     document.getElementById("ofDesc").value = "";
@@ -819,6 +832,8 @@
     btn.disabled = false;
     if(error){ toast("No se pudo publicar: " + error.message); return; }
     toast("Comunicado publicado ✓");
+    document.getElementById("formComunicado").classList.add("hide");
+    document.querySelector('[data-form="formComunicado"]').classList.remove("abierto");
     document.getElementById("coTitulo").value = "";
     document.getElementById("coTexto").value = "";
     document.getElementById("coUrgente").checked = false;
@@ -949,6 +964,8 @@
     btn.disabled = false;
     if(error){ toast("No se pudo guardar: " + error.message); return; }
     toast("Institución guardada ✓");
+    document.getElementById("formInstitucion").classList.add("hide");
+    document.querySelector('[data-form="formInstitucion"]').classList.remove("abierto");
     document.getElementById("inNombre").value = "";
     document.getElementById("inDesc").value = "";
     document.getElementById("inDireccion").value = "";
@@ -1013,6 +1030,15 @@
         }).join("") + '</div>'
       + (dispositivos.length === 0 ? '<p style="font-family:var(--sans);font-size:.78rem;color:var(--ink-faint);margin-top:14px">Todavía no hay visitas registradas. Van a aparecer a partir de que subas esta versión y la gente entre a Fonte.</p>' : '');
   }
+
+  document.querySelectorAll(".form-toggle").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      const f = document.getElementById(btn.getAttribute("data-form"));
+      if(!f) return;
+      f.classList.toggle("hide");
+      btn.classList.toggle("abierto", !f.classList.contains("hide"));
+    });
+  });
 
   revisarSesion();
 </script>
