@@ -216,6 +216,13 @@
       <input class="inp" type="file" id="fotoPropia" accept="image/*" capture="environment" style="padding:9px">
       <img class="foto-preview" id="fotoPreview">
 
+      <div class="field-label" style="margin-top:14px">Video (opcional — pegá el enlace de YouTube, Facebook, TikTok o Instagram)</div>
+      <input class="inp" id="videoUrl" placeholder="https://www.facebook.com/...">
+      <div style="font-family:var(--sans);font-size:.7rem;color:var(--ink-faint);margin:-8px 0 14px;line-height:1.45">
+        El video no se sube a Fonte: se muestra desde donde ya está publicado, así que no ocupa espacio.
+        En Facebook e Instagram solo funciona si el posteo es <b>público</b>.
+      </div>
+
       <button class="btn-gen" id="genBtn">✨ Generar con Fonte</button>
       <div class="err-msg hide" id="genErr"></div>
     </div>
@@ -325,6 +332,8 @@
         <input class="inp" id="coTitulo" placeholder="Ej: Corte de agua programado el viernes">
         <div class="field-label">Texto</div>
         <textarea id="coTexto" style="min-height:84px" placeholder="Contenido completo del comunicado"></textarea>
+        <div class="field-label" style="margin-top:14px">Video (opcional — enlace de YouTube, Facebook, TikTok o Instagram)</div>
+        <input class="inp" id="coVideo" placeholder="https://www.facebook.com/...">
         <label style="display:flex;gap:10px;align-items:flex-start;margin-top:14px;padding:12px;background:color-mix(in srgb,#B23A2E 6%,var(--paper));border:1px solid color-mix(in srgb,#B23A2E 25%,var(--line));border-radius:10px;cursor:pointer">
           <input type="checkbox" id="coUrgente" style="margin-top:2px;width:18px;height:18px;flex:0 0 auto">
           <span style="font-family:var(--sans);font-size:.8rem;color:var(--ink)"><b>Es un aviso urgente</b><br>
@@ -655,7 +664,7 @@
       fuente_etiqueta: "vía " + fuenteElegida,
       origen: "reportero",
       imagen_url: fotoPropiaUrl || imagenDetectada,
-      video_url: videoDetectado,
+      video_url: (document.getElementById("videoUrl").value.trim() || videoDetectado || null),
       publicada: true,
       creada_por: sesion.user.id,
     };
@@ -671,6 +680,7 @@
     document.getElementById("rawInput").value = "";
     document.getElementById("fotoPropia").value = "";
     document.getElementById("fotoPreview").style.display = "none";
+    document.getElementById("videoUrl").value = "";
     fotoPropiaUrl = null;
     cargarPublicadoHoy();
   });
@@ -911,6 +921,7 @@
       institucion: document.getElementById("coInstitucion").value.trim() || "Municipalidad de Quitilipi",
       institucion_id: document.getElementById("coInstitucionSel").value || null,
       urgente: document.getElementById("coUrgente").checked,
+      video_url: document.getElementById("coVideo").value.trim() || null,
       titulo, texto,
     };
     const { error } = await sb.from("comunicados").insert(registro);
@@ -923,6 +934,7 @@
     document.getElementById("coTitulo").value = "";
     document.getElementById("coTexto").value = "";
     document.getElementById("coUrgente").checked = false;
+    document.getElementById("coVideo").value = "";
     cargarComunicadosAdmin();
   });
 

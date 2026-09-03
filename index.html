@@ -734,6 +734,7 @@
     <div class="kicker" id="comunicadoInst"><span class="verif-badge" style="background:var(--barrio)"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span></span></div>
     <h3 class="h" id="comunicadoTitulo" style="margin-top:8px"></h3>
     <p class="s-p" id="comunicadoTexto"></p>
+    <div id="comunicadoVideo" style="display:none;margin:14px 0;border-radius:10px;overflow:hidden;aspect-ratio:16/9"></div>
     <a class="verorig" id="comunicadoFichaLink" style="display:none">Ver ficha de la institución ↗</a>
     <div class="foot-note" style="margin-top:14px">Contenido publicado directamente por la institución, marcado como tal — no es una nota de Fonte.</div>
   </div>
@@ -1329,10 +1330,8 @@
     if(n.video_url){
       heroEl.style.display = "none";
       videoEl.style.display = "block";
-      const esYoutube = n.video_url.includes("youtube.com/embed");
-      videoEl.innerHTML = esYoutube
-        ? '<iframe src="'+esc(n.video_url)+'" width="100%" height="100%" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>'
-        : '<video src="'+esc(n.video_url)+'" width="100%" height="100%" controls playsinline style="object-fit:cover"></video>';
+      videoEl.innerHTML = htmlDeVideo(n.video_url);
+      videoEl.style.aspectRatio = aspectoDeVideo(n.video_url);
     } else {
       videoEl.style.display = "none";
       videoEl.innerHTML = "";
@@ -1662,6 +1661,12 @@
     document.getElementById("comunicadoInst").querySelector("span:last-child").textContent = c.institucion || "";
     document.getElementById("comunicadoTitulo").textContent = c.titulo || "";
     document.getElementById("comunicadoTexto").textContent = c.texto || "";
+    const cv = document.getElementById("comunicadoVideo");
+    if(c.video_url){
+      cv.style.display = "block";
+      cv.style.aspectRatio = aspectoDeVideo(c.video_url);
+      cv.innerHTML = htmlDeVideo(c.video_url);
+    } else { cv.style.display = "none"; cv.innerHTML = ""; }
     const fichaLink = document.getElementById("comunicadoFichaLink");
     if(c.institucion_id && INSTITUCIONES.find(x=>String(x.id)===String(c.institucion_id))){
       fichaLink.style.display = "inline-block";
@@ -1674,6 +1679,7 @@
     document.getElementById("sheetComunicado").classList.add("show");
   }
   function cerrarComunicado(){
+    document.getElementById("comunicadoVideo").innerHTML = "";
     document.getElementById("backdropComunicado").classList.remove("show");
     document.getElementById("sheetComunicado").classList.remove("show");
   }
@@ -2243,6 +2249,52 @@
   });
   // Si no llega el evento nativo (iPhone), igual ofrecemos la ayuda manual
   setTimeout(()=>{ if(!promptInstalar) mostrarInstalar(); }, 1200);
+
+
+  // ================= VIDEO POR ENLACE =================
+  // El video nunca se guarda en Fonte: se muestra desde donde ya está publicado.
+  function idYoutube(u){
+    const m = u.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/|live\/)|youtu\.be\/)([\w-]{11})/);
+    return m ? m[1] : null;
+  }
+  function esFacebook(u){ return /facebook\.com|fb\.watch/i.test(u); }
+  function esTikTok(u){ return /tiktok\.com/i.test(u); }
+  function esInstagram(u){ return /instagram\.com/i.test(u); }
+  function esArchivoVideo(u){ return /\.(mp4|webm|ogg|mov)(\?|$)/i.test(u); }
+  function aspectoDeVideo(u){
+    return (esTikTok(u) || esInstagram(u) || /shorts\//i.test(u)) ? "9/16" : "16/9";
+  }
+  function marcoVideo(src){
+    return '<iframe src="'+esc(src)+'" width="100%" height="100%" frameborder="0" scrolling="no" '
+      + 'allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share" allowfullscreen></iframe>';
+  }
+  function enlaceVideo(u, donde){
+    return '<a href="'+esc(u)+'" target="_blank" rel="noopener" '
+      + 'style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;height:100%;'
+      + 'background:var(--paper-2);border:1px solid var(--line);border-radius:10px;text-decoration:none;padding:20px">'
+      + '<span style="font-size:1.7rem">▶</span>'
+      + '<span style="font-family:var(--sans);font-weight:700;font-size:.84rem;color:var(--ink)">Ver el video en '+esc(donde)+' ↗</span>'
+      + '<span style="font-family:var(--sans);font-size:.7rem;color:var(--ink-faint);text-align:center">Se abre en la app o el navegador</span></a>';
+  }
+  function htmlDeVideo(u){
+    if(!u) return "";
+    u = String(u).trim();
+    const yt = idYoutube(u);
+    if(yt) return marcoVideo("https://www.youtube.com/embed/" + yt);
+    if(esArchivoVideo(u)) return '<video src="'+esc(u)+'" width="100%" height="100%" controls playsinline style="object-fit:contain;background:#000"></video>';
+    if(esFacebook(u)) return marcoVideo("https://www.facebook.com/plugins/video.php?href=" + encodeURIComponent(u) + "&show_text=false&width=560");
+    if(esTikTok(u)){
+      const m = u.match(/video\/(\d+)/);
+      if(m) return marcoVideo("https://www.tiktok.com/embed/v2/" + m[1]);
+      return enlaceVideo(u, "TikTok");
+    }
+    if(esInstagram(u)){
+      const m = u.match(/instagram\.com\/(?:p|reel|tv)\/([\w-]+)/);
+      if(m) return marcoVideo("https://www.instagram.com/p/" + m[1] + "/embed/");
+      return enlaceVideo(u, "Instagram");
+    }
+    return enlaceVideo(u, "el sitio original");
+  }
 
   registrarVisita();
 
