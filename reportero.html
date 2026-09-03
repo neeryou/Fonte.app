@@ -608,10 +608,10 @@
     revisarSesion();
   });
 
-  // fuentes
-  document.querySelectorAll(".srcchip").forEach(b=>{
+  // fuentes (solo los chips de #srcChips: los de acción usan la misma clase)
+  document.querySelectorAll("#srcChips .srcchip").forEach(b=>{
     b.addEventListener("click", ()=>{
-      document.querySelectorAll(".srcchip").forEach(x=>x.classList.remove("on"));
+      document.querySelectorAll("#srcChips .srcchip").forEach(x=>x.classList.remove("on"));
       b.classList.add("on");
       const custom = document.getElementById("srcCustom");
       if(b.getAttribute("data-src") === "__otra"){
@@ -731,7 +731,7 @@
   async function cargarPublicadoHoy(){
     const inicioHoy = new Date(); inicioHoy.setHours(0,0,0,0);
     const { data, error } = await sb.from("noticias")
-      .select("id,titulo,onda,created_at")
+      .select("*")
       .eq("creada_por", sesion.user.id)
       .gte("created_at", inicioHoy.toISOString())
       .order("created_at", { ascending: false });
@@ -742,9 +742,18 @@
     }
     const NOMBRE_ONDA = { barrio:"Barrio", ciudad:"Ciudad", region:"Región", pais:"Argentina", mundo:"Mundo" };
     cont.innerHTML = data.map(n =>
-      '<div class="today-item"><span class="st">'+(NOMBRE_ONDA[n.onda]||n.onda)+'</span><span class="h">'+
-      n.titulo.replace(/[<>&]/g, c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]))+'</span></div>'
+      '<div class="today-item" data-id="'+escA(n.id)+'" style="cursor:pointer">'
+      + '<span class="st">'+(NOMBRE_ONDA[n.onda]||n.onda)+'</span>'
+      + '<span class="h">'+escA(n.titulo)+'</span>'
+      + '<span style="font-family:var(--sans);font-size:.66rem;color:var(--region);font-weight:700;white-space:nowrap">Ver ›</span>'
+      + '</div>'
     ).join("");
+    cont.querySelectorAll(".today-item").forEach(el=>{
+      el.addEventListener("click", ()=>{
+        const n = data.find(x=>String(x.id)===String(el.getAttribute("data-id")));
+        if(n) abrirVisorNota(n);
+      });
+    });
   }
 
   const escA = (s) => (s||"").toString().replace(/[<>&]/g, c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));
@@ -869,6 +878,14 @@
       + '<div><div class="h">'+escA(o.negocio||"")+'</div><div class="sub2">'+escA(o.titulo||"")+'</div></div>'
       + '<button class="del">Quitar</button></div>'
     ).join("");
+    cont.querySelectorAll(".admin-item").forEach(el=>{
+      el.style.cursor = "pointer";
+      el.addEventListener("click", (e)=>{
+        if(e.target.closest("button")) return;
+        const o = data.find(x=>String(x.id)===String(el.getAttribute("data-id")));
+        if(o) abrirVisorOferta(o);
+      });
+    });
     cont.querySelectorAll(".admin-item .del").forEach(btn=>{
       btn.addEventListener("click", async ()=>{
         const id = btn.closest(".admin-item").getAttribute("data-id");
@@ -934,6 +951,14 @@
       + '<div><div class="h">'+escA(c.titulo||"")+(c.urgente?' <span style="font-size:.6rem;font-weight:800;color:#B23A2E">URGENTE</span>':'')+'</div><div class="sub2">'+escA(c.institucion||"")+'</div></div>'
       + '<button class="del">Quitar</button></div>'
     ).join("");
+    cont.querySelectorAll(".admin-item").forEach(el=>{
+      el.style.cursor = "pointer";
+      el.addEventListener("click", (e)=>{
+        if(e.target.closest("button")) return;
+        const c = data.find(x=>String(x.id)===String(el.getAttribute("data-id")));
+        if(c) abrirVisorComunicado(c);
+      });
+    });
     cont.querySelectorAll(".admin-item .del").forEach(btn=>{
       btn.addEventListener("click", async ()=>{
         const id = btn.closest(".admin-item").getAttribute("data-id");
@@ -1213,6 +1238,107 @@
       document.getElementById("accionUrl").classList.toggle("hide", accionSel === "");
     });
   });
+
+  // ================= VISORES: ver cómo quedó publicado =================
+  function abrirVisorHTML(html){
+    document.getElementById("visor").innerHTML = html
+      + '<div class="cuerpo"><button class="cerrar" id="visorCerrar">Cerrar</button></div>';
+    document.getElementById("visorBack").classList.add("show");
+    document.getElementById("visorCerrar").addEventListener("click", cerrarVisor);
+  }
+  function galeriaVisor(lista){
+    if(!lista || !lista.length) return "";
+    if(lista.length === 1) return '<img src="'+escA(lista[0])+'" alt="">';
+    return '<div style="display:flex;gap:6px;overflow-x:auto;padding:0;background:#16140F">'
+      + lista.map(u=>'<img src="'+escA(u)+'" style="flex:0 0 auto;width:82%;max-height:52vh;object-fit:contain;border-radius:0" alt="">').join("")
+      + '</div><div style="font-family:var(--sans);font-size:.7rem;color:var(--ink-faint);padding:8px 18px 0">'
+      + lista.length + ' fotos — deslizá al costado</div>';
+  }
+  function fotosDeNota(n){
+    if(Array.isArray(n.fotos) && n.fotos.length) return n.fotos;
+    if(n.imagen_url) return [n.imagen_url];
+    return [];
+  }
+
+  function abrirVisorNota(n){
+    const lista = fotosDeNota(n);
+    const fecha = n.created_at ? new Date(n.created_at).toLocaleString("es-AR") : "";
+    let h = galeriaVisor(lista);
+    h += '<div class="cuerpo">'
+      + '<div class="cat">'+escA(n.lugar || "")+(n.urgente?' · ⚡ URGENTE':'')+'</div>'
+      + '<h3>'+escA(n.titulo||"")+'</h3>'
+      + '<div class="txt">'+escA(n.resumen_extendido || n.resumen_corto || "")+'</div>'
+      + (n.dato_extra ? '<div class="txt" style="margin-top:12px;padding:10px 12px;background:var(--paper-2);border-left:3px solid var(--int);border-radius:0 8px 8px 0">📌 '+escA(n.dato_extra)+'</div>' : '')
+      + (n.accion_etiqueta && n.accion_url ? '<div class="meta" style="margin-top:12px"><b>Botón:</b> '+escA(n.accion_etiqueta)+' → <a href="'+escA(n.accion_url)+'" target="_blank" rel="noopener">'+escA(n.accion_url)+'</a></div>' : '')
+      + '<div class="meta">'+escA(n.fuente_etiqueta || "sin fuente")+'<br>'+fecha
+      + (n.video_url ? '<br>🎬 Con video' : '')
+      + (lista.length ? '<br>📷 '+lista.length+(lista.length===1?' foto':' fotos') : '<br>Sin foto')
+      + '</div>'
+      + (n.url_original ? '<div class="meta"><a href="'+escA(n.url_original)+'" target="_blank" rel="noopener">Ver la fuente original ↗</a></div>' : '')
+      + '<div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--line)">'
+      + '<div class="field-label">Agregar más fotos a esta nota</div>'
+      + '<input class="inp" type="file" id="masFotos" accept="image/*" multiple style="padding:9px">'
+      + '<div id="masFotosEstado" style="font-family:var(--sans);font-size:.72rem;color:var(--ink-faint)"></div>'
+      + '</div>'
+      + '</div>';
+    abrirVisorHTML(h);
+    document.getElementById("masFotos").addEventListener("change", async (e)=>{
+      const files = Array.from(e.target.files || []).slice(0, 6);
+      if(!files.length) return;
+      const est = document.getElementById("masFotosEstado");
+      est.textContent = "Subiendo…";
+      const nuevas = [];
+      for(let i = 0; i < files.length; i++){
+        try{
+          const chico = await comprimirImagen(files[i]);
+          const nombre = Date.now() + "-x" + i + "." + ((chico.name||files[i].name).split(".").pop() || "jpg");
+          const { error } = await sb.storage.from("notas-fotos").upload(nombre, chico);
+          if(!error){
+            const { data } = sb.storage.from("notas-fotos").getPublicUrl(nombre);
+            nuevas.push(data.publicUrl);
+          }
+        }catch(err){}
+      }
+      if(!nuevas.length){ est.textContent = "No se pudieron subir."; return; }
+      const actuales = fotosDeNota(n);
+      const todas = actuales.concat(nuevas).slice(0, 10);
+      const upd = { fotos: todas };
+      if(!n.imagen_url) upd.imagen_url = todas[0];
+      const { error } = await sb.from("noticias").update(upd).eq("id", n.id);
+      if(error){ est.textContent = "No se pudo guardar: " + error.message; return; }
+      n.fotos = todas;
+      est.textContent = "✓ Ahora la nota tiene " + todas.length + " fotos.";
+      toast("Fotos agregadas ✓");
+      cargarPublicadoHoy();
+    });
+  }
+
+  function abrirVisorOferta(o){
+    let h = o.imagen_url ? '<img src="'+escA(o.imagen_url)+'" alt="">' : "";
+    h += '<div class="cuerpo">'
+      + '<div class="cat">🏷️ '+escA(o.negocio||"")+'</div>'
+      + '<h3>'+escA(o.titulo||"")+'</h3>'
+      + (o.descripcion ? '<div class="txt">'+escA(o.descripcion)+'</div>' : '')
+      + '<div class="meta">'
+      + (o.direccion ? '📍 '+escA(o.direccion)+'<br>' : '')
+      + (o.valido_hasta ? '🕐 Válido hasta: '+escA(o.valido_hasta)+'<br>' : '')
+      + (o.imagen_url ? '📷 Con foto' : 'Sin foto')
+      + '</div></div>';
+    abrirVisorHTML(h);
+  }
+
+  function abrirVisorComunicado(c){
+    const fecha = c.created_at ? new Date(c.created_at).toLocaleString("es-AR") : "";
+    let h = '<div class="cuerpo">'
+      + '<div class="cat">'+(c.urgente?'⚡ URGENTE · ':'✓ ')+escA(c.institucion||"")+'</div>'
+      + '<h3>'+escA(c.titulo||"")+'</h3>'
+      + '<div class="txt">'+escA(c.texto||"")+'</div>'
+      + '<div class="meta">'+fecha
+      + (c.urgente ? '<br>Se muestra abierto en la portada por 48 hs' : '<br>Solo dentro de la ficha de la institución')
+      + (c.video_url ? '<br>🎬 Con video' : '')
+      + '</div></div>';
+    abrirVisorHTML(h);
+  }
 
   document.querySelectorAll(".form-toggle").forEach(btn=>{
     btn.addEventListener("click", ()=>{

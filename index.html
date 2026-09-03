@@ -322,6 +322,16 @@
     font-family:var(--sans); font-size:.62rem; font-weight:800; display:flex; align-items:center; justify-content:center; flex:0 0 auto; }
   .com-destacado{ cursor:pointer; }
 
+  /* ===== foto a pantalla completa ===== */
+  .lightbox{ position:fixed; inset:0; z-index:400; background:#0C0B08; display:none;
+    align-items:center; justify-content:center; }
+  .lightbox.show{ display:flex; }
+  .lightbox img{ max-width:100%; max-height:100%; object-fit:contain; }
+  .lightbox .cerrar{ position:absolute; top:calc(14px + env(safe-area-inset-top)); right:14px;
+    background:rgba(255,255,255,.15); border:0; color:#fff; font-family:var(--sans); font-size:.8rem; font-weight:700;
+    padding:9px 15px; border-radius:999px; backdrop-filter:blur(6px); }
+  .galeria img, .s-hero img{ cursor:zoom-in; }
+
   /* ===== dato extra y acción de la nota ===== */
   .dato-extra{ display:flex; gap:10px; align-items:flex-start; background:color-mix(in srgb,var(--int) 9%,var(--paper-2));
     border-left:3px solid var(--int); border-radius:0 10px 10px 0; padding:12px 14px; margin:16px 0 0;
@@ -868,6 +878,11 @@
   </div>
   <button class="ok" id="instalarBtn">Instalar</button>
   <button class="no" id="instalarNo">✕</button>
+</div>
+
+<div class="lightbox" id="lightbox">
+  <img id="lightboxImg" alt="">
+  <button class="cerrar" id="lightboxCerrar">Cerrar ✕</button>
 </div>
 
 <nav class="bottom-nav">
@@ -2587,6 +2602,25 @@
   }
   document.getElementById("closeTemas").addEventListener("click", cerrarTemas);
   document.getElementById("backdropTemas").addEventListener("click", cerrarTemas);
+
+  // ================= FOTO A PANTALLA COMPLETA =================
+  function abrirFoto(src){
+    document.getElementById("lightboxImg").src = src;
+    document.getElementById("lightbox").classList.add("show");
+  }
+  function cerrarFoto(){
+    document.getElementById("lightbox").classList.remove("show");
+    document.getElementById("lightboxImg").src = "";
+  }
+  document.getElementById("lightboxCerrar").addEventListener("click", cerrarFoto);
+  document.getElementById("lightbox").addEventListener("click", (e)=>{
+    if(e.target.id !== "lightboxCerrar") cerrarFoto();
+  });
+  // cualquier foto de galería o portada se abre en grande
+  document.addEventListener("click", (e)=>{
+    const img = e.target.closest(".galeria img, #s-hero img, #aporteFoto img");
+    if(img && img.src) abrirFoto(img.src);
+  });
 
   registrarVisita();
 
