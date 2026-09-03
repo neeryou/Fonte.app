@@ -135,6 +135,32 @@
     padding:13px; border-radius:11px; border:0; background:var(--ink); color:var(--paper); display:flex;
     align-items:center; justify-content:center; gap:8px; }
 
+  .tipos{ display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:18px; }
+  .tipo{ background:var(--paper); border:1.5px solid var(--line); border-radius:13px; padding:13px 12px; text-align:left;
+    display:flex; flex-direction:column; gap:4px; }
+  .tipo.on{ border-color:var(--ink); background:var(--ink); color:var(--paper); }
+  .tipo .e{ font-size:1.15rem; }
+  .tipo .t{ font-family:var(--sans); font-weight:700; font-size:.82rem; }
+  .tipo .s{ font-family:var(--sans); font-size:.63rem; opacity:.72; line-height:1.3; }
+
+  /* barra de acción con vista previa */
+  .barra-accion{ position:fixed; left:0; right:0; bottom:calc(62px + env(safe-area-inset-bottom)); z-index:140;
+    background:var(--paper); border-top:1px solid var(--line-strong); padding:10px 14px; display:none; gap:8px;
+    max-width:640px; margin:0 auto; }
+  .barra-accion.show{ display:flex; }
+  .b-prev{ flex:0 0 auto; font-family:var(--sans); font-weight:700; font-size:.8rem; padding:12px 15px; border-radius:10px;
+    border:1px solid var(--line-strong); background:var(--paper); color:var(--ink-soft); }
+  .prev-note{ background:var(--paper); border:1px solid var(--line); border-radius:13px; overflow:hidden; margin-bottom:14px; }
+  .prev-note .im{ width:100%; aspect-ratio:16/9; background:var(--paper-2); background-size:cover; background-position:center; }
+  .prev-note .cu{ padding:13px 14px 16px; }
+  .prev-note .k{ font-family:var(--sans); font-size:.56rem; font-weight:700; text-transform:uppercase; color:var(--ciudad); }
+  .prev-note .h{ font-family:var(--serif); font-weight:700; font-size:1.05rem; line-height:1.2; margin:5px 0 6px; }
+  .prev-note .p{ font-family:var(--serif); font-size:.8rem; color:var(--ink-soft); line-height:1.5; }
+  .prev-note .dt{ margin-top:10px; background:color-mix(in srgb,var(--int) 9%,var(--paper-2)); border-left:3px solid var(--int);
+    border-radius:0 8px 8px 0; padding:9px 11px; font-family:var(--sans); font-size:.76rem; }
+  .prev-note .bt{ margin-top:12px; background:var(--ciudad); color:#fff; font-family:var(--sans); font-weight:700;
+    font-size:.8rem; text-align:center; padding:11px; border-radius:9px; }
+
   .rep-view{ display:none; }
   .rep-view.on{ display:block; }
   .tab-badge{ font-family:var(--sans); font-size:.62rem; font-weight:700; background:var(--urgente); color:#fff; padding:1px 6px; border-radius:999px; margin-left:4px; }
@@ -273,8 +299,17 @@
     </div>
 
     <div class="rep-view" id="viewCargar">
-    <h2 class="rep-h">Cargar una noticia</h2>
-    <p class="rep-sub">Pegá lo que viste (Facebook, radio, lo que sea) y Fonte lo convierte en una nota lista para revisar y publicar.</p>
+    <h2 class="rep-h">Publicar</h2>
+    <p class="rep-sub">Elegí qué vas a cargar. Podés ver cómo queda antes de publicarlo.</p>
+
+    <div class="tipos" id="tiposPub">
+      <button class="tipo on" data-tipo="nota"><span class="e">📰</span><span class="t">Nota</span><span class="s">Una noticia de la ciudad o la zona</span></button>
+      <button class="tipo" data-tipo="comunicado"><span class="e">📢</span><span class="t">Comunicado</span><span class="s">Aviso de una institución</span></button>
+      <button class="tipo" data-tipo="oferta"><span class="e">🏷️</span><span class="t">Oferta</span><span class="s">Promoción de un comercio</span></button>
+      <button class="tipo" data-tipo="institucion"><span class="e">🏥</span><span class="t">Institución</span><span class="s">Ficha y fechas de un servicio</span></button>
+    </div>
+
+    <div id="panelNota">
 
     <div class="card">
       <div class="field-label">Lo que capturaste</div>
@@ -374,12 +409,17 @@
       </div>
       <div class="pv-actions">
         <button class="disc" id="discBtn">Descartar</button>
-        <button class="pub" id="pubBtn">Publicar en Fonte</button>
+        <button class="pub hide" id="pubBtn">Publicar en Fonte</button>
       </div>
     </div>
 
     <h2 class="rep-h" style="font-size:1.1rem;margin-top:26px">Publicado hoy</h2>
     <div id="todayList"><p style="font-family:var(--sans);font-size:.78rem;color:var(--ink-faint)">Nada todavía.</p></div>
+    </div>
+
+    <div id="panelComunicado" class="hide"></div>
+    <div id="panelOferta" class="hide"></div>
+    <div id="panelInstitucion" class="hide"></div>
     </div>
 
     <div class="rep-view" id="viewAportes">
@@ -495,6 +535,17 @@
   </div>
 </div>
 
+<div class="rep-view" id="viewPrevia">
+  <h2 class="rep-h">Así va a quedar</h2>
+  <p class="rep-sub">Exactamente como lo va a ver el vecino en Fonte.</p>
+  <div id="previaCont"></div>
+</div>
+
+<div class="barra-accion" id="barraAccion">
+  <button class="b-prev" id="btnVistaPrevia">👁 Ver</button>
+  <button class="btn-gen" id="btnPublicarBarra" style="flex:1;margin:0">Publicar en Fonte</button>
+</div>
+
 <nav class="rep-nav">
   <button class="rnv on" data-v="viewHoy">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
@@ -587,14 +638,14 @@
     if(v === "viewArchivo"){ cargarArchivo(); }
     if(v === "viewMetricas"){ cargarMetricas(); }
     if(v === "viewAportes"){ cargarAportesPendientes(); cargarAvisosPublicados(); }
-    if(v === "viewOfertas"){ cargarOfertasAdmin(); cargarComunicadosAdmin(); }
-    if(v === "viewInstituciones"){ cargarInstitucionesAdmin(); }
+    if(v === "viewCargar"){ cargarPublicadoHoy(); cargarOfertasAdmin(); cargarComunicadosAdmin(); cargarInstitucionesAdmin(); }
     window.scrollTo({ top:0, behavior:"instant" });
   }
   // compatibilidad con llamadas viejas
   function irAPestana(tabId){
-    const map = { tabCargar:"viewCargar", tabAportes:"viewAportes", tabOfertas:"viewOfertas",
-                  tabMetricas:"viewMetricas", tabInstituciones:"viewInstituciones" };
+    if(tabId === "tabOfertas"){ irAVista("viewCargar"); irATipo("oferta"); return; }
+    if(tabId === "tabInstituciones"){ irAVista("viewCargar"); irATipo("institucion"); return; }
+    const map = { tabCargar:"viewCargar", tabAportes:"viewAportes", tabMetricas:"viewMetricas" };
     irAVista(map[tabId] || "viewHoy");
   }
   document.querySelectorAll(".rnv").forEach(b=>{
@@ -1473,7 +1524,7 @@
     const nVenc = (venc.data||[]).length;
     if(nVenc){
       tareas.push({ urg:true, ic:"📅", t: nVenc + (nVenc===1?" fecha vencida":" fechas vencidas"),
-                    s: (venc.data[0].titulo||"") + " — actualizala o la ficha queda vacía", go:"Actualizar ›", v:"viewInstituciones" });
+                    s: (venc.data[0].titulo||"") + " — actualizala o la ficha queda vacía", go:"Actualizar ›", v:"institucion" });
     }
     const urgVigentes = (urg.data||[]).filter(c=>{
       if(!c.created_at) return false;
@@ -1482,7 +1533,7 @@
     urgVigentes.forEach(c=>{
       const horas = Math.max(0, Math.round(48 - (Date.now()-new Date(c.created_at).getTime())/3600000));
       tareas.push({ urg:false, ic:"⚡", t:"Aviso urgente en portada",
-                    s:'"'+(c.titulo||"")+'" sale de portada en '+horas+" h", go:"Ver ›", v:"viewOfertas" });
+                    s:'"'+(c.titulo||"")+'" sale de portada en '+horas+" h", go:"Ver ›", v:"comunicado" });
     });
 
     const cont = document.getElementById("hoyTareas");
@@ -1499,7 +1550,12 @@
       : '<div class="task ok"><span class="ic">✓</span><div class="tx"><div class="t">Todo al día</div>'
         + '<div class="s">No hay nada pendiente de revisión.</div></div></div>';
     cont.querySelectorAll(".task[data-i]").forEach(el=>{
-      el.addEventListener("click", ()=> irAVista(tareas[parseInt(el.getAttribute("data-i"),10)].v));
+      el.addEventListener("click", ()=>{
+        const destino = tareas[parseInt(el.getAttribute("data-i"),10)].v;
+        if(["nota","comunicado","oferta","institucion"].includes(destino)){
+          irAVista("viewCargar"); irATipo(destino);
+        } else irAVista(destino);
+      });
     });
 
     const personasHoy = new Set((visitasHoy.data||[]).map(v=>v.dispositivo_id)).size;
@@ -1785,6 +1841,103 @@
     }catch(e){}
     if(btn) btn.textContent = orig;
   }
+
+  // ================= SELECTOR DE TIPO EN PUBLICAR =================
+  // Los formularios de oferta/comunicado/institución ya existen en sus vistas.
+  // Acá los movemos a los paneles de "Publicar" para tenerlos todos en un solo lugar.
+  let tipoPub = "nota";
+  (function moverFormularios(){
+    // Oferta y comunicado viven en viewOfertas; institución en viewInstituciones.
+    // Los movemos a los paneles de "Publicar" sin duplicar código ni listeners.
+    const vOf = document.getElementById("viewOfertas");
+    const vIn = document.getElementById("viewInstituciones");
+    const pOf = document.getElementById("panelOferta");
+    const pCo = document.getElementById("panelComunicado");
+    const pIn = document.getElementById("panelInstitucion");
+    if(vOf && pOf && pCo){
+      while(vOf.firstChild) pOf.appendChild(vOf.firstChild);
+      // el bloque de comunicado arranca en su propio título: lo separamos
+      const hs = pOf.querySelectorAll("h2.rep-h");
+      const hCom = Array.from(hs).find(h => /comunicado oficial/i.test(h.textContent));
+      if(hCom){
+        let nodo = hCom;
+        const mueve = [];
+        while(nodo){ mueve.push(nodo); nodo = nodo.nextSibling; }
+        mueve.forEach(n => pCo.appendChild(n));
+      }
+    }
+    if(vIn && pIn){ while(vIn.firstChild) pIn.appendChild(vIn.firstChild); }
+  })();
+
+  function irATipo(t){
+    tipoPub = t;
+    document.querySelectorAll("#tiposPub .tipo").forEach(b=> b.classList.toggle("on", b.getAttribute("data-tipo") === t));
+    ["nota","comunicado","oferta","institucion"].forEach(x=>{
+      const p = document.getElementById("panel" + x.charAt(0).toUpperCase() + x.slice(1));
+      if(p) p.classList.toggle("hide", x !== t);
+    });
+    document.getElementById("barraAccion").classList.toggle("show", t === "nota");
+    window.scrollTo({ top:0, behavior:"instant" });
+  }
+  document.querySelectorAll("#tiposPub .tipo").forEach(b=>{
+    b.addEventListener("click", ()=> irATipo(b.getAttribute("data-tipo")));
+  });
+  irATipo("nota");
+
+  // ================= VISTA PREVIA ANTES DE PUBLICAR =================
+  let enPrevia = false;
+  function borradorActual(){
+    const fotos = (typeof fotosPropias !== "undefined" && fotosPropias.length) ? fotosPropias : [];
+    return {
+      titulo: (document.getElementById("pvTitulo")||{}).value || "",
+      resumen_corto: (document.getElementById("pvCorto")||{}).value || "",
+      resumen_extendido: (document.getElementById("pvExtendido")||{}).value || "",
+      dato_extra: (document.getElementById("pvDato")||{}).value || "",
+      accion_etiqueta: (typeof accionEtiqueta === "function" ? accionEtiqueta() : ""),
+      accion_url: (document.getElementById("accionUrl")||{}).value || "",
+      lugar: (document.getElementById("pvLugar")||{}).value || "Quitilipi",
+      fotos, imagen_url: fotos[0] || null,
+      video_url: (document.getElementById("videoUrl")||{}).value || "",
+      fuente_etiqueta: (typeof fuenteElegida !== "undefined" ? fuenteElegida : ""),
+    };
+  }
+  function pintarPrevia(){
+    const n = borradorActual();
+    if(!n.titulo){
+      document.getElementById("previaCont").innerHTML =
+        '<p class="vacio-txt">Todavía no hay nada para ver. Generá la nota con Fonte primero.</p>';
+      return;
+    }
+    const foto = n.fotos[0];
+    document.getElementById("previaCont").innerHTML =
+      '<div class="prev-note">'
+      + (foto ? '<div class="im" style="background-image:url(\''+escA(foto)+'\')"></div>' : '')
+      + '<div class="cu">'
+      + '<div class="k">● Tu ciudad · '+escA(n.lugar)+'</div>'
+      + '<div class="h">'+escA(n.titulo)+'</div>'
+      + '<div class="p">'+escA(n.resumen_corto || n.resumen_extendido)+'</div>'
+      + (n.dato_extra ? '<div class="dt">📌 '+escA(n.dato_extra)+'</div>' : '')
+      + (n.accion_etiqueta && n.accion_url ? '<div class="bt">'+escA(n.accion_etiqueta)+' ↗</div>' : '')
+      + '</div></div>'
+      + '<p class="rep-sub">'
+      + (n.fotos.length ? '📷 '+n.fotos.length+(n.fotos.length===1?' foto':' fotos') : 'Sin foto')
+      + (n.video_url ? ' · 🎬 con video' : '')
+      + (n.fuente_etiqueta ? ' · vía '+escA(n.fuente_etiqueta) : '')
+      + '</p>';
+  }
+  document.getElementById("btnVistaPrevia").addEventListener("click", ()=>{
+    enPrevia = !enPrevia;
+    document.getElementById("viewCargar").classList.toggle("on", !enPrevia);
+    document.getElementById("viewPrevia").classList.toggle("on", enPrevia);
+    document.getElementById("btnVistaPrevia").textContent = enPrevia ? "✎ Editar" : "👁 Ver";
+    if(enPrevia) pintarPrevia();
+    window.scrollTo({ top:0, behavior:"instant" });
+  });
+  document.getElementById("btnPublicarBarra").addEventListener("click", ()=>{
+    const real = document.getElementById("pubBtn");
+    if(real) real.click();
+    else toast("Generá la nota con Fonte antes de publicar.");
+  });
 
   document.querySelectorAll(".form-toggle").forEach(btn=>{
     btn.addEventListener("click", ()=>{
