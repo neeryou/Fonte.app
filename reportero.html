@@ -243,6 +243,25 @@
         <div class="field-label">Resumen extendido<span class="auto">auto</span></div>
         <textarea id="pvExtendido" style="min-height:130px"></textarea>
       </div>
+
+      <div class="pv-field" style="margin-bottom:12px">
+        <div class="field-label">Dato que el resumen no captó (opcional)</div>
+        <input class="inp" id="pvDato" placeholder="Ej: la inscripción cierra el 12 de septiembre">
+      </div>
+
+      <div class="pv-field" style="margin-bottom:12px">
+        <div class="field-label">¿Hay algo para hacer? (opcional)</div>
+        <div class="srcchips" id="accionChips">
+          <button class="srcchip on" data-accion="">Nada</button>
+          <button class="srcchip" data-accion="Registrate en la plataforma">Registrate</button>
+          <button class="srcchip" data-accion="Ingresá a ver">Ingresá a ver</button>
+          <button class="srcchip" data-accion="Descargá el formulario">Formulario</button>
+          <button class="srcchip" data-accion="Escribí a este número">Contacto</button>
+          <button class="srcchip" data-accion="__otra">Otra</button>
+        </div>
+        <input class="inp hide" id="accionCustom" placeholder="Escribí el texto del botón">
+        <input class="inp hide" id="accionUrl" placeholder="https://... (a dónde lleva)">
+      </div>
       <div style="display:flex;gap:10px;margin-bottom:12px">
         <div style="flex:1">
           <div class="field-label">Categoría<span class="auto">auto</span></div>
@@ -667,6 +686,9 @@
     const registro = {
       titulo: document.getElementById("pvTitulo").value.trim(),
       resumen_corto: document.getElementById("pvCorto").value.trim(),
+      dato_extra: document.getElementById("pvDato").value.trim() || null,
+      accion_etiqueta: accionEtiqueta() || null,
+      accion_url: (accionEtiqueta() ? document.getElementById("accionUrl").value.trim() : "") || null,
       resumen_extendido: document.getElementById("pvExtendido").value.trim(),
       categoria: document.getElementById("pvCategoria").value,
       onda: document.getElementById("pvOnda").value,
@@ -695,6 +717,13 @@
     document.getElementById("fotoPreview").innerHTML = "";
     fotosPropias = [];
     document.getElementById("videoUrl").value = "";
+    document.getElementById("pvDato").value = "";
+    document.getElementById("accionUrl").value = "";
+    document.getElementById("accionCustom").value = "";
+    accionSel = "";
+    document.querySelectorAll("#accionChips .srcchip").forEach((x,i)=>x.classList.toggle("on", i===0));
+    document.getElementById("accionCustom").classList.add("hide");
+    document.getElementById("accionUrl").classList.add("hide");
     fotoPropiaUrl = null;
     cargarPublicadoHoy();
   });
@@ -1167,6 +1196,22 @@
   function cerrarVisor(){ document.getElementById("visorBack").classList.remove("show"); }
   document.getElementById("visorBack").addEventListener("click", (e)=>{
     if(e.target.id === "visorBack") cerrarVisor();
+  });
+
+  // ================= ACCIÓN DE LA NOTA =================
+  let accionSel = "";
+  function accionEtiqueta(){
+    if(accionSel === "__otra") return document.getElementById("accionCustom").value.trim();
+    return accionSel;
+  }
+  document.querySelectorAll("#accionChips .srcchip").forEach(b=>{
+    b.addEventListener("click", ()=>{
+      document.querySelectorAll("#accionChips .srcchip").forEach(x=>x.classList.remove("on"));
+      b.classList.add("on");
+      accionSel = b.getAttribute("data-accion");
+      document.getElementById("accionCustom").classList.toggle("hide", accionSel !== "__otra");
+      document.getElementById("accionUrl").classList.toggle("hide", accionSel === "");
+    });
   });
 
   document.querySelectorAll(".form-toggle").forEach(btn=>{

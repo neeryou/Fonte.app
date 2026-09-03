@@ -322,6 +322,16 @@
     font-family:var(--sans); font-size:.62rem; font-weight:800; display:flex; align-items:center; justify-content:center; flex:0 0 auto; }
   .com-destacado{ cursor:pointer; }
 
+  /* ===== dato extra y acción de la nota ===== */
+  .dato-extra{ display:flex; gap:10px; align-items:flex-start; background:color-mix(in srgb,var(--int) 9%,var(--paper-2));
+    border-left:3px solid var(--int); border-radius:0 10px 10px 0; padding:12px 14px; margin:16px 0 0;
+    font-family:var(--sans); font-size:.85rem; color:var(--ink); line-height:1.45; }
+  .dato-extra::before{ content:"📌"; flex:0 0 auto; }
+  .accion-btn{ display:flex; align-items:center; justify-content:center; gap:8px; width:100%;
+    font-family:var(--sans); font-size:.92rem; font-weight:700; color:#fff; background:var(--ciudad);
+    padding:14px 18px; border-radius:11px; text-decoration:none; margin:16px 0 0; }
+  .accion-btn::after{ content:"↗"; opacity:.75; }
+
   /* ===== galería de fotos ===== */
   .galeria{ position:relative; margin-bottom:14px; }
   .gal-row{ display:flex; gap:8px; overflow-x:auto; scrollbar-width:none; scroll-snap-type:x mandatory; border-radius:10px; }
@@ -704,6 +714,8 @@
     <div id="s-video" style="display:none;margin-bottom:16px;border-radius:6px;overflow:hidden;aspect-ratio:16/9;"></div>
     <div style="font-family:var(--sans);font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--ink-faint);margin-bottom:8px">Resumen de Fonte</div>
     <div id="s-body"></div>
+    <div class="dato-extra" id="s-dato" style="display:none"></div>
+    <a class="accion-btn" id="s-accion" target="_blank" rel="noopener" style="display:none"></a>
     <a class="verorig" id="s-orig" target="_blank" rel="noopener">Ver original ↗</a>
     <div class="rel-block" id="relBlock"></div>
   </div>
@@ -1411,6 +1423,17 @@
         if(pop && pop.classList.contains("gloss-pop")) pop.classList.toggle("open");
       });
     });
+    const datoEl = document.getElementById("s-dato");
+    if(n.dato_extra){ datoEl.style.display = "flex"; datoEl.textContent = n.dato_extra; }
+    else { datoEl.style.display = "none"; datoEl.textContent = ""; }
+
+    const accEl = document.getElementById("s-accion");
+    if(n.accion_etiqueta && n.accion_url){
+      accEl.style.display = "flex";
+      accEl.textContent = n.accion_etiqueta;
+      accEl.href = n.accion_url;
+    } else { accEl.style.display = "none"; accEl.removeAttribute("href"); }
+
     const orig = document.getElementById("s-orig");
     if(n.url_original){ orig.href = n.url_original; orig.style.display="inline-flex"; }
     else { orig.style.display="none"; }
@@ -1464,15 +1487,167 @@
     btn.classList.add("on");
   });
 
-  // ---- Compartir (nativo si existe, si no copia el link) ----
+  // ---- Compartir: genera una placa para historias + texto con el link de Fonte ----
+  const URL_FONTE = location.origin + location.pathname;
+
+  function textoCompartir(n){
+    const partes = [];
+    partes.push(n.titulo || "");
+    const resumen = n.resumen_corto || n.resumen_extendido || "";
+    if(resumen) partes.push("", resumen.length > 220 ? resumen.slice(0,220).trim() + "…" : resumen);
+    if(n.dato_extra) partes.push("", "📌 " + n.dato_extra);
+    if(n.accion_etiqueta && n.accion_url) partes.push("", "📎 " + n.accion_etiqueta + " → " + n.accion_url);
+    if(n.fuente_etiqueta) partes.push("", "Fuente: " + n.fuente_etiqueta);
+    partes.push("", "👉 Leelo completo en Fonte: " + URL_FONTE);
+    return partes.join("\n");
+  }
+
+  // Dibuja la placa 1080x1920. Si no hay foto usa el diseño tipográfico.
+  function cargarImagen(src){
+    return new Promise((res)=>{
+      if(!src) return res(null);
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = ()=> res(img);
+      img.onerror = ()=> res(null);
+      img.src = src;
+    });
+  }
+  function envolver(ctx, texto, maxAncho, maxLineas){
+    const palabras = String(texto||"").split(/\s+/);
+    const lineas = []; let linea = "";
+    for(const p of palabras){
+      const prueba = linea ? linea + " " + p : p;
+      if(ctx.measureText(prueba).width > maxAncho && linea){ lineas.push(linea); linea = p; }
+      else linea = prueba;
+      if(lineas.length === maxLineas) break;
+    }
+    if(linea && lineas.length < maxLineas) lineas.push(linea);
+    if(lineas.length === maxLineas){
+      let ult = lineas[maxLineas-1];
+      while(ctx.measureText(ult + "…").width > maxAncho && ult.length > 4) ult = ult.slice(0,-1);
+      lineas[maxLineas-1] = ult.trim() + "…";
+    }
+    return lineas;
+  }
+  async function generarPlaca(n){
+    // sin esto el canvas dibuja con una tipografía genérica
+    try{
+      if(document.fonts && document.fonts.load){
+        await Promise.all([
+          document.fonts.load("400 76px 'Alfa Slab One'"),
+          document.fonts.load("700 88px 'Lora'"),
+          document.fonts.load("500 44px 'Lora'"),
+          document.fonts.load("800 34px 'Work Sans'"),
+          document.fonts.load("700 34px 'Work Sans'"),
+        ]);
+      }
+    }catch(e){}
+    const W = 1080, H = 1920;
+    const c = document.createElement("canvas");
+    c.width = W; c.height = H;
+    const ctx = c.getContext("2d");
+
+    const urgente = !!n.urgente;
+    const lista = (typeof fotosDe === "function") ? fotosDe(n) : (n.imagen_url ? [n.imagen_url] : []);
+    const img = urgente ? null : await cargarImagen(lista[0]);
+
+    const TINTA = "#16140F", PAPEL = "#FDFCF9", CORAL = "#FF4B3E", ROJO = "#B23A2E";
+    const lugar = (n.lugar || "").toUpperCase();
+
+    if(urgente){
+      // ---- placa urgente ----
+      ctx.fillStyle = ROJO; ctx.fillRect(0,0,W,H);
+      ctx.fillStyle = "#fff";
+      ctx.beginPath(); ctx.roundRect(80, 150, 340, 76, 38); ctx.fill();
+      ctx.fillStyle = ROJO; ctx.font = "800 34px 'Work Sans',sans-serif";
+      ctx.fillText("⚡ URGENTE", 118, 200);
+      ctx.fillStyle = "#fff"; ctx.font = "700 86px 'Lora',Georgia,serif";
+      envolver(ctx, n.titulo, W-160, 6).forEach((l,i)=> ctx.fillText(l, 80, 360 + i*104));
+      if(n.dato_extra){
+        ctx.font = "500 42px 'Work Sans',sans-serif"; ctx.fillStyle = "rgba(255,255,255,.92)";
+        envolver(ctx, n.dato_extra, W-160, 4).forEach((l,i)=> ctx.fillText(l, 80, 1180 + i*58));
+      }
+    } else if(img){
+      // ---- placa editorial con foto ----
+      ctx.fillStyle = PAPEL; ctx.fillRect(0,0,W,H);
+      const alto = 900;
+      const escala = Math.max(W/img.width, alto/img.height);
+      const iw = img.width*escala, ih = img.height*escala;
+      ctx.drawImage(img, (W-iw)/2, (alto-ih)/2, iw, ih);
+      if(lugar){
+        ctx.font = "800 32px 'Work Sans',sans-serif";
+        const w = ctx.measureText(lugar).width + 64;
+        ctx.fillStyle = "#3E8557";
+        ctx.beginPath(); ctx.roundRect(60, alto-96, w, 62, 31); ctx.fill();
+        ctx.fillStyle = "#fff"; ctx.fillText(lugar, 92, alto-54);
+      }
+      ctx.fillStyle = TINTA; ctx.font = "700 78px 'Lora',Georgia,serif";
+      envolver(ctx, n.titulo, W-160, 6).forEach((l,i)=> ctx.fillText(l, 80, alto + 150 + i*94));
+    } else {
+      // ---- placa tipográfica (sin foto) ----
+      ctx.fillStyle = PAPEL; ctx.fillRect(0,0,W,H);
+      ctx.strokeStyle = TINTA; ctx.lineWidth = 8;
+      ctx.strokeRect(80, 130, W-160, H-420);
+      if(lugar){
+        ctx.fillStyle = "#3E8557"; ctx.font = "800 34px 'Work Sans',sans-serif";
+        ctx.fillText("● " + lugar, 140, 250);
+      }
+      ctx.fillStyle = TINTA; ctx.font = "700 88px 'Lora',Georgia,serif";
+      const ls = envolver(ctx, n.titulo, W-280, 7);
+      ls.forEach((l,i)=> ctx.fillText(l, 140, 380 + i*106));
+      const yLinea = 380 + ls.length*106 + 20;
+      ctx.fillStyle = CORAL; ctx.beginPath(); ctx.roundRect(140, yLinea, 120, 10, 5); ctx.fill();
+      const bajada = n.resumen_corto || "";
+      if(bajada){
+        ctx.fillStyle = "#57503F"; ctx.font = "500 44px 'Lora',Georgia,serif";
+        envolver(ctx, bajada, W-280, 5).forEach((l,i)=> ctx.fillText(l, 140, yLinea + 90 + i*62));
+      }
+    }
+
+    // ---- pie común: marca + "Leelo completo en Fonte" ----
+    const claro = urgente;
+    ctx.fillStyle = claro ? "rgba(255,255,255,.35)" : TINTA;
+    ctx.fillRect(80, H-260, W-160, claro ? 2 : 5);
+    ctx.fillStyle = claro ? "#fff" : TINTA;
+    ctx.font = "400 76px 'Alfa Slab One',Georgia,serif";
+    ctx.fillText("Fonte", 80, H-150);
+    const anchoMarca = ctx.measureText("Fonte").width;
+    ctx.fillStyle = CORAL;
+    ctx.beginPath(); ctx.arc(80 + anchoMarca + 22, H-198, 11, 0, Math.PI*2); ctx.fill();
+    ctx.textAlign = "right";
+    ctx.fillStyle = claro ? "rgba(255,255,255,.8)" : "#57503F";
+    ctx.font = "700 34px 'Work Sans',sans-serif";
+    ctx.fillText("Leelo completo en Fonte", W-80, H-186);
+    ctx.font = "600 30px 'Work Sans',sans-serif";
+    ctx.fillStyle = claro ? "rgba(255,255,255,.65)" : "#9A9384";
+    ctx.fillText(URL_FONTE.replace(/^https?:\/\//,"").replace(/\/$/,""), W-80, H-138);
+    ctx.textAlign = "left";
+
+    return new Promise(res=> c.toBlob(res, "image/png", 0.92));
+  }
+
   document.getElementById("shareBtn").addEventListener("click", async ()=>{
     if(!notaAbierta) return;
-    const url = notaAbierta.url_original || location.href;
-    const texto = notaAbierta.titulo + " — vía Fonte";
+    const btn = document.getElementById("shareBtn");
+    const original = btn.textContent;
+    const texto = textoCompartir(notaAbierta);
+    btn.textContent = "Preparando…";
     try{
-      if(navigator.share){ await navigator.share({ title: notaAbierta.titulo, text: texto, url }); }
-      else { await navigator.clipboard.writeText(texto + " " + url); alert("Copiado: " + texto); }
-    }catch(e){ /* el usuario canceló el share, no hacemos nada */ }
+      let blob = null;
+      try{ blob = await generarPlaca(notaAbierta); }catch(e){ blob = null; }
+      const archivo = blob ? new File([blob], "fonte.png", { type:"image/png" }) : null;
+
+      if(archivo && navigator.canShare && navigator.canShare({ files:[archivo] })){
+        await navigator.share({ files:[archivo], text: texto });
+      } else if(navigator.share){
+        await navigator.share({ title: notaAbierta.titulo, text: texto, url: URL_FONTE });
+      } else {
+        await navigator.clipboard.writeText(texto);
+        alert("Texto copiado. Pegalo donde quieras compartirlo.");
+      }
+    }catch(e){ /* el usuario canceló, no hacemos nada */ }
+    btn.textContent = original;
   });
 
   document.getElementById("refreshBtn").addEventListener("click", ()=>{ cargar(false); cargarOfertas(); cargarComunicados().then(cargarInstituciones); });
