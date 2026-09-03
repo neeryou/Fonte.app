@@ -77,6 +77,64 @@
     border:1px dashed var(--line-strong); border-radius:12px; padding:14px 16px; margin-bottom:16px; }
   .form-toggle .chev{ font-size:.9rem; color:var(--ink-faint); transition:transform .2s; }
   .form-toggle.abierto .chev{ transform:rotate(180deg); }
+  /* ===== barra inferior ===== */
+  .rep-nav{ position:fixed; left:0; right:0; bottom:0; z-index:150; display:flex; justify-content:space-around; align-items:flex-end;
+    background:var(--paper); border-top:1px solid var(--line-strong); padding:8px 6px calc(9px + env(safe-area-inset-bottom)); }
+  .rnv{ flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; background:none; border:0;
+    font-family:var(--sans); font-size:.6rem; font-weight:600; color:var(--ink-soft); position:relative; }
+  .rnv.on{ color:var(--ink); font-weight:700; }
+  .rnv svg{ width:20px; height:20px; }
+  .rnv .pip{ position:absolute; top:-2px; right:calc(50% - 16px); min-width:16px; height:16px; padding:0 4px; border-radius:999px;
+    background:var(--urgente); color:#fff; font-size:.55rem; font-weight:800; display:flex; align-items:center; justify-content:center;
+    border:2px solid var(--paper); }
+  body{ padding-bottom:76px; }
+
+  /* ===== bandeja de hoy ===== */
+  .sec-lbl{ font-family:var(--sans); font-size:.6rem; font-weight:800; text-transform:uppercase; letter-spacing:.08em;
+    color:var(--ink-faint); margin:22px 0 9px; display:flex; align-items:center; gap:6px; }
+  .sec-lbl .n{ background:var(--urgente); color:#fff; font-size:.56rem; padding:1px 7px; border-radius:999px; }
+  .task{ background:var(--surface, #fff); border:1px solid var(--line); border-radius:14px; padding:13px 14px;
+    display:flex; gap:11px; align-items:center; margin-bottom:9px; }
+  .task.urg{ border-color:color-mix(in srgb,var(--urgente) 40%,var(--line)); background:color-mix(in srgb,var(--urgente) 5%,var(--paper)); }
+  .task .ic{ width:38px; height:38px; border-radius:11px; flex:0 0 auto; display:flex; align-items:center; justify-content:center;
+    font-size:1.05rem; background:var(--paper-2); }
+  .task .tx{ flex:1; min-width:0; }
+  .task .t{ font-family:var(--sans); font-weight:700; font-size:.86rem; color:var(--ink); }
+  .task .s{ font-family:var(--sans); font-size:.7rem; color:var(--ink-faint); margin-top:2px; line-height:1.35; }
+  .task .go{ font-family:var(--sans); font-size:.68rem; font-weight:700; color:var(--region); white-space:nowrap; }
+  .task.ok{ border-color:color-mix(in srgb,var(--barrio) 30%,var(--line)); background:color-mix(in srgb,var(--barrio) 5%,var(--paper)); }
+  .task.ok .go{ color:var(--barrio); }
+
+  .kpis{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; }
+  .kpi3{ background:var(--paper-2); border-radius:12px; padding:11px 8px; text-align:center; }
+  .kpi3 .n{ font-family:var(--serif); font-weight:700; font-size:1.3rem; color:var(--ink); line-height:1; }
+  .kpi3 .l{ font-family:var(--sans); font-size:.58rem; color:var(--ink-faint); margin-top:4px; line-height:1.25; }
+
+  /* ===== archivo ===== */
+  .filtros{ display:flex; gap:6px; overflow-x:auto; padding-bottom:12px; scrollbar-width:none; }
+  .filtros::-webkit-scrollbar{ display:none; }
+  .filtros .f{ flex:0 0 auto; font-family:var(--sans); font-size:.7rem; font-weight:600; padding:6px 12px; border-radius:999px;
+    background:var(--paper-2); color:var(--ink-soft); border:0; white-space:nowrap; }
+  .filtros .f.on{ background:var(--ink); color:var(--paper); }
+  .arch-item{ background:var(--paper); border:1px solid var(--line); border-radius:12px; padding:11px;
+    display:flex; gap:10px; align-items:center; margin-bottom:8px; cursor:pointer; }
+  .arch-item .mini{ width:52px; height:52px; border-radius:9px; flex:0 0 auto; background:var(--paper-2); background-size:cover;
+    background-position:center; display:flex; align-items:center; justify-content:center; font-size:1.1rem; }
+  .arch-item .tx{ flex:1; min-width:0; }
+  .arch-item .t{ font-family:var(--serif); font-weight:700; font-size:.86rem; line-height:1.2; color:var(--ink); }
+  .arch-item .m{ font-family:var(--sans); font-size:.63rem; color:var(--ink-faint); margin-top:3px; display:flex; align-items:center; gap:5px; flex-wrap:wrap; }
+  .bdg{ font-family:var(--sans); font-size:.52rem; font-weight:800; text-transform:uppercase; padding:2px 6px; border-radius:5px; }
+  .bdg.nota{ background:color-mix(in srgb,var(--ciudad) 14%,var(--paper)); color:var(--ciudad); }
+  .bdg.oferta{ background:color-mix(in srgb,var(--int) 14%,var(--paper)); color:var(--int); }
+  .bdg.comunicado{ background:color-mix(in srgb,var(--barrio) 14%,var(--paper)); color:var(--barrio); }
+  .bdg.aporte{ background:color-mix(in srgb,var(--region) 14%,var(--paper)); color:var(--region); }
+  .vacio-txt{ font-family:var(--sans); font-size:.78rem; color:var(--ink-faint); }
+
+  /* ===== botón compartir en el visor ===== */
+  .visor .compartir{ width:100%; margin-top:14px; font-family:var(--sans); font-weight:700; font-size:.88rem;
+    padding:13px; border-radius:11px; border:0; background:var(--ink); color:var(--paper); display:flex;
+    align-items:center; justify-content:center; gap:8px; }
+
   .rep-view{ display:none; }
   .rep-view.on{ display:block; }
   .tab-badge{ font-family:var(--sans); font-size:.62rem; font-weight:700; background:var(--urgente); color:#fff; padding:1px 6px; border-radius:999px; margin-left:4px; }
@@ -186,15 +244,35 @@
   </div></div>
 
   <div class="rep-wrap">
-    <div class="rep-tabs">
-      <button class="rep-tab on" id="tabCargar">Cargar noticia</button>
-      <button class="rep-tab" id="tabAportes">Aportes pendientes<span class="tab-badge hide" id="badgeAportes">0</span></button>
-      <button class="rep-tab" id="tabOfertas">Ofertas y avisos</button>
-      <button class="rep-tab" id="tabMetricas">Métricas</button>
-      <button class="rep-tab" id="tabInstituciones">Instituciones</button>
+    <div class="rep-view on" id="viewHoy">
+      <h2 class="rep-h" id="hoySaludo">Hola</h2>
+      <p class="rep-sub" id="hoyFecha"></p>
+
+      <div class="sec-lbl">Para hacer ahora <span class="n hide" id="hoyPendN">0</span></div>
+      <div id="hoyTareas"></div>
+
+      <div class="sec-lbl">Hoy en Fonte</div>
+      <div class="kpis" id="hoyKpis"></div>
+
+      <div class="sec-lbl">Lo último que publicaste</div>
+      <div id="hoyUltimo"></div>
     </div>
 
-    <div class="rep-view on" id="viewCargar">
+    <div class="rep-view" id="viewArchivo">
+      <h2 class="rep-h">Archivo</h2>
+      <p class="rep-sub">Todo lo que publicaste. Tocá para ver cómo quedó o compartirlo.</p>
+      <input class="inp" id="archBuscar" placeholder="Buscar por título, comercio, institución…" style="margin-bottom:10px">
+      <div class="filtros" id="archFiltros">
+        <button class="f on" data-f="todo">Todo</button>
+        <button class="f" data-f="nota">Notas</button>
+        <button class="f" data-f="comunicado">Comunicados</button>
+        <button class="f" data-f="oferta">Ofertas</button>
+        <button class="f" data-f="aporte">Avisos de vecinos</button>
+      </div>
+      <div id="archLista"><p class="vacio-txt">Cargando…</p></div>
+    </div>
+
+    <div class="rep-view" id="viewCargar">
     <h2 class="rep-h">Cargar una noticia</h2>
     <p class="rep-sub">Pegá lo que viste (Facebook, radio, lo que sea) y Fonte lo convierte en una nota lista para revisar y publicar.</p>
 
@@ -417,6 +495,21 @@
   </div>
 </div>
 
+<nav class="rep-nav">
+  <button class="rnv on" data-v="viewHoy">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
+    <span>Hoy</span><span class="pip hide" id="navPendN">0</span></button>
+  <button class="rnv" data-v="viewCargar">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+    <span>Publicar</span></button>
+  <button class="rnv" data-v="viewArchivo">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+    <span>Archivo</span></button>
+  <button class="rnv" data-v="viewMetricas">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>
+    <span>Panel</span></button>
+</nav>
+
 <div class="toast" id="toast"></div>
 
 <div class="visor-back" id="visorBack">
@@ -483,25 +576,29 @@
     {id:"otro_riesgo", label:"Otro riesgo", icon:"⚠️"}
   ];
 
-  const TABS = {
-    tabCargar: "viewCargar",
-    tabAportes: "viewAportes",
-    tabOfertas: "viewOfertas",
-    tabMetricas: "viewMetricas",
-    tabInstituciones: "viewInstituciones",
-  };
-  function irAPestana(tabId){
-    Object.keys(TABS).forEach(t=>{
-      document.getElementById(t).classList.toggle("on", t===tabId);
-      document.getElementById(TABS[t]).classList.toggle("on", t===tabId);
+  const VISTAS = ["viewHoy","viewCargar","viewArchivo","viewMetricas","viewAportes","viewOfertas","viewInstituciones"];
+  function irAVista(v){
+    VISTAS.forEach(x=>{
+      const el = document.getElementById(x);
+      if(el) el.classList.toggle("on", x === v);
     });
-    if(tabId === "tabAportes"){ cargarAportesPendientes(); cargarAvisosPublicados(); }
-    if(tabId === "tabOfertas"){ cargarOfertasAdmin(); cargarComunicadosAdmin(); }
-    if(tabId === "tabInstituciones"){ cargarInstitucionesAdmin(); }
-    if(tabId === "tabMetricas"){ cargarMetricas(); }
+    document.querySelectorAll(".rnv").forEach(b=> b.classList.toggle("on", b.getAttribute("data-v") === v));
+    if(v === "viewHoy"){ cargarHoy(); }
+    if(v === "viewArchivo"){ cargarArchivo(); }
+    if(v === "viewMetricas"){ cargarMetricas(); }
+    if(v === "viewAportes"){ cargarAportesPendientes(); cargarAvisosPublicados(); }
+    if(v === "viewOfertas"){ cargarOfertasAdmin(); cargarComunicadosAdmin(); }
+    if(v === "viewInstituciones"){ cargarInstitucionesAdmin(); }
+    window.scrollTo({ top:0, behavior:"instant" });
   }
-  Object.keys(TABS).forEach(t=>{
-    document.getElementById(t).addEventListener("click", ()=> irAPestana(t));
+  // compatibilidad con llamadas viejas
+  function irAPestana(tabId){
+    const map = { tabCargar:"viewCargar", tabAportes:"viewAportes", tabOfertas:"viewOfertas",
+                  tabMetricas:"viewMetricas", tabInstituciones:"viewInstituciones" };
+    irAVista(map[tabId] || "viewHoy");
+  }
+  document.querySelectorAll(".rnv").forEach(b=>{
+    b.addEventListener("click", ()=> irAVista(b.getAttribute("data-v")));
   });
 
   let fotosPropias = [];
@@ -581,6 +678,7 @@
       loginView.classList.add("hide");
       consoleView.classList.remove("hide");
       document.getElementById("userEmail").textContent = sesion.user.email;
+      irAVista("viewHoy");
       cargarPublicadoHoy();
       cargarAportesPendientes();
     } else {
@@ -761,9 +859,11 @@
   async function cargarAportesPendientes(){
     const { data, error } = await sb.from("aportes").select("*").eq("estado","pendiente").order("created_at",{ascending:true});
     const cont = document.getElementById("aportesList");
-    const badge = document.getElementById("badgeAportes");
-    if(data && data.length){ badge.textContent = data.length; badge.classList.remove("hide"); }
-    else { badge.classList.add("hide"); }
+    const badge = document.getElementById("badgeAportes"); // ya no existe: el contador vive en la barra inferior
+    if(badge){
+      if(data && data.length){ badge.textContent = data.length; badge.classList.remove("hide"); }
+      else { badge.classList.add("hide"); }
+    }
     if(error || !data || !data.length){
       cont.innerHTML = '<p style="font-family:var(--sans);font-size:.78rem;color:var(--ink-faint)">No hay aportes pendientes de revisión.</p>';
       return;
@@ -1280,8 +1380,10 @@
       + '<input class="inp" type="file" id="masFotos" accept="image/*" multiple style="padding:9px">'
       + '<div id="masFotosEstado" style="font-family:var(--sans);font-size:.72rem;color:var(--ink-faint)"></div>'
       + '</div>'
+      + '<button class="compartir" id="btnCompartirVisor">↗ Compartir en redes</button>'
       + '</div>';
     abrirVisorHTML(h);
+    document.getElementById("btnCompartirVisor").addEventListener("click", (e)=> compartirDesdeConsola(n, "nota", e.currentTarget));
     document.getElementById("masFotos").addEventListener("change", async (e)=>{
       const files = Array.from(e.target.files || []).slice(0, 6);
       if(!files.length) return;
@@ -1323,8 +1425,9 @@
       + (o.direccion ? '📍 '+escA(o.direccion)+'<br>' : '')
       + (o.valido_hasta ? '🕐 Válido hasta: '+escA(o.valido_hasta)+'<br>' : '')
       + (o.imagen_url ? '📷 Con foto' : 'Sin foto')
-      + '</div></div>';
+      + '</div><button class="compartir" id="btnCompartirVisor">↗ Compartir en redes</button></div>';
     abrirVisorHTML(h);
+    document.getElementById("btnCompartirVisor").addEventListener("click", (e)=> compartirDesdeConsola(o, "oferta", e.currentTarget));
   }
 
   function abrirVisorComunicado(c){
@@ -1336,8 +1439,351 @@
       + '<div class="meta">'+fecha
       + (c.urgente ? '<br>Se muestra abierto en la portada por 48 hs' : '<br>Solo dentro de la ficha de la institución')
       + (c.video_url ? '<br>🎬 Con video' : '')
-      + '</div></div>';
+      + '</div><button class="compartir" id="btnCompartirVisor">↗ Compartir en redes</button></div>';
     abrirVisorHTML(h);
+    document.getElementById("btnCompartirVisor").addEventListener("click", (e)=> compartirDesdeConsola(c, "comunicado", e.currentTarget));
+  }
+
+  // ================= HOY: bandeja de trabajo =================
+  async function cargarHoy(){
+    const hoy = new Date();
+    const inicioHoy = new Date(); inicioHoy.setHours(0,0,0,0);
+    const hoyIso = hoy.toISOString().slice(0,10);
+    document.getElementById("hoySaludo").textContent =
+      (hoy.getHours() < 13 ? "Buen día" : hoy.getHours() < 20 ? "Buenas tardes" : "Buenas noches")
+      + (sesion && sesion.user ? ", " + (sesion.user.email||"").split("@")[0] : "");
+    document.getElementById("hoyFecha").textContent =
+      hoy.toLocaleDateString("es-AR",{weekday:"long",day:"numeric",month:"long"}) + " · Esto es lo que necesita tu atención.";
+
+    const [pend, venc, urg, notasHoy, visitasHoy] = await Promise.all([
+      sb.from("aportes").select("id,created_at").eq("estado","pendiente").order("created_at",{ascending:true}),
+      sb.from("institucion_fechas").select("id,titulo,fecha,institucion_id").eq("activa",true).lt("fecha", hoyIso),
+      sb.from("comunicados").select("id,titulo,created_at").eq("urgente",true).order("created_at",{ascending:false}).limit(5),
+      sb.from("noticias").select("*").eq("creada_por", sesion.user.id).gte("created_at", inicioHoy.toISOString()).order("created_at",{ascending:false}),
+      sb.from("visitas").select("dispositivo_id").eq("fecha", hoyIso),
+    ]);
+
+    const tareas = [];
+    const nPend = (pend.data||[]).length;
+    if(nPend){
+      const viejo = pend.data[0].created_at ? tiempoRel(pend.data[0].created_at) : "";
+      tareas.push({ urg:true, ic:"📍", t: nPend + (nPend===1?" aporte esperando revisión":" aportes esperando revisión"),
+                    s: viejo ? "El más viejo, "+viejo : "", go:"Revisar ›", v:"viewAportes" });
+    }
+    const nVenc = (venc.data||[]).length;
+    if(nVenc){
+      tareas.push({ urg:true, ic:"📅", t: nVenc + (nVenc===1?" fecha vencida":" fechas vencidas"),
+                    s: (venc.data[0].titulo||"") + " — actualizala o la ficha queda vacía", go:"Actualizar ›", v:"viewInstituciones" });
+    }
+    const urgVigentes = (urg.data||[]).filter(c=>{
+      if(!c.created_at) return false;
+      return (Date.now() - new Date(c.created_at).getTime()) < 48*3600000;
+    });
+    urgVigentes.forEach(c=>{
+      const horas = Math.max(0, Math.round(48 - (Date.now()-new Date(c.created_at).getTime())/3600000));
+      tareas.push({ urg:false, ic:"⚡", t:"Aviso urgente en portada",
+                    s:'"'+(c.titulo||"")+'" sale de portada en '+horas+" h", go:"Ver ›", v:"viewOfertas" });
+    });
+
+    const cont = document.getElementById("hoyTareas");
+    const badge = document.getElementById("hoyPendN");
+    const navPip = document.getElementById("navPendN");
+    const totalPend = nPend + nVenc;
+    if(totalPend){ badge.textContent = totalPend; badge.classList.remove("hide"); navPip.textContent = totalPend; navPip.classList.remove("hide"); }
+    else { badge.classList.add("hide"); navPip.classList.add("hide"); }
+
+    cont.innerHTML = tareas.length
+      ? tareas.map((t,i)=>'<div class="task'+(t.urg?" urg":"")+'" data-i="'+i+'">'
+          + '<span class="ic">'+t.ic+'</span><div class="tx"><div class="t">'+escA(t.t)+'</div>'
+          + (t.s?'<div class="s">'+escA(t.s)+'</div>':'') + '</div><span class="go">'+t.go+'</span></div>').join("")
+      : '<div class="task ok"><span class="ic">✓</span><div class="tx"><div class="t">Todo al día</div>'
+        + '<div class="s">No hay nada pendiente de revisión.</div></div></div>';
+    cont.querySelectorAll(".task[data-i]").forEach(el=>{
+      el.addEventListener("click", ()=> irAVista(tareas[parseInt(el.getAttribute("data-i"),10)].v));
+    });
+
+    const personasHoy = new Set((visitasHoy.data||[]).map(v=>v.dispositivo_id)).size;
+    document.getElementById("hoyKpis").innerHTML =
+      '<div class="kpi3"><div class="n">'+(notasHoy.data||[]).length+'</div><div class="l">notas publicadas</div></div>'
+      + '<div class="kpi3"><div class="n">'+personasHoy+'</div><div class="l">personas entraron</div></div>'
+      + '<div class="kpi3"><div class="n">'+nPend+'</div><div class="l">aportes por revisar</div></div>';
+
+    const ult = (notasHoy.data||[]).slice(0,3);
+    const ultCont = document.getElementById("hoyUltimo");
+    ultCont.innerHTML = ult.length
+      ? ult.map(n=>itemArchivo(n,"nota")).join("")
+      : '<p class="vacio-txt">Todavía no publicaste nada hoy.</p>';
+    enganchArchivo(ultCont, ult.map(n=>({o:n,tipo:"nota"})));
+  }
+
+  function tiempoRel(iso){
+    const min = Math.round((Date.now() - new Date(iso).getTime())/60000);
+    if(min < 60) return "hace " + min + " min";
+    const h = Math.round(min/60);
+    if(h < 24) return "hace " + h + " h";
+    return "hace " + Math.round(h/24) + " días";
+  }
+
+  // ================= ARCHIVO =================
+  let ARCHIVO = [];
+  let filtroArch = "todo";
+  function itemArchivo(o, tipo){
+    const NOM = { nota:"Nota", oferta:"Oferta", comunicado:"Oficial", aporte:"Vecino" };
+    let titulo = "", meta = "", mini = "", fondo = "";
+    if(tipo === "nota"){
+      titulo = o.titulo || "";
+      const f = fotosDeNota(o);
+      fondo = f[0] || "";
+      mini = fondo ? "" : "📰";
+      meta = (o.lugar||"") + " · " + tiempoRel(o.created_at) + (f.length>1?" · 📷 "+f.length:"") + (o.video_url?" · 🎬":"");
+    } else if(tipo === "oferta"){
+      titulo = o.titulo || "";
+      fondo = o.imagen_url || ""; mini = fondo ? "" : "🏷️";
+      meta = (o.negocio||"") + " · activa";
+    } else if(tipo === "comunicado"){
+      titulo = o.titulo || ""; mini = "📢";
+      meta = (o.institucion||"") + (o.urgente?" · ⚡ urgente":"") + " · " + tiempoRel(o.created_at);
+    } else {
+      const cat = CAT_APORTE.find(c=>c.id===o.categoria) || {label:o.categoria, icon:"📍"};
+      titulo = o.titulo || cat.label;
+      fondo = o.foto_url || ""; mini = fondo ? "" : cat.icon;
+      meta = cat.label + " · " + (o.estado==="resuelto"?"resuelto":"publicado");
+    }
+    const estilo = fondo ? 'style="background-image:url('+"'"+escA(fondo)+"'"+')"' : "";
+    return '<div class="arch-item" data-tipo="'+tipo+'" data-id="'+escA(o.id)+'">'
+      + '<span class="mini" '+estilo+'>'+mini+'</span>'
+      + '<div class="tx"><div class="t">'+escA(titulo)+'</div>'
+      + '<div class="m"><span class="bdg '+tipo+'">'+NOM[tipo]+'</span>'+escA(meta)+'</div></div></div>';
+  }
+  function enganchArchivo(cont, lista){
+    cont.querySelectorAll(".arch-item").forEach(el=>{
+      el.addEventListener("click", ()=>{
+        const id = el.getAttribute("data-id"), tipo = el.getAttribute("data-tipo");
+        const it = lista.find(x=>String(x.o.id)===String(id) && x.tipo===tipo);
+        if(!it) return;
+        if(tipo === "nota") abrirVisorNota(it.o);
+        else if(tipo === "oferta") abrirVisorOferta(it.o);
+        else if(tipo === "comunicado") abrirVisorComunicado(it.o);
+        else abrirVisor(it.o);
+      });
+    });
+  }
+  async function cargarArchivo(){
+    const cont = document.getElementById("archLista");
+    cont.innerHTML = '<p class="vacio-txt">Cargando…</p>';
+    const [n, o, c, a] = await Promise.all([
+      sb.from("noticias").select("*").eq("creada_por", sesion.user.id).order("created_at",{ascending:false}).limit(60),
+      sb.from("ofertas").select("*").eq("activa",true).order("created_at",{ascending:false}),
+      sb.from("comunicados").select("*").order("created_at",{ascending:false}).limit(40),
+      sb.from("aportes").select("*").in("estado",["revisado","resuelto"]).order("created_at",{ascending:false}).limit(40),
+    ]);
+    ARCHIVO = []
+      .concat((n.data||[]).map(x=>({o:x,tipo:"nota"})))
+      .concat((o.data||[]).map(x=>({o:x,tipo:"oferta"})))
+      .concat((c.data||[]).map(x=>({o:x,tipo:"comunicado"})))
+      .concat((a.data||[]).map(x=>({o:x,tipo:"aporte"})))
+      .sort((x,y)=> new Date(y.o.created_at||0) - new Date(x.o.created_at||0));
+    pintarArchivo();
+  }
+  function pintarArchivo(){
+    const cont = document.getElementById("archLista");
+    const q = (document.getElementById("archBuscar").value||"").toLowerCase().trim();
+    const lista = ARCHIVO.filter(it=>{
+      if(filtroArch !== "todo" && it.tipo !== filtroArch) return false;
+      if(!q) return true;
+      const txt = [it.o.titulo, it.o.negocio, it.o.institucion, it.o.descripcion, it.o.lugar].join(" ").toLowerCase();
+      return txt.includes(q);
+    });
+    cont.innerHTML = lista.length
+      ? lista.map(it=>itemArchivo(it.o, it.tipo)).join("")
+      : '<p class="vacio-txt">No hay nada que coincida con la búsqueda.</p>';
+    enganchArchivo(cont, lista);
+  }
+  document.getElementById("archBuscar").addEventListener("input", pintarArchivo);
+  document.querySelectorAll("#archFiltros .f").forEach(b=>{
+    b.addEventListener("click", ()=>{
+      document.querySelectorAll("#archFiltros .f").forEach(x=>x.classList.remove("on"));
+      b.classList.add("on");
+      filtroArch = b.getAttribute("data-f");
+      pintarArchivo();
+    });
+  });
+
+
+  // ================= COMPARTIR DESDE LA CONSOLA =================
+  const URL_FONTE = location.origin + "/";
+
+  function textoCompartir(n){
+    const partes = [];
+    partes.push(n.titulo || "");
+    const resumen = n.resumen_corto || n.resumen_extendido || "";
+    if(resumen) partes.push("", resumen.length > 220 ? resumen.slice(0,220).trim() + "…" : resumen);
+    if(n.dato_extra) partes.push("", "📌 " + n.dato_extra);
+    if(n.accion_etiqueta && n.accion_url) partes.push("", "📎 " + n.accion_etiqueta + " → " + n.accion_url);
+    if(n.fuente_etiqueta) partes.push("", "Fuente: " + n.fuente_etiqueta);
+    partes.push("", "👉 Leelo completo en Fonte: " + URL_FONTE);
+    return partes.join("\n");
+  }
+
+  // Dibuja la placa 1080x1920. Si no hay foto usa el diseño tipográfico.
+  function cargarImagen(src){
+    return new Promise((res)=>{
+      if(!src) return res(null);
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = ()=> res(img);
+      img.onerror = ()=> res(null);
+      img.src = src;
+    });
+  }
+  function envolver(ctx, texto, maxAncho, maxLineas){
+    const palabras = String(texto||"").split(/\s+/);
+    const lineas = []; let linea = "";
+    for(const p of palabras){
+      const prueba = linea ? linea + " " + p : p;
+      if(ctx.measureText(prueba).width > maxAncho && linea){ lineas.push(linea); linea = p; }
+      else linea = prueba;
+      if(lineas.length === maxLineas) break;
+    }
+    if(linea && lineas.length < maxLineas) lineas.push(linea);
+    if(lineas.length === maxLineas){
+      let ult = lineas[maxLineas-1];
+      while(ctx.measureText(ult + "…").width > maxAncho && ult.length > 4) ult = ult.slice(0,-1);
+      lineas[maxLineas-1] = ult.trim() + "…";
+    }
+    return lineas;
+  }
+  async function generarPlaca(n){
+    // sin esto el canvas dibuja con una tipografía genérica
+    try{
+      if(document.fonts && document.fonts.load){
+        await Promise.all([
+          document.fonts.load("400 76px 'Alfa Slab One'"),
+          document.fonts.load("700 88px 'Lora'"),
+          document.fonts.load("500 44px 'Lora'"),
+          document.fonts.load("800 34px 'Work Sans'"),
+          document.fonts.load("700 34px 'Work Sans'"),
+        ]);
+      }
+    }catch(e){}
+    const W = 1080, H = 1920;
+    const c = document.createElement("canvas");
+    c.width = W; c.height = H;
+    const ctx = c.getContext("2d");
+
+    const urgente = !!n.urgente;
+    const lista = (typeof fotosDeNota === "function") ? fotosDeNota(n) : (n.imagen_url ? [n.imagen_url] : []);
+    const img = urgente ? null : await cargarImagen(lista[0]);
+
+    const TINTA = "#16140F", PAPEL = "#FDFCF9", CORAL = "#FF4B3E", ROJO = "#B23A2E";
+    const lugar = (n.lugar || "").toUpperCase();
+
+    if(urgente){
+      // ---- placa urgente ----
+      ctx.fillStyle = ROJO; ctx.fillRect(0,0,W,H);
+      ctx.fillStyle = "#fff";
+      ctx.beginPath(); ctx.roundRect(80, 150, 340, 76, 38); ctx.fill();
+      ctx.fillStyle = ROJO; ctx.font = "800 34px 'Work Sans',sans-serif";
+      ctx.fillText("⚡ URGENTE", 118, 200);
+      ctx.fillStyle = "#fff"; ctx.font = "700 86px 'Lora',Georgia,serif";
+      envolver(ctx, n.titulo, W-160, 6).forEach((l,i)=> ctx.fillText(l, 80, 360 + i*104));
+      if(n.dato_extra){
+        ctx.font = "500 42px 'Work Sans',sans-serif"; ctx.fillStyle = "rgba(255,255,255,.92)";
+        envolver(ctx, n.dato_extra, W-160, 4).forEach((l,i)=> ctx.fillText(l, 80, 1180 + i*58));
+      }
+    } else if(img){
+      // ---- placa editorial con foto ----
+      ctx.fillStyle = PAPEL; ctx.fillRect(0,0,W,H);
+      const alto = 900;
+      const escala = Math.max(W/img.width, alto/img.height);
+      const iw = img.width*escala, ih = img.height*escala;
+      ctx.drawImage(img, (W-iw)/2, (alto-ih)/2, iw, ih);
+      if(lugar){
+        ctx.font = "800 32px 'Work Sans',sans-serif";
+        const w = ctx.measureText(lugar).width + 64;
+        ctx.fillStyle = "#3E8557";
+        ctx.beginPath(); ctx.roundRect(60, alto-96, w, 62, 31); ctx.fill();
+        ctx.fillStyle = "#fff"; ctx.fillText(lugar, 92, alto-54);
+      }
+      ctx.fillStyle = TINTA; ctx.font = "700 78px 'Lora',Georgia,serif";
+      envolver(ctx, n.titulo, W-160, 6).forEach((l,i)=> ctx.fillText(l, 80, alto + 150 + i*94));
+    } else {
+      // ---- placa tipográfica (sin foto) ----
+      ctx.fillStyle = PAPEL; ctx.fillRect(0,0,W,H);
+      ctx.strokeStyle = TINTA; ctx.lineWidth = 8;
+      ctx.strokeRect(80, 130, W-160, H-420);
+      if(lugar){
+        ctx.fillStyle = "#3E8557"; ctx.font = "800 34px 'Work Sans',sans-serif";
+        ctx.fillText("● " + lugar, 140, 250);
+      }
+      ctx.fillStyle = TINTA; ctx.font = "700 88px 'Lora',Georgia,serif";
+      const ls = envolver(ctx, n.titulo, W-280, 7);
+      ls.forEach((l,i)=> ctx.fillText(l, 140, 380 + i*106));
+      const yLinea = 380 + ls.length*106 + 20;
+      ctx.fillStyle = CORAL; ctx.beginPath(); ctx.roundRect(140, yLinea, 120, 10, 5); ctx.fill();
+      const bajada = n.resumen_corto || "";
+      if(bajada){
+        ctx.fillStyle = "#57503F"; ctx.font = "500 44px 'Lora',Georgia,serif";
+        envolver(ctx, bajada, W-280, 5).forEach((l,i)=> ctx.fillText(l, 140, yLinea + 90 + i*62));
+      }
+    }
+
+    // ---- pie común: marca + "Leelo completo en Fonte" ----
+    const claro = urgente;
+    ctx.fillStyle = claro ? "rgba(255,255,255,.35)" : TINTA;
+    ctx.fillRect(80, H-260, W-160, claro ? 2 : 5);
+    ctx.fillStyle = claro ? "#fff" : TINTA;
+    ctx.font = "400 76px 'Alfa Slab One',Georgia,serif";
+    ctx.fillText("Fonte", 80, H-150);
+    const anchoMarca = ctx.measureText("Fonte").width;
+    ctx.fillStyle = CORAL;
+    ctx.beginPath(); ctx.arc(80 + anchoMarca + 22, H-198, 11, 0, Math.PI*2); ctx.fill();
+    ctx.textAlign = "right";
+    ctx.fillStyle = claro ? "rgba(255,255,255,.8)" : "#57503F";
+    ctx.font = "700 34px 'Work Sans',sans-serif";
+    ctx.fillText("Leelo completo en Fonte", W-80, H-186);
+    ctx.font = "600 30px 'Work Sans',sans-serif";
+    ctx.fillStyle = claro ? "rgba(255,255,255,.65)" : "#9A9384";
+    ctx.fillText(URL_FONTE.replace(/^https?:\/\//,"").replace(/\/$/,""), W-80, H-138);
+    ctx.textAlign = "left";
+
+    return new Promise(res=> c.toBlob(res, "image/png", 0.92));
+  }
+
+
+  // Convierte oferta/comunicado al formato que entiende la placa
+  function comoNota(o, tipo){
+    if(tipo === "oferta"){
+      return { titulo:o.titulo, resumen_corto:o.descripcion || "", lugar:o.negocio || "",
+               imagen_url:o.imagen_url, dato_extra:o.valido_hasta ? ("Válido hasta " + o.valido_hasta) : null,
+               accion_etiqueta:null, fuente_etiqueta:o.negocio };
+    }
+    if(tipo === "comunicado"){
+      return { titulo:o.titulo, resumen_corto:o.texto || "", lugar:o.institucion || "",
+               urgente:!!o.urgente, imagen_url:null, fuente_etiqueta:o.institucion };
+    }
+    return o;
+  }
+
+  async function compartirDesdeConsola(obj, tipo, btn){
+    const n = comoNota(obj, tipo);
+    const texto = textoCompartir(n);
+    const orig = btn ? btn.textContent : "";
+    if(btn) btn.textContent = "Preparando…";
+    try{
+      let blob = null;
+      try{ blob = await generarPlaca(n); }catch(e){ blob = null; }
+      const archivo = blob ? new File([blob], "fonte.png", { type:"image/png" }) : null;
+      if(archivo && navigator.canShare && navigator.canShare({ files:[archivo] })){
+        await navigator.share({ files:[archivo], text: texto });
+      } else if(navigator.share){
+        await navigator.share({ title: n.titulo, text: texto, url: URL_FONTE });
+      } else {
+        await navigator.clipboard.writeText(texto);
+        toast("Texto copiado");
+      }
+    }catch(e){}
+    if(btn) btn.textContent = orig;
   }
 
   document.querySelectorAll(".form-toggle").forEach(btn=>{
