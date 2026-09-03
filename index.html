@@ -98,6 +98,12 @@
     border:1px solid transparent; padding:7px 14px; border-radius:8px; white-space:nowrap; }
   .cat.active{ background:var(--ink); color:var(--paper); }
 
+  .temas-bar{ display:flex; justify-content:flex-end; padding:8px 18px 4px; }
+  .temas-btn{ display:flex; align-items:center; gap:6px; font-family:var(--sans); font-size:.7rem; font-weight:700;
+    color:var(--ink-soft); background:none; border:1px solid var(--line-strong); border-radius:999px; padding:6px 13px; }
+  .temas-btn .n{ background:var(--terracota); color:#fff; font-size:.58rem; font-weight:800; min-width:16px; height:16px;
+    padding:0 4px; border-radius:999px; display:none; align-items:center; justify-content:center; }
+  .temas-btn .n.show{ display:flex; }
   .fav-row{ padding:8px 0 4px; border-top:1px solid var(--line); margin-top:2px; }
   .fav-title{ font-family:var(--sans); font-size:.6rem; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:var(--ink-faint); padding:8px 18px 6px; }
   .fav-in{ display:flex; gap:5px; overflow-x:auto; padding:0 18px; scrollbar-width:none; }
@@ -315,6 +321,18 @@
   .inst-chip .badge{ min-width:18px; height:18px; padding:0 5px; border-radius:999px; background:var(--terracota); color:#fff;
     font-family:var(--sans); font-size:.62rem; font-weight:800; display:flex; align-items:center; justify-content:center; flex:0 0 auto; }
   .com-destacado{ cursor:pointer; }
+
+  /* ===== galería de fotos ===== */
+  .galeria{ position:relative; margin-bottom:14px; }
+  .gal-row{ display:flex; gap:8px; overflow-x:auto; scrollbar-width:none; scroll-snap-type:x mandatory; border-radius:10px; }
+  .gal-row::-webkit-scrollbar{ display:none; }
+  .gal-row img{ flex:0 0 100%; scroll-snap-align:center; width:100%; aspect-ratio:4/3; object-fit:cover; border-radius:10px; background:var(--paper-2); }
+  .gal-dots{ display:flex; justify-content:center; gap:5px; margin-top:8px; }
+  .gal-dots i{ width:6px; height:6px; border-radius:50%; background:var(--line-strong); transition:.2s; }
+  .gal-dots i.on{ background:var(--ink-soft); width:16px; border-radius:999px; }
+  .gal-contador{ position:absolute; top:9px; right:9px; background:rgba(20,18,14,.65); color:#fff;
+    font-family:var(--sans); font-size:.62rem; font-weight:700; padding:3px 9px; border-radius:999px; backdrop-filter:blur(4px); }
+  .prev-thumb{ width:56px; height:56px; border-radius:8px; object-fit:cover; border:1px solid var(--line); }
 
   /* ===== invitación a instalar ===== */
   .instalar{ display:none; position:fixed; left:12px; right:12px; bottom:calc(78px + env(safe-area-inset-bottom)); z-index:160;
@@ -652,9 +670,11 @@
 <div id="panelMas" style="display:none">
   <nav class="waves"><div class="waves-in" id="waveNav"></div></nav>
   <div class="cats"><div class="cats-in" id="catNav"></div></div>
-  <div class="fav-row">
-    <div class="fav-title">★ Tus temas — reordenan tu feed, no lo esconden</div>
-    <div class="fav-in" id="favNav"></div>
+  <div class="temas-bar">
+    <button class="temas-btn" id="abrirTemas">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M12 3l2.6 5.6 6.1.8-4.5 4.2 1.2 6-5.4-3-5.4 3 1.2-6L3.3 9.4l6.1-.8z"/></svg>
+      <span>Tus temas</span><span class="n" id="temasN"></span>
+    </button>
   </div>
   <main class="wrap" id="feed"></main>
 </div>
@@ -769,7 +789,9 @@
     <textarea class="fld" id="fDesc" maxlength="300" placeholder="Detalles que ayuden a entender la situación"></textarea>
 
     <div class="field-lbl">Foto (opcional, ayuda mucho)</div>
-    <input class="fld" type="file" id="fFoto" accept="image/*">
+    <input class="fld" type="file" id="fFoto" accept="image/*" multiple>
+    <div style="font-family:var(--sans);font-size:.7rem;color:var(--ink-faint);margin-top:-8px;margin-bottom:12px">Podés elegir hasta 4 fotos.</div>
+    <div id="fFotoPreview" style="display:none;gap:6px;flex-wrap:wrap;margin-bottom:12px"></div>
 
     <div class="field-lbl">Ubicación</div>
     <div class="geo-status" id="geoStatus">Te la vamos a pedir al enviar.</div>
@@ -781,6 +803,16 @@
 
 <div class="ofertas-bar" id="ofertasBar" style="display:none">
   <div class="ofertas-bar-in" id="ofertasGrid"></div>
+</div>
+
+<!-- sheet: tus temas -->
+<div class="backdrop" id="backdropTemas"></div>
+<div class="sheet2" id="sheetTemas">
+  <div class="sheet2-top"><span class="b">★ Tus temas</span><button class="close" id="closeTemas">Listo</button></div>
+  <div class="sheet2-body">
+    <p class="foot-note" style="margin-bottom:14px">Marcá lo que más te interesa. <b>Reordenan tu feed, no lo esconden</b>: lo demás se sigue viendo, solo que más abajo.</p>
+    <div class="fav-in" id="favNav" style="flex-wrap:wrap;overflow:visible"></div>
+  </div>
 </div>
 
 <!-- sheet: buscador -->
@@ -1105,9 +1137,11 @@
         const c = b.getAttribute("data-cat");
         favoritos = favoritos.includes(c) ? favoritos.filter(x=>x!==c) : [...favoritos, c];
         guardarFavoritos();
+        pintarContadorTemas();
         render();
       });
     });
+    if(typeof pintarContadorTemas === "function") pintarContadorTemas();
 
     // banda urgente
     const urgentes = NOTICIAS.filter(n => n.urgente).slice(0,4);
@@ -1335,8 +1369,16 @@
     } else {
       videoEl.style.display = "none";
       videoEl.innerHTML = "";
-      heroEl.style.display = "block";
-      heroEl.setAttribute("style", "aspect-ratio:16/9;" + bgDe(n));
+      const listaN = fotosDe(n);
+      if(listaN.length > 1){
+        heroEl.setAttribute("style", "display:block;margin-bottom:16px");
+        heroEl.innerHTML = htmlGaleria(listaN);
+        activarGalerias(heroEl);
+      } else {
+        heroEl.innerHTML = "";
+        heroEl.style.display = "block";
+        heroEl.setAttribute("style", "aspect-ratio:16/9;" + bgDe(n));
+      }
     }
     const body = document.getElementById("s-body");
     const est = n.resumen_estructurado;
@@ -1507,8 +1549,12 @@
     if(!a) return;
     const cat = CAT_APORTE.find(c=>c.id===a.categoria) || {label:"Aporte", icon:"📍"};
     const fotoEl = document.getElementById("aporteFoto");
-    if(a.foto_url){ fotoEl.style.display="block"; fotoEl.setAttribute("style","display:block;aspect-ratio:16/9;background-image:url('"+esc(a.foto_url)+"');background-size:cover;background-position:center;"); }
-    else { fotoEl.style.display="none"; }
+    const lista = fotosDe(a);
+    if(lista.length){
+      fotoEl.setAttribute("style", "display:block;margin-bottom:12px");
+      fotoEl.innerHTML = htmlGaleria(lista);
+      activarGalerias(fotoEl);
+    } else { fotoEl.style.display = "none"; fotoEl.innerHTML = ""; }
     document.getElementById("aporteCatLbl").querySelector("span:last-child").textContent = cat.icon + " " + cat.label;
     document.getElementById("aporteTitulo").textContent = a.titulo || cat.label;
     document.getElementById("aporteDesc").textContent = a.descripcion || "Sin descripción adicional.";
@@ -1881,20 +1927,27 @@
       document.getElementById("geoStatus").textContent = "Ubicación obtenida ✓";
 
       let foto_url = null;
+      let fotos = [];
       const fileInput = document.getElementById("fFoto");
-      if(fileInput.files[0]){
-        msg.textContent = "Subiendo foto…";
-        const file = fileInput.files[0];
-        const nombre = disp + "-" + Date.now() + "." + (file.name.split(".").pop() || "jpg");
-        try{
-          const chico = await comprimirImagen(file);
-          const upRes = await fetch(SUPABASE_URL + "/storage/v1/object/aportes-fotos/" + nombre, {
-            method: "POST",
-            headers: { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + SUPABASE_KEY, "content-type": chico.type || "image/jpeg" },
-            body: chico
-          });
-          if(upRes.ok){ foto_url = SUPABASE_URL + "/storage/v1/object/public/aportes-fotos/" + nombre; }
-        }catch(e){ /* si falla la foto, mandamos el aporte igual sin foto */ }
+      const elegidas = Array.from(fileInput.files || []).slice(0, 4);
+      if(elegidas.length){
+        for(let i = 0; i < elegidas.length; i++){
+          msg.textContent = elegidas.length > 1
+            ? "Subiendo foto " + (i+1) + " de " + elegidas.length + "…"
+            : "Subiendo foto…";
+          const file = elegidas[i];
+          const nombre = disp + "-" + Date.now() + "-" + i + "." + (file.name.split(".").pop() || "jpg");
+          try{
+            const chico = await comprimirImagen(file);
+            const upRes = await fetch(SUPABASE_URL + "/storage/v1/object/aportes-fotos/" + nombre, {
+              method: "POST",
+              headers: { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + SUPABASE_KEY, "content-type": chico.type || "image/jpeg" },
+              body: chico
+            });
+            if(upRes.ok) fotos.push(SUPABASE_URL + "/storage/v1/object/public/aportes-fotos/" + nombre);
+          }catch(e){ /* si falla una, seguimos con las demás */ }
+        }
+        foto_url = fotos[0] || null;   // la primera sigue siendo la principal
       }
 
       msg.textContent = "Enviando…";
@@ -1907,7 +1960,7 @@
             titulo: document.getElementById("fTitulo").value.trim() || null,
             descripcion: document.getElementById("fDesc").value.trim() || null,
             texto: document.getElementById("fDesc").value.trim() || document.getElementById("fTitulo").value.trim() || (CAT_APORTE.find(c=>c.id===categoriaSeleccionada)||{}).label || "Aporte de un vecino",
-            foto_url, lat, lng,
+            foto_url, fotos: fotos.length ? fotos : null, lat, lng,
             dispositivo_id: disp,
             estado: "pendiente"
           })
@@ -2299,6 +2352,66 @@
     if(esInstagram(u)) return enlaceVideo(u, "Instagram", "#C13584");
     return enlaceVideo(u, "el sitio original");
   }
+
+
+  // ================= GALERÍA =================
+  function fotosDe(o){
+    if(!o) return [];
+    if(Array.isArray(o.fotos) && o.fotos.length) return o.fotos;
+    if(o.foto_url) return [o.foto_url];      // aportes
+    if(o.imagen_url) return [o.imagen_url];  // noticias
+    return [];
+  }
+  function htmlGaleria(lista){
+    if(!lista.length) return "";
+    if(lista.length === 1) return '<img src="'+esc(lista[0])+'" style="width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:10px;margin-bottom:14px" alt="">';
+    const id = "gal" + Math.random().toString(36).slice(2,8);
+    return '<div class="galeria"><div class="gal-row" id="'+id+'">'
+      + lista.map(u=>'<img src="'+esc(u)+'" alt="">').join("")
+      + '</div><span class="gal-contador">1 / '+lista.length+'</span>'
+      + '<div class="gal-dots">'+lista.map((_,i)=>'<i class="'+(i===0?"on":"")+'"></i>').join("")+'</div></div>';
+  }
+  function activarGalerias(cont){
+    (cont || document).querySelectorAll(".gal-row").forEach(row=>{
+      const wrap = row.closest(".galeria");
+      const dots = wrap.querySelectorAll(".gal-dots i");
+      const cont2 = wrap.querySelector(".gal-contador");
+      const total = row.children.length;
+      row.addEventListener("scroll", ()=>{
+        const i = Math.round(row.scrollLeft / row.clientWidth);
+        dots.forEach((d,k)=> d.classList.toggle("on", k === i));
+        if(cont2) cont2.textContent = (Math.min(i+1,total)) + " / " + total;
+      }, { passive:true });
+    });
+  }
+  document.getElementById("fFoto").addEventListener("change", (e)=>{
+    const prev = document.getElementById("fFotoPreview");
+    const files = Array.from(e.target.files || []).slice(0, 4);
+    if(!files.length){ prev.style.display = "none"; prev.innerHTML = ""; return; }
+    prev.style.display = "flex";
+    prev.innerHTML = files.map(f=>'<img class="prev-thumb" src="'+URL.createObjectURL(f)+'" alt="">').join("");
+    if((e.target.files||[]).length > 4){
+      prev.innerHTML += '<div style="font-family:var(--sans);font-size:.68rem;color:var(--urgente);width:100%;margin-top:4px">Se van a subir solo las primeras 4.</div>';
+    }
+  });
+
+  // ================= TUS TEMAS (ficha de ajuste) =================
+  function pintarContadorTemas(){
+    const n = document.getElementById("temasN");
+    if(!n) return;
+    if(favoritos.length){ n.textContent = favoritos.length; n.classList.add("show"); }
+    else { n.classList.remove("show"); }
+  }
+  document.getElementById("abrirTemas").addEventListener("click", ()=>{
+    document.getElementById("backdropTemas").classList.add("show");
+    document.getElementById("sheetTemas").classList.add("show");
+  });
+  function cerrarTemas(){
+    document.getElementById("backdropTemas").classList.remove("show");
+    document.getElementById("sheetTemas").classList.remove("show");
+  }
+  document.getElementById("closeTemas").addEventListener("click", cerrarTemas);
+  document.getElementById("backdropTemas").addEventListener("click", cerrarTemas);
 
   registrarVisita();
 

@@ -485,22 +485,31 @@
     document.getElementById(t).addEventListener("click", ()=> irAPestana(t));
   });
 
+  let fotosPropias = [];
   document.getElementById("fotoPropia").addEventListener("change", async (e)=>{
-    const file = e.target.files[0];
-    fotoPropiaUrl = null;
-    if(!file) return;
-    const preview = document.getElementById("fotoPreview");
-    preview.src = URL.createObjectURL(file);
-    preview.style.display = "block";
-    try{
-      const chico = await comprimirImagen(file);
-      const nombre = Date.now() + "." + ((chico.name||file.name).split(".").pop() || "jpg");
-      const { error } = await sb.storage.from("notas-fotos").upload(nombre, chico);
-      if(!error){
-        const { data } = sb.storage.from("notas-fotos").getPublicUrl(nombre);
-        fotoPropiaUrl = data.publicUrl;
-      }
-    }catch(err){ /* si falla la subida, se publica igual con la imagen que haya detectado Fonte */ }
+    const files = Array.from(e.target.files || []).slice(0, 6);
+    fotosPropias = []; fotoPropiaUrl = null;
+    const prev = document.getElementById("fotoPreview");
+    if(!files.length){ prev.style.display = "none"; prev.innerHTML = ""; return; }
+    prev.style.display = "flex";
+    prev.innerHTML = files.map(f=>'<img src="'+URL.createObjectURL(f)+'" style="width:56px;height:56px;border-radius:8px;object-fit:cover;border:1px solid var(--line)">').join("")
+      + '<div class="estado-fotos" style="font-family:var(--sans);font-size:.68rem;color:var(--ink-faint);width:100%;margin-top:4px">Subiendo…</div>';
+    for(let i = 0; i < files.length; i++){
+      try{
+        const chico = await comprimirImagen(files[i]);
+        const nombre = Date.now() + "-" + i + "." + ((chico.name||files[i].name).split(".").pop() || "jpg");
+        const { error } = await sb.storage.from("notas-fotos").upload(nombre, chico);
+        if(!error){
+          const { data } = sb.storage.from("notas-fotos").getPublicUrl(nombre);
+          fotosPropias.push(data.publicUrl);
+        }
+      }catch(err){ /* si falla una, seguimos con las demás */ }
+    }
+    fotoPropiaUrl = fotosPropias[0] || null;
+    const est = prev.querySelector(".estado-fotos");
+    if(est) est.textContent = fotosPropias.length
+      ? "✓ " + fotosPropias.length + (fotosPropias.length===1 ? " foto lista" : " fotos listas")
+      : "No se pudieron subir las fotos.";
   });
 
   let ofFotoUrl = null;
@@ -666,6 +675,7 @@
       fuente_etiqueta: "vía " + fuenteElegida,
       origen: "reportero",
       imagen_url: fotoPropiaUrl || imagenDetectada,
+      fotos: fotosPropias.length ? fotosPropias : null,
       video_url: (document.getElementById("videoUrl").value.trim() || videoDetectado || null),
       publicada: true,
       creada_por: sesion.user.id,
@@ -682,6 +692,8 @@
     document.getElementById("rawInput").value = "";
     document.getElementById("fotoPropia").value = "";
     document.getElementById("fotoPreview").style.display = "none";
+    document.getElementById("fotoPreview").innerHTML = "";
+    fotosPropias = [];
     document.getElementById("videoUrl").value = "";
     fotoPropiaUrl = null;
     cargarPublicadoHoy();
