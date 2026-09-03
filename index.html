@@ -3,7 +3,24 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Fonte</title>
+<title>Fonte — ¿qué está pasando hoy en Quitilipi?</title>
+<meta name="description" content="Las noticias de Quitilipi y la zona, ordenadas por cercanía. Avisos de vecinos, comunicados oficiales y servicios de la ciudad, en un solo lugar.">
+
+<!-- Vista previa al compartir (WhatsApp, Facebook, etc.) -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Fonte">
+<meta property="og:locale" content="es_AR">
+<meta property="og:title" content="Fonte — ¿qué está pasando hoy en Quitilipi?">
+<meta property="og:description" content="Las noticias de tu ciudad ordenadas por cercanía. Avisos de vecinos, comunicados oficiales y servicios, en un solo lugar.">
+<meta property="og:url" content="https://fonteapp.vercel.app/">
+<meta property="og:image" content="https://fonteapp.vercel.app/compartir.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Fonte — noticias de Quitilipi, Chaco">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Fonte — ¿qué está pasando hoy en Quitilipi?">
+<meta name="twitter:description" content="Las noticias de tu ciudad ordenadas por cercanía.">
+<meta name="twitter:image" content="https://fonteapp.vercel.app/compartir.png">
 <link rel="manifest" href="/manifest.json">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96">
@@ -298,6 +315,22 @@
   .inst-chip .badge{ min-width:18px; height:18px; padding:0 5px; border-radius:999px; background:var(--terracota); color:#fff;
     font-family:var(--sans); font-size:.62rem; font-weight:800; display:flex; align-items:center; justify-content:center; flex:0 0 auto; }
   .com-destacado{ cursor:pointer; }
+
+  /* ===== invitación a instalar ===== */
+  .instalar{ display:none; position:fixed; left:12px; right:12px; bottom:calc(78px + env(safe-area-inset-bottom)); z-index:160;
+    background:var(--ink); color:var(--paper); border-radius:15px; padding:14px 15px;
+    box-shadow:0 10px 30px rgba(0,0,0,.32); align-items:center; gap:12px; }
+  .instalar.show{ display:flex; }
+  .instalar .ico{ width:42px; height:42px; border-radius:11px; background:var(--terracota); flex:0 0 auto;
+    display:flex; align-items:center; justify-content:center; font-family:var(--slab); font-size:1.25rem; color:#fff; }
+  .instalar .tx{ flex:1; min-width:0; }
+  .instalar .t{ font-family:var(--sans); font-weight:700; font-size:.85rem; }
+  .instalar .s{ font-family:var(--sans); font-size:.71rem; opacity:.78; margin-top:2px; line-height:1.35; }
+  .instalar .ok{ font-family:var(--sans); font-weight:700; font-size:.76rem; color:#fff; background:var(--terracota);
+    border:0; padding:10px 15px; border-radius:9px; flex:0 0 auto; }
+  .instalar .no{ background:none; border:0; color:var(--paper); opacity:.5; font-size:1rem; padding:2px 4px; flex:0 0 auto; }
+  .instalar .pasos{ font-family:var(--sans); font-size:.73rem; line-height:1.6; }
+  .instalar .pasos b{ color:#fff; }
 
   /* ===== avisos urgentes deslizables ===== */
   .urg-row{ display:flex; gap:9px; overflow-x:auto; padding:12px 18px 2px; scrollbar-width:none; scroll-snap-type:x mandatory; }
@@ -780,6 +813,16 @@
 <div class="sheet2" id="sheetVecinos">
   <div class="sheet2-top"><span class="b">📍 Lo que reportan los vecinos</span><button class="close" id="closeVecinos">Cerrar ✕</button></div>
   <div class="sheet2-body" id="vecinosBody"></div>
+</div>
+
+<div class="instalar" id="instalarBanner">
+  <span class="ico">F</span>
+  <div class="tx">
+    <div class="t">Tené Fonte en tu celular</div>
+    <div class="s">Se instala como app. Entrás de una y recibís los avisos.</div>
+  </div>
+  <button class="ok" id="instalarBtn">Instalar</button>
+  <button class="no" id="instalarNo">✕</button>
 </div>
 
 <nav class="bottom-nav">
@@ -2146,6 +2189,60 @@
   }
   document.getElementById("closeMios").addEventListener("click", cerrarMios);
   document.getElementById("backdropMios").addEventListener("click", cerrarMios);
+
+  // ================= INSTALAR COMO APP =================
+  let promptInstalar = null;
+  function yaInstalada(){
+    return window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+  }
+  function bannerOculto(){
+    try{
+      const hasta = localStorage.getItem("fonte_instalar_oculto");
+      return hasta && Date.now() < parseInt(hasta, 10);
+    }catch(e){ return false; }
+  }
+  function mostrarInstalar(){
+    if(yaInstalada() || bannerOculto()) return;
+    setTimeout(()=> document.getElementById("instalarBanner").classList.add("show"), 4000);
+  }
+  function cerrarInstalar(dias){
+    document.getElementById("instalarBanner").classList.remove("show");
+    try{ localStorage.setItem("fonte_instalar_oculto", String(Date.now() + dias*86400000)); }catch(e){}
+  }
+  // Chrome/Android: guardamos el pedido nativo para dispararlo con nuestro botón
+  window.addEventListener("beforeinstallprompt", (e)=>{
+    e.preventDefault();
+    promptInstalar = e;
+    mostrarInstalar();
+  });
+  document.getElementById("instalarNo").addEventListener("click", ()=> cerrarInstalar(14));
+  document.getElementById("instalarBtn").addEventListener("click", async ()=>{
+    if(promptInstalar){
+      promptInstalar.prompt();
+      try{
+        const r = await promptInstalar.userChoice;
+        if(r.outcome === "accepted") cerrarInstalar(3650);
+        else cerrarInstalar(14);
+      }catch(e){ cerrarInstalar(14); }
+      promptInstalar = null;
+      return;
+    }
+    // iPhone y navegadores sin pedido nativo: explicamos cómo hacerlo a mano
+    const esIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    const b = document.getElementById("instalarBanner");
+    b.innerHTML = esIOS
+      ? '<div class="tx"><div class="t">Para instalarla en tu iPhone</div>'
+        + '<div class="pasos">1. Tocá el botón <b>Compartir</b> abajo (el cuadradito con la flecha).<br>'
+        + '2. Elegí <b>“Agregar a inicio”</b>.</div></div>'
+        + '<button class="no" id="instalarNo2">✕</button>'
+      : '<div class="tx"><div class="t">Para instalarla</div>'
+        + '<div class="pasos">1. Tocá el menú <b>⋮</b> arriba a la derecha.<br>'
+        + '2. Elegí <b>“Instalar app”</b> o <b>“Agregar a pantalla de inicio”</b>.</div></div>'
+        + '<button class="no" id="instalarNo2">✕</button>';
+    document.getElementById("instalarNo2").addEventListener("click", ()=> cerrarInstalar(14));
+  });
+  // Si no llega el evento nativo (iPhone), igual ofrecemos la ayuda manual
+  setTimeout(()=>{ if(!promptInstalar) mostrarInstalar(); }, 1200);
 
   registrarVisita();
 
