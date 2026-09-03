@@ -206,13 +206,13 @@
 
   footer{ border-top:2px solid var(--ink); margin-top:22px; padding:18px 0 96px; }
   .foot-note{ font-family:var(--sans); font-size:.7rem; color:var(--ink-faint); line-height:1.55; }
-  .refresh-btn{ position:fixed; right:14px; bottom:calc(126px + env(safe-area-inset-bottom)); z-index:130;
+  .refresh-btn{ position:fixed; right:14px; bottom:calc(148px + env(safe-area-inset-bottom)); z-index:130;
     font-family:var(--sans); font-size:.66rem; font-weight:700;
     color:var(--paper); background:var(--ink); border:0; padding:8px 13px; border-radius:999px;
     box-shadow:0 3px 8px rgba(30,28,22,.16); transition:transform .28s ease, opacity .28s ease; }
   .refresh-btn.hide{ transform:translateY(70px); opacity:0; pointer-events:none; }
   [data-tema="oscuro"] .refresh-btn{ background:#2A251C; color:#F5F1E6; box-shadow:0 3px 8px rgba(0,0,0,.4); }
-  body{ padding-bottom:calc(132px + env(safe-area-inset-bottom)); }
+  body{ padding-bottom:calc(155px + env(safe-area-inset-bottom)); }
 
   /* desktop: columnas de diario */
   @media (min-width:760px){
@@ -592,26 +592,42 @@
   @media (prefers-reduced-motion:reduce){ *{ transition:none !important; } .spinner{ animation:none; } }
 
   /* ===== pestañas principales: Todo / Vecinos ===== */
-  .tabs-main{ position:sticky; top:0; z-index:60; display:flex; background:color-mix(in srgb,var(--paper) 94%,transparent);
+  .tabs-main{ position:sticky; top:0; z-index:60; padding:10px 18px 9px;
+    background:color-mix(in srgb,var(--paper) 94%,transparent);
     backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); border-bottom:1px solid var(--line); }
-  .tab-main{ flex:1; background:none; border:0; padding:13px 0 11px; font-family:var(--sans); font-weight:700; font-size:.86rem;
-    color:var(--ink-faint); position:relative; }
-  .tab-main.on{ color:var(--ink); }
-  .tab-main.on::after{ content:''; position:absolute; left:32%; right:32%; bottom:0; height:3px; border-radius:3px; background:var(--terracota); }
-  .tab-main .n{ font-size:.66rem; font-weight:600; color:var(--ink-faint); margin-left:2px; }
-  .tab-main .n.nuevo{ background:var(--terracota); color:#fff; font-weight:800; padding:2px 7px; border-radius:999px; margin-left:5px; }
+  .tabs-in{ position:relative; display:flex; background:var(--paper-2); border-radius:999px; padding:4px; }
+  .tabs-in .sl{ position:absolute; top:4px; bottom:4px; left:4px; width:calc(50% - 4px); background:var(--ink);
+    border-radius:999px; transition:left .28s cubic-bezier(.4,0,.2,1); }
+  .tab-main{ flex:1; position:relative; z-index:1; background:none; border:0; padding:9px 0;
+    font-family:var(--sans); font-weight:700; font-size:.8rem; color:var(--ink-soft);
+    display:flex; align-items:center; justify-content:center; gap:6px; }
+  .tab-main.on{ color:var(--paper); }
+  .tab-main .e{ font-size:.92rem; }
+  .tab-main .n{ font-size:.62rem; font-weight:600; color:var(--ink-faint); }
+  .tab-main.on .n{ color:rgba(253,252,249,.65); }
+  .tab-main .n.nuevo{ background:var(--terracota); color:#fff; font-weight:800; padding:1px 6px; border-radius:999px; }
+  [data-tema="oscuro"] .tabs-in .sl{ background:var(--terracota); }
 
   /* ===== barra flotante de ofertas (se esconde al bajar) ===== */
   .ofertas-bar{ position:fixed; left:0; right:0; bottom:calc(64px + env(safe-area-inset-bottom)); z-index:140;
-    background:var(--surface); border-top:1px solid var(--line); box-shadow:0 -4px 12px rgba(80,60,40,.07);
+    background:linear-gradient(100deg,#F5E6C0,#EFDCA8); border-top:2px solid var(--int);
+    box-shadow:0 -4px 12px rgba(120,90,30,.12);
     transition:transform .28s ease; transform:translateY(0); }
   .ofertas-bar.hide{ transform:translateY(140%); }
-  .ofertas-bar-in{ display:flex; gap:8px; padding:9px 14px; overflow-x:auto; scrollbar-width:none; }
+  .ofertas-bar .lbl{ font-family:var(--sans); font-size:.5rem; font-weight:800; letter-spacing:.1em;
+    text-transform:uppercase; color:#8a6a22; padding:6px 14px 0; }
+  .ofertas-bar-in{ display:flex; gap:8px; padding:6px 14px 9px; overflow-x:auto; scrollbar-width:none; }
   .ofertas-bar-in::-webkit-scrollbar{ display:none; }
-  .ob-chip{ flex:0 0 auto; display:flex; align-items:center; gap:6px; background:var(--paper-2); border-radius:999px; padding:6px 11px; white-space:nowrap; }
-  .ob-chip .pc{ font-family:var(--sans); font-weight:800; font-size:.66rem; color:var(--int);
-    background:color-mix(in srgb,var(--int) 15%,var(--paper-2)); padding:2px 6px; border-radius:6px; }
-  .ob-chip .nm{ font-family:var(--sans); font-weight:600; font-size:.68rem; color:var(--ink-soft); }
+  .ob-chip{ flex:0 0 auto; display:flex; align-items:center; gap:6px; background:rgba(255,255,255,.78);
+    border-radius:999px; padding:6px 11px; white-space:nowrap; }
+  .ob-chip .pc{ font-family:var(--sans); font-weight:800; font-size:.65rem; color:#fff;
+    background:var(--int); padding:2px 7px; border-radius:5px; }
+  .ob-chip .nm{ font-family:var(--sans); font-weight:700; font-size:.67rem; color:#5c4614; }
+  [data-tema="oscuro"] .ofertas-bar{ background:linear-gradient(100deg,#3A2E14,#2E2410); border-top-color:#C9A34A; }
+  [data-tema="oscuro"] .ofertas-bar .lbl{ color:#D1A467; }
+  [data-tema="oscuro"] .ob-chip{ background:rgba(255,255,255,.09); }
+  [data-tema="oscuro"] .ob-chip .nm{ color:#EFE3C8; }
+  [data-tema="oscuro"] .ob-chip .pc{ background:#C9A34A; color:#221B08; }
 
   /* ===== resultados de búsqueda ===== */
   .res-row{ display:flex; gap:10px; padding:11px 0; border-top:1px solid var(--line); align-items:flex-start; }
@@ -662,8 +678,11 @@
 </div>
 
 <nav class="tabs-main">
-  <button class="tab-main on" id="tabCiudad">Ciudad <span class="n" id="tabCiudadN"></span></button>
-  <button class="tab-main" id="tabMas">Más noticias</button>
+  <div class="tabs-in" id="tabsIn">
+    <span class="sl" id="tabsSlider"></span>
+    <button class="tab-main on" id="tabCiudad"><span class="e">🏠</span>Ciudad <span class="n" id="tabCiudadN"></span></button>
+    <button class="tab-main" id="tabMas"><span class="e">🌎</span>Más noticias <span class="n" id="tabMasN"></span></button>
+  </div>
 </nav>
 
 <div id="panelCiudad">
@@ -824,6 +843,7 @@
 </div>
 
 <div class="ofertas-bar" id="ofertasBar" style="display:none">
+  <div class="lbl">🏷️ Comercios de Quitilipi</div>
   <div class="ofertas-bar-in" id="ofertasGrid"></div>
 </div>
 
@@ -1144,6 +1164,17 @@
     }
 
     const NO_LOCAL = NOTICIAS.filter(n => !ONDAS_LOCALES.has(n.onda));
+    // contador de novedades del otro lado
+    (function(){
+      const el = document.getElementById("tabMasN");
+      if(!el || document.getElementById("panelMas").style.display === "block") return;
+      let desde = 0;
+      try{ desde = parseInt(localStorage.getItem("fonte_mas_visto") || "0", 10); }catch(e){}
+      if(!desde){ el.textContent = ""; el.className = "n"; return; }
+      const nuevas = NO_LOCAL.filter(n => n.created_at && new Date(n.created_at).getTime() > desde).length;
+      if(nuevas > 0){ el.textContent = nuevas > 99 ? "99+" : nuevas; el.className = "n nuevo"; }
+      else { el.textContent = ""; el.className = "n"; }
+    })();
     const filtradas = catActiva === "todo" ? NO_LOCAL : NO_LOCAL.filter(n => n.categoria === catActiva);
 
     // categorías presentes
@@ -2663,10 +2694,33 @@
     const esMas = cual === "mas";
     document.getElementById("tabCiudad").classList.toggle("on", !esMas);
     document.getElementById("tabMas").classList.toggle("on", esMas);
+    document.getElementById("tabsSlider").style.left = esMas ? "calc(50% + 0px)" : "4px";
     document.getElementById("panelCiudad").style.display = esMas ? "none" : "block";
     document.getElementById("panelMas").style.display = esMas ? "block" : "none";
+    if(esMas){
+      const n = document.getElementById("tabMasN");
+      n.textContent = ""; n.className = "n";
+      try{ localStorage.setItem("fonte_mas_visto", String(Date.now())); }catch(e){}
+    }
+    try{ sessionStorage.setItem("fonte_pestana", cual); }catch(e){}
     window.scrollTo({ top:0, behavior:"instant" });
   }
+  function pestanaActual(){
+    return document.getElementById("panelMas").style.display === "block" ? "mas" : "ciudad";
+  }
+  // Fonte decide cuando venís de afuera; vos decidís mientras estás adentro.
+  const MINUTOS_PARA_VOLVER = 30;
+  function marcarSalida(){
+    try{ sessionStorage.setItem("fonte_ultima_salida", String(Date.now())); }catch(e){}
+  }
+  document.addEventListener("visibilitychange", ()=>{
+    if(document.visibilityState === "hidden"){ marcarSalida(); return; }
+    let salida = null;
+    try{ salida = sessionStorage.getItem("fonte_ultima_salida"); }catch(e){}
+    if(salida && (Date.now() - parseInt(salida,10)) > MINUTOS_PARA_VOLVER*60000){
+      if(pestanaActual() !== "ciudad") irAPestanaPrincipal("ciudad");
+    }
+  });
   document.getElementById("tabCiudad").addEventListener("click", ()=> irAPestanaPrincipal("ciudad"));
   document.getElementById("tabMas").addEventListener("click", ()=> irAPestanaPrincipal("mas"));
 
