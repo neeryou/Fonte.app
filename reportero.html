@@ -1668,6 +1668,10 @@
 
   // ================= COMPARTIR DESDE LA CONSOLA =================
   const URL_FONTE = location.origin + "/";
+  function urlDe(n, tipo){
+    if(!n || !n.id) return URL_FONTE;
+    return URL_FONTE + "?" + (tipo || "n") + "=" + encodeURIComponent(n.id);
+  }
 
   function textoCompartir(n){
     const partes = [];
@@ -1677,7 +1681,7 @@
     if(n.dato_extra) partes.push("", "📌 " + n.dato_extra);
     if(n.accion_etiqueta && n.accion_url) partes.push("", "📎 " + n.accion_etiqueta + " → " + n.accion_url);
     if(n.fuente_etiqueta) partes.push("", "Fuente: " + n.fuente_etiqueta);
-    partes.push("", "👉 Leelo completo en Fonte: " + URL_FONTE);
+    partes.push("", "👉 Leelo completo en Fonte: " + urlDe(n, n.__tipo));
     return partes.join("\n");
   }
 
@@ -1810,15 +1814,15 @@
   // Convierte oferta/comunicado al formato que entiende la placa
   function comoNota(o, tipo){
     if(tipo === "oferta"){
-      return { titulo:o.titulo, resumen_corto:o.descripcion || "", lugar:o.negocio || "",
+      return { id:o.id, __tipo:"o", titulo:o.titulo, resumen_corto:o.descripcion || "", lugar:o.negocio || "",
                imagen_url:o.imagen_url, dato_extra:o.valido_hasta ? ("Válido hasta " + o.valido_hasta) : null,
                accion_etiqueta:null, fuente_etiqueta:o.negocio };
     }
     if(tipo === "comunicado"){
-      return { titulo:o.titulo, resumen_corto:o.texto || "", lugar:o.institucion || "",
+      return { id:o.id, __tipo:"c", titulo:o.titulo, resumen_corto:o.texto || "", lugar:o.institucion || "",
                urgente:!!o.urgente, imagen_url:null, fuente_etiqueta:o.institucion };
     }
-    return o;
+    return Object.assign({}, o, { __tipo:"n" });
   }
 
   async function compartirDesdeConsola(obj, tipo, btn){
@@ -1833,7 +1837,7 @@
       if(archivo && navigator.canShare && navigator.canShare({ files:[archivo] })){
         await navigator.share({ files:[archivo], text: texto });
       } else if(navigator.share){
-        await navigator.share({ title: n.titulo, text: texto, url: URL_FONTE });
+        await navigator.share({ title: n.titulo, text: texto, url: urlDe(n, n.__tipo) });
       } else {
         await navigator.clipboard.writeText(texto);
         toast("Texto copiado");

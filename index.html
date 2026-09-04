@@ -670,7 +670,7 @@
 
 <div class="ticker" id="ticker">
   <div class="tick"><span class="lbl">Quitilipi</span><span class="val" id="tickClima">—</span></div>
-  <div class="tick"><span class="lbl">Dólar oficial</span><span class="val" id="tickDolar">—</span></div>
+  <div class="tick"><span class="lbl">Sensación</span><span class="val" id="tickSensacion">—</span></div>
   <button class="tick notif-btn" id="notifActivar" aria-label="Activar avisos" style="flex:0 0 auto;border:0;border-right:1px solid var(--line);background:none;cursor:pointer;align-items:center;padding:7px 13px;position:relative;font-size:.9rem">🔔<span class="pip" id="notifPip" style="display:none"></span></button>
   <button class="tick tema-btn" id="temaBtn" aria-label="Cambiar tema" style="margin-left:auto;border:0;border-right:0;background:none;cursor:pointer;align-items:center;padding:7px 16px">
     <svg id="temaIcon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--ink-soft)" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
@@ -1014,17 +1014,19 @@
   const ONDAS_LOCALES = new Set(["barrio","ciudad"]); // lo que va en la pestaña Ciudad
   const RANGO_KM = { barrio:1, ciudad:2, region:3, pais:4, mundo:5 }; // orden de cercanía para "Cerca tuyo"
 
-  // ---- ticker: clima (Open-Meteo, sin key) y dólar oficial (dolarapi, sin key) ----
+  // ---- ticker: clima y sensación térmica (Open-Meteo, sin key) ----
   const CLIMA_COD = {0:['Despejado','☀️'],1:['Parcial','⛅'],2:['Parcial','⛅'],3:['Nublado','☁️'],45:['Niebla','🌫️'],48:['Niebla','🌫️'],51:['Llovizna','🌦️'],53:['Llovizna','🌦️'],55:['Llovizna','🌦️'],61:['Lluvia','🌧️'],63:['Lluvia','🌧️'],65:['Lluvia','🌧️'],80:['Chubascos','🌦️'],81:['Chubascos','🌦️'],82:['Chubascos','🌦️'],95:['Tormenta','⛈️'],96:['Tormenta','⛈️'],99:['Tormenta','⛈️']};
-  fetch("https://api.open-meteo.com/v1/forecast?latitude=-26.8667&longitude=-60.2167&current_weather=true")
+  fetch("https://api.open-meteo.com/v1/forecast?latitude=-26.8667&longitude=-60.2167&current_weather=true&current=apparent_temperature&timezone=America%2FArgentina%2FBuenos_Aires")
     .then(r=>r.json()).then(d=>{
       const c = d.current_weather;
       const par = CLIMA_COD[c.weathercode] || ['—','🌡️'];
       document.getElementById("tickClima").textContent = Math.round(c.temperature) + "° " + par[1] + " " + par[0];
-    }).catch(()=>{ document.getElementById("tickClima").textContent = "no disponible"; });
-  fetch("https://dolarapi.com/v1/dolares/oficial")
-    .then(r=>r.json()).then(d=>{ document.getElementById("tickDolar").textContent = "$" + Math.round(d.venta); })
-    .catch(()=>{ document.getElementById("tickDolar").textContent = "no disponible"; });
+      const st = d.current && typeof d.current.apparent_temperature === "number" ? d.current.apparent_temperature : null;
+      document.getElementById("tickSensacion").textContent = (st === null) ? "—" : (Math.round(st) + "°");
+    }).catch(()=>{
+      document.getElementById("tickClima").textContent = "no disponible";
+      document.getElementById("tickSensacion").textContent = "—";
+    });
 
   // ---- aportes del pueblo ----
   const CAT_APORTE = [
@@ -1084,6 +1086,7 @@
       NOTICIAS = await res.json();
       render();
     renderCiudad();
+    if(typeof intentarEnlace === "function") intentarEnlace();
     }catch(e){
       document.getElementById("feed").innerHTML =
         '<div class="state"><div class="big">No se pudieron cargar las noticias.</div><div class="sub">'+esc(e.message)+'</div></div>';
@@ -1535,8 +1538,13 @@
 
   // ---- Compartir: genera una placa para historias + texto con el link de Fonte ----
   const URL_FONTE = location.origin + location.pathname;
+  // Enlace directo: quien lo recibe abre esa nota, no la portada.
+  function urlDe(n, tipo){
+    if(!n || !n.id) return URL_FONTE;
+    return URL_FONTE + "?" + (tipo || "n") + "=" + encodeURIComponent(n.id);
+  }
 
-  function textoCompartir(n){
+  function textoCompartir(n, tipo){
     const partes = [];
     partes.push(n.titulo || "");
     const resumen = n.resumen_corto || n.resumen_extendido || "";
@@ -1544,7 +1552,7 @@
     if(n.dato_extra) partes.push("", "📌 " + n.dato_extra);
     if(n.accion_etiqueta && n.accion_url) partes.push("", "📎 " + n.accion_etiqueta + " → " + n.accion_url);
     if(n.fuente_etiqueta) partes.push("", "Fuente: " + n.fuente_etiqueta);
-    partes.push("", "👉 Leelo completo en Fonte: " + URL_FONTE);
+    partes.push("", "👉 Leelo completo en Fonte: " + urlDe(n, tipo));
     return partes.join("\n");
   }
 
@@ -1687,7 +1695,7 @@
       if(archivo && navigator.canShare && navigator.canShare({ files:[archivo] })){
         await navigator.share({ files:[archivo], text: texto });
       } else if(navigator.share){
-        await navigator.share({ title: notaAbierta.titulo, text: texto, url: URL_FONTE });
+        await navigator.share({ title: notaAbierta.titulo, text: texto, url: urlDe(notaAbierta, "n") });
       } else {
         await navigator.clipboard.writeText(texto);
         alert("Texto copiado. Pegalo donde quieras compartirlo.");
@@ -2246,8 +2254,8 @@
   (function(){
     let guardado = null;
     try{ guardado = localStorage.getItem("fonte_tema"); }catch(e){}
-    const sistema = (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) ? "oscuro" : "claro";
-    aplicarTema(guardado || sistema);
+    // Fonte arranca en modo día salvo que la persona haya elegido oscuro.
+    aplicarTema(guardado || "claro");
   })();
   document.getElementById("temaBtn").addEventListener("click", ()=>{
     const actual = document.documentElement.getAttribute("data-tema");
@@ -2652,6 +2660,34 @@
     const img = e.target.closest(".galeria img, #s-hero img, #aporteFoto img");
     if(img && img.src) abrirFoto(img.src);
   });
+
+  // ================= ABRIR DESDE UN ENLACE COMPARTIDO =================
+  // fonte.city/?n=<id> abre esa nota; ?c=<id> un comunicado; ?a=<id> un aviso; ?o=<id> una oferta.
+  function abrirDesdeEnlace(){
+    let p;
+    try{ p = new URLSearchParams(location.search); }catch(e){ return; }
+    const intentos = [
+      ["n", ()=> (NOTICIAS||[]).some(x=>String(x.id)===p.get("n")) && abrir(p.get("n"))],
+      ["c", ()=> (COMUNICADOS||[]).some(x=>String(x.id)===p.get("c")) && abrirComunicado(p.get("c"))],
+      ["a", ()=> (APORTES||[]).some(x=>String(x.id)===p.get("a")) && abrirAporte(p.get("a"))],
+      ["o", ()=> (OFERTAS||[]).some(x=>String(x.id)===p.get("o")) && abrirOferta(p.get("o"))],
+    ];
+    for(const [clave, fn] of intentos){
+      if(!p.get(clave)) continue;
+      if(fn()){
+        // limpiamos la dirección para que al recargar no vuelva a abrirse
+        try{ history.replaceState(null, "", location.pathname); }catch(e){}
+      }
+      return;
+    }
+  }
+  let enlaceResuelto = false;
+  function intentarEnlace(){
+    if(enlaceResuelto) return;
+    if(!(NOTICIAS||[]).length) return;
+    enlaceResuelto = true;
+    setTimeout(abrirDesdeEnlace, 350);
+  }
 
   registrarVisita();
 
