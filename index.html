@@ -1238,7 +1238,12 @@
     }
 
     // ordenar por cercanía real (barrio primero, mundo último) y por fecha dentro de cada onda
+    const leidosPP = getLeidos();
     const ordenadas = [...filtradas].sort((a,b)=>{
+      // lo que todavía no leíste va primero: si no, lo nuevo queda enterrado
+      const la = leidosPP.has(String(a.id)) ? 1 : 0;
+      const lb = leidosPP.has(String(b.id)) ? 1 : 0;
+      if(la !== lb) return la - lb;
       const ra = RANGO_KM[a.onda]||9, rb = RANGO_KM[b.onda]||9;
       if(ra !== rb) return ra - rb;
       return new Date(b.created_at) - new Date(a.created_at);
