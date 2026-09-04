@@ -1667,7 +1667,9 @@
 
 
   // ================= COMPARTIR DESDE LA CONSOLA =================
-  const URL_FONTE = location.origin + "/";
+  // Dominio fijo: lo compartido siempre apunta a fonte.city, aunque estés
+  // entrando por la dirección vieja de Vercel.
+  const URL_FONTE = "https://fonte.city/";
   function urlDe(n, tipo){
     if(!n || !n.id) return URL_FONTE;
     return URL_FONTE + "?" + (tipo || "n") + "=" + encodeURIComponent(n.id);
@@ -1675,6 +1677,9 @@
 
   function textoCompartir(n){
     const partes = [];
+    // Aclaramos arriba de todo qué es, para que nadie lo confunda con una noticia.
+    if(n.__tipo === "o") partes.push("🏷️ ESPACIO DE UN COMERCIO", "");
+    else if(n.__tipo === "c") partes.push("📢 COMUNICADO OFICIAL", "");
     partes.push(n.titulo || "");
     const resumen = n.resumen_corto || n.resumen_extendido || "";
     if(resumen) partes.push("", resumen.length > 220 ? resumen.slice(0,220).trim() + "…" : resumen);
@@ -1686,13 +1691,41 @@
   }
 
   // Dibuja la placa 1080x1920. Si no hay foto usa el diseño tipográfico.
-  function cargarImagen(src){
+  // Las fuentes se cargan una sola vez y quedan listas para todas las placas.
+  let _fuentes = null;
+  function fuentesListas(){
+    if(_fuentes) return _fuentes;
+    _fuentes = (async ()=>{
+      try{
+        if(document.fonts && document.fonts.load){
+          await Promise.all([
+            document.fonts.load("400 76px 'Alfa Slab One'"),
+            document.fonts.load("700 88px 'Lora'"),
+            document.fonts.load("500 44px 'Lora'"),
+            document.fonts.load("800 34px 'Work Sans'"),
+            document.fonts.load("700 34px 'Work Sans'"),
+          ]);
+        }
+      }catch(e){}
+    })();
+    return _fuentes;
+  }
+  // Empezamos a cargarlas apenas abre la app, así compartir sale al toque.
+  setTimeout(fuentesListas, 1500);
+
+  const _imgCache = {};
+  function cargarImagen(src, msTope){
     return new Promise((res)=>{
       if(!src) return res(null);
+      if(_imgCache[src] !== undefined) return res(_imgCache[src]);
       const img = new Image();
       img.crossOrigin = "anonymous";
-      img.onload = ()=> res(img);
-      img.onerror = ()=> res(null);
+      let listo = false;
+      const terminar = (v)=>{ if(listo) return; listo = true; _imgCache[src] = v; res(v); };
+      img.onload = ()=> terminar(img);
+      img.onerror = ()=> terminar(null);
+      // si la foto tarda demasiado, la placa sale igual sin ella
+      setTimeout(()=> terminar(null), msTope || 3500);
       img.src = src;
     });
   }
@@ -1714,18 +1747,7 @@
     return lineas;
   }
   async function generarPlaca(n){
-    // sin esto el canvas dibuja con una tipografía genérica
-    try{
-      if(document.fonts && document.fonts.load){
-        await Promise.all([
-          document.fonts.load("400 76px 'Alfa Slab One'"),
-          document.fonts.load("700 88px 'Lora'"),
-          document.fonts.load("500 44px 'Lora'"),
-          document.fonts.load("800 34px 'Work Sans'"),
-          document.fonts.load("700 34px 'Work Sans'"),
-        ]);
-      }
-    }catch(e){}
+    await fuentesListas();
     const W = 1080, H = 1920;
     const c = document.createElement("canvas");
     c.width = W; c.height = H;
@@ -1736,7 +1758,15 @@
     const img = urgente ? null : await cargarImagen(lista[0]);
 
     const TINTA = "#16140F", PAPEL = "#FDFCF9", CORAL = "#FF4B3E", ROJO = "#B23A2E";
+    const DORADO = "#8A6A22", VERDE = "#22503A";
     const lugar = (n.lugar || "").toUpperCase();
+
+    // Cinta que dice qué es: un anuncio nunca puede parecer una noticia.
+    const TIPOS = {
+      o: { txt:"ESPACIO DE UN COMERCIO", color:DORADO },
+      c: { txt:"COMUNICADO OFICIAL",     color:VERDE  },
+    };
+    const cinta = TIPOS[n.__tipo] || null;
 
     if(urgente){
       // ---- placa urgente ----
@@ -1788,6 +1818,18 @@
       }
     }
 
+    // ---- cinta de tipo: solo si no es una nota ----
+    if(cinta){
+      const yC = H - 330;
+      ctx.fillStyle = cinta.color;
+      ctx.fillRect(0, yC, W, 74);
+      ctx.fillStyle = "#fff";
+      ctx.font = "800 34px 'Work Sans',sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText(cinta.txt, W/2, yC + 48);
+      ctx.textAlign = "left";
+    }
+
     // ---- pie común: marca + "Leelo completo en Fonte" ----
     const claro = urgente;
     ctx.fillStyle = claro ? "rgba(255,255,255,.35)" : TINTA;
@@ -1807,7 +1849,7 @@
     ctx.fillText(URL_FONTE.replace(/^https?:\/\//,"").replace(/\/$/,""), W-80, H-138);
     ctx.textAlign = "left";
 
-    return new Promise(res=> c.toBlob(res, "image/png", 0.92));
+    return new Promise(res=> c.toBlob(res, "image/jpeg", 0.9));
   }
 
 
@@ -1833,7 +1875,7 @@
     try{
       let blob = null;
       try{ blob = await generarPlaca(n); }catch(e){ blob = null; }
-      const archivo = blob ? new File([blob], "fonte.png", { type:"image/png" }) : null;
+      const archivo = blob ? new File([blob], "fonte.jpg", { type:"image/jpeg" }) : null;
       if(archivo && navigator.canShare && navigator.canShare({ files:[archivo] })){
         await navigator.share({ files:[archivo], text: texto });
       } else if(navigator.share){

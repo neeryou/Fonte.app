@@ -796,6 +796,7 @@
     <h3 class="h" id="comunicadoTitulo" style="margin-top:8px"></h3>
     <p class="s-p" id="comunicadoTexto"></p>
     <div id="comunicadoVideo" style="display:none;margin:14px 0;border-radius:10px;overflow:hidden;aspect-ratio:16/9"></div>
+    <button class="act-btn ghost" id="comunicadoCompartirBtn" style="width:100%;margin-top:14px">↗ Compartir</button>
     <a class="verorig" id="comunicadoFichaLink" style="display:none">Ver ficha de la institución ↗</a>
     <div class="foot-note" style="margin-top:14px">Contenido publicado directamente por la institución, marcado como tal — no es una nota de Fonte.</div>
   </div>
@@ -1537,7 +1538,9 @@
   });
 
   // ---- Compartir: genera una placa para historias + texto con el link de Fonte ----
-  const URL_FONTE = location.origin + location.pathname;
+  // Dominio fijo: lo compartido siempre apunta a fonte.city, aunque estés
+  // entrando por la dirección vieja de Vercel.
+  const URL_FONTE = "https://fonte.city/";
   // Enlace directo: quien lo recibe abre esa nota, no la portada.
   function urlDe(n, tipo){
     if(!n || !n.id) return URL_FONTE;
@@ -1546,6 +1549,9 @@
 
   function textoCompartir(n, tipo){
     const partes = [];
+    // Aclaramos arriba de todo qué es, para que nadie lo confunda con una noticia.
+    if(n.__tipo === "o") partes.push("🏷️ ESPACIO DE UN COMERCIO", "");
+    else if(n.__tipo === "c") partes.push("📢 COMUNICADO OFICIAL", "");
     partes.push(n.titulo || "");
     const resumen = n.resumen_corto || n.resumen_extendido || "";
     if(resumen) partes.push("", resumen.length > 220 ? resumen.slice(0,220).trim() + "…" : resumen);
@@ -1557,13 +1563,41 @@
   }
 
   // Dibuja la placa 1080x1920. Si no hay foto usa el diseño tipográfico.
-  function cargarImagen(src){
+  // Las fuentes se cargan una sola vez y quedan listas para todas las placas.
+  let _fuentes = null;
+  function fuentesListas(){
+    if(_fuentes) return _fuentes;
+    _fuentes = (async ()=>{
+      try{
+        if(document.fonts && document.fonts.load){
+          await Promise.all([
+            document.fonts.load("400 76px 'Alfa Slab One'"),
+            document.fonts.load("700 88px 'Lora'"),
+            document.fonts.load("500 44px 'Lora'"),
+            document.fonts.load("800 34px 'Work Sans'"),
+            document.fonts.load("700 34px 'Work Sans'"),
+          ]);
+        }
+      }catch(e){}
+    })();
+    return _fuentes;
+  }
+  // Empezamos a cargarlas apenas abre la app, así compartir sale al toque.
+  setTimeout(fuentesListas, 1500);
+
+  const _imgCache = {};
+  function cargarImagen(src, msTope){
     return new Promise((res)=>{
       if(!src) return res(null);
+      if(_imgCache[src] !== undefined) return res(_imgCache[src]);
       const img = new Image();
       img.crossOrigin = "anonymous";
-      img.onload = ()=> res(img);
-      img.onerror = ()=> res(null);
+      let listo = false;
+      const terminar = (v)=>{ if(listo) return; listo = true; _imgCache[src] = v; res(v); };
+      img.onload = ()=> terminar(img);
+      img.onerror = ()=> terminar(null);
+      // si la foto tarda demasiado, la placa sale igual sin ella
+      setTimeout(()=> terminar(null), msTope || 3500);
       img.src = src;
     });
   }
@@ -1585,18 +1619,7 @@
     return lineas;
   }
   async function generarPlaca(n){
-    // sin esto el canvas dibuja con una tipografía genérica
-    try{
-      if(document.fonts && document.fonts.load){
-        await Promise.all([
-          document.fonts.load("400 76px 'Alfa Slab One'"),
-          document.fonts.load("700 88px 'Lora'"),
-          document.fonts.load("500 44px 'Lora'"),
-          document.fonts.load("800 34px 'Work Sans'"),
-          document.fonts.load("700 34px 'Work Sans'"),
-        ]);
-      }
-    }catch(e){}
+    await fuentesListas();
     const W = 1080, H = 1920;
     const c = document.createElement("canvas");
     c.width = W; c.height = H;
@@ -1607,7 +1630,15 @@
     const img = urgente ? null : await cargarImagen(lista[0]);
 
     const TINTA = "#16140F", PAPEL = "#FDFCF9", CORAL = "#FF4B3E", ROJO = "#B23A2E";
+    const DORADO = "#8A6A22", VERDE = "#22503A";
     const lugar = (n.lugar || "").toUpperCase();
+
+    // Cinta que dice qué es: un anuncio nunca puede parecer una noticia.
+    const TIPOS = {
+      o: { txt:"ESPACIO DE UN COMERCIO", color:DORADO },
+      c: { txt:"COMUNICADO OFICIAL",     color:VERDE  },
+    };
+    const cinta = TIPOS[n.__tipo] || null;
 
     if(urgente){
       // ---- placa urgente ----
@@ -1659,6 +1690,18 @@
       }
     }
 
+    // ---- cinta de tipo: solo si no es una nota ----
+    if(cinta){
+      const yC = H - 330;
+      ctx.fillStyle = cinta.color;
+      ctx.fillRect(0, yC, W, 74);
+      ctx.fillStyle = "#fff";
+      ctx.font = "800 34px 'Work Sans',sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText(cinta.txt, W/2, yC + 48);
+      ctx.textAlign = "left";
+    }
+
     // ---- pie común: marca + "Leelo completo en Fonte" ----
     const claro = urgente;
     ctx.fillStyle = claro ? "rgba(255,255,255,.35)" : TINTA;
@@ -1678,19 +1721,19 @@
     ctx.fillText(URL_FONTE.replace(/^https?:\/\//,"").replace(/\/$/,""), W-80, H-138);
     ctx.textAlign = "left";
 
-    return new Promise(res=> c.toBlob(res, "image/png", 0.92));
+    return new Promise(res=> c.toBlob(res, "image/jpeg", 0.9));
   }
 
   document.getElementById("shareBtn").addEventListener("click", async ()=>{
     if(!notaAbierta) return;
     const btn = document.getElementById("shareBtn");
     const original = btn.textContent;
-    const texto = textoCompartir(notaAbierta);
+    const texto = textoCompartir(notaAbierta, "n");
     btn.textContent = "Preparando…";
     try{
       let blob = null;
       try{ blob = await generarPlaca(notaAbierta); }catch(e){ blob = null; }
-      const archivo = blob ? new File([blob], "fonte.png", { type:"image/png" }) : null;
+      const archivo = blob ? new File([blob], "fonte.jpg", { type:"image/jpeg" }) : null;
 
       if(archivo && navigator.canShare && navigator.canShare({ files:[archivo] })){
         await navigator.share({ files:[archivo], text: texto });
@@ -1829,9 +1872,11 @@
       el.addEventListener("click", ()=> abrirOferta(el.getAttribute("data-oferta-id")));
     });
   }
+  let ofertaAbierta = null;
   function abrirOferta(id){
     const o = OFERTAS.find(x=>String(x.id)===String(id));
     if(!o) return;
+    ofertaAbierta = o;
     const check = '<svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
     const foto = o.imagen_url ? "background-image:url('"+esc(o.imagen_url)+"');background-size:cover;background-position:center;" : "background:var(--paper-3);";
     document.getElementById("ofertaHero").setAttribute("style", foto);
@@ -1857,12 +1902,38 @@
   }
   document.getElementById("closeOferta").addEventListener("click", cerrarOferta);
   document.getElementById("backdropOferta").addEventListener("click", cerrarOferta);
-  document.getElementById("ofertaCompartirBtn").addEventListener("click", async ()=>{
-    try{
-      if(navigator.share){ await navigator.share({ title: document.getElementById("ofertaTitulo").textContent, url: location.href }); }
-      else { await navigator.clipboard.writeText(location.href); }
-    }catch(e){}
+  document.getElementById("ofertaCompartirBtn").addEventListener("click", async (e)=>{
+    if(!ofertaAbierta) return;
+    await compartirPieza({
+      id: ofertaAbierta.id, __tipo: "o",
+      titulo: ofertaAbierta.titulo,
+      resumen_corto: ofertaAbierta.descripcion || "",
+      lugar: ofertaAbierta.negocio || "",
+      imagen_url: ofertaAbierta.imagen_url || null,
+      dato_extra: ofertaAbierta.valido_hasta ? ("Válido hasta " + ofertaAbierta.valido_hasta) : null,
+      fuente_etiqueta: ofertaAbierta.negocio || "",
+    }, e.currentTarget);
   });
+
+  // Compartir cualquier pieza (nota, oferta o comunicado) con su placa
+  async function compartirPieza(pieza, btn){
+    const original = btn ? btn.textContent : "";
+    if(btn) btn.textContent = "Preparando…";
+    const texto = textoCompartir(pieza, pieza.__tipo);
+    try{
+      let blob = null;
+      try{ blob = await generarPlaca(pieza); }catch(e){ blob = null; }
+      const archivo = blob ? new File([blob], "fonte.jpg", { type:"image/jpeg" }) : null;
+      if(archivo && navigator.canShare && navigator.canShare({ files:[archivo] })){
+        await navigator.share({ files:[archivo], text: texto });
+      } else if(navigator.share){
+        await navigator.share({ title: pieza.titulo, text: texto, url: urlDe(pieza, pieza.__tipo) });
+      } else {
+        await navigator.clipboard.writeText(texto);
+      }
+    }catch(e){}
+    if(btn) btn.textContent = original;
+  }
 
   // ================= COMUNICADOS OFICIALES (municipio / instituciones verificadas) =================
   let COMUNICADOS = [];
@@ -1928,9 +1999,11 @@
     };
   }
 
+  let comunicadoAbierto = null;
   function abrirComunicado(id){
     const c = COMUNICADOS.find(x=>String(x.id)===String(id));
     if(!c) return;
+    comunicadoAbierto = c;
     marcarComunicadoVisto(id);
     if(typeof pintarInstituciones === "function") pintarInstituciones();
     document.getElementById("comunicadoInst").querySelector("span:last-child").textContent = c.institucion || "";
@@ -1958,6 +2031,18 @@
     document.getElementById("backdropComunicado").classList.remove("show");
     document.getElementById("sheetComunicado").classList.remove("show");
   }
+  document.getElementById("comunicadoCompartirBtn").addEventListener("click", async (e)=>{
+    if(!comunicadoAbierto) return;
+    await compartirPieza({
+      id: comunicadoAbierto.id, __tipo: "c",
+      titulo: comunicadoAbierto.titulo,
+      resumen_corto: comunicadoAbierto.texto || "",
+      lugar: comunicadoAbierto.institucion || "",
+      urgente: !!comunicadoAbierto.urgente,
+      imagen_url: null,
+      fuente_etiqueta: comunicadoAbierto.institucion || "",
+    }, e.currentTarget);
+  });
   document.getElementById("closeComunicado").addEventListener("click", cerrarComunicado);
   document.getElementById("backdropComunicado").addEventListener("click", cerrarComunicado);
 
