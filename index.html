@@ -919,9 +919,6 @@
   <button class="bn-item" id="navBuscar">
     <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
     <span>Buscar</span></button>
-  <button class="bn-item" id="navReportero">
-    <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M17 6l3 3M14 9l2 2"/></svg>
-    <span>Reportero</span></button>
 </nav>
 
 <script>
@@ -1996,6 +1993,7 @@
           localStorage.setItem("fonte_urg_cerrados", JSON.stringify(c.slice(-50)));
         }catch(e2){}
         renderComunicadosEn();
+        if(typeof pintarInstituciones === "function") pintarInstituciones();
       });
     });
     row.onscroll = ()=>{
@@ -2113,13 +2111,58 @@
         return '<a class="inst-chip'+(tieneUrgente?" destacada":"")+'" data-inst-id="'+esc(i.id)+'"><span class="ic">'+(ICONS_INST[i.tipo]||"📍")+'</span><span class="nm">'+esc(i.nombre)+'</span>'
           + (sinLeer ? '<span class="badge">'+sinLeer+'</span>' : '') + '</a>';
       }).join("")
+      + (function(){
+          // Comunicados cuya institución no está cargada como ficha: si no,
+          // al cerrar el aviso urgente quedaban sin ninguna forma de encontrarlos.
+          const conFicha = new Set();
+          INSTITUCIONES.forEach(i=> comunicadosDe(i.id).forEach(c=> conFicha.add(String(c.id))));
+          const sueltos = (COMUNICADOS||[]).filter(c=>!conFicha.has(String(c.id)));
+          if(!sueltos.length) return "";
+          const vistos = comunicadosVistos();
+          const sinLeer = sueltos.filter(c=>!vistos.has(String(c.id))).length;
+          return '<a class="inst-chip" id="chipComunicados"><span class="ic">📢</span>'
+            + '<span class="nm">Comunicados</span>'
+            + (sinLeer ? '<span class="badge">'+sinLeer+'</span>' : '') + '</a>';
+        })()
       + (FECHAS_INST.length ? '<a class="inst-more" id="verFechasBtn">📅 Próximas fechas ›</a>' : "");
     document.querySelectorAll(".inst-chip").forEach(el=>{
       el.addEventListener("click", ()=> abrirInstitucion(el.getAttribute("data-inst-id")));
     });
     const vf = document.getElementById("verFechasBtn");
     if(vf) vf.addEventListener("click", abrirProximasFechas);
+    const chipCom = document.getElementById("chipComunicados");
+    if(chipCom) chipCom.addEventListener("click", abrirListaComunicados);
   }
+  // Lista de comunicados que no tienen ficha de institución cargada
+  function abrirListaComunicados(){
+    const conFicha = new Set();
+    INSTITUCIONES.forEach(i=> comunicadosDe(i.id).forEach(c=> conFicha.add(String(c.id))));
+    const lista = (COMUNICADOS||[]).filter(c=>!conFicha.has(String(c.id)));
+    const vistos = comunicadosVistos();
+    document.getElementById("institucionBody").innerHTML =
+      '<div class="ficha-head"><span class="ic">📢</span><div><div class="nm">Comunicados oficiales</div>'
+      + '<div class="sub"><span class="verif-badge" style="background:var(--barrio);width:14px;height:14px">'+check+'</span>Instituciones verificadas</div></div></div>'
+      + (lista.length
+          ? '<div class="ficha-sec" style="margin-top:16px">' + lista.map(c=>{
+              const cuando = c.created_at ? tiempoDesde(c.created_at) : "";
+              const prev = (c.texto||"").length > 110 ? (c.texto||"").slice(0,110)+"…" : (c.texto||"");
+              const nuevo = !vistos.has(String(c.id));
+              return '<a class="f-com" data-com-id="'+esc(c.id)+'"><span class="verif-badge">'+check+'</span>'
+                + '<div class="tx"><div class="t">'+esc(c.titulo||"")
+                + (c.urgente ? ' <span style="color:var(--urgente);font-size:.6rem;font-weight:800">⚡</span>' : '')
+                + (nuevo ? ' <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--terracota);vertical-align:middle"></span>' : '')
+                + '</div>'
+                + (prev ? '<div class="p">'+esc(prev)+'</div>' : '')
+                + '<div class="m">'+esc(c.institucion||"")+(cuando?" · "+cuando:"")+'</div></div></a>';
+            }).join("") + '</div>'
+          : '<p class="foot-note" style="margin-top:14px">No hay comunicados.</p>');
+    document.querySelectorAll("#institucionBody .f-com").forEach(el=>{
+      el.addEventListener("click", ()=>{ cerrarInstitucion(); abrirComunicado(el.getAttribute("data-com-id")); });
+    });
+    document.getElementById("backdropInstitucion").classList.add("show");
+    document.getElementById("sheetInstitucion").classList.add("show");
+  }
+
   function abrirInstitucion(id){
     const inst = INSTITUCIONES.find(x=>String(x.id)===String(id));
     if(!inst) return;
@@ -2602,13 +2645,13 @@
   // ================= INSTALAR COMO APP =================
   let promptInstalar = null;
   function yaInstalada(){
-    return window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+    if(window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true) return true;
+    try{ return localStorage.getItem("fonte_ya_instalada") === "1"; }catch(e){ return false; }
   }
   function bannerOculto(){
-    try{
-      const hasta = localStorage.getItem("fonte_instalar_oculto");
-      return hasta && Date.now() < parseInt(hasta, 10);
-    }catch(e){ return false; }
+    // Solo se esconde por lo que dure esta sesión: si vuelve a entrar sin
+    // haberla instalado, la invitación aparece de nuevo.
+    try{ return sessionStorage.getItem("fonte_instalar_oculto") === "1"; }catch(e){ return false; }
   }
   function mostrarInstalar(){
     if(yaInstalada() || bannerOculto()) return;
@@ -2616,7 +2659,10 @@
   }
   function cerrarInstalar(dias){
     document.getElementById("instalarBanner").classList.remove("show");
-    try{ localStorage.setItem("fonte_instalar_oculto", String(Date.now() + dias*86400000)); }catch(e){}
+    if(dias > 100){   // la instaló: no hace falta volver a ofrecerlo nunca
+      try{ localStorage.setItem("fonte_ya_instalada", "1"); }catch(e){}
+    }
+    try{ sessionStorage.setItem("fonte_instalar_oculto", "1"); }catch(e){}
   }
   // Chrome/Android: guardamos el pedido nativo para dispararlo con nuestro botón
   window.addEventListener("beforeinstallprompt", (e)=>{
@@ -2840,9 +2886,6 @@
     });
     document.getElementById("navPublicar").addEventListener("click", function(){
       document.getElementById("fabAportar").click();
-    });
-    document.getElementById("navReportero").addEventListener("click", function(){
-      window.location.href = "reportero.html";
     });
   })();
 
