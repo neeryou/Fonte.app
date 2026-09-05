@@ -2456,17 +2456,18 @@
     try{ primera = localStorage.getItem("fonte_primera_visita"); }catch(e){}
     const esNuevo = !primera;
     try{
-      const res = await fetch(SUPABASE_URL + "/rest/v1/visitas", {
+      // Se registra a través de una función del servidor: así no depende de
+      // los permisos de la tabla y nadie puede cargar visitas falsas.
+      const res = await fetch(SUPABASE_URL + "/rest/v1/rpc/registrar_visita", {
         method: "POST",
         headers: {
           "apikey": SUPABASE_KEY, "Authorization": "Bearer " + SUPABASE_KEY,
-          "Content-Type": "application/json", "Prefer": "return=minimal,resolution=ignore-duplicates"
+          "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          dispositivo_id: disp,
-          fecha: hoy,
-          es_nuevo: esNuevo,
-          instalada: window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true
+          disp: disp,
+          nuevo: esNuevo,
+          app: window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true
         })
       });
       avisoDebug("→ respuesta del servidor: " + res.status);
