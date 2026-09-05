@@ -2425,11 +2425,32 @@
   // ================= ANALÍTICA: registro de visita =================
   // Registra una visita por dispositivo por día. Sirve para medir usuarios
   // recurrentes, que es la métrica que define si Fonte está funcionando.
+  // Con fonte.city/?debug=1 se ve en pantalla qué pasa al registrar la visita.
+  const MODO_DEBUG = (function(){
+    try{ return new URLSearchParams(location.search).get("debug") === "1"; }catch(e){ return false; }
+  })();
+  function avisoDebug(txt){
+    if(!MODO_DEBUG) return;
+    let caja = document.getElementById("cajaDebug");
+    if(!caja){
+      caja = document.createElement("div");
+      caja.id = "cajaDebug";
+      caja.style.cssText = "position:fixed;left:8px;right:8px;top:8px;z-index:9999;background:#16140F;color:#fff;"
+        + "font-family:monospace;font-size:11px;line-height:1.5;padding:12px;border-radius:10px;white-space:pre-wrap;"
+        + "box-shadow:0 6px 20px rgba(0,0,0,.4)";
+      document.body.appendChild(caja);
+      caja.addEventListener("click", ()=> caja.remove());
+    }
+    caja.textContent += txt + "\n";
+  }
+
   async function registrarVisita(){
     const hoy = new Date().toISOString().slice(0,10);
     let ultima = null;
     try{ ultima = localStorage.getItem("fonte_ultima_visita"); }catch(e){}
-    if(ultima === hoy) return;           // ya quedó registrada la de hoy
+    avisoDebug("registrarVisita — hoy=" + hoy + " | última guardada=" + (ultima || "ninguna"));
+    if(MODO_DEBUG) ultima = null;        // en modo diagnóstico siempre reintenta
+    if(ultima === hoy){ avisoDebug("→ ya estaba registrada hoy, no se reintenta"); return; }
     const disp = getDispositivoId();
     let primera = null;
     try{ primera = localStorage.getItem("fonte_primera_visita"); }catch(e){}
@@ -2448,6 +2469,7 @@
           instalada: window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true
         })
       });
+      avisoDebug("→ respuesta del servidor: " + res.status);
       if(res.ok || res.status === 409){   // 409 = ya estaba registrada hoy, también cuenta
         try{
           localStorage.setItem("fonte_ultima_visita", hoy);
@@ -2457,8 +2479,12 @@
         let detalle = "";
         try{ const j = await res.json(); detalle = j.message || j.hint || ""; }catch(e){}
         console.error("Fonte / no se pudo registrar la visita:", res.status, detalle);
+        avisoDebug("→ ERROR: " + detalle);
       }
-    }catch(e){ console.error("Fonte / error de red al registrar la visita:", e); }
+    }catch(e){
+      console.error("Fonte / error de red al registrar la visita:", e);
+      avisoDebug("→ ERROR de red: " + (e && e.message ? e.message : e));
+    }
   }
   // ================= ONBOARDING (primera visita) =================
   const ONB = [
