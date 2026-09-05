@@ -796,8 +796,8 @@
     <h3 class="h" id="comunicadoTitulo" style="margin-top:8px"></h3>
     <p class="s-p" id="comunicadoTexto"></p>
     <div id="comunicadoVideo" style="display:none;margin:14px 0;border-radius:10px;overflow:hidden;aspect-ratio:16/9"></div>
-    <button class="act-btn ghost" id="comunicadoCompartirBtn" style="width:100%;margin-top:14px">↗ Compartir</button>
-    <a class="verorig" id="comunicadoFichaLink" style="display:none">Ver ficha de la institución ↗</a>
+    <button class="act-btn ghost" id="comunicadoCompartirBtn" style="width:100%;margin-top:16px">↗ Compartir</button>
+    <a class="verorig" id="comunicadoFichaLink" style="display:none;width:100%;justify-content:center;margin-top:10px">Ver ficha de la institución ↗</a>
     <div class="foot-note" style="margin-top:14px">Contenido publicado directamente por la institución, marcado como tal — no es una nota de Fonte.</div>
   </div>
 </div>
@@ -2022,7 +2022,7 @@
     } else { cv.style.display = "none"; cv.innerHTML = ""; }
     const fichaLink = document.getElementById("comunicadoFichaLink");
     if(c.institucion_id && INSTITUCIONES.find(x=>String(x.id)===String(c.institucion_id))){
-      fichaLink.style.display = "inline-block";
+      fichaLink.style.display = "inline-flex";
       fichaLink.onclick = (e)=>{ e.preventDefault(); cerrarComunicado(); abrirInstitucion(c.institucion_id); };
     } else {
       fichaLink.style.display = "none";
@@ -2448,13 +2448,17 @@
           instalada: window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true
         })
       });
-      if(res.ok){
+      if(res.ok || res.status === 409){   // 409 = ya estaba registrada hoy, también cuenta
         try{
           localStorage.setItem("fonte_ultima_visita", hoy);
           if(esNuevo) localStorage.setItem("fonte_primera_visita", hoy);
         }catch(e){}
+      } else {
+        let detalle = "";
+        try{ const j = await res.json(); detalle = j.message || j.hint || ""; }catch(e){}
+        console.error("Fonte / no se pudo registrar la visita:", res.status, detalle);
       }
-    }catch(e){ /* si falla, no molestamos al vecino */ }
+    }catch(e){ console.error("Fonte / error de red al registrar la visita:", e); }
   }
   // ================= ONBOARDING (primera visita) =================
   const ONB = [

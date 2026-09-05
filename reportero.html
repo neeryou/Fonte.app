@@ -634,6 +634,14 @@
       if(el) el.classList.toggle("on", x === v);
     });
     document.querySelectorAll(".rnv").forEach(b=> b.classList.toggle("on", b.getAttribute("data-v") === v));
+    // La barra "Ver / Publicar" solo corresponde al formulario de nota
+    const barra = document.getElementById("barraAccion");
+    if(barra) barra.classList.toggle("show", v === "viewCargar" && (typeof tipoPub === "undefined" || tipoPub === "nota"));
+    if(v !== "viewCargar" && typeof enPrevia !== "undefined" && enPrevia){
+      enPrevia = false;
+      document.getElementById("viewPrevia").classList.remove("on");
+      document.getElementById("btnVistaPrevia").textContent = "👁 Ver";
+    }
     if(v === "viewHoy"){ cargarHoy(); }
     if(v === "viewArchivo"){ cargarArchivo(); }
     if(v === "viewMetricas"){ cargarMetricas(); }
@@ -1922,7 +1930,8 @@
       const p = document.getElementById("panel" + x.charAt(0).toUpperCase() + x.slice(1));
       if(p) p.classList.toggle("hide", x !== t);
     });
-    document.getElementById("barraAccion").classList.toggle("show", t === "nota");
+    const enPublicar = document.getElementById("viewCargar").classList.contains("on");
+    document.getElementById("barraAccion").classList.toggle("show", enPublicar && t === "nota");
     window.scrollTo({ top:0, behavior:"instant" });
   }
   document.querySelectorAll("#tiposPub .tipo").forEach(b=>{
