@@ -29,6 +29,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Fonte">
+<link rel="preconnect" href="https://skpfycmkilahghvoxqxw.supabase.co" crossorigin>
+<link rel="dns-prefetch" href="https://skpfycmkilahghvoxqxw.supabase.co">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Lora:ital,wght@0,500;0,600;0,700;1,500&family=Work+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
@@ -318,6 +320,8 @@
     border-radius:999px; padding:8px 13px 8px 8px; box-shadow:0 1px 4px rgba(80,60,40,.06); }
   .inst-chip .ic{ width:30px; height:30px; border-radius:50%; background:var(--paper-2); display:flex; align-items:center; justify-content:center; font-size:.95rem; flex:0 0 auto; }
   .inst-chip .nm{ font-family:var(--sans); font-size:.76rem; font-weight:700; color:var(--ink); white-space:nowrap; }
+  .inst-chip .punto-urg{ width:9px; height:9px; border-radius:50%; background:var(--urgente); flex:0 0 auto;
+    box-shadow:0 0 0 3px color-mix(in srgb,var(--urgente) 22%,transparent); }
   .inst-chip .badge{ min-width:18px; height:18px; padding:0 5px; border-radius:999px; background:var(--terracota); color:#fff;
     font-family:var(--sans); font-size:.62rem; font-weight:800; display:flex; align-items:center; justify-content:center; flex:0 0 auto; }
   .com-destacado{ cursor:pointer; }
@@ -504,6 +508,10 @@
   .f-com .tx{ flex:1; min-width:0; }
   .f-com .t{ font-family:var(--sans); font-weight:700; font-size:.82rem; color:var(--ink); }
   .f-com .p{ font-family:var(--sans); font-size:.74rem; color:var(--ink-soft); margin-top:2px; line-height:1.4; }
+  .f-com.urg{ background:color-mix(in srgb,var(--urgente) 6%,transparent); border-radius:10px; padding-left:9px; padding-right:6px; }
+  .f-com .tag-urg{ font-family:var(--sans); font-size:.55rem; font-weight:800; color:#fff; background:var(--urgente);
+    padding:2px 7px; border-radius:999px; vertical-align:middle; }
+  .f-com .x-urg{ background:none; border:0; color:var(--ink-faint); font-size:.85rem; padding:2px 5px; flex:0 0 auto; align-self:flex-start; }
   .f-com .m{ font-family:var(--sans); font-size:.64rem; color:var(--ink-faint); margin-top:3px; }
   .inst-more{ flex:0 0 auto; display:flex; align-items:center; font-family:var(--sans); font-size:.72rem; font-weight:700; color:var(--int); padding:0 4px; white-space:nowrap; }
 
@@ -718,13 +726,6 @@
   <main class="wrap" id="feed"></main>
 </div>
 
-<footer><div class="wrap">
-  <p class="foot-note">Fonte · Fase 0 · un diario inteligente que ordena las noticias por cercanía. Las noticias se resumen automáticamente con IA; cada una enlaza a su fuente original.</p>
-  <div style="display:flex;gap:14px;margin-top:12px">
-    <a href="reportero.html" style="font-family:var(--sans);font-size:.68rem;color:var(--ink-soft);font-weight:600;border-bottom:1px dotted var(--line-strong)">🔑 Reportero</a>
-  </div>
-</div></footer>
-
 <button class="fab" id="fabAportar">+ Aportá un dato</button>
 <button class="refresh-btn" id="refreshBtn">↻ Actualizar</button>
 
@@ -919,6 +920,9 @@
   <button class="bn-item" id="navBuscar">
     <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
     <span>Buscar</span></button>
+  <button class="bn-item" id="navReportero">
+    <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M17 6l3 3M14 9l2 2"/></svg>
+    <span>Reportero</span></button>
 </nav>
 
 <script>
@@ -1076,7 +1080,7 @@
     }
     try{
       const url = SUPABASE_URL + "/rest/v1/noticias"
-        + "?select=*&publicada=eq.true&order=created_at.desc&limit=200";
+        + "?select=*&publicada=eq.true&order=created_at.desc&limit=90";
       const res = await fetch(url, {
         headers: { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + SUPABASE_KEY }
       });
@@ -2068,6 +2072,21 @@
     if(dif === 1) return "MAÑANA";
     return "EN "+dif+" DÍAS";
   }
+  // Un urgente pasa por dos etapas: se cierra de la portada (sigue con puntito
+  // en su ficha) y recién al cerrarlo dentro de la ficha se descarta del todo.
+  function urgenteDescartado(id){
+    try{
+      const l = JSON.parse(localStorage.getItem("fonte_urg_descartados") || "[]");
+      return l.includes(String(id));
+    }catch(e){ return false; }
+  }
+  function descartarUrgente(id){
+    try{
+      const l = JSON.parse(localStorage.getItem("fonte_urg_descartados") || "[]");
+      l.push(String(id));
+      localStorage.setItem("fonte_urg_descartados", JSON.stringify(l.slice(-80)));
+    }catch(e){}
+  }
   function comunicadosVistos(){
     try{ return new Set(JSON.parse(localStorage.getItem("fonte_com_vistos") || "[]")); }catch(e){ return new Set(); }
   }
@@ -2107,62 +2126,20 @@
         const propios = comunicadosDe(i.id);
         const vistos = comunicadosVistos();
         const sinLeer = propios.filter(c=>!vistos.has(String(c.id))).length;
-        const tieneUrgente = propios.some(c=>c.urgente && !vistos.has(String(c.id)));
-        return '<a class="inst-chip'+(tieneUrgente?" destacada":"")+'" data-inst-id="'+esc(i.id)+'"><span class="ic">'+(ICONS_INST[i.tipo]||"📍")+'</span><span class="nm">'+esc(i.nombre)+'</span>'
+        // Urgente que sigue vigente y todavía no se descartó del todo
+        const urgPendiente = propios.some(c=> c.urgente && !urgenteDescartado(c.id));
+        return '<a class="inst-chip'+(urgPendiente?" destacada":"")+'" data-inst-id="'+esc(i.id)+'">'
+          + '<span class="ic">'+(ICONS_INST[i.tipo]||"📍")+'</span><span class="nm">'+esc(i.nombre)+'</span>'
+          + (urgPendiente ? '<span class="punto-urg" title="Tiene un aviso urgente"></span>' : '')
           + (sinLeer ? '<span class="badge">'+sinLeer+'</span>' : '') + '</a>';
       }).join("")
-      + (function(){
-          // Comunicados cuya institución no está cargada como ficha: si no,
-          // al cerrar el aviso urgente quedaban sin ninguna forma de encontrarlos.
-          const conFicha = new Set();
-          INSTITUCIONES.forEach(i=> comunicadosDe(i.id).forEach(c=> conFicha.add(String(c.id))));
-          const sueltos = (COMUNICADOS||[]).filter(c=>!conFicha.has(String(c.id)));
-          if(!sueltos.length) return "";
-          const vistos = comunicadosVistos();
-          const sinLeer = sueltos.filter(c=>!vistos.has(String(c.id))).length;
-          return '<a class="inst-chip" id="chipComunicados"><span class="ic">📢</span>'
-            + '<span class="nm">Comunicados</span>'
-            + (sinLeer ? '<span class="badge">'+sinLeer+'</span>' : '') + '</a>';
-        })()
       + (FECHAS_INST.length ? '<a class="inst-more" id="verFechasBtn">📅 Próximas fechas ›</a>' : "");
     document.querySelectorAll(".inst-chip").forEach(el=>{
       el.addEventListener("click", ()=> abrirInstitucion(el.getAttribute("data-inst-id")));
     });
     const vf = document.getElementById("verFechasBtn");
     if(vf) vf.addEventListener("click", abrirProximasFechas);
-    const chipCom = document.getElementById("chipComunicados");
-    if(chipCom) chipCom.addEventListener("click", abrirListaComunicados);
   }
-  // Lista de comunicados que no tienen ficha de institución cargada
-  function abrirListaComunicados(){
-    const conFicha = new Set();
-    INSTITUCIONES.forEach(i=> comunicadosDe(i.id).forEach(c=> conFicha.add(String(c.id))));
-    const lista = (COMUNICADOS||[]).filter(c=>!conFicha.has(String(c.id)));
-    const vistos = comunicadosVistos();
-    document.getElementById("institucionBody").innerHTML =
-      '<div class="ficha-head"><span class="ic">📢</span><div><div class="nm">Comunicados oficiales</div>'
-      + '<div class="sub"><span class="verif-badge" style="background:var(--barrio);width:14px;height:14px">'+check+'</span>Instituciones verificadas</div></div></div>'
-      + (lista.length
-          ? '<div class="ficha-sec" style="margin-top:16px">' + lista.map(c=>{
-              const cuando = c.created_at ? tiempoDesde(c.created_at) : "";
-              const prev = (c.texto||"").length > 110 ? (c.texto||"").slice(0,110)+"…" : (c.texto||"");
-              const nuevo = !vistos.has(String(c.id));
-              return '<a class="f-com" data-com-id="'+esc(c.id)+'"><span class="verif-badge">'+check+'</span>'
-                + '<div class="tx"><div class="t">'+esc(c.titulo||"")
-                + (c.urgente ? ' <span style="color:var(--urgente);font-size:.6rem;font-weight:800">⚡</span>' : '')
-                + (nuevo ? ' <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--terracota);vertical-align:middle"></span>' : '')
-                + '</div>'
-                + (prev ? '<div class="p">'+esc(prev)+'</div>' : '')
-                + '<div class="m">'+esc(c.institucion||"")+(cuando?" · "+cuando:"")+'</div></div></a>';
-            }).join("") + '</div>'
-          : '<p class="foot-note" style="margin-top:14px">No hay comunicados.</p>');
-    document.querySelectorAll("#institucionBody .f-com").forEach(el=>{
-      el.addEventListener("click", ()=>{ cerrarInstitucion(); abrirComunicado(el.getAttribute("data-com-id")); });
-    });
-    document.getElementById("backdropInstitucion").classList.add("show");
-    document.getElementById("sheetInstitucion").classList.add("show");
-  }
-
   function abrirInstitucion(id){
     const inst = INSTITUCIONES.find(x=>String(x.id)===String(id));
     if(!inst) return;
@@ -2187,13 +2164,19 @@
     }
     const comInst = comunicadosDe(id);
     if(comInst.length){
-      html += '<div class="ficha-sec"><div class="h">Comunicados de esta institución</div>' + comInst.slice(0,5).map(c=>{
+      html += '<div class="ficha-sec"><div class="h">Comunicados de esta institución</div>' + comInst.slice(0,6).map(c=>{
         const cuando = c.created_at ? new Date(c.created_at).toLocaleDateString("es-AR",{day:"numeric",month:"short"}) : "";
         const prev = (c.texto||"").length > 110 ? (c.texto||"").slice(0,110)+"…" : (c.texto||"");
-        return '<a class="f-com" data-com-id="'+esc(c.id)+'"><span class="verif-badge">'+check+'</span>'
-          + '<div class="tx"><div class="t">'+esc(c.titulo||"")+'</div>'
+        const urgPend = c.urgente && !urgenteDescartado(c.id);
+        return '<div class="f-com'+(urgPend?" urg":"")+'" data-com-id="'+esc(c.id)+'">'
+          + '<span class="verif-badge">'+check+'</span>'
+          + '<div class="tx" data-abrir="'+esc(c.id)+'"><div class="t">'
+          + (urgPend ? '<span class="tag-urg">⚡ Urgente</span> ' : '')
+          + esc(c.titulo||"")+'</div>'
           + (prev ? '<div class="p">'+esc(prev)+'</div>' : '')
-          + (cuando ? '<div class="m">'+cuando+'</div>' : '') + '</div></a>';
+          + (cuando ? '<div class="m">'+cuando+'</div>' : '') + '</div>'
+          + (urgPend ? '<button class="x-urg" data-descartar="'+esc(c.id)+'" title="No mostrar más el aviso">✕</button>' : '')
+          + '</div>';
       }).join("") + '</div>';
     }
     let contact = "";
@@ -2203,8 +2186,16 @@
     if(inst.link_url) contact += '<div>🔗 <a href="'+esc(inst.link_url)+'" target="_blank" rel="noopener">Más información</a></div>';
     if(contact) html += '<div class="ficha-contact">'+contact+'</div>';
     document.getElementById("institucionBody").innerHTML = html;
-    document.querySelectorAll("#institucionBody .f-com").forEach(el=>{
-      el.addEventListener("click", ()=>{ cerrarInstitucion(); abrirComunicado(el.getAttribute("data-com-id")); });
+    document.querySelectorAll("#institucionBody .f-com .tx[data-abrir]").forEach(el=>{
+      el.addEventListener("click", ()=>{ cerrarInstitucion(); abrirComunicado(el.getAttribute("data-abrir")); });
+    });
+    document.querySelectorAll("#institucionBody [data-descartar]").forEach(b=>{
+      b.addEventListener("click", (e)=>{
+        e.stopPropagation();
+        descartarUrgente(b.getAttribute("data-descartar"));
+        abrirInstitucion(id);                 // se redibuja sin el aviso
+        if(typeof pintarInstituciones === "function") pintarInstituciones();
+      });
     });
     document.getElementById("backdropInstitucion").classList.add("show");
     document.getElementById("sheetInstitucion").classList.add("show");
@@ -2858,11 +2849,14 @@
 
   registrarVisita();
 
-  cargar(false);
-  cargarAportes();
-  cargarOfertas();
-  cargarComunicados().then(()=>{ cargarInstituciones(); revisarNovedades(); });
-  mostrarBannerNotif();
+  // Primero las noticias, que es lo que la persona vino a ver.
+  // Lo demás se carga apenas termina, para que la pantalla aparezca antes.
+  cargar(false).then(()=>{
+    cargarAportes();
+    cargarOfertas();
+    cargarComunicados().then(()=>{ cargarInstituciones(); revisarNovedades(); });
+    mostrarBannerNotif();
+  });
   setInterval(()=>{
     cargar(true); cargarAportes(); cargarOfertas();
     cargarComunicados().then(()=>{ cargarInstituciones(); revisarNovedades(); });
@@ -2883,6 +2877,9 @@
     document.getElementById("navBuscar").addEventListener("click", function(){
       marcar(this);
       abrirBuscar();
+    });
+    document.getElementById("navReportero").addEventListener("click", function(){
+      window.location.href = "reportero.html";
     });
     document.getElementById("navPublicar").addEventListener("click", function(){
       document.getElementById("fabAportar").click();
