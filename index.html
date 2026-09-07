@@ -326,6 +326,16 @@
     font-family:var(--sans); font-size:.62rem; font-weight:800; display:flex; align-items:center; justify-content:center; flex:0 0 auto; }
   .com-destacado{ cursor:pointer; }
 
+  /* ===== control del audio ===== */
+  .audio-ctrl{ display:flex; align-items:center; gap:11px; margin:12px 0 4px; padding:10px 12px;
+    background:var(--paper-2); border-radius:11px; }
+  .audio-ctrl .a-salto{ font-family:var(--sans); font-size:.7rem; font-weight:700; color:var(--ink-soft);
+    background:var(--paper); border:1px solid var(--line-strong); padding:8px 11px; border-radius:8px; flex:0 0 auto; }
+  .audio-ctrl .a-mid{ flex:1; min-width:0; }
+  .audio-ctrl .a-track{ height:5px; background:var(--line); border-radius:999px; overflow:hidden; }
+  .audio-ctrl .a-fill{ height:100%; width:0%; background:var(--ciudad); border-radius:999px; transition:width .4s linear; }
+  .audio-ctrl .a-time{ font-family:var(--mono); font-size:.64rem; color:var(--ink-faint); margin-top:5px; text-align:center; }
+
   /* ===== foto a pantalla completa ===== */
   .lightbox{ position:fixed; inset:0; z-index:400; background:#0C0B08; display:none;
     align-items:center; justify-content:center; }
@@ -740,6 +750,14 @@
       <button class="listen-btn" id="listenBtn">▶ Escuchar</button>
       <button class="share-btn" id="shareBtn">↗ Compartir</button>
     </div>
+    <div class="audio-ctrl hide" id="audioCtrl">
+      <button class="a-salto" id="audioMenos" aria-label="Retroceder 10 segundos">↺ 10s</button>
+      <div class="a-mid">
+        <div class="a-track"><div class="a-fill" id="audioBarra"></div></div>
+        <div class="a-time" id="audioTiempo">0:00 / 0:00</div>
+      </div>
+      <button class="a-salto" id="audioMas" aria-label="Adelantar 10 segundos">10s ↻</button>
+    </div>
     <div class="ph-img s-hero" id="s-hero"></div>
     <div id="s-video" style="display:none;margin-bottom:16px;border-radius:6px;overflow:hidden;aspect-ratio:16/9;"></div>
     <div style="font-family:var(--sans);font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--ink-faint);margin-bottom:8px">Resumen de Fonte</div>
@@ -1018,13 +1036,18 @@
 
   // ---- ticker: clima y sensación térmica (Open-Meteo, sin key) ----
   const CLIMA_COD = {0:['Despejado','☀️'],1:['Parcial','⛅'],2:['Parcial','⛅'],3:['Nublado','☁️'],45:['Niebla','🌫️'],48:['Niebla','🌫️'],51:['Llovizna','🌦️'],53:['Llovizna','🌦️'],55:['Llovizna','🌦️'],61:['Lluvia','🌧️'],63:['Lluvia','🌧️'],65:['Lluvia','🌧️'],80:['Chubascos','🌦️'],81:['Chubascos','🌦️'],82:['Chubascos','🌦️'],95:['Tormenta','⛈️'],96:['Tormenta','⛈️'],99:['Tormenta','⛈️']};
-  fetch("https://api.open-meteo.com/v1/forecast?latitude=-26.8667&longitude=-60.2167&current_weather=true&current=apparent_temperature&timezone=America%2FArgentina%2FBuenos_Aires")
+  fetch("https://api.open-meteo.com/v1/forecast?latitude=-26.8667&longitude=-60.2167"
+      + "&current=temperature_2m,apparent_temperature,weather_code"
+      + "&timezone=America%2FArgentina%2FBuenos_Aires")
     .then(r=>r.json()).then(d=>{
-      const c = d.current_weather;
-      const par = CLIMA_COD[c.weathercode] || ['—','🌡️'];
-      document.getElementById("tickClima").textContent = Math.round(c.temperature) + "° " + par[1] + " " + par[0];
-      const st = d.current && typeof d.current.apparent_temperature === "number" ? d.current.apparent_temperature : null;
-      document.getElementById("tickSensacion").textContent = (st === null) ? "—" : (Math.round(st) + "°");
+      const c = d.current || {};
+      const par = CLIMA_COD[c.weather_code] || ['—','🌡️'];
+      if(typeof c.temperature_2m === "number"){
+        document.getElementById("tickClima").textContent = Math.round(c.temperature_2m) + "° " + par[1] + " " + par[0];
+      }
+      const st = c.apparent_temperature;
+      document.getElementById("tickSensacion").textContent =
+        (typeof st === "number") ? (Math.round(st) + "°") : "—";
     }).catch(()=>{
       document.getElementById("tickClima").textContent = "no disponible";
       document.getElementById("tickSensacion").textContent = "—";
@@ -1442,6 +1465,11 @@
         heroEl.setAttribute("style", "display:block;margin-bottom:16px");
         heroEl.innerHTML = htmlGaleria(listaN);
         activarGalerias(heroEl);
+      } else if(listaN.length === 1){
+        // como <img> y no como fondo: así se puede tocar para verla completa
+        heroEl.setAttribute("style", "display:block;margin-bottom:16px");
+        heroEl.innerHTML = '<img src="'+esc(listaN[0])+'" alt="" '
+          + 'style="width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:10px;cursor:zoom-in">';
       } else {
         heroEl.innerHTML = "";
         heroEl.style.display = "block";
@@ -1522,26 +1550,108 @@
   document.getElementById("closeSheet").addEventListener("click", cerrar);
   document.getElementById("backdrop").addEventListener("click", cerrar);
 
-  // ---- Escuchar (voz del navegador, gratis) ----
+  // ---- Escuchar: voz del navegador, con tiempo y saltos de 10 segundos ----
+  // La voz no permite "saltar" de verdad, así que partimos el texto en oraciones
+  // y avanzamos o retrocedemos de a oraciones hasta cubrir esos 10 segundos.
+  const AUDIO = { partes: [], i: 0, sonando: false, seg: 0, total: 0, reloj: null };
+  const PALABRAS_POR_SEG = 2.6;   // ritmo aproximado de lectura
+
+  function mejorVoz(){
+    if(!("speechSynthesis" in window)) return null;
+    const voces = window.speechSynthesis.getVoices() || [];
+    const es = voces.filter(v => /^es/i.test(v.lang));
+    if(!es.length) return null;
+    // preferimos voces naturales de Google/Microsoft, y acento rioplatense
+    const puntaje = (v)=>{
+      let p = 0;
+      if(/AR/i.test(v.lang)) p += 5;
+      else if(/(MX|US|CL|UY)/i.test(v.lang)) p += 3;
+      if(/google/i.test(v.name)) p += 4;
+      if(/(natural|neural|online|premium)/i.test(v.name)) p += 4;
+      if(!v.localService) p += 2;
+      return p;
+    };
+    return es.sort((a,b)=> puntaje(b) - puntaje(a))[0] || es[0];
+  }
+  if("speechSynthesis" in window){
+    window.speechSynthesis.onvoiceschanged = ()=>{};   // fuerza la carga en Chrome
+  }
+
+  function segundosDe(txt){
+    return Math.max(1, Math.round((txt.trim().split(/\s+/).length) / PALABRAS_POR_SEG));
+  }
+  function mmss(s){
+    s = Math.max(0, Math.round(s));
+    return Math.floor(s/60) + ":" + String(s%60).padStart(2,"0");
+  }
+  function pintarAudio(){
+    const t = document.getElementById("audioTiempo");
+    if(t) t.textContent = mmss(AUDIO.seg) + " / " + mmss(AUDIO.total);
+    const barra = document.getElementById("audioBarra");
+    if(barra) barra.style.width = AUDIO.total ? Math.min(100, AUDIO.seg / AUDIO.total * 100) + "%" : "0%";
+  }
   function pararAudio(){
     if("speechSynthesis" in window) window.speechSynthesis.cancel();
+    clearInterval(AUDIO.reloj);
+    AUDIO.sonando = false;
     const btn = document.getElementById("listenBtn");
     if(btn){ btn.textContent = "▶ Escuchar"; btn.classList.remove("on"); }
+    const ctrl = document.getElementById("audioCtrl");
+    if(ctrl) ctrl.classList.add("hide");
+  }
+  function decirDesde(i){
+    if(!("speechSynthesis" in window)) return;
+    window.speechSynthesis.cancel();
+    AUDIO.i = Math.max(0, Math.min(i, AUDIO.partes.length - 1));
+    AUDIO.seg = AUDIO.partes.slice(0, AUDIO.i).reduce((a,p)=> a + p.seg, 0);
+    pintarAudio();
+    const voz = mejorVoz();
+    const hablar = (k)=>{
+      if(k >= AUDIO.partes.length){ pararAudio(); AUDIO.seg = AUDIO.total; pintarAudio(); return; }
+      AUDIO.i = k;
+      const u = new SpeechSynthesisUtterance(AUDIO.partes[k].txt);
+      u.lang = (voz && voz.lang) || "es-AR";
+      if(voz) u.voice = voz;
+      u.rate = 1.0; u.pitch = 1.02;    // un poco más natural que el valor por defecto
+      u.onend = ()=>{ if(AUDIO.sonando) hablar(k + 1); };
+      u.onerror = ()=> pararAudio();
+      window.speechSynthesis.speak(u);
+    };
+    AUDIO.sonando = true;
+    hablar(AUDIO.i);
+    clearInterval(AUDIO.reloj);
+    AUDIO.reloj = setInterval(()=>{
+      if(!AUDIO.sonando) return;
+      AUDIO.seg = Math.min(AUDIO.total, AUDIO.seg + 1);
+      pintarAudio();
+    }, 1000);
+  }
+  function saltarAudio(segundos){
+    if(!AUDIO.partes.length) return;
+    let objetivo = Math.max(0, Math.min(AUDIO.total, AUDIO.seg + segundos));
+    let acum = 0, idx = 0;
+    for(let k = 0; k < AUDIO.partes.length; k++){
+      if(acum + AUDIO.partes[k].seg > objetivo){ idx = k; break; }
+      acum += AUDIO.partes[k].seg;
+      idx = k;
+    }
+    decirDesde(idx);
   }
   document.getElementById("listenBtn").addEventListener("click", ()=>{
     if(!notaAbierta || !("speechSynthesis" in window)) return;
     const btn = document.getElementById("listenBtn");
-    if(window.speechSynthesis.speaking){ pararAudio(); return; }
+    if(AUDIO.sonando){ pararAudio(); return; }
     const texto = (notaAbierta.titulo||"") + ". " + (notaAbierta.resumen_extendido || notaAbierta.resumen_corto || "");
-    const u = new SpeechSynthesisUtterance(texto);
-    u.lang = "es-AR";
-    u.rate = 0.98;
-    u.onend = pararAudio;
-    u.onerror = pararAudio;
-    window.speechSynthesis.speak(u);
-    btn.textContent = "■ Detener";
-    btn.classList.add("on");
+    AUDIO.partes = texto.split(/(?<=[.!?])\s+/).filter(t=>t.trim().length)
+      .map(t=>({ txt:t.trim(), seg: segundosDe(t) }));
+    AUDIO.total = AUDIO.partes.reduce((a,p)=> a + p.seg, 0);
+    if(!AUDIO.partes.length) return;
+    btn.textContent = "■ Detener"; btn.classList.add("on");
+    document.getElementById("audioCtrl").classList.remove("hide");
+    decirDesde(0);
   });
+  document.getElementById("audioMenos").addEventListener("click", ()=> saltarAudio(-10));
+  document.getElementById("audioMas").addEventListener("click", ()=> saltarAudio(10));
 
   // ---- Compartir: genera una placa para historias + texto con el link de Fonte ----
   // Dominio fijo: lo compartido siempre apunta a fonte.city, aunque estés
@@ -2751,7 +2861,7 @@
   }
   function htmlGaleria(lista){
     if(!lista.length) return "";
-    if(lista.length === 1) return '<img src="'+esc(lista[0])+'" style="width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:10px;margin-bottom:14px" alt="">';
+    if(lista.length === 1) return '<img src="'+esc(lista[0])+'" style="width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:10px;margin-bottom:14px;cursor:zoom-in" alt="">';
     const id = "gal" + Math.random().toString(36).slice(2,8);
     return '<div class="galeria"><div class="gal-row" id="'+id+'">'
       + lista.map(u=>'<img src="'+esc(u)+'" alt="">').join("")
@@ -2846,6 +2956,97 @@
     enlaceResuelto = true;
     setTimeout(abrirDesdeEnlace, 350);
   }
+
+  // ================= BOTÓN ATRÁS DEL CELULAR =================
+  // La gente espera que "atrás" cierre lo que está abierto y la deje donde estaba,
+  // no que la saque de Fonte. Cada panel que se abre suma un paso al historial.
+  (function(){
+    const PANELES = [
+      { sheet:"sheet",             cerrar:()=>cerrar() },
+      { sheet:"sheetAporte",       cerrar:()=>cerrarAporte() },
+      { sheet:"sheetOferta",       cerrar:()=>cerrarOferta() },
+      { sheet:"sheetComunicado",   cerrar:()=>cerrarComunicado() },
+      { sheet:"sheetInstitucion",  cerrar:()=>cerrarInstitucion() },
+      { sheet:"sheetFechas",       cerrar:()=>cerrarFechas() },
+      { sheet:"sheetVecinos",      cerrar:()=>cerrarVecinos() },
+      { sheet:"sheetMios",         cerrar:()=>cerrarMios() },
+      { sheet:"sheetTemas",        cerrar:()=>cerrarTemas() },
+      { sheet:"sheetBuscar",       cerrar:()=>cerrarBuscar() },
+      { sheet:"sheetForm",         cerrar:()=>cerrarForm() },
+      { sheet:"lightbox",          cerrar:()=>cerrarFoto() },
+    ];
+    function algoAbierto(){
+      for(let i = PANELES.length - 1; i >= 0; i--){
+        const el = document.getElementById(PANELES[i].sheet);
+        if(el && el.classList.contains("show")) return PANELES[i];
+      }
+      return null;
+    }
+    // Cada vez que se abre un panel, agregamos un paso al historial
+    let pasos = 0;
+    const obs = new MutationObserver(()=>{
+      const abierto = !!algoAbierto();
+      if(abierto && pasos === 0){
+        pasos = 1;
+        try{ history.pushState({ fonte:true }, ""); }catch(e){}
+      } else if(!abierto && pasos > 0){
+        pasos = 0;
+      }
+    });
+    PANELES.forEach(p=>{
+      const el = document.getElementById(p.sheet);
+      if(el) obs.observe(el, { attributes:true, attributeFilter:["class"] });
+    });
+
+    window.addEventListener("popstate", ()=>{
+      const p = algoAbierto();
+      if(p){
+        p.cerrar();
+        pasos = 0;
+        // volvemos a dejar un paso por si abre otra cosa
+        try{ history.pushState({ fonte:true }, ""); }catch(e){}
+        pasos = 1;
+        setTimeout(()=>{ if(!algoAbierto()){ pasos = 0; } }, 60);
+        return;
+      }
+      // Si no hay panel abierto pero está en "Más noticias", vuelve a Ciudad
+      if(document.getElementById("panelMas").style.display === "block"){
+        irAPestanaPrincipal("ciudad");
+        try{ history.pushState({ fonte:true }, ""); }catch(e){}
+      }
+    });
+    // paso base, para que el primer "atrás" no saque de la app
+    try{ history.replaceState({ fonte:true }, ""); }catch(e){}
+  })();
+
+  // ================= DESLIZAR ENTRE CIUDAD Y MÁS NOTICIAS =================
+  (function(){
+    let x0 = null, y0 = null, siguiendo = false;
+    const MIN_X = 60;      // cuánto hay que arrastrar para que cuente
+    const MAX_Y = 45;      // si sube o baja más que esto, es scroll, no deslizamiento
+
+    function empieza(e){
+      // no interferir con carruseles ni con nada abierto
+      if(e.target.closest(".urg-row, .inst-row, .ofertas-bar, .gal-row, .waves-in, .cats-in, .fav-in, .sheet, .sheet2, .lightbox")) {
+        siguiendo = false; return;
+      }
+      const t = e.touches[0];
+      x0 = t.clientX; y0 = t.clientY; siguiendo = true;
+    }
+    function termina(e){
+      if(!siguiendo || x0 === null) return;
+      siguiendo = false;
+      const t = e.changedTouches[0];
+      const dx = t.clientX - x0, dy = t.clientY - y0;
+      x0 = null;
+      if(Math.abs(dy) > MAX_Y || Math.abs(dx) < MIN_X) return;
+      const enMas = document.getElementById("panelMas").style.display === "block";
+      if(dx < 0 && !enMas) irAPestanaPrincipal("mas");        // arrastra a la izquierda
+      else if(dx > 0 && enMas) irAPestanaPrincipal("ciudad"); // arrastra a la derecha
+    }
+    document.addEventListener("touchstart", empieza, { passive:true });
+    document.addEventListener("touchend", termina, { passive:true });
+  })();
 
   registrarVisita();
 
