@@ -131,6 +131,22 @@
   .vacio-txt{ font-family:var(--sans); font-size:.78rem; color:var(--ink-faint); }
 
   /* ===== botón compartir en el visor ===== */
+  /* ===== editor de aporte ===== */
+  .edit-box{ margin-top:14px; padding-top:14px; border-top:1px solid var(--line); }
+  .edit-box .fl{ font-family:var(--sans); font-size:.62rem; font-weight:700; text-transform:uppercase;
+    letter-spacing:.05em; color:var(--ink-faint); margin:10px 0 5px; }
+  .edit-box .acciones{ display:flex; gap:8px; margin-top:12px; }
+  .edit-box .acciones button{ flex:1; font-family:var(--sans); font-weight:700; font-size:.82rem;
+    padding:11px; border-radius:9px; border:0; }
+  .btn-guardar{ background:var(--barrio); color:#fff; }
+  .btn-cancelar{ background:none; border:1px solid var(--line-strong) !important; color:var(--ink-soft); }
+  .recorte{ position:relative; background:#16140F; border-radius:10px; overflow:hidden; touch-action:none; }
+  .recorte img{ width:100%; display:block; }
+  .recorte .marco{ position:absolute; border:2px solid #fff; box-shadow:0 0 0 9999px rgba(0,0,0,.5); cursor:move; }
+  .recorte .tirador{ position:absolute; right:-9px; bottom:-9px; width:22px; height:22px; border-radius:50%;
+    background:#fff; border:2px solid var(--barrio); }
+  .recorte-ayuda{ font-family:var(--sans); font-size:.7rem; color:var(--ink-faint); margin-top:6px; }
+
   .visor .compartir{ width:100%; margin-top:14px; font-family:var(--sans); font-weight:700; font-size:.88rem;
     padding:13px; border-radius:11px; border:0; background:var(--ink); color:var(--paper); display:flex;
     align-items:center; justify-content:center; gap:8px; }
@@ -546,7 +562,7 @@
 </div>
 
 <div class="barra-accion" id="barraAccion">
-  <button class="b-prev" id="btnVistaPrevia">👁 Ver</button>
+  <button class="b-prev hide" id="btnVistaPrevia">👁 Vista previa</button>
   <button class="btn-gen" id="btnPublicarBarra" style="flex:1;margin:0">Publicar en Fonte</button>
 </div>
 
@@ -644,7 +660,7 @@
     if(v !== "viewCargar" && typeof enPrevia !== "undefined" && enPrevia){
       enPrevia = false;
       document.getElementById("viewPrevia").classList.remove("on");
-      document.getElementById("btnVistaPrevia").textContent = "👁 Ver";
+      document.getElementById("btnVistaPrevia").textContent = "👁 Vista previa";
     }
     if(v === "viewHoy"){ cargarHoy(); }
     if(v === "viewArchivo"){ cargarArchivo(); }
@@ -836,6 +852,7 @@
       if(videoDetectado) avisos.push("🎬 video encontrado");
       document.getElementById("pvMedia").textContent = avisos.join(" · ");
       document.getElementById("previewCard").classList.remove("hide");
+      document.getElementById("btnVistaPrevia").classList.remove("hide");
       document.getElementById("previewCard").scrollIntoView({ behavior: "smooth", block: "center" });
     }catch(e){
       errEl.textContent = "Error de conexión, probá de nuevo.";
@@ -850,6 +867,7 @@
 
   document.getElementById("discBtn").addEventListener("click", ()=>{
     document.getElementById("previewCard").classList.add("hide");
+    document.getElementById("btnVistaPrevia").classList.add("hide");
   });
 
   document.getElementById("pubBtn").addEventListener("click", async ()=>{
@@ -884,6 +902,7 @@
     }
     toast("Publicado en Fonte ✓");
     document.getElementById("previewCard").classList.add("hide");
+    document.getElementById("btnVistaPrevia").classList.add("hide");
     document.getElementById("rawInput").value = "";
     document.getElementById("fotoPropia").value = "";
     document.getElementById("fotoPreview").style.display = "none";
@@ -1352,6 +1371,19 @@
     }
     const maxN = Math.max(1, ...dias.map(d=>d.n));
 
+    // Gasto estimado de la IA este mes (aproximado: el número real está en Google)
+    const inicioMes = new Date(); inicioMes.setDate(1); inicioMes.setHours(0,0,0,0);
+    let notasMes = 0;
+    try{
+      const r = await sb.from("noticias").select("id", { count:"exact", head:true })
+        .gte("created_at", inicioMes.toISOString());
+      notasMes = r.count || 0;
+    }catch(e){}
+    const COSTO_POR_NOTA = 0.006;                 // dólares, aproximado
+    const gasto = (notasMes * COSTO_POR_NOTA);
+    const TOPE_USD = 10;
+    const pctGasto = Math.min(100, Math.round(gasto / TOPE_USD * 100));
+
     cont.innerHTML =
       '<div class="kpi-grid">'
       + '<div class="kpi destacado"><div class="n">'+recurrentes+'</div><div class="l">Usuarios recurrentes<br>(3+ días en el último mes)</div></div>'
@@ -1369,7 +1401,16 @@
           const dd = d.fecha.slice(8,10);
           return '<div class="col"><div class="bar'+(d.fecha===hoy?" hoy":"")+'" style="height:'+alto+'px" title="'+d.fecha+': '+d.n+'"></div><div class="d">'+dd+'</div></div>';
         }).join("") + '</div>'
-      + (dispositivos.length === 0 ? '<p style="font-family:var(--sans);font-size:.78rem;color:var(--ink-faint);margin-top:14px">Todavía no hay visitas registradas. Van a aparecer a partir de que subas esta versión y la gente entre a Fonte.</p>' : '');
+      + (dispositivos.length === 0 ? '<p style="font-family:var(--sans);font-size:.78rem;color:var(--ink-faint);margin-top:14px">Todavía no hay visitas registradas. Van a aparecer a partir de que la gente entre a Fonte.</p>' : '')
+      + '<div class="sec-lbl" style="margin-top:24px">Gasto de la IA este mes</div>'
+      + '<div class="kpi-grid" style="grid-template-columns:1fr 1fr">'
+      + '<div class="kpi"><div class="n">'+notasMes+'</div><div class="l">notas generadas</div></div>'
+      + '<div class="kpi"><div class="n">US$'+gasto.toFixed(2)+'</div><div class="l">estimado</div></div>'
+      + '</div>'
+      + '<div class="meta-bar"><div class="track"><div class="fill" style="width:'+pctGasto+'%;background:'
+      + (pctGasto > 80 ? '#B23A2E' : 'var(--int)')+'"></div></div>'
+      + '<div class="cap">Sobre un tope de US$'+TOPE_USD+'. Es un cálculo aproximado '
+      + '(unos US$0,006 por nota); el número exacto está en Google AI Studio.</div></div>';
   }
 
   // ================= VISOR DE AVISO =================
@@ -1388,10 +1429,13 @@
       + '<div class="txt">'+escA(a.descripcion || a.texto || "Sin descripción.")+'</div>'
       + '<div class="meta">'+mapa+'<br>'+fecha+'<br>Estado: <b>'+(estados[a.estado]||a.estado)+'</b></div>'
       + (a.foto_url ? '<div class="meta"><a href="'+escA(a.foto_url)+'" target="_blank" rel="noopener">Abrir foto en tamaño completo ↗</a></div>' : '')
+      + '<button class="compartir" id="visorEditar" style="background:var(--region)">✎ Editar este aviso</button>'
+      + '<div id="editorAporte"></div>'
       + '<button class="cerrar" id="visorCerrar">Cerrar</button>'
       + '</div>';
     document.getElementById("visorBack").classList.add("show");
     document.getElementById("visorCerrar").addEventListener("click", cerrarVisor);
+    document.getElementById("visorEditar").addEventListener("click", ()=> abrirEditorAporte(a));
   }
   function cerrarVisor(){ document.getElementById("visorBack").classList.remove("show"); }
   document.getElementById("visorBack").addEventListener("click", (e)=>{
@@ -1456,9 +1500,20 @@
       + '<div id="masFotosEstado" style="font-family:var(--sans);font-size:.72rem;color:var(--ink-faint)"></div>'
       + '</div>'
       + '<button class="compartir" id="btnCompartirVisor">↗ Compartir en redes</button>'
+      + '<button class="compartir" id="btnBorrarNota" style="background:none;border:1px solid #B23A2E;color:#B23A2E;margin-top:8px">🗑 Borrar esta nota</button>'
       + '</div>';
     abrirVisorHTML(h);
     document.getElementById("btnCompartirVisor").addEventListener("click", (e)=> compartirDesdeConsola(n, "nota", e.currentTarget));
+    document.getElementById("btnBorrarNota").addEventListener("click", async (e)=>{
+      if(!confirm("¿Borrar esta nota de Fonte? No se puede deshacer.")) return;
+      e.currentTarget.disabled = true;
+      const { error } = await sb.from("noticias").delete().eq("id", n.id);
+      if(error){ toast("No se pudo borrar: " + error.message); e.currentTarget.disabled = false; return; }
+      toast("Nota borrada");
+      cerrarVisor();
+      cargarPublicadoHoy();
+      if(typeof cargarArchivo === "function") cargarArchivo();
+    });
     document.getElementById("masFotos").addEventListener("change", async (e)=>{
       const files = Array.from(e.target.files || []).slice(0, 6);
       if(!files.length) return;
@@ -2000,7 +2055,7 @@
     enPrevia = !enPrevia;
     document.getElementById("viewCargar").classList.toggle("on", !enPrevia);
     document.getElementById("viewPrevia").classList.toggle("on", enPrevia);
-    document.getElementById("btnVistaPrevia").textContent = enPrevia ? "✎ Editar" : "👁 Ver";
+    document.getElementById("btnVistaPrevia").textContent = enPrevia ? "✎ Editar" : "👁 Vista previa";
     if(enPrevia) pintarPrevia();
     window.scrollTo({ top:0, behavior:"instant" });
   });
@@ -2009,6 +2064,140 @@
     if(real) real.click();
     else toast("Generá la nota con Fonte antes de publicar.");
   });
+
+  // ================= EDITAR UN APORTE =================
+  // El vecino a veces escribe apurado o la foto sale torcida. Esto permite
+  // corregir el texto y recortar la imagen, sin cambiar lo que reportó.
+  function abrirEditorAporte(a){
+    const cont = document.getElementById("editorAporte");
+    const foto = (Array.isArray(a.fotos) && a.fotos.length ? a.fotos[0] : a.foto_url) || "";
+    cont.innerHTML = '<div class="edit-box">'
+      + '<div class="fl">Título</div>'
+      + '<input class="inp" id="edTitulo" value="'+escA(a.titulo||"")+'" placeholder="Ej: Pozo en calle San Martín">'
+      + '<div class="fl">Descripción</div>'
+      + '<textarea class="inp" id="edDesc" style="min-height:80px">'+escA(a.descripcion||"")+'</textarea>'
+      + (foto
+          ? '<div class="fl">Foto</div>'
+            + '<div class="recorte" id="recorte"><img id="recorteImg" src="'+escA(foto)+'" alt="">'
+            + '<div class="marco" id="recorteMarco"><span class="tirador"></span></div></div>'
+            + '<div class="recorte-ayuda">Arrastrá el marco para elegir qué parte queda. '
+            + 'Si no lo tocás, la foto se guarda igual.</div>'
+          : '')
+      + '<div class="acciones">'
+      + '<button class="btn-cancelar" id="edCancelar">Cancelar</button>'
+      + '<button class="btn-guardar" id="edGuardar">Guardar cambios</button>'
+      + '</div></div>';
+    document.getElementById("visorEditar").classList.add("hide");
+    if(foto) prepararRecorte();
+    document.getElementById("edCancelar").addEventListener("click", ()=>{
+      cont.innerHTML = "";
+      document.getElementById("visorEditar").classList.remove("hide");
+    });
+    document.getElementById("edGuardar").addEventListener("click", ()=> guardarAporte(a));
+  }
+
+  // Marco de recorte que se puede mover y agrandar con el dedo
+  let RECORTE = null;
+  function prepararRecorte(){
+    const cont = document.getElementById("recorte");
+    const marco = document.getElementById("recorteMarco");
+    const img = document.getElementById("recorteImg");
+    RECORTE = { x:10, y:10, w:80, h:60, tocado:false };   // en porcentaje
+    function pintar(){
+      marco.style.left = RECORTE.x + "%";
+      marco.style.top = RECORTE.y + "%";
+      marco.style.width = RECORTE.w + "%";
+      marco.style.height = RECORTE.h + "%";
+    }
+    img.onload = pintar; pintar();
+
+    let modo = null, x0 = 0, y0 = 0, base = null;
+    function pos(e){ const t = e.touches ? e.touches[0] : e; return { x:t.clientX, y:t.clientY }; }
+    function empieza(e){
+      const p = pos(e);
+      modo = e.target.classList.contains("tirador") ? "tamaño" : "mover";
+      x0 = p.x; y0 = p.y; base = { ...RECORTE };
+      RECORTE.tocado = true;
+      e.preventDefault();
+    }
+    function mueve(e){
+      if(!modo) return;
+      const p = pos(e), r = cont.getBoundingClientRect();
+      const dx = (p.x - x0) / r.width * 100, dy = (p.y - y0) / r.height * 100;
+      if(modo === "mover"){
+        RECORTE.x = Math.max(0, Math.min(100 - base.w, base.x + dx));
+        RECORTE.y = Math.max(0, Math.min(100 - base.h, base.y + dy));
+      } else {
+        RECORTE.w = Math.max(15, Math.min(100 - RECORTE.x, base.w + dx));
+        RECORTE.h = Math.max(15, Math.min(100 - RECORTE.y, base.h + dy));
+      }
+      pintar();
+      e.preventDefault();
+    }
+    function termina(){ modo = null; }
+    marco.addEventListener("touchstart", empieza, { passive:false });
+    marco.addEventListener("mousedown", empieza);
+    document.addEventListener("touchmove", mueve, { passive:false });
+    document.addEventListener("mousemove", mueve);
+    document.addEventListener("touchend", termina);
+    document.addEventListener("mouseup", termina);
+  }
+
+  async function recortarFoto(url){
+    return new Promise((res)=>{
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = ()=>{
+        try{
+          const sx = img.width  * RECORTE.x / 100;
+          const sy = img.height * RECORTE.y / 100;
+          const sw = img.width  * RECORTE.w / 100;
+          const sh = img.height * RECORTE.h / 100;
+          const c = document.createElement("canvas");
+          const escala = Math.min(1, 1400 / Math.max(sw, sh));
+          c.width = Math.round(sw * escala);
+          c.height = Math.round(sh * escala);
+          c.getContext("2d").drawImage(img, sx, sy, sw, sh, 0, 0, c.width, c.height);
+          c.toBlob(b=> res(b), "image/jpeg", 0.85);
+        }catch(e){ res(null); }
+      };
+      img.onerror = ()=> res(null);
+      img.src = url;
+    });
+  }
+
+  async function guardarAporte(a){
+    const btn = document.getElementById("edGuardar");
+    btn.disabled = true; btn.textContent = "Guardando…";
+    const cambios = {
+      titulo: document.getElementById("edTitulo").value.trim() || null,
+      descripcion: document.getElementById("edDesc").value.trim() || null,
+    };
+    const fotoActual = (Array.isArray(a.fotos) && a.fotos.length ? a.fotos[0] : a.foto_url) || "";
+    if(fotoActual && RECORTE && RECORTE.tocado){
+      btn.textContent = "Recortando la foto…";
+      const blob = await recortarFoto(fotoActual);
+      if(blob){
+        try{
+          const nombre = "recorte-" + Date.now() + ".jpg";
+          const { error } = await sb.storage.from("aportes-fotos").upload(nombre, blob, { contentType:"image/jpeg" });
+          if(!error){
+            const { data } = sb.storage.from("aportes-fotos").getPublicUrl(nombre);
+            cambios.foto_url = data.publicUrl;
+            const otras = Array.isArray(a.fotos) ? a.fotos.slice(1) : [];
+            cambios.fotos = [data.publicUrl].concat(otras);
+          }
+        }catch(e){}
+      }
+    }
+    const { error } = await sb.from("aportes").update(cambios).eq("id", a.id);
+    btn.disabled = false; btn.textContent = "Guardar cambios";
+    if(error){ toast("No se pudo guardar: " + error.message); return; }
+    toast("Aviso actualizado ✓");
+    cerrarVisor();
+    cargarAvisosPublicados();
+    cargarAportesPendientes();
+  }
 
   document.querySelectorAll(".form-toggle").forEach(btn=>{
     btn.addEventListener("click", ()=>{

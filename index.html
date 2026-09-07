@@ -74,6 +74,9 @@
   .plate{ padding:14px 0 10px; border-bottom:2px solid var(--ink); }
   .plate-row{ display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:10px; }
   .plate .side{ font-family:var(--mono); font-size:.66rem; color:var(--ink-soft); line-height:1.35; letter-spacing:.01em; }
+  .plate .side.right{ display:flex; flex-direction:column; align-items:flex-end; gap:6px; }
+  .tema-btn{ background:var(--paper-2); border:1px solid var(--line-strong); border-radius:999px;
+    padding:6px; color:var(--ink-soft); display:flex; align-items:center; justify-content:center; }
   .plate .side.right{ text-align:right; }
   .brand{ font-family:var(--slab); font-weight:400; font-size:clamp(1.7rem,6.6vw,2.6rem); letter-spacing:.005em; line-height:1; text-align:center; position:relative; }
   .brand::after{ content:''; display:inline-block; width:7px; height:7px; border-radius:50%; background:var(--terracota); margin-left:6px; vertical-align:top; margin-top:4px; }
@@ -329,6 +332,9 @@
   /* ===== control del audio ===== */
   .audio-ctrl{ display:flex; align-items:center; gap:11px; margin:12px 0 4px; padding:10px 12px;
     background:var(--paper-2); border-radius:11px; }
+  .audio-ctrl .a-play{ width:40px; height:40px; border-radius:50%; background:var(--ciudad); color:#fff;
+    border:0; font-size:.9rem; flex:0 0 auto; display:flex; align-items:center; justify-content:center; }
+  .audio-ctrl .a-play.on{ background:var(--ink); }
   .audio-ctrl .a-salto{ font-family:var(--sans); font-size:.7rem; font-weight:700; color:var(--ink-soft);
     background:var(--paper); border:1px solid var(--line-strong); padding:8px 11px; border-radius:8px; flex:0 0 auto; }
   .audio-ctrl .a-mid{ flex:1; min-width:0; }
@@ -681,7 +687,12 @@
     <div class="plate-row">
       <div class="side" id="fechaIzq">Quitilipi, Chaco</div>
       <div><div class="brand">Fonte</div><span class="tag">¿qué está pasando hoy en tu ciudad?</span></div>
-      <div class="side right" id="edicionDer"></div>
+      <div class="side right">
+        <button class="tema-btn" id="temaBtn" aria-label="Cambiar entre modo día y noche">
+          <svg id="temaIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+        </button>
+        <span id="edicionDer"></span>
+      </div>
     </div>
   </div>
 </div>
@@ -690,9 +701,7 @@
   <div class="tick"><span class="lbl">Quitilipi</span><span class="val" id="tickClima">—</span></div>
   <div class="tick"><span class="lbl">Sensación</span><span class="val" id="tickSensacion">—</span></div>
   <button class="tick notif-btn" id="notifActivar" aria-label="Activar avisos" style="flex:0 0 auto;border:0;border-right:1px solid var(--line);background:none;cursor:pointer;align-items:center;padding:7px 13px;position:relative;font-size:.9rem">🔔<span class="pip" id="notifPip" style="display:none"></span></button>
-  <button class="tick tema-btn" id="temaBtn" aria-label="Cambiar tema" style="margin-left:auto;border:0;border-right:0;background:none;cursor:pointer;align-items:center;padding:7px 16px">
-    <svg id="temaIcon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--ink-soft)" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
-  </button>
+
 </div>
 
 <nav class="tabs-main">
@@ -747,10 +756,10 @@
     <div class="kicker" id="s-kicker"><span class="dot"></span><span id="s-place"></span></div>
     <h2 class="h" id="s-title" style="margin-top:8px"></h2>
     <div class="s-src"><span class="src" id="s-src"></span><span id="s-urg"></span>
-      <button class="listen-btn" id="listenBtn">▶ Escuchar</button>
       <button class="share-btn" id="shareBtn">↗ Compartir</button>
     </div>
-    <div class="audio-ctrl hide" id="audioCtrl">
+    <div class="audio-ctrl" id="audioCtrl">
+      <button class="a-play" id="listenBtn" aria-label="Escuchar la nota">▶</button>
       <button class="a-salto" id="audioMenos" aria-label="Retroceder 10 segundos">↺ 10s</button>
       <div class="a-mid">
         <div class="a-track"><div class="a-fill" id="audioBarra"></div></div>
@@ -1595,9 +1604,7 @@
     clearInterval(AUDIO.reloj);
     AUDIO.sonando = false;
     const btn = document.getElementById("listenBtn");
-    if(btn){ btn.textContent = "▶ Escuchar"; btn.classList.remove("on"); }
-    const ctrl = document.getElementById("audioCtrl");
-    if(ctrl) ctrl.classList.add("hide");
+    if(btn){ btn.textContent = "▶"; btn.classList.remove("on"); }
   }
   function decirDesde(i){
     if(!("speechSynthesis" in window)) return;
@@ -1646,8 +1653,7 @@
       .map(t=>({ txt:t.trim(), seg: segundosDe(t) }));
     AUDIO.total = AUDIO.partes.reduce((a,p)=> a + p.seg, 0);
     if(!AUDIO.partes.length) return;
-    btn.textContent = "■ Detener"; btn.classList.add("on");
-    document.getElementById("audioCtrl").classList.remove("hide");
+    btn.textContent = "■"; btn.classList.add("on");
     decirDesde(0);
   });
   document.getElementById("audioMenos").addEventListener("click", ()=> saltarAudio(-10));
