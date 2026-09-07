@@ -339,6 +339,10 @@
       </div>
 
       <button class="btn-gen" id="genBtn">✨ Generar con Fonte</button>
+      <button class="btn-gen hide" id="leerImgBtn" style="background:var(--int);margin-top:8px">🔍 Leer la imagen y armar la nota</button>
+      <div id="leerImgAyuda" class="hide" style="font-family:var(--sans);font-size:.7rem;color:var(--ink-faint);margin-top:6px;line-height:1.45">
+        Si el flyer tiene toda la información escrita adentro, tocá este botón: Fonte lee la imagen y arma la nota, aunque no pegues ningún texto.
+      </div>
       <div class="err-msg hide" id="genErr"></div>
     </div>
 
@@ -681,6 +685,8 @@
       }catch(err){ /* si falla una, seguimos con las demás */ }
     }
     fotoPropiaUrl = fotosPropias[0] || null;
+    document.getElementById("leerImgBtn").classList.toggle("hide", !fotoPropiaUrl);
+    document.getElementById("leerImgAyuda").classList.toggle("hide", !fotoPropiaUrl);
     const est = prev.querySelector(".estado-fotos");
     if(est) est.textContent = fotosPropias.length
       ? "✓ " + fotosPropias.length + (fotosPropias.length===1 ? " foto lista" : " fotos listas")
@@ -784,14 +790,21 @@
   document.getElementById("srcCustom").addEventListener("input", (e)=>{ fuenteElegida = e.target.value.trim() || "Otra fuente"; });
 
   // generar con Fonte
-  document.getElementById("genBtn").addEventListener("click", async ()=>{
+  // Un solo generador para los dos botones: con texto, con imagen, o con ambos.
+  async function generarNota({ conImagen }){
     const texto = document.getElementById("rawInput").value.trim();
     const errEl = document.getElementById("genErr");
     errEl.classList.add("hide");
-    if(texto.length < 15){ errEl.textContent = "Pegá un poco más de texto."; errEl.classList.remove("hide"); return; }
+    const imagen = conImagen ? (fotoPropiaUrl || null) : null;
+    if(!imagen && texto.length < 15){
+      errEl.textContent = "Pegá un poco más de texto, o subí una imagen para leer.";
+      errEl.classList.remove("hide");
+      return;
+    }
 
-    const btn = document.getElementById("genBtn");
-    btn.innerHTML = '<span class="spinner"></span> Fonte está leyendo y resumiendo...';
+    const btn = document.getElementById(conImagen ? "leerImgBtn" : "genBtn");
+    const etiquetaOriginal = btn.innerHTML;
+    btn.innerHTML = '<span class="spinner"></span> ' + (conImagen ? "Fonte está leyendo la imagen..." : "Fonte está leyendo y resumiendo...");
     btn.disabled = true;
     document.getElementById("previewCard").classList.add("hide");
 
@@ -799,7 +812,7 @@
       const res = await fetch(FUNCION_GENERAR, {
         method: "POST",
         headers: { "content-type": "application/json", "Authorization": "Bearer " + sesion.access_token },
-        body: JSON.stringify({ texto, fuente_etiqueta: fuenteElegida }),
+        body: JSON.stringify({ texto, fuente_etiqueta: fuenteElegida, imagen_url: imagen }),
       });
       const data = await res.json();
       if(!res.ok || !data.ok){
@@ -818,6 +831,7 @@
       imagenDetectada = b.imagen_url || null;
       videoDetectado = b.video_url || null;
       const avisos = [];
+      if(b.imagen_leida) avisos.push("🔍 se leyó la imagen");
       if(imagenDetectada) avisos.push("📷 foto encontrada");
       if(videoDetectado) avisos.push("🎬 video encontrado");
       document.getElementById("pvMedia").textContent = avisos.join(" · ");
@@ -827,10 +841,12 @@
       errEl.textContent = "Error de conexión, probá de nuevo.";
       errEl.classList.remove("hide");
     }finally{
-      btn.innerHTML = "✨ Generar con Fonte";
+      btn.innerHTML = etiquetaOriginal;
       btn.disabled = false;
     }
-  });
+  }
+  document.getElementById("genBtn").addEventListener("click", ()=> generarNota({ conImagen:false }));
+  document.getElementById("leerImgBtn").addEventListener("click", ()=> generarNota({ conImagen:true }));
 
   document.getElementById("discBtn").addEventListener("click", ()=>{
     document.getElementById("previewCard").classList.add("hide");
