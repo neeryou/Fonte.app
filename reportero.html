@@ -4,13 +4,20 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Fonte · Redacción</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700&family=IBM+Plex+Mono:wght@500;600&family=Work+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
   :root{
-    --paper:#F5F0E4; --paper-2:#EFE9DA; --paper-3:#EAE3D1;
-    --ink:#22201A; --ink-soft:#574F42; --ink-faint:#8B8271; --line:#D8D0BE; --line-strong:#C7BDA6;
-    --barrio:#234A32; --serif:Georgia,'Times New Roman',Times,serif;
-    --sans:-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue',Arial,sans-serif;
+    --paper:#FBF8F1; --paper-2:#F4EFE4; --paper-3:#EDE6D6; --surface:#FFFDF9;
+    --ink:#14120D; --ink-soft:#4A4438; --ink-faint:#8B8474; --ink-20:#C3BCA9;
+    --line:#E3DCC9; --line-strong:#CFC5AC;
+    --barrio:#22503A; --region:#1B3A5C; --int:#8A6A22; --urgente:#A8382C; --ciudad:#3E8557;
+    --serif:'Fraunces',Georgia,'Times New Roman',Times,serif;
+    --sans:'Work Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;
+    --slab:'Alfa Slab One',Georgia,serif;
+    --mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
   }
   *{ box-sizing:border-box; }
   body{ margin:0; color:var(--ink); background:var(--paper); font-family:var(--serif); line-height:1.42; }
@@ -177,6 +184,17 @@
   .prev-note .bt{ margin-top:12px; background:var(--ciudad); color:#fff; font-family:var(--sans); font-weight:700;
     font-size:.8rem; text-align:center; padding:11px; border-radius:9px; }
 
+  /* ===== acabado de imprenta ===== */
+  .rep-h{ letter-spacing:-.018em; }
+  .kpi3 .n, .kpi .n, .arch-item .m, .fecha-row .m, .visor .meta{ font-variant-numeric:tabular-nums; }
+  .field-label, .sec-lbl, .lbl{ letter-spacing:.16em; }
+  .arch-item, .admin-item, .inst-block, .fecha-row, .task{ border-top-width:.5px; }
+  .arch-item, .aporte-review, .card, .task{ border-radius:3px; }
+  .rep-tabs, .rep-tab, .inp, textarea, .btn-gen, .form-toggle{ border-radius:3px; }
+  .rnv .pip, .bdg, .tab-badge{ border-radius:2px; }
+  /* filete doble bajo la barra superior, como en la app */
+  .rep-top{ border-bottom:2.5px solid var(--ink); position:relative; }
+  .rep-top::after{ content:''; position:absolute; left:0; right:0; bottom:-4px; border-top:.5px solid var(--ink); }
   .rep-view{ display:none; }
   .rep-view.on{ display:block; }
   .tab-badge{ font-family:var(--sans); font-size:.62rem; font-weight:700; background:var(--urgente); color:#fff; padding:1px 6px; border-radius:999px; margin-left:4px; }
@@ -378,6 +396,20 @@
       </div>
 
       <div class="pv-field" style="margin-bottom:12px">
+        <div class="field-label">Imagen al compartir</div>
+        <div class="srcchips" id="placaChips">
+          <button class="srcchip on" data-placa="auto">Automático</button>
+          <button class="srcchip" data-placa="editorial">Foto arriba</button>
+          <button class="srcchip" data-placa="foto">Foto completa</button>
+          <button class="srcchip" data-placa="tipografica">Solo texto</button>
+        </div>
+        <div style="font-family:var(--sans);font-size:.7rem;color:var(--ink-faint);margin-top:6px;line-height:1.45">
+          <b>Automático</b> elige solo. <b>Foto completa</b> para cuando la imagen es la noticia
+          (una persona buscada, un ganador). <b>Solo texto</b> si la foto no aporta o es de otro medio.
+        </div>
+      </div>
+
+      <div class="pv-field" style="margin-bottom:12px">
         <div class="field-label">Dato que el resumen no captó (opcional)</div>
         <input class="inp" id="pvDato" placeholder="Ej: la inscripción cierra el 12 de septiembre">
       </div>
@@ -491,6 +523,9 @@
         <input class="inp" id="coTitulo" placeholder="Ej: Corte de agua programado el viernes">
         <div class="field-label">Texto</div>
         <textarea id="coTexto" style="min-height:84px" placeholder="Contenido completo del comunicado"></textarea>
+        <div class="field-label" style="margin-top:14px">Foto (opcional)</div>
+        <input class="inp" type="file" id="coFoto" accept="image/*" style="padding:9px">
+        <img class="foto-preview" id="coFotoPreview">
         <div class="field-label" style="margin-top:14px">Video (opcional — enlace de YouTube, Facebook, TikTok o Instagram)</div>
         <input class="inp" id="coVideo" placeholder="https://www.facebook.com/...">
         <label style="display:flex;gap:10px;align-items:flex-start;margin-top:14px;padding:12px;background:color-mix(in srgb,#B23A2E 6%,var(--paper));border:1px solid color-mix(in srgb,#B23A2E 25%,var(--line));border-radius:10px;cursor:pointer">
@@ -878,6 +913,7 @@
       titulo: document.getElementById("pvTitulo").value.trim(),
       resumen_corto: document.getElementById("pvCorto").value.trim(),
       dato_extra: document.getElementById("pvDato").value.trim() || null,
+      estilo_placa: placaSel,
       accion_etiqueta: accionEtiqueta() || null,
       accion_url: (accionEtiqueta() ? document.getElementById("accionUrl").value.trim() : "") || null,
       resumen_extendido: document.getElementById("pvExtendido").value.trim(),
@@ -1184,6 +1220,7 @@
       institucion_id: document.getElementById("coInstitucionSel").value || null,
       urgente: document.getElementById("coUrgente").checked,
       video_url: document.getElementById("coVideo").value.trim() || null,
+      imagen_url: coFotoUrl,
       titulo, texto,
     };
     const { error } = await sb.from("comunicados").insert(registro);
@@ -1197,6 +1234,9 @@
     document.getElementById("coTexto").value = "";
     document.getElementById("coUrgente").checked = false;
     document.getElementById("coVideo").value = "";
+    document.getElementById("coFoto").value = "";
+    document.getElementById("coFotoPreview").style.display = "none";
+    coFotoUrl = null;
     cargarComunicadosAdmin();
   });
 
@@ -2198,6 +2238,36 @@
     cargarAvisosPublicados();
     cargarAportesPendientes();
   }
+
+  // Estilo de la imagen que se genera al compartir
+  let placaSel = "auto";
+  document.querySelectorAll("#placaChips .srcchip").forEach(b=>{
+    b.addEventListener("click", ()=>{
+      document.querySelectorAll("#placaChips .srcchip").forEach(x=>x.classList.remove("on"));
+      b.classList.add("on");
+      placaSel = b.getAttribute("data-placa");
+    });
+  });
+
+  // Foto del comunicado
+  let coFotoUrl = null;
+  document.getElementById("coFoto").addEventListener("change", async (e)=>{
+    const file = e.target.files[0];
+    coFotoUrl = null;
+    if(!file) return;
+    const prev = document.getElementById("coFotoPreview");
+    prev.src = URL.createObjectURL(file);
+    prev.style.display = "block";
+    try{
+      const chico = await comprimirImagen(file);
+      const nombre = "com-" + Date.now() + "." + ((chico.name||file.name).split(".").pop() || "jpg");
+      const { error } = await sb.storage.from("notas-fotos").upload(nombre, chico);
+      if(!error){
+        const { data } = sb.storage.from("notas-fotos").getPublicUrl(nombre);
+        coFotoUrl = data.publicUrl;
+      }
+    }catch(err){ /* si falla, se publica igual sin foto */ }
+  });
 
   document.querySelectorAll(".form-toggle").forEach(btn=>{
     btn.addEventListener("click", ()=>{

@@ -1724,8 +1724,8 @@
         if(document.fonts && document.fonts.load){
           await Promise.all([
             document.fonts.load("400 76px 'Alfa Slab One'"),
-            document.fonts.load("700 88px 'Lora'"),
-            document.fonts.load("500 44px 'Lora'"),
+            document.fonts.load("700 88px 'Fraunces'"),
+            document.fonts.load("500 44px 'Fraunces'"),
             document.fonts.load("800 34px 'Work Sans'"),
             document.fonts.load("700 34px 'Work Sans'"),
           ]);
@@ -1792,19 +1792,57 @@
     };
     const cinta = TIPOS[n.__tipo] || null;
 
-    if(urgente){
+    // ¿Qué diseño le toca a esta placa?
+    //  urgente     → roja
+    //  sin foto    → tipográfica (marco y titular grande)
+    //  protagonista→ foto a sangre completa con el titular encima
+    //  el resto    → editorial (foto arriba, titular abajo)
+    const CATS_PROTAGONISTA = ["policiales","sociedad","deportes","cultura","espectaculos"];
+    function diseñoDePlaca(){
+      if(n.estilo_placa && n.estilo_placa !== "auto") return n.estilo_placa;
+      if(urgente) return "urgente";
+      if(!img) return "tipografica";
+      if(CATS_PROTAGONISTA.includes((n.categoria||"").toLowerCase())) return "foto";
+      return "editorial";
+    }
+    const diseño = diseñoDePlaca();
+
+    if(diseño === "urgente"){
       // ---- placa urgente ----
       ctx.fillStyle = ROJO; ctx.fillRect(0,0,W,H);
       ctx.fillStyle = "#fff";
       ctx.beginPath(); ctx.roundRect(80, 150, 340, 76, 38); ctx.fill();
       ctx.fillStyle = ROJO; ctx.font = "800 34px 'Work Sans',sans-serif";
       ctx.fillText("⚡ URGENTE", 118, 200);
-      ctx.fillStyle = "#fff"; ctx.font = "700 86px 'Lora',Georgia,serif";
+      ctx.fillStyle = "#fff"; ctx.font = "700 86px 'Fraunces',Georgia,serif";
       envolver(ctx, n.titulo, W-160, 6).forEach((l,i)=> ctx.fillText(l, 80, 360 + i*104));
       if(n.dato_extra){
         ctx.font = "500 42px 'Work Sans',sans-serif"; ctx.fillStyle = "rgba(255,255,255,.92)";
         envolver(ctx, n.dato_extra, W-160, 4).forEach((l,i)=> ctx.fillText(l, 80, 1180 + i*58));
       }
+    } else if(diseño === "foto" && img){
+      // ---- foto a sangre completa: para cuando la imagen es la noticia ----
+      const escala = Math.max(W/img.width, H/img.height);
+      const iw = img.width*escala, ih = img.height*escala;
+      ctx.drawImage(img, (W-iw)/2, (H-ih)/2, iw, ih);
+      // velo de abajo hacia arriba para que el titular se lea sobre cualquier foto
+      const velo = ctx.createLinearGradient(0, H*0.30, 0, H);
+      velo.addColorStop(0, "rgba(10,9,7,0)");
+      velo.addColorStop(0.45, "rgba(10,9,7,.62)");
+      velo.addColorStop(1, "rgba(10,9,7,.95)");
+      ctx.fillStyle = velo; ctx.fillRect(0, 0, W, H);
+      if(lugar){
+        ctx.font = "800 32px 'Work Sans',sans-serif";
+        const w = ctx.measureText(lugar).width + 60;
+        ctx.fillStyle = "rgba(255,255,255,.22)";
+        ctx.beginPath(); ctx.roundRect(80, 130, w, 60, 30); ctx.fill();
+        ctx.fillStyle = "#fff"; ctx.fillText(lugar, 110, 170);
+      }
+      ctx.fillStyle = "#fff"; ctx.font = "700 84px 'Fraunces',Georgia,serif";
+      const ls = envolver(ctx, n.titulo, W-160, 6);
+      const alturaTexto = ls.length * 100;
+      const yInicio = H - 330 - alturaTexto;
+      ls.forEach((l,i)=> ctx.fillText(l, 80, yInicio + i*100));
     } else if(img){
       // ---- placa editorial con foto ----
       ctx.fillStyle = PAPEL; ctx.fillRect(0,0,W,H);
@@ -1819,7 +1857,7 @@
         ctx.beginPath(); ctx.roundRect(60, alto-96, w, 62, 31); ctx.fill();
         ctx.fillStyle = "#fff"; ctx.fillText(lugar, 92, alto-54);
       }
-      ctx.fillStyle = TINTA; ctx.font = "700 78px 'Lora',Georgia,serif";
+      ctx.fillStyle = TINTA; ctx.font = "700 78px 'Fraunces',Georgia,serif";
       envolver(ctx, n.titulo, W-160, 6).forEach((l,i)=> ctx.fillText(l, 80, alto + 150 + i*94));
     } else {
       // ---- placa tipográfica (sin foto) ----
@@ -1830,14 +1868,14 @@
         ctx.fillStyle = "#3E8557"; ctx.font = "800 34px 'Work Sans',sans-serif";
         ctx.fillText("● " + lugar, 140, 250);
       }
-      ctx.fillStyle = TINTA; ctx.font = "700 88px 'Lora',Georgia,serif";
+      ctx.fillStyle = TINTA; ctx.font = "700 88px 'Fraunces',Georgia,serif";
       const ls = envolver(ctx, n.titulo, W-280, 7);
       ls.forEach((l,i)=> ctx.fillText(l, 140, 380 + i*106));
       const yLinea = 380 + ls.length*106 + 20;
       ctx.fillStyle = CORAL; ctx.beginPath(); ctx.roundRect(140, yLinea, 120, 10, 5); ctx.fill();
       const bajada = n.resumen_corto || "";
       if(bajada){
-        ctx.fillStyle = "#57503F"; ctx.font = "500 44px 'Lora',Georgia,serif";
+        ctx.fillStyle = "#4A4438"; ctx.font = "500 44px 'Fraunces',Georgia,serif";
         envolver(ctx, bajada, W-280, 5).forEach((l,i)=> ctx.fillText(l, 140, yLinea + 90 + i*62));
       }
     }
