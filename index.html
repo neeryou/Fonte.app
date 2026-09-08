@@ -33,15 +33,15 @@
 <link rel="dns-prefetch" href="https://skpfycmkilahghvoxqxw.supabase.co">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Lora:ital,wght@0,500;0,600;0,700;1,500&family=Work+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,500&family=Lora:ital,wght@0,500;0,600;0,700;1,500&family=Work+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
 <style>
   :root{
-    --paper:#FDFCF9; --paper-2:#F5F2EA; --paper-3:#EFEADD; --surface:#FFFFFF;
-    --ink:#16140F; --ink-soft:#57503F; --ink-faint:#9A9384;
-    --line:#E7E1D2; --line-strong:#D8CFB8;
-    --barrio:#22503A; --ciudad:#3E8557; --region:#2E6690; --pais:#63528C; --mundo:#9C7038;
-    --urgente:#B23A2E; --int:#8A6A22; --terracota:#FF4B3E;
-    --serif:'Lora',Georgia,'Times New Roman',Times,serif;
+    --paper:#FBF8F1; --paper-2:#F4EFE4; --paper-3:#EDE6D6; --surface:#FFFDF9;
+    --ink:#14120D; --ink-soft:#4A4438; --ink-faint:#8B8474; --ink-20:#C3BCA9;
+    --line:#E3DCC9; --line-strong:#CFC5AC;
+    --barrio:#22503A; --ciudad:#3E8557; --region:#1B3A5C; --pais:#63528C; --mundo:#9C7038;
+    --urgente:#A8382C; --int:#8A6A22; --terracota:#A8382C;
+    --serif:'Fraunces',Georgia,'Times New Roman',Times,serif;
     --sans:'Work Sans',-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue',Arial,sans-serif;
     --slab:'Alfa Slab One',Georgia,serif;
     --mono:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
@@ -50,10 +50,10 @@
   }
   [data-tema="oscuro"]{
     --paper:#17140F; --paper-2:#211D16; --paper-3:#2A251C; --surface:#1E1A13;
-    --ink:#F5F1E6; --ink-soft:#C9C2B2; --ink-faint:#8A8375;
+    --ink:#F5F1E6; --ink-soft:#C9C2B2; --ink-faint:#8A8375; --ink-20:#4E4738;
     --line:#332E24; --line-strong:#453F31;
-    --barrio:#49B37E; --ciudad:#5FBF82; --region:#5AA6D6; --pais:#A090D6; --mundo:#D1A467;
-    --urgente:#E2554A; --int:#C9A34A; --terracota:#FF6B57;
+    --barrio:#49B37E; --ciudad:#5FBF82; --region:#6FA8D8; --pais:#A090D6; --mundo:#D1A467;
+    --urgente:#D9584B; --int:#C9A34A; --terracota:#D9584B;
     color-scheme:dark;
   }
   *{ box-sizing:border-box; }
@@ -71,7 +71,9 @@
   .why.urg{ color:#fff; background:var(--urgente); }
 
   /* nameplate */
-  .plate{ padding:14px 0 10px; border-bottom:2px solid var(--ink); }
+  .plate{ padding:14px 0 0; border-bottom:.5px solid var(--ink); }
+  /* filete doble: grueso arriba, capilar abajo — la firma de un diario impreso */
+  .plate::after{ content:''; display:block; border-top:2.5px solid var(--ink); margin-top:12px; margin-bottom:2.5px; }
   .plate-row{ display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:10px; }
   .plate .side{ font-family:var(--mono); font-size:.66rem; color:var(--ink-soft); line-height:1.35; letter-spacing:.01em; }
   .plate .side.right{ display:flex; flex-direction:column; align-items:flex-end; gap:6px; }
@@ -275,7 +277,8 @@
   .databig-lbl{ font-family:var(--sans); font-size:.62rem; color:var(--ink-faint); text-transform:uppercase; letter-spacing:.05em; margin-top:3px; }
 
   /* ===== panel de nota escaneable ===== */
-  .s-lede::first-letter{ font-size:2.3rem; font-weight:700; float:left; line-height:.85; padding:4px 6px 0 0; color:var(--urgente); }
+  .s-lede::first-letter{ font-family:var(--slab); font-weight:400; font-size:3.1rem; float:left;
+    line-height:.78; margin:5px 9px 0 0; color:var(--urgente); }
   .data-box{ background:var(--paper-2); border-radius:10px; padding:14px 16px; margin:16px 0; display:flex; gap:14px; }
   .data-item{ flex:1; text-align:center; }
   .data-num{ font-family:var(--serif); font-weight:700; font-size:1.3rem; color:var(--urgente); line-height:1; }
@@ -319,15 +322,40 @@
   /* ===== instituciones y servicios verificados ===== */
   .inst-row{ display:flex; gap:9px; overflow-x:auto; scrollbar-width:none; padding:2px 0 2px; }
   .inst-row::-webkit-scrollbar{ display:none; }
-  .inst-chip{ flex:0 0 auto; display:flex; align-items:center; gap:8px; background:var(--surface); border:1px solid var(--line);
-    border-radius:999px; padding:8px 13px 8px 8px; box-shadow:0 1px 4px rgba(80,60,40,.06); }
-  .inst-chip .ic{ width:30px; height:30px; border-radius:50%; background:var(--paper-2); display:flex; align-items:center; justify-content:center; font-size:.95rem; flex:0 0 auto; }
+  .inst-chip{ flex:0 0 auto; display:flex; align-items:center; gap:7px; background:var(--surface);
+    border:.5px solid var(--line-strong); border-radius:2px; padding:6px 11px 6px 7px; }
+  .inst-chip .ic{ width:24px; height:24px; border-radius:2px; background:var(--region); color:#fff;
+    display:flex; align-items:center; justify-content:center; flex:0 0 auto;
+    font-family:var(--mono); font-size:.6rem; font-weight:600; letter-spacing:.02em; }
   .inst-chip .nm{ font-family:var(--sans); font-size:.76rem; font-weight:700; color:var(--ink); white-space:nowrap; }
   .inst-chip .punto-urg{ width:9px; height:9px; border-radius:50%; background:var(--urgente); flex:0 0 auto;
     box-shadow:0 0 0 3px color-mix(in srgb,var(--urgente) 22%,transparent); }
   .inst-chip .badge{ min-width:18px; height:18px; padding:0 5px; border-radius:999px; background:var(--terracota); color:#fff;
     font-family:var(--sans); font-size:.62rem; font-weight:800; display:flex; align-items:center; justify-content:center; flex:0 0 auto; }
   .com-destacado{ cursor:pointer; }
+
+  /* ===== acabado de imprenta ===== */
+  /* Los números alinean en columna, como en una tabla tipográfica */
+  .tick .val, .dato .n, .kpi .n, .time-txt, .src, .ag-date .d,
+  .conf-count, .ob-chip .pc, .cifra-n{ font-variant-numeric:tabular-nums; }
+  /* Titulares: en cuerpo grande el ojo pide menos espacio entre letras */
+  .lead .h, .z-lead .h, .s-title, #s-title{ letter-spacing:-.022em; }
+  .h, .zitem h4, .aporte-tit, .oferta-tit{ letter-spacing:-.012em; }
+  /* Filetes capilares: separan sin pesar */
+  .zitem, .li, .aporte-full, .f-com, .com-row, .ag-row, .res-row{ border-top-width:.5px !important; }
+  /* Volanta: versalitas espaciadas, no mayúsculas apretadas */
+  .kicker, .zlabel .nm, .section-eyebrow .t, .avisos-label, .ofertas-label, .fav-title{
+    letter-spacing:.16em; }
+  /* Numeración de las notas secundarias */
+  .zlist{ counter-reset:nota; }
+  .zlist .zitem{ position:relative; padding-left:30px; counter-increment:nota; }
+  .zlist .zitem::before{ content:counter(nota, decimal-leading-zero); position:absolute; left:0; top:15px;
+    font-family:var(--mono); font-size:.62rem; font-weight:500; color:var(--ink-20);
+    font-variant-numeric:tabular-nums; }
+  /* Comilla colgante en las citas */
+  .s-cita, .cita-nota{ text-indent:-.42em; }
+  /* Cita con filete a la izquierda, no con fondo */
+  .s-quote{ border-left:2px solid var(--region); padding-left:15px; background:none; }
 
   /* ===== control del audio ===== */
   .audio-ctrl{ display:flex; align-items:center; gap:11px; margin:12px 0 4px; padding:10px 12px;
@@ -532,7 +560,9 @@
   .inst-more{ flex:0 0 auto; display:flex; align-items:center; font-family:var(--sans); font-size:.72rem; font-weight:700; color:var(--int); padding:0 4px; white-space:nowrap; }
 
   .ficha-head{ display:flex; align-items:center; gap:12px; }
-  .ficha-head .ic{ width:52px; height:52px; border-radius:14px; background:var(--paper-2); display:flex; align-items:center; justify-content:center; font-size:1.5rem; flex:0 0 auto; }
+  .ficha-head .ic{ width:48px; height:48px; border-radius:2px; background:var(--region); color:#fff;
+    display:flex; align-items:center; justify-content:center; flex:0 0 auto;
+    font-family:var(--mono); font-size:1.05rem; font-weight:600; letter-spacing:.02em; }
   .ficha-head .nm{ font-family:var(--serif); font-weight:700; font-size:1.15rem; color:var(--ink); }
   .ficha-head .sub{ display:flex; align-items:center; gap:5px; font-family:var(--sans); font-size:.68rem; color:var(--ink-faint); margin-top:2px; }
   .date-box{ margin-top:16px; background:color-mix(in srgb,var(--terracota) 8%,var(--paper-2)); border:1.5px solid color-mix(in srgb,var(--terracota) 35%,var(--line)); border-radius:14px; padding:14px 16px; }
@@ -2171,6 +2201,15 @@
 
   // ================= INSTITUCIONES Y SERVICIOS VERIFICADOS =================
   const ICONS_INST = { salud:"🏥", social:"📦", municipio:"🏛️", seguridad:"🚓", educacion:"🏫", cultura:"🎭", deporte:"⚽", otro:"📍" };
+  // Sigla de dos letras a partir del nombre: se lee igual en cualquier celular
+  // y queda más serio que un emoji, que cada teléfono dibuja distinto.
+  function siglaDe(nombre){
+    const limpio = (nombre||"").replace(/\b(de|del|la|el|los|las|y)\b/gi, " ").trim();
+    const palabras = limpio.split(/\s+/).filter(Boolean);
+    if(!palabras.length) return "··";
+    if(palabras.length === 1) return palabras[0].slice(0,2).toUpperCase();
+    return (palabras[0][0] + palabras[1][0]).toUpperCase();
+  }
   let INSTITUCIONES = [];
   let FECHAS_INST = [];
   function fmtFecha(iso){
@@ -2245,7 +2284,7 @@
         // Urgente que sigue vigente y todavía no se descartó del todo
         const urgPendiente = propios.some(c=> c.urgente && !urgenteDescartado(c.id));
         return '<a class="inst-chip'+(urgPendiente?" destacada":"")+'" data-inst-id="'+esc(i.id)+'">'
-          + '<span class="ic">'+(ICONS_INST[i.tipo]||"📍")+'</span><span class="nm">'+esc(i.nombre)+'</span>'
+          + '<span class="ic">'+siglaDe(i.nombre)+'</span><span class="nm">'+esc(i.nombre)+'</span>'
           + (urgPendiente ? '<span class="punto-urg" title="Tiene un aviso urgente"></span>' : '')
           + (sinLeer ? '<span class="badge">'+sinLeer+'</span>' : '') + '</a>';
       }).join("")
