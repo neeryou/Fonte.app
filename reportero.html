@@ -184,7 +184,70 @@
   .prev-note .bt{ margin-top:12px; background:var(--ciudad); color:#fff; font-family:var(--sans); font-weight:700;
     font-size:.8rem; text-align:center; padding:11px; border-radius:9px; }
 
-  /* ===== acabado de imprenta ===== */
+  /* ===== acabado de imprenta (maqueta consola) ===== */
+  /* barra superior con filete doble */
+  .rep-top{ background:var(--ink); color:var(--paper); }
+  .rep-top .row{ padding:13px 0; }
+  .rep-brand .b{ font-family:var(--slab); font-size:1.05rem; }
+  .rep-badge{ font-family:var(--sans); font-size:.5rem; font-weight:800; letter-spacing:.16em;
+    background:rgba(255,255,255,.14); padding:3px 8px; border-radius:2px; text-transform:uppercase; }
+  .rep-user{ font-family:var(--mono); font-size:.58rem; opacity:.75; }
+  .logout-btn{ font-family:var(--sans); font-size:.6rem; font-weight:700; border:.5px solid rgba(255,255,255,.3);
+    background:none; color:var(--paper); padding:5px 11px; border-radius:2px; margin-left:9px; }
+
+  /* rótulo de sección con regla al costado */
+  .sec-lbl{ display:flex; align-items:center; gap:11px; margin:24px 0 11px; font-family:var(--sans);
+    font-size:.6rem; font-weight:800; letter-spacing:.2em; text-transform:uppercase; color:var(--ink); }
+  .sec-lbl::after{ content:''; order:2; flex:1; height:.5px; background:var(--line-strong); }
+  .sec-lbl .n{ order:3; font-family:var(--mono); font-size:.56rem; background:var(--urgente); color:#fff;
+    padding:1px 6px; border-radius:2px; }
+
+  /* tarea */
+  .task{ border-radius:3px; border:.5px solid var(--line-strong); }
+  .task.urg{ border-left:3px solid var(--urgente); }
+  .task .ic{ border-radius:2px; background:var(--paper-2); color:var(--ink-soft);
+    font-family:var(--mono); font-size:.62rem; font-weight:600; }
+  .task.urg .ic{ background:var(--urgente); color:#fff; }
+  .task .t{ font-family:var(--serif); font-weight:600; font-size:.9rem; letter-spacing:-.01em; }
+  .task .go{ font-family:var(--mono); font-size:.6rem; font-weight:500; color:var(--region); }
+
+  /* kpis con filete arriba y abajo */
+  .kpis{ border-top:.5px solid var(--ink); border-bottom:.5px solid var(--ink); gap:0; }
+  .kpi3{ border-right:.5px solid var(--line); border-radius:0; background:none; }
+  .kpi3:last-child{ border-right:0; }
+  .kpi3 .n{ font-family:var(--serif); font-weight:700; color:var(--region); font-variant-numeric:tabular-nums; letter-spacing:-.02em; }
+  .kpi3 .l{ letter-spacing:.09em; }
+
+  /* archivo numerado */
+  .arch-lista{ counter-reset:it; }
+  .arch-item{ counter-increment:it; padding-left:32px; position:relative; border-radius:3px; }
+  .arch-item::before{ content:counter(it,decimal-leading-zero); position:absolute; left:8px; top:14px;
+    font-family:var(--mono); font-size:.6rem; color:var(--ink-20); font-variant-numeric:tabular-nums; }
+  .arch-item .mini{ border-radius:2px; }
+  .arch-item .m{ font-family:var(--mono); font-size:.57rem; }
+
+  /* selector de tipo con siglas */
+  .tipo{ border-radius:3px; border:.5px solid var(--line-strong); }
+  .tipo.on{ border-color:var(--ink); }
+  .tipo .e{ display:none; }
+  .tipo::before{ content:attr(data-sig); font-family:var(--mono); font-size:.62rem; font-weight:600; color:var(--region); }
+  .tipo.on::before{ color:#fff; }
+
+  /* nav con filete doble arriba */
+  .rep-nav{ border-top:2.5px solid var(--ink); }
+  .rep-nav::before{ content:''; position:absolute; left:0; right:0; top:-4px; border-top:.5px solid var(--ink); }
+  .rnv{ letter-spacing:.05em; text-transform:uppercase; font-size:.55rem; }
+  .rnv .pip{ font-family:var(--mono); background:var(--urgente); }
+
+  /* filete doble bajo la barra */
+  .rep-top{ border-bottom:.5px solid var(--ink); position:relative; }
+
+  /* campos */
+  .field-label{ letter-spacing:.16em; }
+  .inp, textarea.inp, .btn-gen, .card, .form-toggle{ border-radius:3px; }
+  .srcchip, .chip{ border-radius:2px; }
+
+  /* ===== acabado viejo, se mantiene ===== */
   .rep-h{ letter-spacing:-.018em; }
   .kpi3 .n, .kpi .n, .arch-item .m, .fecha-row .m, .visor .meta{ font-variant-numeric:tabular-nums; }
   .field-label, .sec-lbl, .lbl{ letter-spacing:.16em; }
@@ -329,7 +392,7 @@
         <button class="f" data-f="oferta">Ofertas</button>
         <button class="f" data-f="aporte">Avisos de vecinos</button>
       </div>
-      <div id="archLista"><p class="vacio-txt">Cargando…</p></div>
+      <div id="archLista" class="arch-lista"><p class="vacio-txt">Cargando…</p></div>
     </div>
 
     <div class="rep-view" id="viewCargar">
@@ -337,10 +400,10 @@
     <p class="rep-sub">Elegí qué vas a cargar. Podés ver cómo queda antes de publicarlo.</p>
 
     <div class="tipos" id="tiposPub">
-      <button class="tipo on" data-tipo="nota"><span class="e">📰</span><span class="t">Nota</span><span class="s">Una noticia de la ciudad o la zona</span></button>
-      <button class="tipo" data-tipo="comunicado"><span class="e">📢</span><span class="t">Comunicado</span><span class="s">Aviso de una institución</span></button>
-      <button class="tipo" data-tipo="oferta"><span class="e">🏷️</span><span class="t">Oferta</span><span class="s">Promoción de un comercio</span></button>
-      <button class="tipo" data-tipo="institucion"><span class="e">🏥</span><span class="t">Institución</span><span class="s">Ficha y fechas de un servicio</span></button>
+      <button class="tipo on" data-tipo="nota" data-sig="NO"><span class="e">📰</span><span class="t">Nota</span><span class="s">Una noticia de la ciudad o la zona</span></button>
+      <button class="tipo" data-tipo="comunicado" data-sig="CO"><span class="e">📢</span><span class="t">Comunicado</span><span class="s">Aviso de una institución</span></button>
+      <button class="tipo" data-tipo="oferta" data-sig="OF"><span class="e">🏷️</span><span class="t">Oferta</span><span class="s">Promoción de un comercio</span></button>
+      <button class="tipo" data-tipo="institucion" data-sig="IN"><span class="e">🏥</span><span class="t">Institución</span><span class="s">Ficha y fechas de un servicio</span></button>
     </div>
 
     <div id="panelNota">
@@ -1637,12 +1700,12 @@
     const nPend = (pend.data||[]).length;
     if(nPend){
       const viejo = pend.data[0].created_at ? tiempoRel(pend.data[0].created_at) : "";
-      tareas.push({ urg:true, ic:"📍", t: nPend + (nPend===1?" aporte esperando revisión":" aportes esperando revisión"),
+      tareas.push({ urg:true, ic:"AP", t: nPend + (nPend===1?" aporte esperando revisión":" aportes esperando revisión"),
                     s: viejo ? "El más viejo, "+viejo : "", go:"Revisar ›", v:"viewAportes" });
     }
     const nVenc = (venc.data||[]).length;
     if(nVenc){
-      tareas.push({ urg:true, ic:"📅", t: nVenc + (nVenc===1?" fecha vencida":" fechas vencidas"),
+      tareas.push({ urg:true, ic:"FE", t: nVenc + (nVenc===1?" fecha vencida":" fechas vencidas"),
                     s: (venc.data[0].titulo||"") + " — actualizala o la ficha queda vacía", go:"Actualizar ›", v:"institucion" });
     }
     const urgVigentes = (urg.data||[]).filter(c=>{
@@ -1651,7 +1714,7 @@
     });
     urgVigentes.forEach(c=>{
       const horas = Math.max(0, Math.round(48 - (Date.now()-new Date(c.created_at).getTime())/3600000));
-      tareas.push({ urg:false, ic:"⚡", t:"Aviso urgente en portada",
+      tareas.push({ urg:false, ic:"UR", t:"Aviso urgente en portada",
                     s:'"'+(c.titulo||"")+'" sale de portada en '+horas+" h", go:"Ver ›", v:"comunicado" });
     });
 
