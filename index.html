@@ -391,7 +391,7 @@
   .lightbox .cerrar{ position:absolute; top:calc(14px + env(safe-area-inset-top)); right:14px;
     background:rgba(255,255,255,.15); border:0; color:#fff; font-family:var(--sans); font-size:.8rem; font-weight:700;
     padding:9px 15px; border-radius:999px; backdrop-filter:blur(6px); }
-  .galeria img, .s-hero img{ cursor:zoom-in; }
+  .galeria img, .s-hero img, #s-hero img, #aporteFoto img{ cursor:zoom-in; }
 
   /* ===== dato extra y acción de la nota ===== */
   .dato-extra{ display:flex; gap:10px; align-items:flex-start; background:color-mix(in srgb,var(--int) 9%,var(--paper-2));
@@ -3026,8 +3026,11 @@
   });
   // cualquier foto de galería o portada se abre en grande
   document.addEventListener("click", (e)=>{
-    const img = e.target.closest(".galeria img, #s-hero img, #aporteFoto img");
-    if(img && img.src) abrirFoto(img.src);
+    // cualquier foto dentro del sheet de nota o de aporte se abre en grande
+    const img = e.target.closest("#sheet img, #sheetAporte img, .galeria img, #s-hero img, #aporteFoto img");
+    if(img && img.src && !img.closest(".s-video") && !img.closest("iframe")){
+      abrirFoto(img.src);
+    }
   });
 
   // ================= ABRIR DESDE UN ENLACE COMPARTIDO =================
