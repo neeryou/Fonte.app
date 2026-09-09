@@ -1533,12 +1533,26 @@
       + '<div class="meta">'+mapa+'<br>'+fecha+'<br>Estado: <b>'+(estados[a.estado]||a.estado)+'</b></div>'
       + (a.foto_url ? '<div class="meta"><a href="'+escA(a.foto_url)+'" target="_blank" rel="noopener">Abrir foto en tamaño completo ↗</a></div>' : '')
       + '<button class="compartir" id="visorEditar" style="background:var(--region)">✎ Editar este aviso</button>'
+      + '<button class="compartir" id="visorBorrarAporte" style="background:none;border:1px solid #A8382C;color:#A8382C;margin-top:8px">🗑 Borrar este aporte</button>'
       + '<div id="editorAporte"></div>'
       + '<button class="cerrar" id="visorCerrar">Cerrar</button>'
       + '</div>';
     document.getElementById("visorBack").classList.add("show");
     document.getElementById("visorCerrar").addEventListener("click", cerrarVisor);
     document.getElementById("visorEditar").addEventListener("click", ()=> abrirEditorAporte(a));
+    document.getElementById("visorBorrarAporte").addEventListener("click", async (e)=>{
+      if(!confirm("¿Borrar este aporte para siempre? No se puede deshacer.")) return;
+      e.currentTarget.disabled = true;
+      // borra también las confirmaciones asociadas, si las hubiera
+      try{ await sb.from("aporte_confirmaciones").delete().eq("aporte_id", a.id); }catch(err){}
+      const { error } = await sb.from("aportes").delete().eq("id", a.id);
+      if(error){ toast("No se pudo borrar: " + error.message); e.currentTarget.disabled = false; return; }
+      toast("Aporte borrado");
+      cerrarVisor();
+      if(typeof cargarAportesPendientes === "function") cargarAportesPendientes();
+      if(typeof cargarAvisosPublicados === "function") cargarAvisosPublicados();
+      if(typeof cargarArchivo === "function") cargarArchivo();
+    });
   }
   function cerrarVisor(){ document.getElementById("visorBack").classList.remove("show"); }
   document.getElementById("visorBack").addEventListener("click", (e)=>{
