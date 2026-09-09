@@ -1809,9 +1809,15 @@
     //  sin foto    → tipográfica (marco y titular grande)
     //  protagonista→ foto a sangre completa con el titular encima
     //  el resto    → editorial (foto arriba, titular abajo)
-    const CATS_PROTAGONISTA = ["policiales","sociedad","deportes","cultura","espectaculos"];
+    // Categorías donde la imagen suele SER la noticia
+    const CATS_PROTAGONISTA = ["policiales","desastres","deportes","espectaculos","religion"];
     function diseñoDePlaca(){
-      if(n.estilo_placa && n.estilo_placa !== "auto") return n.estilo_placa;
+      // 1. Si en la consola elegiste un estilo a mano, manda ese (incluso sobre urgente)
+      if(n.estilo_placa && n.estilo_placa !== "auto"){
+        if(n.estilo_placa === "foto" && !img) return "tipografica";   // pidió foto pero no hay
+        return n.estilo_placa;
+      }
+      // 2. Automático
       if(urgente) return "urgente";
       if(!img) return "tipografica";
       if(CATS_PROTAGONISTA.includes((n.categoria||"").toLowerCase())) return "foto";
