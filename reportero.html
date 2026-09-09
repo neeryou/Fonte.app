@@ -1329,7 +1329,7 @@
         if(!confirm("¿Quitar esta institución (y todas sus fechas) de Fonte?")) return;
         btn.disabled = true;
         const { error } = await sb.from("instituciones").delete().eq("id", id);
-        if(error){ toast("No se pudo quitar."); btn.disabled=false; return; }
+        if(error){ toast("No se pudo quitar: " + error.message); btn.disabled=false; return; }
         toast("Institución quitada");
         cargarInstitucionesAdmin();
       });
@@ -1584,15 +1584,19 @@
   }
   function galeriaVisor(lista){
     if(!lista || !lista.length) return "";
-    if(lista.length === 1) return '<img src="'+escA(lista[0])+'" alt="">';
-    return '<div style="display:flex;gap:6px;overflow-x:auto;padding:0;background:#16140F">'
-      + lista.map(u=>'<img src="'+escA(u)+'" style="flex:0 0 auto;width:82%;max-height:52vh;object-fit:contain;border-radius:0" alt="">').join("")
+    if(lista.length === 1) return '<img class="foto-zoom" src="'+escA(lista[0])+'" alt="" style="cursor:zoom-in">';
+    return '<div style="display:flex;gap:6px;overflow-x:auto;background:#16140F;scroll-snap-type:x mandatory">'
+      + lista.map(u=>'<img class="foto-zoom" src="'+escA(u)+'" style="flex:0 0 100%;scroll-snap-align:center;max-height:56vh;object-fit:contain;cursor:zoom-in" alt="">').join("")
       + '</div><div style="font-family:var(--sans);font-size:.7rem;color:var(--ink-faint);padding:8px 18px 0">'
-      + lista.length + ' fotos — deslizá al costado</div>';
+      + lista.length + ' fotos — deslizá al costado, tocá para verla en grande</div>';
   }
   function fotosDeNota(n){
-    if(Array.isArray(n.fotos) && n.fotos.length) return n.fotos;
-    if(n.imagen_url) return [n.imagen_url];
+    // 'fotos' puede venir como arreglo o como texto JSON según cómo lo devuelva la base
+    let arr = n.fotos;
+    if(typeof arr === "string"){ try{ arr = JSON.parse(arr); }catch(e){ arr = null; } }
+    if(Array.isArray(arr) && arr.length) return arr;
+    if(n.imagen_url) return [n.imagen_url];   // noticias
+    if(n.foto_url) return [n.foto_url];        // aportes de vecinos
     return [];
   }
 
@@ -1686,9 +1690,56 @@
       + '<div class="meta">'+fecha
       + (c.urgente ? '<br>Se muestra abierto en la portada por 48 hs' : '<br>Solo dentro de la ficha de la institución')
       + (c.video_url ? '<br>🎬 Con video' : '')
-      + '</div><button class="compartir" id="btnCompartirVisor">↗ Compartir en redes</button></div>';
+      + '</div>'
+      + '<button class="compartir" id="btnCompartirVisor">↗ Compartir en redes</button>'
+      + '<button class="compartir" id="btnEditarComunicado" style="background:var(--region);margin-top:8px">✎ Editar</button>'
+      + '<button class="compartir" id="btnBorrarComunicado" style="background:none;border:1px solid #A8382C;color:#A8382C;margin-top:8px">🗑 Borrar</button>'
+      + '<div id="editorComunicado"></div></div>';
     abrirVisorHTML(h);
     document.getElementById("btnCompartirVisor").addEventListener("click", (e)=> compartirDesdeConsola(c, "comunicado", e.currentTarget));
+    document.getElementById("btnBorrarComunicado").addEventListener("click", async (e)=>{
+      if(!confirm("¿Borrar este comunicado para siempre?")) return;
+      e.currentTarget.disabled = true;
+      const { error } = await sb.from("comunicados").delete().eq("id", c.id);
+      if(error){ toast("No se pudo borrar: " + error.message); e.currentTarget.disabled = false; return; }
+      toast("Comunicado borrado");
+      cerrarVisor();
+      cargarComunicadosAdmin();
+      if(typeof cargarArchivo === "function") cargarArchivo();
+    });
+    document.getElementById("btnEditarComunicado").addEventListener("click", ()=> editarComunicado(c));
+  }
+
+  function editarComunicado(c){
+    const cont = document.getElementById("editorComunicado");
+    document.getElementById("btnEditarComunicado").classList.add("hide");
+    cont.innerHTML = '<div class="edit-box">'
+      + '<div class="fl">Título</div>'
+      + '<input class="inp" id="ecTitulo" value="'+escA(c.titulo||"")+'">'
+      + '<div class="fl">Texto</div>'
+      + '<textarea class="inp" id="ecTexto" style="min-height:100px">'+escA(c.texto||"")+'</textarea>'
+      + '<label style="display:flex;gap:9px;align-items:center;margin-top:12px;font-family:var(--sans);font-size:.82rem">'
+      + '<input type="checkbox" id="ecUrgente" '+(c.urgente?"checked":"")+' style="width:18px;height:18px"> Es un aviso urgente</label>'
+      + '<div class="acciones"><button class="btn-cancelar" id="ecCancelar">Cancelar</button>'
+      + '<button class="btn-guardar" id="ecGuardar">Guardar cambios</button></div></div>';
+    document.getElementById("ecCancelar").addEventListener("click", ()=>{
+      cont.innerHTML = "";
+      document.getElementById("btnEditarComunicado").classList.remove("hide");
+    });
+    document.getElementById("ecGuardar").addEventListener("click", async ()=>{
+      const btn = document.getElementById("ecGuardar");
+      btn.disabled = true; btn.textContent = "Guardando…";
+      const { error } = await sb.from("comunicados").update({
+        titulo: document.getElementById("ecTitulo").value.trim(),
+        texto: document.getElementById("ecTexto").value.trim(),
+        urgente: document.getElementById("ecUrgente").checked,
+      }).eq("id", c.id);
+      btn.disabled = false; btn.textContent = "Guardar cambios";
+      if(error){ toast("No se pudo guardar: " + error.message); return; }
+      toast("Comunicado actualizado ✓");
+      cerrarVisor();
+      cargarComunicadosAdmin();
+    });
   }
 
   // ================= HOY: bandeja de trabajo =================
@@ -2345,6 +2396,26 @@
       }
     }catch(err){ /* si falla, se publica igual sin foto */ }
   });
+
+  // ================= FOTO A PANTALLA COMPLETA =================
+  (function(){
+    const lb = document.createElement("div");
+    lb.id = "repLightbox";
+    lb.style.cssText = "position:fixed;inset:0;z-index:600;background:#0C0B08;display:none;"
+      + "align-items:center;justify-content:center;padding:14px";
+    lb.innerHTML = '<img id="repLightboxImg" style="max-width:100%;max-height:100%;object-fit:contain">'
+      + '<button style="position:absolute;top:16px;right:16px;background:rgba(255,255,255,.15);border:0;'
+      + 'color:#fff;font-family:var(--sans);font-weight:700;font-size:.8rem;padding:9px 14px;border-radius:2px">Cerrar ✕</button>';
+    document.body.appendChild(lb);
+    lb.addEventListener("click", ()=>{ lb.style.display = "none"; lb.querySelector("img").src = ""; });
+    document.addEventListener("click", (e)=>{
+      const img = e.target.closest(".foto-zoom");
+      if(img && img.src){
+        lb.querySelector("#repLightboxImg").src = img.src;
+        lb.style.display = "flex";
+      }
+    });
+  })();
 
   document.querySelectorAll(".form-toggle").forEach(btn=>{
     btn.addEventListener("click", ()=>{
