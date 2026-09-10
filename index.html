@@ -345,6 +345,10 @@
   .inst-chip .badge{ min-width:18px; height:18px; padding:0 5px; border-radius:999px; background:var(--terracota); color:#fff;
     font-family:var(--sans); font-size:.62rem; font-weight:800; display:flex; align-items:center; justify-content:center; flex:0 0 auto; }
   .com-destacado{ cursor:pointer; }
+  .geo-btn{ flex:1; font-family:var(--sans); font-size:.72rem; font-weight:700; color:var(--ink-soft);
+    background:var(--paper-2); border:.5px solid var(--line-strong); border-radius:3px; padding:9px 8px; }
+  .geo-btn.on{ background:var(--ciudad); border-color:var(--ciudad); color:#fff; }
+  #mapaAjuste iframe{ width:100%; height:220px; border:.5px solid var(--line-strong); border-radius:4px; }
 
   /* ===== acabado de imprenta ===== */
   /* Los números alinean en columna, como en una tabla tipográfica */
@@ -688,7 +692,11 @@
     border:.5px solid rgba(138,106,34,.3); border-radius:2px; padding:6px 11px; white-space:nowrap; }
   .ob-chip .pc{ font-family:var(--mono); font-weight:600; font-size:.66rem; color:var(--int);
     background:none; padding:0; font-variant-numeric:tabular-nums; }
-  .ob-chip .nm{ font-family:var(--sans); font-weight:700; font-size:.67rem; color:#5c4614; }
+  .ob-chip .tx{ display:flex; flex-direction:column; gap:1px; }
+  .ob-chip .nm{ font-family:var(--sans); font-weight:700; font-size:.67rem; color:#5c4614; line-height:1.15; }
+  .ob-chip .nm2{ font-family:var(--sans); font-weight:500; font-size:.6rem; color:var(--int); line-height:1.2; }
+  .ob-chip.sin-pc .pc{ background:var(--int); color:#fff; padding:3px 7px; border-radius:2px; font-family:var(--sans);
+    font-weight:800; font-size:.56rem; letter-spacing:.06em; }
   [data-tema="oscuro"] .ofertas-bar{ background:linear-gradient(100deg,#3A2E14,#2E2410); border-top-color:#C9A34A; }
   [data-tema="oscuro"] .ofertas-bar .lbl{ color:#D1A467; }
   [data-tema="oscuro"] .ob-chip{ background:rgba(255,255,255,.09); }
@@ -906,7 +914,13 @@
     <div id="fFotoPreview" style="display:none;gap:6px;flex-wrap:wrap;margin-bottom:12px"></div>
 
     <div class="field-lbl">Ubicación</div>
-    <div class="geo-status" id="geoStatus">Te la vamos a pedir al enviar.</div>
+    <input class="fld" id="fDireccion" placeholder="Ej: San Martín y Belgrano, o el nombre del lugar">
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button type="button" class="geo-btn" id="btnUsarGPS">📍 Usar mi ubicación actual</button>
+      <button type="button" class="geo-btn" id="btnAjustarMapa">🗺️ Marcar en el mapa</button>
+    </div>
+    <div class="geo-status" id="geoStatus">Si no marcás nada, se pide tu ubicación al enviar.</div>
+    <div id="mapaAjuste" class="hide" style="margin-top:10px"></div>
 
     <button class="submit-btn" id="fSubmit">Enviar aporte</button>
     <div class="form-msg" id="formMsg"></div>
@@ -2071,10 +2085,12 @@
     bar.style.display = "block";
     document.getElementById("ofertasGrid").innerHTML = OFERTAS.map(o=>{
       const m = (o.titulo||"").match(/(\d+\s*%)/);
-      const destaque = m ? m[1].replace(/\s/g,"") : "★";
-      return '<a class="ob-chip" data-oferta-id="'+esc(o.id)+'">'
+      // Sin porcentaje explícito, mostramos el gancho de la oferta en vez de una estrella vacía
+      const destaque = m ? m[1].replace(/\s/g,"") : "VER";
+      const gancho = m ? "" : ('<span class="nm2">'+esc((o.titulo||"").length>28 ? (o.titulo||"").slice(0,28).trim()+"…" : (o.titulo||""))+'</span>');
+      return '<a class="ob-chip'+(m?"":" sin-pc")+'" data-oferta-id="'+esc(o.id)+'">'
         + '<span class="pc">'+esc(destaque)+'</span>'
-        + '<span class="nm">'+esc(o.negocio||o.titulo||"")+'</span></a>';
+        + '<span class="tx"><span class="nm">'+esc(o.negocio||o.titulo||"")+'</span>'+gancho+'</span></a>';
     }).join("");
     document.querySelectorAll(".ob-chip").forEach(el=>{
       el.addEventListener("click", ()=> abrirOferta(el.getAttribute("data-oferta-id")));
@@ -2484,11 +2500,7 @@
       if((cuenta||0) >= 5){ msg.textContent = "Ya enviaste el máximo de aportes por hoy. Probá mañana."; btn.disabled=false; return; }
     }catch(e){ /* si falla la verificación, seguimos igual — no bloqueamos por un error de red */ }
 
-    msg.textContent = "Pidiendo tu ubicación…";
-    document.getElementById("geoStatus").textContent = "Pidiendo permiso de ubicación…";
-    navigator.geolocation.getCurrentPosition(async (pos)=>{
-      const lat = pos.coords.latitude, lng = pos.coords.longitude;
-      document.getElementById("geoStatus").textContent = "Ubicación obtenida ✓";
+    async function continuarEnvio(lat, lng){
 
       let foto_url = null;
       let fotos = [];
@@ -2525,6 +2537,7 @@
             descripcion: document.getElementById("fDesc").value.trim() || null,
             texto: document.getElementById("fDesc").value.trim() || document.getElementById("fTitulo").value.trim() || (CAT_APORTE.find(c=>c.id===categoriaSeleccionada)||{}).label || "Aporte de un vecino",
             foto_url, fotos: fotos.length ? fotos : null, lat, lng,
+            lugar_texto: document.getElementById("fDireccion").value.trim() || null,
             dispositivo_id: disp,
             estado: "pendiente"
           })
@@ -2542,17 +2555,44 @@
           cerrarForm();
           document.getElementById("fTitulo").value = "";
           document.getElementById("fDesc").value = "";
+          document.getElementById("fDireccion").value = "";
+          document.getElementById("fFotoPreview").innerHTML = "";
+          document.getElementById("fFotoPreview").style.display = "none";
+          document.getElementById("mapaAjuste").classList.add("hide");
+          document.getElementById("mapaAjuste").innerHTML = "";
+          document.getElementById("btnUsarGPS").textContent = "📍 Usar mi ubicación actual";
+          document.getElementById("btnUsarGPS").classList.remove("on");
+          document.getElementById("geoStatus").textContent = "Si no marcás nada, se pide tu ubicación al enviar.";
+          geoLatManual = null; geoLngManual = null;
           fileInput.value = "";
           categoriaSeleccionada = null;
           document.querySelectorAll("#catGridForm .cat-opt").forEach(x=>x.classList.remove("sel"));
           msg.textContent = "";
         }, 1800);
       }catch(e){ btn.disabled=false; console.error("Fonte / error de red al enviar aporte:", e); msg.textContent = "No se pudo enviar: " + e.message; }
-    }, (err)=>{
-      document.getElementById("geoStatus").textContent = "Necesitamos tu ubicación para poder publicar el aporte.";
-      msg.textContent = "Activá la ubicación e intentá de nuevo.";
-      btn.disabled = false;
-    });
+    }
+
+    // 1) si ya tenés un punto elegido a mano, se usa ese sin volver a pedir permiso
+    if(geoLatManual && geoLngManual){
+      msg.textContent = "Enviando…";
+      continuarEnvio(geoLatManual, geoLngManual);
+      return;
+    }
+    // 2) si no, se intenta el GPS como respaldo — pero ya no es obligatorio:
+    //    si lo niega o falla, el aporte igual se envía con la dirección escrita.
+    msg.textContent = "Pidiendo tu ubicación…";
+    document.getElementById("geoStatus").textContent = "Pidiendo permiso de ubicación…";
+    navigator.geolocation.getCurrentPosition(
+      (pos)=>{
+        document.getElementById("geoStatus").textContent = "Ubicación obtenida ✓";
+        continuarEnvio(pos.coords.latitude, pos.coords.longitude);
+      },
+      ()=>{
+        document.getElementById("geoStatus").textContent = "Sin ubicación exacta — se envía con la dirección que escribiste.";
+        continuarEnvio(null, null);
+      },
+      { timeout:8000 }
+    );
   });
 
   (function(){
@@ -3151,6 +3191,34 @@
     document.addEventListener("touchstart", empieza, { passive:true });
     document.addEventListener("touchend", termina, { passive:true });
   })();
+
+  // ================= UBICACIÓN DEL APORTE: GPS o dirección escrita =================
+  let geoLatManual = null, geoLngManual = null;
+  document.getElementById("btnUsarGPS").addEventListener("click", ()=>{
+    const btn = document.getElementById("btnUsarGPS");
+    const estado = document.getElementById("geoStatus");
+    if(!navigator.geolocation){ estado.textContent = "Tu navegador no permite compartir ubicación."; return; }
+    btn.textContent = "📍 Buscando…";
+    navigator.geolocation.getCurrentPosition((pos)=>{
+      geoLatManual = pos.coords.latitude; geoLngManual = pos.coords.longitude;
+      btn.textContent = "✓ Ubicación tomada"; btn.classList.add("on");
+      estado.textContent = "Se va a guardar tu ubicación actual.";
+    }, ()=>{
+      btn.textContent = "📍 Usar mi ubicación actual";
+      estado.textContent = "No se pudo obtener la ubicación. Podés escribir la dirección igual.";
+    }, { timeout:10000 });
+  });
+  document.getElementById("btnAjustarMapa").addEventListener("click", ()=>{
+    const cont = document.getElementById("mapaAjuste");
+    const abierto = !cont.classList.contains("hide");
+    if(abierto){ cont.classList.add("hide"); cont.innerHTML = ""; return; }
+    cont.classList.remove("hide");
+    // Centrado en Quitilipi si todavía no hay un punto elegido
+    const lat = geoLatManual || -26.8667, lng = geoLngManual || -60.2167;
+    cont.innerHTML = '<iframe src="https://maps.google.com/maps?q='+lat+','+lng+'&z=15&output=embed" loading="lazy"></iframe>'
+      + '<div style="font-family:var(--sans);font-size:.68rem;color:var(--ink-faint);margin-top:6px">'
+      + 'Este mapa es para ubicarte. Si el punto no es exacto, describilo bien en el campo de arriba — igual llega al reportero.</div>';
+  });
 
   registrarVisita();
 
