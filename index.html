@@ -30,6 +30,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Fonte">
 <link rel="preconnect" href="https://skpfycmkilahghvoxqxw.supabase.co" crossorigin>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <link rel="dns-prefetch" href="https://skpfycmkilahghvoxqxw.supabase.co">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -352,7 +354,11 @@
   .geo-btn{ flex:1; font-family:var(--sans); font-size:.72rem; font-weight:700; color:var(--ink-soft);
     background:var(--paper-2); border:.5px solid var(--line-strong); border-radius:3px; padding:9px 8px; }
   .geo-btn.on{ background:var(--ciudad); border-color:var(--ciudad); color:#fff; }
-  #mapaAjuste iframe{ width:100%; height:220px; border:.5px solid var(--line-strong); border-radius:4px; }
+  .mapa-pin-wrap{ position:relative; width:100%; height:240px; border:.5px solid var(--line-strong); border-radius:4px; overflow:hidden; }
+  #mapaPin{ width:100%; height:100%; }
+  .mapa-pin-fijo{ position:absolute; left:50%; top:50%; transform:translate(-50%,-100%); font-size:2rem;
+    pointer-events:none; z-index:500; filter:drop-shadow(0 3px 3px rgba(0,0,0,.35)); }
+  .mapa-ayuda{ font-family:var(--sans); font-size:.68rem; color:var(--ink-faint); margin-top:7px; line-height:1.4; }
 
   /* ===== acabado de imprenta ===== */
   /* Los números alinean en columna, como en una tabla tipográfica */
@@ -924,7 +930,14 @@
       <button type="button" class="geo-btn" id="btnAjustarMapa">🗺️ Marcar en el mapa</button>
     </div>
     <div class="geo-status" id="geoStatus">Si no marcás nada, se pide tu ubicación al enviar.</div>
-    <div id="mapaAjuste" class="hide" style="margin-top:10px"></div>
+    <div id="mapaAjuste" class="hide" style="margin-top:10px">
+      <div class="mapa-pin-wrap">
+        <div id="mapaPin"></div>
+        <div class="mapa-pin-fijo">📍</div>
+      </div>
+      <div class="mapa-ayuda">Deslizá el mapa con un dedo hasta que el pin quede sobre el lugar. No hace falta tocar el pin.</div>
+      <button type="button" class="geo-btn on" id="btnConfirmarPin" style="width:100%;margin-top:8px">✓ Usar este punto</button>
+    </div>
 
     <button class="submit-btn" id="fSubmit">Enviar aporte</button>
     <div class="form-msg" id="formMsg"></div>
@@ -2567,7 +2580,7 @@
           document.getElementById("fFotoPreview").innerHTML = "";
           document.getElementById("fFotoPreview").style.display = "none";
           document.getElementById("mapaAjuste").classList.add("hide");
-          document.getElementById("mapaAjuste").innerHTML = "";
+          if(mapaLeaflet){ mapaLeaflet.remove(); mapaLeaflet = null; }
           document.getElementById("btnUsarGPS").textContent = "📍 Usar mi ubicación actual";
           document.getElementById("btnUsarGPS").classList.remove("on");
           document.getElementById("geoStatus").textContent = "Si no marcás nada, se pide tu ubicación al enviar.";
@@ -3216,16 +3229,29 @@
       estado.textContent = "No se pudo obtener la ubicación. Podés escribir la dirección igual.";
     }, { timeout:10000 });
   });
+  // Mapa con pin fijo al centro: se arrastra el mapa con un dedo, el pin no se toca.
+  let mapaLeaflet = null;
   document.getElementById("btnAjustarMapa").addEventListener("click", ()=>{
     const cont = document.getElementById("mapaAjuste");
     const abierto = !cont.classList.contains("hide");
-    if(abierto){ cont.classList.add("hide"); cont.innerHTML = ""; return; }
+    if(abierto){ cont.classList.add("hide"); return; }
     cont.classList.remove("hide");
-    // Centrado en Quitilipi si todavía no hay un punto elegido
     const lat = geoLatManual || -26.8667, lng = geoLngManual || -60.2167;
-    cont.innerHTML = '<iframe src="https://maps.google.com/maps?q='+lat+','+lng+'&z=15&output=embed" loading="lazy"></iframe>'
-      + '<div style="font-family:var(--sans);font-size:.68rem;color:var(--ink-faint);margin-top:6px">'
-      + 'Este mapa es para ubicarte. Si el punto no es exacto, describilo bien en el campo de arriba — igual llega al reportero.</div>';
+    setTimeout(()=>{
+      if(mapaLeaflet){ mapaLeaflet.remove(); mapaLeaflet = null; }
+      mapaLeaflet = L.map("mapaPin", { zoomControl:true, attributionControl:false }).setView([lat, lng], 16);
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom:19 }).addTo(mapaLeaflet);
+      mapaLeaflet.invalidateSize();
+    }, 60);
+  });
+  document.getElementById("btnConfirmarPin").addEventListener("click", ()=>{
+    if(!mapaLeaflet) return;
+    const c = mapaLeaflet.getCenter();
+    geoLatManual = c.lat; geoLngManual = c.lng;
+    document.getElementById("geoStatus").textContent = "✓ Punto marcado en el mapa.";
+    document.getElementById("btnUsarGPS").textContent = "✓ Ubicación tomada";
+    document.getElementById("btnUsarGPS").classList.add("on");
+    document.getElementById("mapaAjuste").classList.add("hide");
   });
 
   registrarVisita();
