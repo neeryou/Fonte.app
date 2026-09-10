@@ -1185,7 +1185,7 @@
         if(!confirm("¿Quitar esta oferta de Fonte?")) return;
         btn.disabled = true;
         const { error } = await sb.from("ofertas").delete().eq("id", id);
-        if(error){ toast("No se pudo quitar."); btn.disabled=false; return; }
+        if(error){ toast("No se pudo quitar: " + error.message); btn.disabled=false; return; }
         toast("Oferta quitada");
         cargarOfertasAdmin();
       });
@@ -1676,9 +1676,22 @@
       + (o.direccion ? '📍 '+escA(o.direccion)+'<br>' : '')
       + (o.valido_hasta ? '🕐 Válido hasta: '+escA(o.valido_hasta)+'<br>' : '')
       + (o.imagen_url ? '📷 Con foto' : 'Sin foto')
-      + '</div><button class="compartir" id="btnCompartirVisor">↗ Compartir en redes</button></div>';
+      + '</div>'
+      + '<button class="compartir" id="btnCompartirVisor">↗ Compartir en redes</button>'
+      + '<button class="compartir" id="btnBorrarOferta" style="background:none;border:1px solid #A8382C;color:#A8382C;margin-top:8px">🗑 Borrar esta oferta</button>'
+      + '</div>';
     abrirVisorHTML(h);
     document.getElementById("btnCompartirVisor").addEventListener("click", (e)=> compartirDesdeConsola(o, "oferta", e.currentTarget));
+    document.getElementById("btnBorrarOferta").addEventListener("click", async (e)=>{
+      if(!confirm("¿Borrar esta oferta para siempre?")) return;
+      e.currentTarget.disabled = true;
+      const { error } = await sb.from("ofertas").delete().eq("id", o.id);
+      if(error){ toast("No se pudo borrar: " + error.message); e.currentTarget.disabled = false; return; }
+      toast("Oferta borrada");
+      cerrarVisor();
+      if(typeof cargarOfertasAdmin === "function") cargarOfertasAdmin();
+      if(typeof cargarArchivo === "function") cargarArchivo();
+    });
   }
 
   function abrirVisorComunicado(c){
