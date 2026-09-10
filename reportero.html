@@ -2236,27 +2236,38 @@
   // ================= EDITAR UN APORTE =================
   // El vecino a veces escribe apurado o la foto sale torcida. Esto permite
   // corregir el texto y recortar la imagen, sin cambiar lo que reportó.
+  // Todas las fotos del aporte, sea que vengan en 'fotos' (varias) o solo en 'foto_url' (una vieja)
+  function fotosDelAporte(a){
+    let arr = a.fotos;
+    if(typeof arr === "string"){ try{ arr = JSON.parse(arr); }catch(e){ arr = null; } }
+    if(Array.isArray(arr) && arr.length) return arr.filter(Boolean);
+    if(a.foto_url) return [a.foto_url];
+    return [];
+  }
+
+  let EDIT_FOTOS = [];   // copia editable de las fotos de este aporte (se puede borrar de acá)
+  let EDIT_FOTO_IDX = 0; // cuál está en el recortador ahora
+
   function abrirEditorAporte(a){
     const cont = document.getElementById("editorAporte");
-    const foto = (Array.isArray(a.fotos) && a.fotos.length ? a.fotos[0] : a.foto_url) || "";
+    EDIT_FOTOS = fotosDelAporte(a);
+    EDIT_FOTO_IDX = 0;
+    RECORTES = {};   // se arranca limpio para este aporte
     cont.innerHTML = '<div class="edit-box">'
       + '<div class="fl">Título</div>'
       + '<input class="inp" id="edTitulo" value="'+escA(a.titulo||"")+'" placeholder="Ej: Pozo en calle San Martín">'
       + '<div class="fl">Descripción</div>'
       + '<textarea class="inp" id="edDesc" style="min-height:80px">'+escA(a.descripcion||"")+'</textarea>'
-      + (foto
-          ? '<div class="fl">Foto</div>'
-            + '<div class="recorte" id="recorte"><img id="recorteImg" src="'+escA(foto)+'" alt="">'
-            + '<div class="marco" id="recorteMarco"><span class="tirador"></span></div></div>'
-            + '<div class="recorte-ayuda">Arrastrá el marco para elegir qué parte queda. '
-            + 'Si no lo tocás, la foto se guarda igual.</div>'
-          : '')
+      + '<div class="fl">Fotos <span style="text-transform:none;letter-spacing:0;font-weight:500">— tocá una para recortarla</span></div>'
+      + '<div id="edMiniaturas"></div>'
+      + '<div id="edRecorteWrap"></div>'
       + '<div class="acciones">'
       + '<button class="btn-cancelar" id="edCancelar">Cancelar</button>'
       + '<button class="btn-guardar" id="edGuardar">Guardar cambios</button>'
       + '</div></div>';
     document.getElementById("visorEditar").classList.add("hide");
-    if(foto) prepararRecorte();
+    pintarMiniaturasEdicion();
+    if(EDIT_FOTOS.length) abrirRecorteDe(0);
     document.getElementById("edCancelar").addEventListener("click", ()=>{
       cont.innerHTML = "";
       document.getElementById("visorEditar").classList.remove("hide");
@@ -2264,13 +2275,59 @@
     document.getElementById("edGuardar").addEventListener("click", ()=> guardarAporte(a));
   }
 
+  function pintarMiniaturasEdicion(){
+    const cont = document.getElementById("edMiniaturas");
+    if(!cont) return;
+    if(!EDIT_FOTOS.length){
+      cont.innerHTML = '<p style="font-family:var(--sans);font-size:.76rem;color:var(--ink-faint)">Este aviso no tiene fotos.</p>';
+      return;
+    }
+    cont.style.cssText = "display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px";
+    cont.innerHTML = EDIT_FOTOS.map((url,i)=>
+      '<div style="position:relative">'
+      + '<img data-idx="'+i+'" src="'+escA(url)+'" style="width:60px;height:60px;object-fit:cover;border-radius:6px;cursor:pointer;'
+      + 'border:2px solid '+(i===EDIT_FOTO_IDX?"var(--barrio)":"transparent")+'">'
+      + '<button data-del="'+i+'" style="position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;'
+      + 'background:#A8382C;color:#fff;border:0;font-size:.65rem;line-height:1">✕</button>'
+      + '</div>'
+    ).join("");
+    cont.querySelectorAll("img[data-idx]").forEach(img=>{
+      img.addEventListener("click", ()=> abrirRecorteDe(parseInt(img.getAttribute("data-idx"),10)));
+    });
+    cont.querySelectorAll("[data-del]").forEach(btn=>{
+      btn.addEventListener("click", (e)=>{
+        e.stopPropagation();
+        const i = parseInt(btn.getAttribute("data-del"),10);
+        if(!confirm("¿Quitar esta foto del aviso?")) return;
+        EDIT_FOTOS.splice(i,1);
+        if(EDIT_FOTO_IDX >= EDIT_FOTOS.length) EDIT_FOTO_IDX = Math.max(0, EDIT_FOTOS.length-1);
+        pintarMiniaturasEdicion();
+        if(EDIT_FOTOS.length) abrirRecorteDe(EDIT_FOTO_IDX);
+        else document.getElementById("edRecorteWrap").innerHTML = "";
+      });
+    });
+  }
+
+  function abrirRecorteDe(i){
+    EDIT_FOTO_IDX = i;
+    pintarMiniaturasEdicion();
+    const wrap = document.getElementById("edRecorteWrap");
+    wrap.innerHTML = '<div class="recorte" id="recorte"><img id="recorteImg" src="'+escA(EDIT_FOTOS[i])+'" alt="">'
+      + '<div class="marco" id="recorteMarco"><span class="tirador"></span></div></div>'
+      + '<div class="recorte-ayuda">Arrastrá el marco para elegir qué parte queda de esta foto. '
+      + 'Si no lo tocás, se guarda igual. Podés recortar cada foto por separado.</div>';
+    prepararRecorte();
+  }
+
   // Marco de recorte que se puede mover y agrandar con el dedo
-  let RECORTE = null;
+  let RECORTES = {};   // uno por índice de foto, para no perder el trabajo al cambiar de foto
+  let RECORTE = null;  // el que está activo ahora mismo (referencia dentro de RECORTES[idx])
   function prepararRecorte(){
     const cont = document.getElementById("recorte");
     const marco = document.getElementById("recorteMarco");
     const img = document.getElementById("recorteImg");
-    RECORTE = { x:10, y:10, w:80, h:60, tocado:false };   // en porcentaje
+    if(!RECORTES[EDIT_FOTO_IDX]) RECORTES[EDIT_FOTO_IDX] = { x:10, y:10, w:80, h:60, tocado:false };
+    RECORTE = RECORTES[EDIT_FOTO_IDX];   // en porcentaje
     function pintar(){
       marco.style.left = RECORTE.x + "%";
       marco.style.top = RECORTE.y + "%";
@@ -2334,6 +2391,23 @@
     });
   }
 
+  // Recorta una foto puntual y la sube; devuelve la URL nueva o la original si no se tocó / falla
+  async function recortarFotoDe(idx){
+    const url = EDIT_FOTOS[idx];
+    const r = RECORTES[idx];
+    if(!url || !r || !r.tocado) return url;
+    RECORTE = r;   // recortarFoto() usa la variable global RECORTE
+    const blob = await recortarFoto(url);
+    if(!blob) return url;
+    try{
+      const nombre = "recorte-" + Date.now() + "-" + idx + ".jpg";
+      const { error } = await sb.storage.from("aportes-fotos").upload(nombre, blob, { contentType:"image/jpeg" });
+      if(error) return url;
+      const { data } = sb.storage.from("aportes-fotos").getPublicUrl(nombre);
+      return data.publicUrl;
+    }catch(e){ return url; }
+  }
+
   async function guardarAporte(a){
     const btn = document.getElementById("edGuardar");
     btn.disabled = true; btn.textContent = "Guardando…";
@@ -2341,22 +2415,18 @@
       titulo: document.getElementById("edTitulo").value.trim() || null,
       descripcion: document.getElementById("edDesc").value.trim() || null,
     };
-    const fotoActual = (Array.isArray(a.fotos) && a.fotos.length ? a.fotos[0] : a.foto_url) || "";
-    if(fotoActual && RECORTE && RECORTE.tocado){
-      btn.textContent = "Recortando la foto…";
-      const blob = await recortarFoto(fotoActual);
-      if(blob){
-        try{
-          const nombre = "recorte-" + Date.now() + ".jpg";
-          const { error } = await sb.storage.from("aportes-fotos").upload(nombre, blob, { contentType:"image/jpeg" });
-          if(!error){
-            const { data } = sb.storage.from("aportes-fotos").getPublicUrl(nombre);
-            cambios.foto_url = data.publicUrl;
-            const otras = Array.isArray(a.fotos) ? a.fotos.slice(1) : [];
-            cambios.fotos = [data.publicUrl].concat(otras);
-          }
-        }catch(e){}
+    // se procesan TODAS las fotos tocadas, en el orden en que quedaron (después de borrar/reordenar)
+    if(EDIT_FOTOS.length){
+      const finales = [];
+      for(let i = 0; i < EDIT_FOTOS.length; i++){
+        if(RECORTES[i] && RECORTES[i].tocado) btn.textContent = "Recortando foto " + (i+1) + " de " + EDIT_FOTOS.length + "…";
+        finales.push(await recortarFotoDe(i));
       }
+      cambios.fotos = finales;
+      cambios.foto_url = finales[0];
+    } else {
+      cambios.fotos = null;
+      cambios.foto_url = null;
     }
     const { error } = await sb.from("aportes").update(cambios).eq("id", a.id);
     btn.disabled = false; btn.textContent = "Guardar cambios";
