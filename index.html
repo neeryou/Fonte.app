@@ -136,6 +136,10 @@
   .section-eyebrow::before{ content:''; order:2; flex:1; height:.5px; background:var(--line-strong); }
   .section-eyebrow .src, .section-eyebrow .c{ order:3; font-family:var(--mono); font-size:.56rem; color:var(--ink-faint); font-variant-numeric:tabular-nums; background:none; padding:0; }
   .pp-grid{ display:grid; grid-template-columns:1fr; gap:20px; }
+  /* en celular: primero la nota con foto, después los rieles de texto */
+  .pp-center{ order:1; }
+  .pp-left{ order:2; }
+  .pp-right{ order:3; }
   .rail-title{ font-family:var(--sans); text-transform:uppercase; letter-spacing:.1em; font-size:.64rem; font-weight:700; color:var(--ink-faint); padding-bottom:7px; border-bottom:2px solid var(--ink); margin-bottom:2px; }
   .rail-item{ display:block; padding:11px 0; border-top:1px solid var(--line); }
   .rail-item:first-of-type{ border-top:0; }
@@ -236,7 +240,7 @@
   /* desktop: columnas de diario */
   @media (min-width:760px){
     .pp-grid{ grid-template-columns:230px 1fr 230px; gap:0; }
-    .pp-left{ padding-right:20px; }
+    .pp-left{ order:1; padding-right:20px; } .pp-center{ order:2; } .pp-right{ order:3; }
     .pp-center{ padding:0 24px; border-left:1px solid var(--line); border-right:1px solid var(--line); }
     .pp-right{ padding-left:20px; }
     .zgrid{ grid-template-columns:1.35fr 1fr; gap:0; }
@@ -1294,8 +1298,12 @@
     });
     if(typeof pintarContadorTemas === "function") pintarContadorTemas();
 
-    // banda urgente
-    const urgentes = NOTICIAS.filter(n => n.urgente).slice(0,4);
+    // banda urgente: primero lo urgente de Quitilipi/barrio, y solo si no alcanza
+    // se completa con lo urgente de la región — "cerca tuyo" tiene que ser cerca de verdad.
+    const urgentesTodas = NOTICIAS.filter(n => n.urgente);
+    const urgCiudad = urgentesTodas.filter(n => ONDAS_LOCALES.has(n.onda));
+    const urgResto = urgentesTodas.filter(n => !ONDAS_LOCALES.has(n.onda));
+    const urgentes = urgCiudad.concat(urgResto).slice(0,4);
     const band = document.getElementById("urgentBand");
     if(urgentes.length){
       band.classList.add("show");
