@@ -3016,7 +3016,10 @@
   // ================= GALERÍA =================
   function fotosDe(o){
     if(!o) return [];
-    if(Array.isArray(o.fotos) && o.fotos.length) return o.fotos;
+    // 'fotos' puede volver como arreglo ya interpretado o como texto JSON, según el pedido
+    let arr = o.fotos;
+    if(typeof arr === "string"){ try{ arr = JSON.parse(arr); }catch(e){ arr = null; } }
+    if(Array.isArray(arr) && arr.length) return arr;
     if(o.foto_url) return [o.foto_url];      // aportes
     if(o.imagen_url) return [o.imagen_url];  // noticias
     return [];
