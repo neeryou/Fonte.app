@@ -71,6 +71,10 @@
   .kicker .dot{ width:6px; height:6px; border-radius:0; background:var(--region); }
   .src{ font-family:var(--sans); font-size:.6rem; font-weight:700; color:var(--ink-soft); background:none;
     border:0; padding:0; letter-spacing:.06em; text-transform:uppercase; }
+  /* etiqueta de crédito de fuente: la única con fondo de tinta, como un sello de imprenta */
+  .fuente-tag{ font-family:var(--sans); font-size:.58rem; font-weight:800; color:var(--paper); background:var(--ink);
+    border:0; padding:4px 9px; letter-spacing:.1em; text-transform:uppercase; border-radius:2px; display:inline-block; }
+  [data-tema="oscuro"] .fuente-tag{ background:var(--paper); color:var(--ink); }
   .byl{ display:flex; align-items:center; gap:9px; margin-top:12px; padding-top:9px; border-top:.5px solid var(--line); }
   .byl .src{ }
   .byl .src:not(:first-child){ font-family:var(--mono); font-size:.6rem; text-transform:none; letter-spacing:0; color:var(--ink-faint); font-weight:500; }
@@ -816,7 +820,7 @@
   <div class="sheet-body">
     <div class="kicker" id="s-kicker"><span class="dot"></span><span id="s-place"></span></div>
     <h2 class="h" id="s-title" style="margin-top:8px"></h2>
-    <div class="s-src"><span class="src" id="s-src"></span><span id="s-urg"></span>
+    <div class="s-src"><span class="fuente-tag" id="s-src"></span><span id="s-urg"></span>
       <button class="share-btn" id="shareBtn">↗ Compartir</button>
     </div>
     <div class="audio-ctrl" id="audioCtrl">
@@ -1249,7 +1253,7 @@
       + '<span class="kicker"><span class="dot" style="background:'+colorDe(lead.onda)+'"></span>'+(lead.lugar?esc(lead.lugar):nombreDe(lead.onda))+'</span>'
       + '<h2 class="h">'+esc(lead.titulo)+'</h2>'
       + (lead.resumen_corto?'<p class="dek">'+esc(lead.resumen_corto)+'</p>':'')
-      + '<div class="byl">'+(lead.fuente_etiqueta?'<span class="src">'+esc(lead.fuente_etiqueta)+'</span>':'')
+      + '<div class="byl">'+(lead.fuente_etiqueta?'<span class="fuente-tag">'+esc(lead.fuente_etiqueta)+'</span>':'')
       + '<span class="src">'+tiempoDesde(lead.created_at)+'</span></div></a>';
     html += resto.map(n=>
       '<a class="article zitem'+(leidos.has(String(n.id))?" leida":"")+'" data-id="'+esc(n.id)+'" style="display:flex;gap:12px;padding:14px 0;border-top:1px solid var(--line);align-items:flex-start">'
@@ -1333,7 +1337,7 @@
         return '<a class="u-item article" data-id="'+esc(n.id)+'">'
           + '<h3 class="h">'+esc(n.titulo)+'</h3>'
           + '<div class="tags"><span class="why urg">⚡ '+lugar+'</span>'
-          + (n.fuente_etiqueta?'<span class="src">'+esc(n.fuente_etiqueta)+'</span>':'') + '</div>'
+          + (n.fuente_etiqueta?'<span class="fuente-tag">'+esc(n.fuente_etiqueta)+'</span>':'') + '</div>'
           + timelineHtml + '</a>';
       }).join("");
     } else { band.classList.remove("show"); }
@@ -1391,7 +1395,7 @@
         + '<span class="kicker"><span class="dot"></span>'+leadLugar+'</span>'
         + '<h2 class="h">'+esc(lead.titulo)+'</h2>'
         + (lead.resumen_corto?'<p class="dek">'+esc(lead.resumen_corto)+'</p>':'')
-        + '<div class="byl">'+(lead.fuente_etiqueta?'<span class="src">'+esc(lead.fuente_etiqueta)+'</span>':'')+'<span class="src">'+tiempoDesde(lead.created_at)+'</span></div></a>';
+        + '<div class="byl">'+(lead.fuente_etiqueta?'<span class="fuente-tag">'+esc(lead.fuente_etiqueta)+'</span>':'')+'<span class="src">'+tiempoDesde(lead.created_at)+'</span></div></a>';
       if(subLead){
         const subLugar = subLead.lugar ? esc(subLead.lugar) : nombreDe(subLead.onda);
         html += '<a class="article pp-sub" data-id="'+esc(subLead.id)+'" style="--w:'+colorDe(subLead.onda)+'">'
@@ -1444,7 +1448,7 @@
         + '<div class="ph-img" style="'+bgDe(zLead)+'"></div>'
         + '<h3 class="h">'+esc(zLead.titulo)+'</h3>'
         + (zLead.resumen_corto?'<p class="dek">'+esc(zLead.resumen_corto)+'</p>':'')
-        + '<div class="byl">'+zFav+zCatTag+(zLead.fuente_etiqueta?'<span class="src">'+esc(zLead.fuente_etiqueta)+'</span>':'')+'<span class="src">'+tiempoDesde(zLead.created_at)+'</span></div></a>';
+        + '<div class="byl">'+zFav+zCatTag+(zLead.fuente_etiqueta?'<span class="fuente-tag">'+esc(zLead.fuente_etiqueta)+'</span>':'')+'<span class="src">'+tiempoDesde(zLead.created_at)+'</span></div></a>';
       // con suficiente volumen en la zona, una mini-tira deslizable justo después del lead —
       // la misma técnica del cierre, pero como parte normal de la interfaz, no solo al final
       const miniN = notas.length >= 7 ? Math.min(3, notas.length - 5) : 0;
