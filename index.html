@@ -744,6 +744,9 @@
 <body>
 
 <div class="wrap">
+  <div style="background:#FF0000;color:#fff;text-align:center;padding:14px;font-family:sans-serif;font-weight:900;font-size:1.1rem;letter-spacing:.03em">
+    ✅ VERSIÓN NUEVA CARGADA — CÓDIGO 4471
+  </div>
   <div class="plate">
     <div class="plate-row">
       <div class="side" id="fechaIzq">Quitilipi, Chaco</div>
@@ -1548,6 +1551,12 @@
       videoEl.style.display = "none";
       videoEl.innerHTML = "";
       const listaN = fotosDe(n);
+      if(typeof avisoDebug === "function"){
+        avisoDebug("nota " + n.id + " — n.fotos tipo=" + (typeof n.fotos)
+          + " crudo=" + JSON.stringify(n.fotos)
+          + " | n.imagen_url=" + (n.imagen_url || "(vacío)")
+          + " | fotosDe() devolvió " + listaN.length + " item(s)");
+      }
       if(listaN.length > 1){
         heroEl.setAttribute("style", "display:block;margin-bottom:16px");
         heroEl.innerHTML = htmlGaleria(listaN);
