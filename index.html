@@ -2065,10 +2065,24 @@
     const cat = CAT_APORTE.find(c=>c.id===a.categoria) || {label:"Aporte", icon:"📍"};
     const fotoEl = document.getElementById("aporteFoto");
     const lista = fotosDe(a);
+    if(typeof avisoDebug === "function"){
+      avisoDebug("aporte " + id + " — a.fotos tipo=" + (typeof a.fotos)
+        + " | crudo=" + JSON.stringify(a.fotos)
+        + " | foto_url=" + (a.foto_url||"(vacío)")
+        + " | fotosDe() devolvió " + lista.length + " item(s)");
+    }
     if(lista.length){
       fotoEl.setAttribute("style", "display:block;margin-bottom:12px");
       fotoEl.innerHTML = htmlGaleria(lista);
       activarGalerias(fotoEl);
+      if(typeof avisoDebug === "function"){
+        setTimeout(()=>{
+          const imgs = fotoEl.querySelectorAll("img").length;
+          const rowW = fotoEl.querySelector(".gal-row");
+          avisoDebug("→ <img> pintadas en pantalla: " + imgs
+            + (rowW ? " | ancho de la fila: " + rowW.scrollWidth + "px / visible: " + rowW.clientWidth + "px" : " | (una sola foto, sin fila)"));
+        }, 200);
+      }
     } else { fotoEl.style.display = "none"; fotoEl.innerHTML = ""; }
     document.getElementById("aporteCatLbl").querySelector("span:last-child").textContent = cat.icon + " " + cat.label;
     document.getElementById("aporteTitulo").textContent = a.titulo || cat.label;
