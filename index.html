@@ -419,7 +419,8 @@
 
   /* ===== galería de fotos ===== */
   .galeria{ position:relative; margin-bottom:14px; }
-  .gal-row{ display:flex; gap:8px; overflow-x:auto; scrollbar-width:none; scroll-snap-type:x mandatory; border-radius:10px; }
+  .gal-row{ display:flex; gap:8px; overflow-x:auto; scrollbar-width:none; scroll-snap-type:x mandatory; border-radius:10px;
+    touch-action: pan-x; }  /* le avisa al navegador que acá el gesto es horizontal, para que no se lo quede el panel vertical */
   .gal-row::-webkit-scrollbar{ display:none; }
   .gal-row img{ flex:0 0 100%; scroll-snap-align:center; width:100%; aspect-ratio:4/3; object-fit:cover; border-radius:10px; background:var(--paper-2); }
   .gal-dots{ display:flex; justify-content:center; gap:5px; margin-top:8px; }
