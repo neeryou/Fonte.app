@@ -3131,14 +3131,21 @@
   }
   document.getElementById("lightboxCerrar").addEventListener("click", cerrarFoto);
   document.getElementById("lightbox").addEventListener("click", (e)=>{
-    if(e.target.id !== "lightboxCerrar") cerrarFoto();
+    // cerrar solo si tocás el fondo, NO si tocás la foto agrandada en sí
+    if(e.target.id === "lightbox" || e.target.id === "lightboxCerrar") cerrarFoto();
   });
   // cualquier foto de galería o portada se abre en grande
   document.addEventListener("click", (e)=>{
-    // cualquier foto dentro del sheet de nota o de aporte se abre en grande
     const img = e.target.closest("#sheet img, #sheetAporte img, .galeria img, #s-hero img, #aporteFoto img");
+    if(typeof avisoDebug === "function"){
+      avisoDebug("toque detectado — elemento: <" + e.target.tagName.toLowerCase() + "> "
+        + "clase=\"" + (e.target.className||"") + "\" | "
+        + "¿encontró una <img> válida? " + (img ? "SÍ (" + (img.src||"").slice(-40) + ")" : "NO"));
+    }
     if(img && img.src && !img.closest(".s-video") && !img.closest("iframe")){
       abrirFoto(img.src);
+      if(typeof avisoDebug === "function") avisoDebug("→ abrirFoto() llamada. ¿#lightbox tiene clase show ahora? "
+        + document.getElementById("lightbox").classList.contains("show"));
     }
   });
 
