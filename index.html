@@ -2658,6 +2658,23 @@
     aplicarTema(actual === "oscuro" ? "claro" : "oscuro");
   });
 
+  function toastFonte(msg){
+    let t = document.getElementById("toastFonte");
+    if(!t){
+      t = document.createElement("div");
+      t.id = "toastFonte";
+      t.style.cssText = "position:fixed;left:50%;bottom:calc(90px + env(safe-area-inset-bottom));"
+        + "transform:translateX(-50%);background:var(--ink);color:var(--paper);font-family:var(--sans);"
+        + "font-size:.8rem;font-weight:600;padding:11px 18px;border-radius:8px;z-index:900;max-width:86%;"
+        + "text-align:center;box-shadow:0 8px 20px rgba(0,0,0,.28);opacity:0;transition:opacity .25s";
+      document.body.appendChild(t);
+    }
+    t.textContent = msg;
+    requestAnimationFrame(()=>{ t.style.opacity = "1"; });
+    clearTimeout(t._h);
+    t._h = setTimeout(()=>{ t.style.opacity = "0"; }, 3200);
+  }
+
   // ================= NOTIFICACIONES =================
   let swReg = null;
   if("serviceWorker" in navigator){
@@ -2671,7 +2688,20 @@
     pip.style.display = (soportaNotif() && Notification.permission === "default") ? "block" : "none";
   }
   document.getElementById("notifActivar").addEventListener("click", async ()=>{
-    if(!soportaNotif()){ return; }
+    if(!soportaNotif()){
+      const esIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+      const instalada = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+      if(esIOS && !instalada){
+        toastFonte("En iPhone hay que instalar Fonte primero: Compartir → Agregar a inicio.");
+      } else {
+        toastFonte("Este navegador no permite avisos. Probá desde Chrome o instalando la app.");
+      }
+      return;
+    }
+    if(Notification.permission === "denied"){
+      toastFonte("Los avisos están bloqueados para Fonte en tu celular. Se activan desde Ajustes del navegador.");
+      return;
+    }
     if(Notification.permission === "granted"){
       notificar("Ya están activados ✓", "Te avisamos cuando haya algo importante en tu ciudad.", "fonte-ya");
       return;
