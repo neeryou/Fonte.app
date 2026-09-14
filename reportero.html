@@ -1549,12 +1549,18 @@
       + '<div class="txt">'+escA(a.descripcion || a.texto || "Sin descripción.")+'</div>'
       + '<div class="meta">'+mapa+'<br>'+fecha+'<br>Estado: <b>'+(estados[a.estado]||a.estado)+'</b></div>'
       + (a.foto_url ? '<div class="meta"><a href="'+escA(a.foto_url)+'" target="_blank" rel="noopener">Abrir foto en tamaño completo ↗</a></div>' : '')
-      + '<button class="compartir" id="visorEditar" style="background:var(--region)">✎ Editar este aviso</button>'
+      + bloqueFormatoCompartir(a)
+      + '<button class="compartir" id="btnCompartirVisor">↗ Compartir en redes</button>'
+      + '<button class="compartir" id="btnCopiarTextoVisor" style="background:none;border:1px solid var(--line);color:var(--ink)">📋 Copiar el texto</button>'
+      + '<button class="compartir" id="visorEditar" style="background:var(--region);margin-top:8px">✎ Editar este aviso</button>'
       + '<button class="compartir" id="visorBorrarAporte" style="background:none;border:1px solid #A8382C;color:#A8382C;margin-top:8px">🗑 Borrar este aporte</button>'
       + '<div id="editorAporte"></div>'
       + '<button class="cerrar" id="visorCerrar">Cerrar</button>'
       + '</div>';
     document.getElementById("visorBack").classList.add("show");
+    engancharFormatoCompartir(a);
+    document.getElementById("btnCompartirVisor").addEventListener("click", (e)=> compartirDesdeConsola(a, "aporte", e.currentTarget));
+    document.getElementById("btnCopiarTextoVisor").addEventListener("click", (e)=> copiarTextoConsola(a, "aporte", e.currentTarget));
     document.getElementById("visorCerrar").addEventListener("click", cerrarVisor);
     document.getElementById("visorEditar").addEventListener("click", ()=> abrirEditorAporte(a));
     document.getElementById("visorBorrarAporte").addEventListener("click", async (e)=>{
@@ -1972,6 +1978,7 @@
     // Aclaramos arriba de todo qué es, para que nadie lo confunda con una noticia.
     if(n.__tipo === "o") partes.push("🏷️ ESPACIO DE UN COMERCIO", "");
     else if(n.__tipo === "c") partes.push("📢 COMUNICADO OFICIAL", "");
+    else if(n.__tipo === "a") partes.push("📍 AVISO DE UN VECINO", "");
     partes.push(n.titulo || "");
     const resumen = n.resumen_corto || n.resumen_extendido || "";
     if(resumen) partes.push("", resumen.length > 220 ? resumen.slice(0,220).trim() + "…" : resumen);
@@ -2045,13 +2052,14 @@
     const img = urgente ? null : await cargarImagen(lista[0]);
 
     const TINTA = "#16140F", PAPEL = "#FDFCF9", CORAL = "#FF4B3E", ROJO = "#B23A2E";
-    const DORADO = "#8A6A22", VERDE = "#22503A";
+    const DORADO = "#8A6A22", VERDE = "#22503A", AZUL = "#1B3A5C";
     const lugar = (n.lugar || "").toUpperCase();
 
-    // Cinta que dice qué es: un anuncio nunca puede parecer una noticia.
+    // Cinta que dice qué es: un anuncio (o un aviso de vecino) nunca puede parecer una noticia.
     const TIPOS = {
       o: { txt:"ESPACIO DE UN COMERCIO", color:DORADO },
       c: { txt:"COMUNICADO OFICIAL",     color:VERDE  },
+      a: { txt:"AVISO DE UN VECINO",     color:AZUL   },
     };
     const cinta = TIPOS[n.__tipo] || null;
 
@@ -2194,6 +2202,12 @@
     if(tipo === "comunicado"){
       return { id:o.id, __tipo:"c", titulo:o.titulo, resumen_corto:o.texto || "", lugar:o.institucion || "",
                urgente:!!o.urgente, imagen_url:null, fuente_etiqueta:o.institucion };
+    }
+    if(tipo === "aporte"){
+      const cat = CAT_APORTE.find(x=>x.id===o.categoria) || {label:o.categoria || "Aviso"};
+      return { id:o.id, __tipo:"a", titulo:o.titulo || cat.label, resumen_corto:o.descripcion || "",
+               lugar:o.lugar_texto || "", imagen_url:o.foto_url || null, fotos:o.fotos || null,
+               fuente_etiqueta:"Aviso de un vecino" };
     }
     return Object.assign({}, o, { __tipo:"n" });
   }
