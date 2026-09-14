@@ -249,6 +249,9 @@
     .pp-left{ order:1; padding-right:20px; } .pp-center{ order:2; } .pp-right{ order:3; }
     .pp-center{ padding:0 24px; border-left:1px solid var(--line); border-right:1px solid var(--line); }
     .pp-right{ padding-left:20px; }
+    /* Ciudad no lleva riel "Cerca tuyo": el centro ocupa ese espacio */
+    .pp-grid.sin-cerca{ grid-template-columns:1fr 230px; }
+    .pp-grid.sin-cerca .pp-center{ border-left:0; padding-left:0; }
     .zgrid{ grid-template-columns:1.35fr 1fr; gap:0; }
     .z-lead{ padding-right:26px; }
     .zlist{ padding-left:26px; border-left:1px solid var(--line); }
@@ -422,16 +425,20 @@
   .accion-btn::after{ content:"↗"; opacity:.75; }
 
   /* ===== galería de fotos ===== */
-  .galeria{ position:relative; margin-bottom:14px; }
+  .galeria{ position:relative; margin-bottom:14px; aspect-ratio:auto; overflow:visible; }
   .gal-row{ display:flex; gap:8px; overflow-x:auto; scrollbar-width:none; scroll-snap-type:x mandatory; border-radius:10px;
     touch-action: pan-x; }  /* le avisa al navegador que acá el gesto es horizontal, para que no se lo quede el panel vertical */
   .gal-row::-webkit-scrollbar{ display:none; }
   .gal-row img{ flex:0 0 100%; scroll-snap-align:center; width:100%; aspect-ratio:4/3; object-fit:cover; border-radius:10px; background:var(--paper-2); }
-  .gal-dots{ display:flex; justify-content:center; gap:5px; margin-top:8px; }
-  .gal-dots i{ width:6px; height:6px; border-radius:50%; background:var(--line-strong); transition:.2s; }
+  .gal-dots{ display:flex; justify-content:center; gap:7px; margin-top:8px; }
+  .gal-dots i{ width:6px; height:6px; border-radius:50%; background:var(--line-strong); transition:.2s; cursor:pointer; padding:6px; background-clip:content-box; }
   .gal-dots i.on{ background:var(--ink-soft); width:16px; border-radius:999px; }
   .gal-contador{ position:absolute; top:9px; right:9px; background:rgba(20,18,14,.65); color:#fff;
-    font-family:var(--sans); font-size:.62rem; font-weight:700; padding:3px 9px; border-radius:999px; backdrop-filter:blur(4px); }
+    font-family:var(--sans); font-size:.62rem; font-weight:700; padding:3px 9px; border-radius:999px; backdrop-filter:blur(4px); pointer-events:none; }
+  .gal-nav{ position:absolute; top:50%; transform:translateY(-50%); width:32px; height:32px; border-radius:50%; border:0;
+    background:rgba(20,18,14,.5); color:#fff; font-family:var(--sans); font-size:1.1rem; line-height:1;
+    display:flex; align-items:center; justify-content:center; cursor:pointer; backdrop-filter:blur(4px); }
+  .gal-nav.prev{ left:8px; } .gal-nav.next{ right:8px; }
   .prev-thumb{ width:56px; height:56px; border-radius:8px; object-fit:cover; border:1px solid var(--line); }
 
   /* ===== invitación a instalar ===== */
@@ -836,6 +843,7 @@
     <div id="s-video" style="display:none;margin-bottom:16px;border-radius:6px;overflow:hidden;aspect-ratio:16/9;"></div>
     <div style="font-family:var(--sans);font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--ink-faint);margin-bottom:8px">Resumen de Fonte</div>
     <div id="s-body"></div>
+    <div id="s-galeria" style="display:none"></div>
     <div class="dato-extra" id="s-dato" style="display:none"></div>
     <a class="accion-btn" id="s-accion" target="_blank" rel="noopener" style="display:none"></a>
     <a class="verorig" id="s-orig" target="_blank" rel="noopener">Ver original ↗</a>
@@ -1239,33 +1247,176 @@
         + '<div class="sub">Cuando aparezca algo de Quitilipi o la zona, lo vas a ver acá.</div></div>';
       return;
     }
-    const leidos = getLeidos();
+    // mismo criterio de orden que "Más noticias" (no leídas primero, más cerca primero,
+    // más nueva primero) — para que las dos pestañas se sientan la misma app.
+    const leidosPP = getLeidos();
     const ordenadas = [...locales].sort((a,b)=>{
-      const la = leidos.has(String(a.id)) ? 1 : 0, lb = leidos.has(String(b.id)) ? 1 : 0;
+      const la = leidosPP.has(String(a.id)) ? 1 : 0;
+      const lb = leidosPP.has(String(b.id)) ? 1 : 0;
       if(la !== lb) return la - lb;
+      const ra = RANGO_KM[a.onda]||9, rb = RANGO_KM[b.onda]||9;
+      if(ra !== rb) return ra - rb;
       return new Date(b.created_at) - new Date(a.created_at);
     });
-    const lead = ordenadas[0], resto = ordenadas.slice(1, 12);
-    let html = '<div class="section-eyebrow" style="border-bottom:2px solid var(--ink);padding-bottom:6px;margin-bottom:13px">'
-      + '<span class="t">Noticias de tu ciudad</span><span class="src">'+locales.length+' '+(locales.length===1?'noticia':'noticias')+'</span></div>';
-    html += '<a class="article lead'+(leidos.has(String(lead.id))?" leida":"")+'" data-id="'+esc(lead.id)+'" style="--w:'+colorDe(lead.onda)+'">'
-      + '<div class="ph-img" style="'+bgDe(lead)+'"></div>'
-      + '<span class="kicker"><span class="dot" style="background:'+colorDe(lead.onda)+'"></span>'+(lead.lugar?esc(lead.lugar):nombreDe(lead.onda))+'</span>'
-      + '<h2 class="h">'+esc(lead.titulo)+'</h2>'
-      + (lead.resumen_corto?'<p class="dek">'+esc(lead.resumen_corto)+'</p>':'')
-      + '<div class="byl">'+(lead.fuente_etiqueta?'<span class="fuente-tag">'+esc(lead.fuente_etiqueta)+'</span>':'')
-      + '<span class="src">'+tiempoDesde(lead.created_at)+'</span></div></a>';
-    html += resto.map(n=>
-      '<a class="article zitem'+(leidos.has(String(n.id))?" leida":"")+'" data-id="'+esc(n.id)+'" style="display:flex;gap:12px;padding:14px 0;border-top:1px solid var(--line);align-items:flex-start">'
-      + '<div class="ph-img" style="width:66px;height:66px;flex:0 0 auto;aspect-ratio:auto;'+bgDe(n)+'"></div>'
-      + '<div style="flex:1;min-width:0"><span class="kicker" style="font-size:.58rem"><span class="dot" style="background:'+colorDe(n.onda)+'"></span>'+(n.lugar?esc(n.lugar):nombreDe(n.onda))+'</span>'
-      + '<h4 class="h" style="font-size:.94rem;margin-top:4px">'+esc(n.titulo)+'</h4>'
-      + '<div class="byl" style="margin-top:5px"><span class="src">'+tiempoDesde(n.created_at)+'</span></div></div></a>'
-    ).join("");
-    cont.innerHTML = html;
+    const conOndas = ONDAS.filter(o => ONDAS_LOCALES.has(o.id) && locales.some(n => n.onda === o.id));
+
+    // mismo bloque que arma "Más noticias" (Primera plana + zonas), pero sin el
+    // riel "Cerca tuyo": acá ya estás viendo solo lo local, no hace falta.
+    cont.innerHTML = htmlPrimeraPlanaYZonas(ordenadas, conOndas, { conCercaTuyo:false });
+
+    const yaLeidas = getLeidos();
     cont.querySelectorAll(".article[data-id]").forEach(el=>{
+      if(yaLeidas.has(String(el.getAttribute("data-id")))) el.classList.add("leida");
       el.addEventListener("click", ()=> abrir(el.getAttribute("data-id")));
     });
+  }
+
+  // Arma "Primera plana" + las zonas por onda debajo — lo usan tanto Ciudad como
+  // Más noticias, para que las dos pestañas compartan el mismo lenguaje visual.
+  // conCercaTuyo controla si va el riel izquierdo de "Cerca tuyo" (en Ciudad no hace
+  // falta: ya estás viendo solo lo local).
+  function htmlPrimeraPlanaYZonas(ordenadas, conOndas, opts){
+    opts = opts || {};
+    const conCercaTuyo = opts.conCercaTuyo !== false;
+    let html = "";
+    const lead = ordenadas[0];
+    if(!lead) return html;
+    const subLead = ordenadas[1];
+    const recientes = [...ordenadas].sort((a,b)=> new Date(b.created_at)-new Date(a.created_at)).slice(0,5);
+
+    html += '<section class="pp" id="pp">';
+    html += '<div class="section-eyebrow"><span class="t">Primera plana</span><span class="src">'+ordenadas.length+' '+(ordenadas.length===1?'noticia':'noticias')+'</span></div>';
+    html += '<div class="pp-grid'+(conCercaTuyo?'':' sin-cerca')+'">';
+
+    if(conCercaTuyo){
+      const cercanas = ordenadas.slice(0, 6);
+      html += '<aside class="pp-left"><div class="rail-title">Cerca tuyo</div>';
+      cercanas.slice(2,6).forEach(n=>{
+        const lugar = n.lugar ? esc(n.lugar) : nombreDe(n.onda);
+        html += '<a class="article rail-item" data-id="'+esc(n.id)+'" style="--w:'+colorDe(n.onda)+'">'
+          + '<span class="kicker"><span class="dot"></span>'+lugar+'</span>'
+          + '<h3 class="h">'+esc(n.titulo)+'</h3></a>';
+      });
+      html += '</aside>';
+    }
+
+    html += '<div class="pp-center">';
+    const leadLugar = lead.lugar ? esc(lead.lugar) : nombreDe(lead.onda);
+    html += '<a class="article lead" data-id="'+esc(lead.id)+'" style="--w:'+colorDe(lead.onda)+'">'
+      + '<div class="ph-img" style="'+bgDe(lead)+'"></div>'
+      + '<span class="kicker"><span class="dot"></span>'+leadLugar+'</span>'
+      + '<h2 class="h">'+esc(lead.titulo)+'</h2>'
+      + (lead.resumen_corto?'<p class="dek">'+esc(lead.resumen_corto)+'</p>':'')
+      + '<div class="byl">'+(lead.fuente_etiqueta?'<span class="fuente-tag">'+esc(lead.fuente_etiqueta)+'</span>':'')+'<span class="src">'+tiempoDesde(lead.created_at)+'</span></div></a>';
+    if(subLead){
+      const subLugar = subLead.lugar ? esc(subLead.lugar) : nombreDe(subLead.onda);
+      html += '<a class="article pp-sub" data-id="'+esc(subLead.id)+'" style="--w:'+colorDe(subLead.onda)+'">'
+        + '<div class="ph-img sq" style="'+bgDe(subLead)+'"></div>'
+        + '<div><span class="kicker"><span class="dot"></span>'+subLugar+'</span>'
+        + '<h3 class="h">'+esc(subLead.titulo)+'</h3>'
+        + (subLead.resumen_corto?'<p class="dek">'+esc(subLead.resumen_corto)+'</p>':'') + '</div></a>';
+    }
+    html += '</div>';
+
+    html += '<aside class="pp-right recientes"><div class="rail-title">Últimas</div>';
+    recientes.forEach(n=>{
+      html += '<a class="article rail-item" data-id="'+esc(n.id)+'">'
+        + '<span class="tt">'+tiempoDesde(n.created_at)+'</span>'
+        + '<h3 class="h">'+esc(n.titulo)+'</h3></a>';
+    });
+    html += '</aside>';
+
+    html += '</div></section>';
+
+    // ===== ONDAS densas debajo =====
+    const leidos = getLeidos();
+    const seed = semillaRotativa();
+    let contadorDatos = 0; // para que el "dato destacado" salga salteado, no en cada nota que tenga cifras
+    // con volumen suficiente, reservamos 2 notas para un cierre en mosaico ("también pasó hoy")
+    const paraMosaico = ordenadas.length >= 8 ? ordenadas.slice(-Math.min(8, Math.floor(ordenadas.length/3))) : [];
+    const idsMosaico = new Set(paraMosaico.map(n=>String(n.id)));
+    for(const o of conOndas){
+      const notas = ordenadas.filter(n => n.onda === o.id && !idsMosaico.has(String(n.id))).sort((a,b)=>{
+        const fa = favoritos.includes(a.categoria) ? 1 : 0;
+        const fb = favoritos.includes(b.categoria) ? 1 : 0;
+        if(fa !== fb) return fb - fa; // favoritos primero
+        const la = leidos.has(String(a.id)) ? 1 : 0;
+        const lb = leidos.has(String(b.id)) ? 1 : 0;
+        if(la !== lb) return la - lb; // no leídas primero
+        return ordenRotativo(a.id, seed) - ordenRotativo(b.id, seed); // varía cada 25 min, no siempre el mismo orden
+      });
+      if(!notas.length) continue;
+      html += '<section class="zone" id="z-'+o.id+'" style="--w:'+o.color+'">';
+      html += '<div class="zlabel"><span class="gl"></span><span class="nm">'+esc(o.nombre)+'</span><span class="km">'+notas.length+' '+(notas.length===1?'noticia':'noticias')+'</span></div>';
+      html += '<div class="zgrid">';
+      const zLead = notas[0];
+      const zLugar = zLead.lugar ? esc(zLead.lugar) : o.nombre;
+      const zFav = favoritos.includes(zLead.categoria) ? '<span class="why int">★ '+(CAT_NOMBRE[zLead.categoria]||"")+'</span>' : '';
+      const zColor = CAT_COLOR[zLead.categoria] || "#8B8271";
+      const zCatTag = (!favoritos.includes(zLead.categoria) && zLead.categoria) ? '<span class="ctag" style="--ac:'+zColor+'">'+(CAT_NOMBRE[zLead.categoria]||zLead.categoria)+'</span>' : '';
+      html += '<a class="article z-lead" data-id="'+esc(zLead.id)+'">'
+        + '<div class="ph-img" style="'+bgDe(zLead)+'"></div>'
+        + '<h3 class="h">'+esc(zLead.titulo)+'</h3>'
+        + (zLead.resumen_corto?'<p class="dek">'+esc(zLead.resumen_corto)+'</p>':'')
+        + '<div class="byl">'+zFav+zCatTag+(zLead.fuente_etiqueta?'<span class="fuente-tag">'+esc(zLead.fuente_etiqueta)+'</span>':'')+'<span class="src">'+tiempoDesde(zLead.created_at)+'</span></div></a>';
+      // con suficiente volumen en la zona, una mini-tira deslizable justo después del lead —
+      // la misma técnica del cierre, pero como parte normal de la interfaz, no solo al final
+      const miniN = notas.length >= 7 ? Math.min(3, notas.length - 5) : 0;
+      const miniMosaico = miniN > 0 ? notas.slice(1, 1+miniN) : [];
+      const restoZona = notas.slice(1 + miniMosaico.length);
+      if(miniMosaico.length){ html += tplMosaicRow(miniMosaico); }
+      html += '<div class="zlist">';
+      let pendientePar = null;
+      restoZona.forEach((n, i)=>{
+        const lugar = n.lugar ? esc(n.lugar) : o.nombre;
+        const fav = favoritos.includes(n.categoria) ? ' <span class="why int" style="margin-left:5px">★</span>' : '';
+        const color = CAT_COLOR[n.categoria] || "#8B8271";
+        const catTag = n.categoria ? '<span class="ctag" style="--ac:'+color+'">'+(CAT_NOMBRE[n.categoria]||n.categoria)+'</span>' : '';
+        const esReciente = (Date.now() - new Date(n.created_at).getTime()) < 15*60000;
+        const tiempo = (esReciente ? '<span class="pulse-dot"></span>' : '') + tiempoDesde(n.created_at);
+        // cada 4 ítems, uno "respira" con foto para romper el ritmo apilado
+        const destacada = (i % 4 === 3);
+        const est = n.resumen_estructurado;
+        let especial = "";
+        if(est && est.cita && est.cita.texto){
+          especial = '<a class="article li" data-id="'+esc(n.id)+'" style="--ac:'+color+'">'
+            + '<h4 class="h">'+esc(n.titulo)+'</h4>'
+            + '<blockquote class="li-quote">“'+esc(est.cita.texto)+'”<span class="li-quote-who">— '+esc(est.cita.quien||"")+'</span></blockquote>'
+            + '<div class="meta-row">'+catTag+fav+'<span class="src">'+lugar+'</span><span class="src">'+tiempo+'</span></div></a>';
+        } else if(est && est.datos && est.datos[0] && est.datos[0].numero && (contadorDatos++ % 3 === 0)){
+          const d = est.datos[0];
+          especial = '<a class="article li li-databig" data-id="'+esc(n.id)+'" style="--ac:'+color+'">'
+            + '<div class="databig-num">'+esc(d.numero)+'</div><div class="databig-lbl">'+esc(d.etiqueta||"")+'</div>'
+            + '<h4 class="h" style="margin-top:6px">'+esc(n.titulo)+'</h4>'
+            + '<div class="meta-row" style="justify-content:center">'+catTag+fav+'<span class="src">'+lugar+'</span></div></a>';
+        } else if(destacada){
+          especial = '<a class="article li feat" data-id="'+esc(n.id)+'" style="--ac:'+color+'">'
+            + '<div class="ph-img" style="'+bgDe(n)+'"></div>'
+            + '<h4 class="h">'+esc(n.titulo)+'</h4>'
+            + (n.resumen_corto?'<p class="dek" style="font-size:.82rem;margin-top:4px">'+esc(n.resumen_corto)+'</p>':'')
+            + '<div class="meta-row">'+catTag+fav+'<span class="src">'+lugar+'</span><span class="src">'+tiempo+'</span></div></a>';
+        }
+
+        if(especial){
+          // si había un ítem esperando pareja, lo saco solo antes de meter el especial
+          if(pendientePar){ html += tplLiSingle(pendientePar); pendientePar = null; }
+          html += especial;
+        } else {
+          const item = { id:n.id, titulo:n.titulo, catTag, fav, lugar, tiempo, color };
+          if(pendientePar){ html += tplLiPair(pendientePar, item); pendientePar = null; }
+          else { pendientePar = item; }
+        }
+      });
+      if(pendientePar){ html += tplLiSingle(pendientePar); }
+      html += '</div></div></section>';
+    }
+
+    // ===== cierre en mosaico (deslizable al costado) =====
+    if(paraMosaico.length >= 2){
+      html += '<div class="mosaic-label">También pasó hoy</div>' + tplMosaicRow(paraMosaico);
+    }
+
+    return html;
   }
 
   function render(){
@@ -1364,147 +1515,8 @@
       return new Date(b.created_at) - new Date(a.created_at);
     });
 
-    let html = "";
-
-    // ===== PRIMERA PLANA (arma con las noticias más cercanas de todas las que hay) =====
-    const cercanas = ordenadas.slice(0, 6);       // riel izquierdo "Cerca tuyo"
-    const lead = ordenadas[0];                     // nota principal
-    const subLead = ordenadas[1];                   // segunda nota central
-    const recientes = [...filtradas].sort((a,b)=> new Date(b.created_at)-new Date(a.created_at)).slice(0,5); // riel derecho
-
-    if(lead){
-      html += '<section class="pp" id="pp">';
-      html += '<div class="section-eyebrow"><span class="t">Primera plana</span><span class="src">'+ (filtradas.length) +' noticias</span></div>';
-      html += '<div class="pp-grid">';
-
-      // riel izquierdo: cerca tuyo
-      html += '<aside class="pp-left"><div class="rail-title">Cerca tuyo</div>';
-      cercanas.slice(2,6).forEach(n=>{
-        const lugar = n.lugar ? esc(n.lugar) : nombreDe(n.onda);
-        html += '<a class="article rail-item" data-id="'+esc(n.id)+'" style="--w:'+colorDe(n.onda)+'">'
-          + '<span class="kicker"><span class="dot"></span>'+lugar+'</span>'
-          + '<h3 class="h">'+esc(n.titulo)+'</h3></a>';
-      });
-      html += '</aside>';
-
-      // centro: lead + sub
-      html += '<div class="pp-center">';
-      const leadLugar = lead.lugar ? esc(lead.lugar) : nombreDe(lead.onda);
-      html += '<a class="article lead" data-id="'+esc(lead.id)+'" style="--w:'+colorDe(lead.onda)+'">'
-        + '<div class="ph-img" style="'+bgDe(lead)+'"></div>'
-        + '<span class="kicker"><span class="dot"></span>'+leadLugar+'</span>'
-        + '<h2 class="h">'+esc(lead.titulo)+'</h2>'
-        + (lead.resumen_corto?'<p class="dek">'+esc(lead.resumen_corto)+'</p>':'')
-        + '<div class="byl">'+(lead.fuente_etiqueta?'<span class="fuente-tag">'+esc(lead.fuente_etiqueta)+'</span>':'')+'<span class="src">'+tiempoDesde(lead.created_at)+'</span></div></a>';
-      if(subLead){
-        const subLugar = subLead.lugar ? esc(subLead.lugar) : nombreDe(subLead.onda);
-        html += '<a class="article pp-sub" data-id="'+esc(subLead.id)+'" style="--w:'+colorDe(subLead.onda)+'">'
-          + '<div class="ph-img sq" style="'+bgDe(subLead)+'"></div>'
-          + '<div><span class="kicker"><span class="dot"></span>'+subLugar+'</span>'
-          + '<h3 class="h">'+esc(subLead.titulo)+'</h3>'
-          + (subLead.resumen_corto?'<p class="dek">'+esc(subLead.resumen_corto)+'</p>':'') + '</div></a>';
-      }
-      html += '</div>';
-
-      // riel derecho: recientes (honesto — no "más leído", que sería inventado)
-      html += '<aside class="pp-right recientes"><div class="rail-title">Últimas</div>';
-      recientes.forEach(n=>{
-        html += '<a class="article rail-item" data-id="'+esc(n.id)+'">'
-          + '<span class="tt">'+tiempoDesde(n.created_at)+'</span>'
-          + '<h3 class="h">'+esc(n.titulo)+'</h3></a>';
-      });
-      html += '</aside>';
-
-      html += '</div></section>';
-    }
-
-    // ===== ONDAS densas debajo =====
-    const leidos = getLeidos();
-    const seed = semillaRotativa();
-    let contadorDatos = 0; // para que el "dato destacado" salga salteado, no en cada nota que tenga cifras
-    // con volumen suficiente, reservamos 2 notas para un cierre en mosaico ("también pasó hoy")
-    const paraMosaico = filtradas.length >= 8 ? ordenadas.slice(-Math.min(8, Math.floor(filtradas.length/3))) : [];
-    const idsMosaico = new Set(paraMosaico.map(n=>String(n.id)));
-    for(const o of conNoticias){
-      const notas = filtradas.filter(n => n.onda === o.id && !idsMosaico.has(String(n.id))).sort((a,b)=>{
-        const fa = favoritos.includes(a.categoria) ? 1 : 0;
-        const fb = favoritos.includes(b.categoria) ? 1 : 0;
-        if(fa !== fb) return fb - fa; // favoritos primero
-        const la = leidos.has(String(a.id)) ? 1 : 0;
-        const lb = leidos.has(String(b.id)) ? 1 : 0;
-        if(la !== lb) return la - lb; // no leídas primero
-        return ordenRotativo(a.id, seed) - ordenRotativo(b.id, seed); // varía cada 25 min, no siempre el mismo orden
-      });
-      if(!notas.length) continue;
-      html += '<section class="zone" id="z-'+o.id+'" style="--w:'+o.color+'">';
-      html += '<div class="zlabel"><span class="gl"></span><span class="nm">'+esc(o.nombre)+'</span><span class="km">'+notas.length+' '+(notas.length===1?'noticia':'noticias')+'</span></div>';
-      html += '<div class="zgrid">';
-      const zLead = notas[0];
-      const zLugar = zLead.lugar ? esc(zLead.lugar) : o.nombre;
-      const zFav = favoritos.includes(zLead.categoria) ? '<span class="why int">★ '+(CAT_NOMBRE[zLead.categoria]||"")+'</span>' : '';
-      const zColor = CAT_COLOR[zLead.categoria] || "#8B8271";
-      const zCatTag = (!favoritos.includes(zLead.categoria) && zLead.categoria) ? '<span class="ctag" style="--ac:'+zColor+'">'+(CAT_NOMBRE[zLead.categoria]||zLead.categoria)+'</span>' : '';
-      html += '<a class="article z-lead" data-id="'+esc(zLead.id)+'">'
-        + '<div class="ph-img" style="'+bgDe(zLead)+'"></div>'
-        + '<h3 class="h">'+esc(zLead.titulo)+'</h3>'
-        + (zLead.resumen_corto?'<p class="dek">'+esc(zLead.resumen_corto)+'</p>':'')
-        + '<div class="byl">'+zFav+zCatTag+(zLead.fuente_etiqueta?'<span class="fuente-tag">'+esc(zLead.fuente_etiqueta)+'</span>':'')+'<span class="src">'+tiempoDesde(zLead.created_at)+'</span></div></a>';
-      // con suficiente volumen en la zona, una mini-tira deslizable justo después del lead —
-      // la misma técnica del cierre, pero como parte normal de la interfaz, no solo al final
-      const miniN = notas.length >= 7 ? Math.min(3, notas.length - 5) : 0;
-      const miniMosaico = miniN > 0 ? notas.slice(1, 1+miniN) : [];
-      const restoZona = notas.slice(1 + miniMosaico.length);
-      if(miniMosaico.length){ html += tplMosaicRow(miniMosaico); }
-      html += '<div class="zlist">';
-      let pendientePar = null;
-      restoZona.forEach((n, i)=>{
-        const lugar = n.lugar ? esc(n.lugar) : o.nombre;
-        const fav = favoritos.includes(n.categoria) ? ' <span class="why int" style="margin-left:5px">★</span>' : '';
-        const color = CAT_COLOR[n.categoria] || "#8B8271";
-        const catTag = n.categoria ? '<span class="ctag" style="--ac:'+color+'">'+(CAT_NOMBRE[n.categoria]||n.categoria)+'</span>' : '';
-        const esReciente = (Date.now() - new Date(n.created_at).getTime()) < 15*60000;
-        const tiempo = (esReciente ? '<span class="pulse-dot"></span>' : '') + tiempoDesde(n.created_at);
-        // cada 4 ítems, uno "respira" con foto para romper el ritmo apilado
-        const destacada = (i % 4 === 3);
-        const est = n.resumen_estructurado;
-        let especial = "";
-        if(est && est.cita && est.cita.texto){
-          especial = '<a class="article li" data-id="'+esc(n.id)+'" style="--ac:'+color+'">'
-            + '<h4 class="h">'+esc(n.titulo)+'</h4>'
-            + '<blockquote class="li-quote">“'+esc(est.cita.texto)+'”<span class="li-quote-who">— '+esc(est.cita.quien||"")+'</span></blockquote>'
-            + '<div class="meta-row">'+catTag+fav+'<span class="src">'+lugar+'</span><span class="src">'+tiempo+'</span></div></a>';
-        } else if(est && est.datos && est.datos[0] && est.datos[0].numero && (contadorDatos++ % 3 === 0)){
-          const d = est.datos[0];
-          especial = '<a class="article li li-databig" data-id="'+esc(n.id)+'" style="--ac:'+color+'">'
-            + '<div class="databig-num">'+esc(d.numero)+'</div><div class="databig-lbl">'+esc(d.etiqueta||"")+'</div>'
-            + '<h4 class="h" style="margin-top:6px">'+esc(n.titulo)+'</h4>'
-            + '<div class="meta-row" style="justify-content:center">'+catTag+fav+'<span class="src">'+lugar+'</span></div></a>';
-        } else if(destacada){
-          especial = '<a class="article li feat" data-id="'+esc(n.id)+'" style="--ac:'+color+'">'
-            + '<div class="ph-img" style="'+bgDe(n)+'"></div>'
-            + '<h4 class="h">'+esc(n.titulo)+'</h4>'
-            + (n.resumen_corto?'<p class="dek" style="font-size:.82rem;margin-top:4px">'+esc(n.resumen_corto)+'</p>':'')
-            + '<div class="meta-row">'+catTag+fav+'<span class="src">'+lugar+'</span><span class="src">'+tiempo+'</span></div></a>';
-        }
-
-        if(especial){
-          // si había un ítem esperando pareja, lo saco solo antes de meter el especial
-          if(pendientePar){ html += tplLiSingle(pendientePar); pendientePar = null; }
-          html += especial;
-        } else {
-          const item = { id:n.id, titulo:n.titulo, catTag, fav, lugar, tiempo, color };
-          if(pendientePar){ html += tplLiPair(pendientePar, item); pendientePar = null; }
-          else { pendientePar = item; }
-        }
-      });
-      if(pendientePar){ html += tplLiSingle(pendientePar); }
-      html += '</div></div></section>';
-    }
-
-    // ===== cierre en mosaico (deslizable al costado) =====
-    if(paraMosaico.length >= 2){
-      html += '<div class="mosaic-label">También pasó hoy</div>' + tplMosaicRow(paraMosaico);
-    }
+    // Primera plana + zonas: bloque compartido con la pestaña Ciudad (ver htmlPrimeraPlanaYZonas).
+    const html = htmlPrimeraPlanaYZonas(ordenadas, conNoticias, { conCercaTuyo:true });
 
     feed.innerHTML = html;
 
@@ -1552,25 +1564,33 @@
       videoEl.style.display = "none";
       videoEl.innerHTML = "";
       const listaN = fotosDe(n);
+      const galEl = document.getElementById("s-galeria");
       if(typeof avisoDebug === "function"){
         avisoDebug("nota " + n.id + " — n.fotos tipo=" + (typeof n.fotos)
           + " crudo=" + JSON.stringify(n.fotos)
           + " | n.imagen_url=" + (n.imagen_url || "(vacío)")
           + " | fotosDe() devolvió " + listaN.length + " item(s)");
       }
-      if(listaN.length > 1){
-        heroEl.setAttribute("style", "display:block;margin-bottom:16px");
-        heroEl.innerHTML = htmlGaleria(listaN);
-        activarGalerias(heroEl);
-      } else if(listaN.length === 1){
-        // como <img> y no como fondo: así se puede tocar para verla completa
-        heroEl.setAttribute("style", "display:block;margin-bottom:16px");
+      // portada: siempre una sola foto fija (la primera) — es la misma que se usa
+      // como imagen al compartir, así que nunca puede quedar oculta en un carrusel.
+      if(listaN.length){
+        heroEl.setAttribute("style", "display:block;margin-bottom:16px;aspect-ratio:auto;overflow:visible;background:none");
         heroEl.innerHTML = '<img src="'+esc(listaN[0])+'" alt="" '
           + 'style="width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:10px;cursor:zoom-in">';
       } else {
         heroEl.innerHTML = "";
         heroEl.style.display = "block";
         heroEl.setAttribute("style", "aspect-ratio:16/9;" + bgDe(n));
+      }
+      // el resto de las fotos (si hay más de una) va deslizable debajo del resumen,
+      // no arriba — arriba solo va la portada.
+      if(listaN.length > 1){
+        galEl.style.display = "block";
+        galEl.innerHTML = '<div class="rail-title" style="margin-top:4px">Más fotos</div>' + htmlGaleria(listaN.slice(1));
+        activarGalerias(galEl);
+      } else {
+        galEl.style.display = "none";
+        galEl.innerHTML = "";
       }
     }
     const body = document.getElementById("s-body");
@@ -1850,24 +1870,20 @@
     };
     const cinta = TIPOS[n.__tipo] || null;
 
-    // ¿Qué diseño le toca a esta placa?
-    //  urgente     → roja
-    //  sin foto    → tipográfica (marco y titular grande)
-    //  protagonista→ foto a sangre completa con el titular encima
-    //  el resto    → editorial (foto arriba, titular abajo)
-    // Categorías donde la imagen suele SER la noticia
-    const CATS_PROTAGONISTA = ["policiales","desastres","deportes","espectaculos","religion"];
+    // ¿Qué diseño le toca a esta placa? Solo 3 formatos:
+    //  urgente  → roja
+    //  sin foto → marco (tipográfica, titular grande con borde)
+    //  con foto → foto de fondo a sangre completa con el titular encima
     function diseñoDePlaca(){
       // 1. Si en la consola elegiste un estilo a mano, manda ese (incluso sobre urgente)
       if(n.estilo_placa && n.estilo_placa !== "auto"){
+        if(n.estilo_placa === "editorial") return img ? "foto" : "tipografica"; // formato viejo, ya no existe
         if(n.estilo_placa === "foto" && !img) return "tipografica";   // pidió foto pero no hay
         return n.estilo_placa;
       }
       // 2. Automático
       if(urgente) return "urgente";
-      if(!img) return "tipografica";
-      if(CATS_PROTAGONISTA.includes((n.categoria||"").toLowerCase())) return "foto";
-      return "editorial";
+      return img ? "foto" : "tipografica";
     }
     const diseño = diseñoDePlaca();
 
@@ -1898,31 +1914,15 @@
       if(lugar){
         ctx.font = "800 32px 'Work Sans',sans-serif";
         const w = ctx.measureText(lugar).width + 60;
-        ctx.fillStyle = "rgba(255,255,255,.22)";
+        ctx.fillStyle = "#fff";
         ctx.beginPath(); ctx.roundRect(80, 130, w, 60, 30); ctx.fill();
-        ctx.fillStyle = "#fff"; ctx.fillText(lugar, 110, 170);
+        ctx.fillStyle = TINTA; ctx.fillText(lugar, 110, 170);
       }
       ctx.fillStyle = "#fff"; ctx.font = "700 84px 'Fraunces',Georgia,serif";
       const ls = envolver(ctx, n.titulo, W-160, 6);
       const alturaTexto = ls.length * 100;
       const yInicio = H - 330 - alturaTexto;
       ls.forEach((l,i)=> ctx.fillText(l, 80, yInicio + i*100));
-    } else if(img){
-      // ---- placa editorial con foto ----
-      ctx.fillStyle = PAPEL; ctx.fillRect(0,0,W,H);
-      const alto = 900;
-      const escala = Math.max(W/img.width, alto/img.height);
-      const iw = img.width*escala, ih = img.height*escala;
-      ctx.drawImage(img, (W-iw)/2, (alto-ih)/2, iw, ih);
-      if(lugar){
-        ctx.font = "800 32px 'Work Sans',sans-serif";
-        const w = ctx.measureText(lugar).width + 64;
-        ctx.fillStyle = "#3E8557";
-        ctx.beginPath(); ctx.roundRect(60, alto-96, w, 62, 31); ctx.fill();
-        ctx.fillStyle = "#fff"; ctx.fillText(lugar, 92, alto-54);
-      }
-      ctx.fillStyle = TINTA; ctx.font = "700 78px 'Fraunces',Georgia,serif";
-      envolver(ctx, n.titulo, W-160, 6).forEach((l,i)=> ctx.fillText(l, 80, alto + 150 + i*94));
     } else {
       // ---- placa tipográfica (sin foto) ----
       ctx.fillStyle = PAPEL; ctx.fillRect(0,0,W,H);
@@ -2083,7 +2083,11 @@
         + " | fotosDe() devolvió " + lista.length + " item(s)");
     }
     if(lista.length){
-      fotoEl.setAttribute("style", "display:block;margin-bottom:12px");
+      // el contenedor trae la clase .ph-img (pensada para una sola foto de fondo,
+      // con relación de aspecto fija y overflow:hidden) — para la galería hay que
+      // anularla acá mismo, si no el recorte tapa la segunda y tercera foto y el
+      // swipe no tiene dónde ir.
+      fotoEl.setAttribute("style", "display:block;margin-bottom:12px;aspect-ratio:auto;overflow:visible;background:none");
       fotoEl.innerHTML = htmlGaleria(lista);
       activarGalerias(fotoEl);
       if(typeof avisoDebug === "function"){
@@ -3071,9 +3075,16 @@
   // ================= GALERÍA =================
   function fotosDe(o){
     if(!o) return [];
-    // 'fotos' puede volver como arreglo ya interpretado o como texto JSON, según el pedido
+    // 'fotos' puede volver como arreglo ya interpretado, como texto JSON, o —si la
+    // columna es un array nativo de Postgres— como texto {"url1","url2"}, según el pedido
     let arr = o.fotos;
-    if(typeof arr === "string"){ try{ arr = JSON.parse(arr); }catch(e){ arr = null; } }
+    if(typeof arr === "string"){
+      try{ arr = JSON.parse(arr); }
+      catch(e){
+        const m = arr.match(/^\{(.*)\}$/);
+        arr = m ? m[1].split(",").map(s=>s.trim().replace(/^"|"$/g,"")).filter(Boolean) : null;
+      }
+    }
     if(Array.isArray(arr) && arr.length) return arr;
     if(o.foto_url) return [o.foto_url];      // aportes
     if(o.imagen_url) return [o.imagen_url];  // noticias
@@ -3085,20 +3096,36 @@
     const id = "gal" + Math.random().toString(36).slice(2,8);
     return '<div class="galeria"><div class="gal-row" id="'+id+'">'
       + lista.map(u=>'<img src="'+esc(u)+'" alt="">').join("")
-      + '</div><span class="gal-contador">1 / '+lista.length+'</span>'
-      + '<div class="gal-dots">'+lista.map((_,i)=>'<i class="'+(i===0?"on":"")+'"></i>').join("")+'</div></div>';
+      + '</div>'
+      + '<button class="gal-nav prev" type="button" aria-label="Foto anterior">‹</button>'
+      + '<button class="gal-nav next" type="button" aria-label="Foto siguiente">›</button>'
+      + '<span class="gal-contador">1 / '+lista.length+'</span>'
+      + '<div class="gal-dots">'+lista.map((_,i)=>'<i class="'+(i===0?"on":"")+'" data-i="'+i+'"></i>').join("")+'</div></div>';
   }
+  // Galería deslizable: funciona con swipe, pero también con las flechas y los puntitos —
+  // así no depende de que el gesto táctil se detecte bien en todos los celulares.
   function activarGalerias(cont){
     (cont || document).querySelectorAll(".gal-row").forEach(row=>{
       const wrap = row.closest(".galeria");
       const dots = wrap.querySelectorAll(".gal-dots i");
       const cont2 = wrap.querySelector(".gal-contador");
       const total = row.children.length;
-      row.addEventListener("scroll", ()=>{
+      function irA(i){
+        i = Math.max(0, Math.min(total-1, i));
+        row.scrollTo({ left: i * row.clientWidth, behavior:"smooth" });
+      }
+      function actualizar(){
         const i = Math.round(row.scrollLeft / row.clientWidth);
         dots.forEach((d,k)=> d.classList.toggle("on", k === i));
         if(cont2) cont2.textContent = (Math.min(i+1,total)) + " / " + total;
-      }, { passive:true });
+      }
+      row.addEventListener("scroll", actualizar, { passive:true });
+      dots.forEach(d=>{
+        d.addEventListener("click", (e)=>{ e.stopPropagation(); irA(parseInt(d.getAttribute("data-i"),10)); });
+      });
+      const prev = wrap.querySelector(".gal-nav.prev"), next = wrap.querySelector(".gal-nav.next");
+      if(prev) prev.addEventListener("click", (e)=>{ e.stopPropagation(); irA(Math.round(row.scrollLeft/row.clientWidth) - 1); });
+      if(next) next.addEventListener("click", (e)=>{ e.stopPropagation(); irA(Math.round(row.scrollLeft/row.clientWidth) + 1); });
     });
   }
   document.getElementById("fFoto").addEventListener("change", (e)=>{

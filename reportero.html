@@ -421,6 +421,7 @@
         <button class="srcchip" data-src="__otra">Otra</button>
       </div>
       <input class="inp src-custom" id="srcCustom" placeholder="Escribí la fuente">
+      <input class="inp" id="srcLink" placeholder="Link de la fuente (opcional) — pegá acá el posteo o la nota original" style="margin-top:8px">
 
       <div class="field-label" style="margin-top:14px">Foto propia (opcional — si no subís nada, se usa la que Fonte encuentre del link)</div>
       <input class="inp" type="file" id="fotoPropia" accept="image/*" multiple style="padding:9px">
@@ -462,9 +463,9 @@
         <div class="field-label">Imagen al compartir</div>
         <div class="srcchips" id="placaChips">
           <button class="srcchip on" data-placa="auto">Automático</button>
-          <button class="srcchip" data-placa="editorial">Foto arriba</button>
-          <button class="srcchip" data-placa="foto">Foto completa</button>
-          <button class="srcchip" data-placa="tipografica">Solo texto</button>
+          <button class="srcchip" data-placa="foto">Foto de fondo</button>
+          <button class="srcchip" data-placa="tipografica">Marco</button>
+          <button class="srcchip" data-placa="urgente">Urgente</button>
         </div>
         <div style="font-family:var(--sans);font-size:.7rem;color:var(--ink-faint);margin-top:6px;line-height:1.45">
           <b>Automático</b> elige solo. <b>Foto completa</b> para cuando la imagen es la noticia
@@ -942,6 +943,11 @@
       document.getElementById("pvOnda").value = b.onda || "ciudad";
       document.getElementById("pvLugar").value = b.lugar || "Quitilipi";
       document.getElementById("pvUrgente").checked = !!b.urgente;
+      // si lo que se pegó era solo un link, lo usamos también como link de la fuente
+      const esSoloUnLink = /^https?:\/\/\S+$/i.test(texto);
+      if(esSoloUnLink && !document.getElementById("srcLink").value.trim()){
+        document.getElementById("srcLink").value = texto;
+      }
       imagenDetectada = b.imagen_url || null;
       videoDetectado = b.video_url || null;
       const avisos = [];
@@ -985,6 +991,7 @@
       lugar: document.getElementById("pvLugar").value.trim(),
       urgente: document.getElementById("pvUrgente").checked,
       fuente_etiqueta: "vía " + fuenteElegida,
+      url_original: document.getElementById("srcLink").value.trim() || null,
       origen: "reportero",
       imagen_url: fotoPropiaUrl || imagenDetectada,
       fotos: fotosPropias.length ? fotosPropias : null,
@@ -1008,6 +1015,7 @@
     document.getElementById("fotoPreview").innerHTML = "";
     fotosPropias = [];
     document.getElementById("videoUrl").value = "";
+    document.getElementById("srcLink").value = "";
     document.getElementById("pvDato").value = "";
     document.getElementById("accionUrl").value = "";
     document.getElementById("accionCustom").value = "";
@@ -2028,37 +2036,56 @@
     };
     const cinta = TIPOS[n.__tipo] || null;
 
-    if(urgente){
+    // Solo 3 formatos: urgente (roja) / foto de fondo a sangre completa / marco (sin foto).
+    // Si se eligió un estilo a mano en "Estilo de la imagen que se genera al compartir", manda ese.
+    function diseñoDePlaca(){
+      if(n.estilo_placa && n.estilo_placa !== "auto"){
+        if(n.estilo_placa === "editorial") return img ? "foto" : "tipografica"; // formato viejo, ya no existe
+        if(n.estilo_placa === "foto" && !img) return "tipografica";
+        return n.estilo_placa;
+      }
+      if(urgente) return "urgente";
+      return img ? "foto" : "tipografica";
+    }
+    const diseño = diseñoDePlaca();
+
+    if(diseño === "urgente"){
       // ---- placa urgente ----
       ctx.fillStyle = ROJO; ctx.fillRect(0,0,W,H);
       ctx.fillStyle = "#fff";
       ctx.beginPath(); ctx.roundRect(80, 150, 340, 76, 38); ctx.fill();
       ctx.fillStyle = ROJO; ctx.font = "800 34px 'Work Sans',sans-serif";
       ctx.fillText("⚡ URGENTE", 118, 200);
-      ctx.fillStyle = "#fff"; ctx.font = "700 86px 'Lora',Georgia,serif";
+      ctx.fillStyle = "#fff"; ctx.font = "700 86px 'Fraunces',Georgia,serif";
       envolver(ctx, n.titulo, W-160, 6).forEach((l,i)=> ctx.fillText(l, 80, 360 + i*104));
       if(n.dato_extra){
         ctx.font = "500 42px 'Work Sans',sans-serif"; ctx.fillStyle = "rgba(255,255,255,.92)";
         envolver(ctx, n.dato_extra, W-160, 4).forEach((l,i)=> ctx.fillText(l, 80, 1180 + i*58));
       }
-    } else if(img){
-      // ---- placa editorial con foto ----
-      ctx.fillStyle = PAPEL; ctx.fillRect(0,0,W,H);
-      const alto = 900;
-      const escala = Math.max(W/img.width, alto/img.height);
+    } else if(diseño === "foto" && img){
+      // ---- foto de fondo a sangre completa, con velo y titular encima ----
+      const escala = Math.max(W/img.width, H/img.height);
       const iw = img.width*escala, ih = img.height*escala;
-      ctx.drawImage(img, (W-iw)/2, (alto-ih)/2, iw, ih);
+      ctx.drawImage(img, (W-iw)/2, (H-ih)/2, iw, ih);
+      const velo = ctx.createLinearGradient(0, H*0.30, 0, H);
+      velo.addColorStop(0, "rgba(10,9,7,0)");
+      velo.addColorStop(0.45, "rgba(10,9,7,.62)");
+      velo.addColorStop(1, "rgba(10,9,7,.95)");
+      ctx.fillStyle = velo; ctx.fillRect(0, 0, W, H);
       if(lugar){
         ctx.font = "800 32px 'Work Sans',sans-serif";
-        const w = ctx.measureText(lugar).width + 64;
-        ctx.fillStyle = "#3E8557";
-        ctx.beginPath(); ctx.roundRect(60, alto-96, w, 62, 31); ctx.fill();
-        ctx.fillStyle = "#fff"; ctx.fillText(lugar, 92, alto-54);
+        const w = ctx.measureText(lugar).width + 60;
+        ctx.fillStyle = "#fff";
+        ctx.beginPath(); ctx.roundRect(80, 130, w, 60, 30); ctx.fill();
+        ctx.fillStyle = TINTA; ctx.fillText(lugar, 110, 170);
       }
-      ctx.fillStyle = TINTA; ctx.font = "700 78px 'Lora',Georgia,serif";
-      envolver(ctx, n.titulo, W-160, 6).forEach((l,i)=> ctx.fillText(l, 80, alto + 150 + i*94));
+      ctx.fillStyle = "#fff"; ctx.font = "700 84px 'Fraunces',Georgia,serif";
+      const ls = envolver(ctx, n.titulo, W-160, 6);
+      const alturaTexto = ls.length * 100;
+      const yInicio = H - 330 - alturaTexto;
+      ls.forEach((l,i)=> ctx.fillText(l, 80, yInicio + i*100));
     } else {
-      // ---- placa tipográfica (sin foto) ----
+      // ---- marco (tipográfica, sin foto) ----
       ctx.fillStyle = PAPEL; ctx.fillRect(0,0,W,H);
       ctx.strokeStyle = TINTA; ctx.lineWidth = 8;
       ctx.strokeRect(80, 130, W-160, H-420);
@@ -2066,14 +2093,14 @@
         ctx.fillStyle = "#3E8557"; ctx.font = "800 34px 'Work Sans',sans-serif";
         ctx.fillText("● " + lugar, 140, 250);
       }
-      ctx.fillStyle = TINTA; ctx.font = "700 88px 'Lora',Georgia,serif";
+      ctx.fillStyle = TINTA; ctx.font = "700 88px 'Fraunces',Georgia,serif";
       const ls = envolver(ctx, n.titulo, W-280, 7);
       ls.forEach((l,i)=> ctx.fillText(l, 140, 380 + i*106));
       const yLinea = 380 + ls.length*106 + 20;
       ctx.fillStyle = CORAL; ctx.beginPath(); ctx.roundRect(140, yLinea, 120, 10, 5); ctx.fill();
       const bajada = n.resumen_corto || "";
       if(bajada){
-        ctx.fillStyle = "#57503F"; ctx.font = "500 44px 'Lora',Georgia,serif";
+        ctx.fillStyle = "#57503F"; ctx.font = "500 44px 'Fraunces',Georgia,serif";
         envolver(ctx, bajada, W-280, 5).forEach((l,i)=> ctx.fillText(l, 140, yLinea + 90 + i*62));
       }
     }
