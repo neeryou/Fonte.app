@@ -132,7 +132,7 @@
   .why.int{ color:var(--int); background:color-mix(in srgb,var(--int) 15%,transparent); }
 
   .ph-img{ position:relative; overflow:hidden; border-radius:12px; background:var(--g,#ccc); aspect-ratio:16/9; }
-  .ph-img::after{ content:''; position:absolute; inset:0; background:linear-gradient(180deg,transparent 42%,rgba(0,0,0,.18)); }
+  .ph-img::after{ content:''; position:absolute; inset:0; background:linear-gradient(180deg,transparent 42%,rgba(0,0,0,.18)); pointer-events:none; }
   .ph-img.sq{ aspect-ratio:1/1; }
 
   /* PRIMERA PLANA */
@@ -319,13 +319,13 @@
   /* ===== aportes del pueblo ===== */
   .avisos-wrap{ padding:14px 0 4px; }
   .avisos-label{ font-family:var(--sans); font-size:.68rem; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:var(--ink-faint); display:flex; align-items:center; gap:6px; padding:0 0 9px; }
-  .avisos-row{ display:flex; gap:9px; overflow-x:auto; scrollbar-width:none; padding-bottom:2px; }
+  .avisos-row{ display:flex; gap:14px; overflow-x:auto; scrollbar-width:none; padding-bottom:2px; }
   .avisos-row::-webkit-scrollbar{ display:none; }
-  .aporte-card{ flex:0 0 auto; width:140px; background:var(--surface); border:1px solid var(--line); border-radius:14px; overflow:hidden; box-shadow:0 2px 10px rgba(80,60,40,.08); }
-  .aporte-card .ph-img{ aspect-ratio:4/3; border-radius:0; }
-  .aporte-card .txt{ padding:7px 8px 9px; }
-  .aporte-cat{ font-family:var(--sans); font-size:.6rem; font-weight:700; color:var(--ink-soft); }
-  .aporte-tit{ font-family:var(--serif); font-size:.84rem; margin-top:2px; }
+  .aviso-mini{ flex:0 0 auto; width:92px; text-align:center; }
+  .aviso-mini .ic-circle{ width:50px; height:50px; margin:0 auto 6px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.35rem; }
+  .aviso-mini .cat{ font-family:var(--sans); font-size:.68rem; font-weight:700; color:var(--ink); line-height:1.22; }
+  .aviso-mini .m{ font-family:var(--sans); font-size:.58rem; color:var(--ink-faint); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .aviso-mini .nuevo{ display:inline-block; margin-top:4px; font-family:var(--sans); font-size:.5rem; font-weight:800; text-transform:uppercase; letter-spacing:.02em; color:#fff; background:var(--urgente); padding:2px 6px; border-radius:999px; }
   .fab{ display:none; }
 
   /* ===== ofertas de comercios locales (contenido pago, marcado como tal) ===== */
@@ -792,14 +792,6 @@
 
   <div class="wrap"><div class="urgent-band" id="urgentBand"><div class="band-head">⚡ Cerca tuyo ahora</div><div class="band-list"></div></div></div>
 
-  <div class="wrap" id="institucionesWrap" style="display:none;padding:14px 0 4px;">
-    <div class="ofertas-label" style="color:var(--barrio)">
-      <span class="verif-badge" style="background:var(--barrio)"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-      Servicios e instituciones
-    </div>
-    <div class="inst-row" id="institucionesRow"></div>
-  </div>
-
   <div class="wrap" id="avisosWrap" style="display:none;padding:14px 0 4px;">
     <div class="avisos-label">📍 Avisos de vecinos
       <a id="avisosVerTodos" style="margin-left:auto;font-weight:700;color:var(--region);text-transform:none;letter-spacing:0;font-size:.72rem">Ver todos ›</a>
@@ -1166,6 +1158,12 @@
     {id:"arbol_caido", label:"Árbol o poste caído", icon:"🌳"},
     {id:"otro_riesgo", label:"Otro riesgo", icon:"⚠️"}
   ];
+  // color de cada ícono en la fila de "Avisos de vecinos" de Inicio
+  const CAT_APORTE_COLOR = {
+    agua_estancada:"var(--region)", calle_mal_estado:"var(--int)", corte_luz:"var(--urgente)",
+    corte_agua:"var(--region)", alumbrado:"var(--int)", residuos:"var(--barrio)",
+    arbol_caido:"var(--barrio)", otro_riesgo:"var(--urgente)"
+  };
   let APORTES = [];
   function getDispositivoId(){
     let id = localStorage.getItem("fonte_dispositivo_id");
@@ -2047,14 +2045,16 @@
     wrap.style.display = "block";
     document.getElementById("avisosRow").innerHTML = nuevos.map(a=>{
       const cat = CAT_APORTE.find(c=>c.id===a.categoria) || {label:"Aporte", icon:"📍"};
-      const conFoto = !!a.foto_url;
-      return '<a class="aporte-card" data-aporte-id="'+esc(a.id)+'">'
-        + '<div class="ph-img" style="'+(conFoto ? ("background-image:url('"+esc(a.foto_url)+"')") : "background:var(--paper-2)")+'">'
-        + (conFoto ? '' : '<span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:1.5rem">'+cat.icon+'</span>')
-        + '</div>'
-        + '<div class="txt"><div class="aporte-cat">'+esc(cat.label)+'</div><div class="aporte-tit">'+esc(a.titulo||cat.label)+'</div></div></a>';
+      const color = CAT_APORTE_COLOR[a.categoria] || "var(--ink-faint)";
+      const esReciente = a.created_at && (Date.now() - new Date(a.created_at).getTime()) < 20*60000;
+      return '<a class="aviso-mini" data-aporte-id="'+esc(a.id)+'">'
+        + '<span class="ic-circle" style="background:color-mix(in srgb,'+color+' 16%,var(--paper));color:'+color+'">'+cat.icon+'</span>'
+        + '<div class="cat">'+esc(cat.label)+'</div>'
+        + (a.lugar_texto ? '<div class="m">'+esc(a.lugar_texto)+'</div>' : '<div class="m">'+tiempoDesde(a.created_at)+'</div>')
+        + (esReciente ? '<span class="nuevo">Recién publicado</span>' : '')
+        + '</a>';
     }).join("");
-    document.querySelectorAll("#avisosRow .aporte-card").forEach(el=>{
+    document.querySelectorAll("#avisosRow .aviso-mini").forEach(el=>{
       el.addEventListener("click", ()=>{
         const id = el.getAttribute("data-aporte-id");
         marcarAporteVisto(id);
@@ -2446,7 +2446,10 @@
     pintarInstituciones();
   }
   function pintarInstituciones(){
+    // La fila en Inicio se sacó (ahora ese lugar es de "Avisos de vecinos"); las instituciones
+    // se siguen cargando igual porque las usan Alertas, el buscador y la ficha de cada una.
     const wrap = document.getElementById("institucionesWrap");
+    if(!wrap) return;
     if(!INSTITUCIONES.length){ wrap.style.display = "none"; return; }
     wrap.style.display = "block";
     document.getElementById("institucionesRow").innerHTML =
