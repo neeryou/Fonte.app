@@ -110,10 +110,12 @@
   .task .s{ font-family:var(--sans); font-size:.7rem; color:var(--ink-faint); margin-top:2px; line-height:1.35; }
   .task .go{ font-family:var(--sans); font-size:.68rem; font-weight:700; color:var(--region); white-space:nowrap; }
   .task.ok{ border-color:color-mix(in srgb,var(--barrio) 30%,var(--line)); background:color-mix(in srgb,var(--barrio) 5%,var(--paper)); }
+  .task.ok .ic{ background:var(--barrio); color:#fff; }
   .task.ok .go{ color:var(--barrio); }
 
   .kpis{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; }
   .kpi3{ background:var(--paper-2); border-radius:12px; padding:11px 8px; text-align:center; }
+  .kpi3 .ic{ display:block; font-size:1.1rem; margin-bottom:3px; }
   .kpi3 .n{ font-family:var(--serif); font-weight:700; font-size:1.3rem; color:var(--ink); line-height:1; }
   .kpi3 .l{ font-family:var(--sans); font-size:.58rem; color:var(--ink-faint); margin-top:4px; line-height:1.25; }
 
@@ -136,6 +138,10 @@
   .bdg.comunicado{ background:color-mix(in srgb,var(--barrio) 14%,var(--paper)); color:var(--barrio); }
   .bdg.aporte{ background:color-mix(in srgb,var(--region) 14%,var(--paper)); color:var(--region); }
   .vacio-txt{ font-family:var(--sans); font-size:.78rem; color:var(--ink-faint); }
+  .vacio-card{ background:var(--paper-2); border:1px dashed var(--line-strong); border-radius:14px; padding:26px 20px; text-align:center; }
+  .vacio-card .ic{ font-size:1.6rem; display:block; margin-bottom:8px; }
+  .vacio-card .t{ font-family:var(--serif); font-weight:700; font-size:.94rem; color:var(--ink); }
+  .vacio-card .s{ font-family:var(--sans); font-size:.74rem; color:var(--ink-faint); margin-top:4px; }
 
   /* ===== botón compartir en el visor ===== */
   /* ===== editor de aporte ===== */
@@ -370,6 +376,8 @@
     <div class="rep-view on" id="viewHoy">
       <h2 class="rep-h" id="hoySaludo">Hola</h2>
       <p class="rep-sub" id="hoyFecha"></p>
+
+      <button class="btn-gen" id="btnPublicarAhora" style="margin-top:14px;margin-bottom:4px;background:var(--region)">Publicar ahora →</button>
 
       <div class="sec-lbl">Para hacer ahora <span class="n hide" id="hoyPendN">0</span></div>
       <div id="hoyTareas"></div>
@@ -778,6 +786,7 @@
   document.querySelectorAll(".rnv").forEach(b=>{
     b.addEventListener("click", ()=> irAVista(b.getAttribute("data-v")));
   });
+  document.getElementById("btnPublicarAhora").addEventListener("click", ()=> irAVista("viewCargar"));
 
   let fotosPropias = [];
   document.getElementById("fotoPropia").addEventListener("change", async (e)=>{
@@ -1628,11 +1637,15 @@
       + '<input class="inp" type="file" id="masFotos" accept="image/*" multiple style="padding:9px">'
       + '<div id="masFotosEstado" style="font-family:var(--sans);font-size:.72rem;color:var(--ink-faint)"></div>'
       + '</div>'
+      + bloqueFormatoCompartir(n)
       + '<button class="compartir" id="btnCompartirVisor">↗ Compartir en redes</button>'
+      + '<button class="compartir" id="btnCopiarTextoVisor" style="background:none;border:1px solid var(--line);color:var(--ink)">📋 Copiar el texto</button>'
       + '<button class="compartir" id="btnBorrarNota" style="background:none;border:1px solid #B23A2E;color:#B23A2E;margin-top:8px">🗑 Borrar esta nota</button>'
       + '</div>';
     abrirVisorHTML(h);
+    engancharFormatoCompartir(n);
     document.getElementById("btnCompartirVisor").addEventListener("click", (e)=> compartirDesdeConsola(n, "nota", e.currentTarget));
+    document.getElementById("btnCopiarTextoVisor").addEventListener("click", (e)=> copiarTextoConsola(n, "nota", e.currentTarget));
     document.getElementById("btnBorrarNota").addEventListener("click", async (e)=>{
       if(!confirm("¿Borrar esta nota de Fonte? No se puede deshacer.")) return;
       e.currentTarget.disabled = true;
@@ -1685,11 +1698,15 @@
       + (o.valido_hasta ? '🕐 Válido hasta: '+escA(o.valido_hasta)+'<br>' : '')
       + (o.imagen_url ? '📷 Con foto' : 'Sin foto')
       + '</div>'
+      + bloqueFormatoCompartir(o)
       + '<button class="compartir" id="btnCompartirVisor">↗ Compartir en redes</button>'
+      + '<button class="compartir" id="btnCopiarTextoVisor" style="background:none;border:1px solid var(--line);color:var(--ink)">📋 Copiar el texto</button>'
       + '<button class="compartir" id="btnBorrarOferta" style="background:none;border:1px solid #A8382C;color:#A8382C;margin-top:8px">🗑 Borrar esta oferta</button>'
       + '</div>';
     abrirVisorHTML(h);
+    engancharFormatoCompartir(o);
     document.getElementById("btnCompartirVisor").addEventListener("click", (e)=> compartirDesdeConsola(o, "oferta", e.currentTarget));
+    document.getElementById("btnCopiarTextoVisor").addEventListener("click", (e)=> copiarTextoConsola(o, "oferta", e.currentTarget));
     document.getElementById("btnBorrarOferta").addEventListener("click", async (e)=>{
       if(!confirm("¿Borrar esta oferta para siempre?")) return;
       e.currentTarget.disabled = true;
@@ -1712,12 +1729,16 @@
       + (c.urgente ? '<br>Se muestra abierto en la portada por 48 hs' : '<br>Solo dentro de la ficha de la institución')
       + (c.video_url ? '<br>🎬 Con video' : '')
       + '</div>'
+      + bloqueFormatoCompartir(c)
       + '<button class="compartir" id="btnCompartirVisor">↗ Compartir en redes</button>'
+      + '<button class="compartir" id="btnCopiarTextoVisor" style="background:none;border:1px solid var(--line);color:var(--ink)">📋 Copiar el texto</button>'
       + '<button class="compartir" id="btnEditarComunicado" style="background:var(--region);margin-top:8px">✎ Editar</button>'
       + '<button class="compartir" id="btnBorrarComunicado" style="background:none;border:1px solid #A8382C;color:#A8382C;margin-top:8px">🗑 Borrar</button>'
       + '<div id="editorComunicado"></div></div>';
     abrirVisorHTML(h);
+    engancharFormatoCompartir(c);
     document.getElementById("btnCompartirVisor").addEventListener("click", (e)=> compartirDesdeConsola(c, "comunicado", e.currentTarget));
+    document.getElementById("btnCopiarTextoVisor").addEventListener("click", (e)=> copiarTextoConsola(c, "comunicado", e.currentTarget));
     document.getElementById("btnBorrarComunicado").addEventListener("click", async (e)=>{
       if(!confirm("¿Borrar este comunicado para siempre?")) return;
       e.currentTarget.disabled = true;
@@ -1828,15 +1849,15 @@
 
     const personasHoy = new Set((visitasHoy.data||[]).map(v=>v.dispositivo_id)).size;
     document.getElementById("hoyKpis").innerHTML =
-      '<div class="kpi3"><div class="n">'+(notasHoy.data||[]).length+'</div><div class="l">notas publicadas</div></div>'
-      + '<div class="kpi3"><div class="n">'+personasHoy+'</div><div class="l">personas entraron</div></div>'
-      + '<div class="kpi3"><div class="n">'+nPend+'</div><div class="l">aportes por revisar</div></div>';
+      '<div class="kpi3"><span class="ic">📄</span><div class="n">'+(notasHoy.data||[]).length+'</div><div class="l">notas publicadas</div></div>'
+      + '<div class="kpi3"><span class="ic">👥</span><div class="n">'+personasHoy+'</div><div class="l">personas entraron</div></div>'
+      + '<div class="kpi3"><span class="ic">💬</span><div class="n">'+nPend+'</div><div class="l">aportes por revisar</div></div>';
 
     const ult = (notasHoy.data||[]).slice(0,3);
     const ultCont = document.getElementById("hoyUltimo");
     ultCont.innerHTML = ult.length
       ? ult.map(n=>itemArchivo(n,"nota")).join("")
-      : '<p class="vacio-txt">Todavía no publicaste nada hoy.</p>';
+      : '<div class="vacio-card"><span class="ic">📝</span><div class="t">Aún no hay publicaciones</div><div class="s">Las notas que publiques aparecerán aquí.</div></div>';
     enganchArchivo(ultCont, ult.map(n=>({o:n,tipo:"nota"})));
   }
 
@@ -2156,8 +2177,44 @@
     return Object.assign({}, o, { __tipo:"n" });
   }
 
+  // ================= FORMATO Y TEXTO AL COMPARTIR DESDE EL ARCHIVO =================
+  // El reportero puede elegir con qué formato compartir cada pieza ya publicada,
+  // sin tocar el estilo que quedó guardado. Se recuerda por id mientras dura la sesión.
+  const formatoElegidoPorId = {};
+  function bloqueFormatoCompartir(obj){
+    const actual = formatoElegidoPorId[obj.id] || "auto";
+    const chip = (v, label) => '<button class="srcchip'+(actual===v?' on':'')+'" data-f="'+v+'">'+label+'</button>';
+    return '<div class="field-label" style="margin-top:16px">Formato para compartir</div>'
+      + '<div class="srcchips" id="formatoShare-'+escA(obj.id)+'">'
+      + chip("auto","Automático") + chip("foto","Foto de fondo") + chip("tipografica","Marco") + chip("urgente","Urgente")
+      + '</div>';
+  }
+  function engancharFormatoCompartir(obj){
+    const cont = document.getElementById("formatoShare-"+obj.id);
+    if(!cont) return;
+    cont.querySelectorAll(".srcchip").forEach(b=>{
+      b.addEventListener("click", ()=>{
+        cont.querySelectorAll(".srcchip").forEach(x=>x.classList.remove("on"));
+        b.classList.add("on");
+        formatoElegidoPorId[obj.id] = b.getAttribute("data-f");
+      });
+    });
+  }
+  async function copiarTextoConsola(obj, tipo, btn){
+    const n = comoNota(obj, tipo);
+    const texto = textoCompartir(n);
+    const orig = btn ? btn.textContent : "";
+    try{
+      await navigator.clipboard.writeText(texto);
+      if(btn){ btn.textContent = "✓ Copiado"; setTimeout(()=> btn.textContent = orig, 1600); }
+      else toast("Texto copiado ✓");
+    }catch(e){ toast("No se pudo copiar"); }
+  }
+
   async function compartirDesdeConsola(obj, tipo, btn){
     const n = comoNota(obj, tipo);
+    const formato = formatoElegidoPorId[obj.id];
+    if(formato && formato !== "auto") n.estilo_placa = formato;
     const texto = textoCompartir(n);
     const orig = btn ? btn.textContent : "";
     if(btn) btn.textContent = "Preparando…";
