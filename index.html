@@ -271,7 +271,7 @@
   .sheet-top{ display:flex; justify-content:space-between; align-items:center; padding:6px 18px 10px; border-bottom:1px solid var(--line); }
   .sheet-top .b{ font-family:var(--serif); font-weight:700; font-size:1.1rem; }
   .close{ font-family:var(--sans); font-size:.8rem; font-weight:600; color:var(--ink-soft); background:none; border:0; }
-  .sheet-body{ flex:1; overflow-y:auto; padding:18px; }
+  .sheet-body{ flex:1; overflow-y:auto; overflow-x:hidden; padding:18px; }
   .sheet-body .h{ font-size:clamp(1.5rem,6vw,2rem); line-height:1.1; margin:8px 0 12px; }
   .s-src{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; padding-bottom:14px; border-bottom:1px solid var(--line); margin-bottom:16px; }
   .s-hero{ margin-bottom:16px; border-radius:6px; }
@@ -427,7 +427,7 @@
   /* ===== galería de fotos ===== */
   .galeria{ position:relative; margin-bottom:14px; aspect-ratio:auto; overflow:visible; }
   .gal-row{ display:flex; gap:8px; overflow-x:auto; scrollbar-width:none; scroll-snap-type:x mandatory; border-radius:10px;
-    touch-action: pan-x; }  /* le avisa al navegador que acá el gesto es horizontal, para que no se lo quede el panel vertical */
+    touch-action: pan-x; -webkit-overflow-scrolling:touch; }  /* le avisa al navegador que acá el gesto es horizontal, para que no se lo quede el panel vertical */
   .gal-row::-webkit-scrollbar{ display:none; }
   .gal-row img{ flex:0 0 100%; scroll-snap-align:center; width:100%; aspect-ratio:4/3; object-fit:cover; border-radius:10px; background:var(--paper-2); }
   .gal-dots{ display:flex; justify-content:center; gap:7px; margin-top:8px; }
@@ -666,7 +666,7 @@
   /* ===== sheet 2: aporte / formulario (mismo lenguaje visual que .sheet) ===== */
   .sheet2{ position:fixed; left:0; right:0; bottom:0; z-index:200; max-width:640px; margin:0 auto; max-height:88vh;
     background:var(--paper); border-radius:20px 20px 0 0; box-shadow:none; visibility:hidden;
-    transform:translateY(100%); transition:transform .3s cubic-bezier(.22,.61,.36,1), visibility .3s; overflow-y:auto; }
+    transform:translateY(100%); transition:transform .3s cubic-bezier(.22,.61,.36,1), visibility .3s; overflow-y:auto; overflow-x:hidden; }
   .sheet2.show{ transform:translateY(0); box-shadow:0 -14px 44px rgba(30,28,22,.28); visibility:visible; }
   .sheet2-top{ display:flex; justify-content:space-between; align-items:center; padding:14px 18px 10px; border-bottom:1px solid var(--line); }
   .sheet2-top .b{ font-family:var(--serif); font-weight:700; font-size:1.1rem; }
@@ -798,6 +798,13 @@
       Servicios e instituciones
     </div>
     <div class="inst-row" id="institucionesRow"></div>
+  </div>
+
+  <div class="wrap" id="avisosWrap" style="display:none;padding:14px 0 4px;">
+    <div class="avisos-label">📍 Avisos de vecinos
+      <a id="avisosVerTodos" style="margin-left:auto;font-weight:700;color:var(--region);text-transform:none;letter-spacing:0;font-size:.72rem">Ver todos ›</a>
+    </div>
+    <div class="avisos-row" id="avisosRow"></div>
   </div>
 
   <main class="wrap" id="feedCiudad">
@@ -1001,7 +1008,7 @@
 
 <div class="backdrop" id="backdropVecinos"></div>
 <div class="sheet2" id="sheetVecinos">
-  <div class="sheet2-top"><span class="b">📍 Lo que reportan los vecinos</span><button class="close" id="closeVecinos">Cerrar ✕</button></div>
+  <div class="sheet2-top"><span class="b">🔔 Alertas</span><button class="close" id="closeVecinos">Cerrar ✕</button></div>
   <div class="sheet2-body" id="vecinosBody"></div>
 </div>
 
@@ -1025,8 +1032,8 @@
     <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
     <span>Inicio</span></button>
   <button class="bn-item" id="navVecinos">
-    <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6.2 7-11a7 7 0 10-14 0c0 4.8 7 11 7 11z"/><circle cx="12" cy="10" r="2.4"/></svg>
-    <span>Vecinos</span><span class="bn-badge" id="navVecinosN" style="display:none">0</span></button>
+    <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+    <span>Alertas</span><span class="bn-badge" id="navVecinosN" style="display:none">0</span></button>
   <button class="bn-item center" id="navPublicar">
     <span class="ic-circle"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span>
     <span>Publicar</span></button>
@@ -1957,7 +1964,9 @@
     }
 
     // ---- pie común: marca + "Leelo completo en Fonte" ----
-    const claro = urgente;
+    // el pie va en claro tanto en "urgente" (fondo rojo) como en "foto" (el velo
+    // oscuro del degradé llega hasta abajo) — solo "tipografica" tiene fondo papel.
+    const claro = (diseño === "urgente" || diseño === "foto");
     ctx.fillStyle = claro ? "rgba(255,255,255,.35)" : TINTA;
     ctx.fillRect(80, H-260, W-160, claro ? 2 : 5);
     ctx.fillStyle = claro ? "#fff" : TINTA;
@@ -2011,9 +2020,51 @@
       APORTES = res.ok ? await res.json() : [];
       await cargarConfirmaciones();
     }catch(e){ APORTES = []; }
-    // La lista vive en el sheet (abrirVecinos). Acá solo actualizamos el contador de la barra.
+    // La lista completa vive en Alertas (abrirVecinos). Acá solo el contador de la barra
+    // y la fila de "recién publicados" en Inicio.
     pintarBadgeVecinos();
+    pintarAvisosHome();
   }
+  // ---- aviso individual visto: igual que con los comunicados, se guarda por dispositivo ----
+  function aportesVistos(){
+    try{ return new Set(JSON.parse(localStorage.getItem("fonte_aportes_vistos") || "[]")); }catch(e){ return new Set(); }
+  }
+  function marcarAporteVisto(id){
+    try{
+      const v = aportesVistos();
+      v.add(String(id));
+      localStorage.setItem("fonte_aportes_vistos", JSON.stringify(Array.from(v).slice(-300)));
+    }catch(e){}
+  }
+  // Fila de "recién publicados" en Inicio, igual que instituciones/urgentes: solo lo nuevo,
+  // y lo que se toca para ver se saca de acá y queda en la lista completa (Alertas).
+  function pintarAvisosHome(){
+    const wrap = document.getElementById("avisosWrap");
+    if(!wrap) return;
+    const vistos = aportesVistos();
+    const nuevos = (APORTES||[]).filter(a => a.estado !== "resuelto" && !vistos.has(String(a.id))).slice(0, 8);
+    if(!nuevos.length){ wrap.style.display = "none"; document.getElementById("avisosRow").innerHTML = ""; return; }
+    wrap.style.display = "block";
+    document.getElementById("avisosRow").innerHTML = nuevos.map(a=>{
+      const cat = CAT_APORTE.find(c=>c.id===a.categoria) || {label:"Aporte", icon:"📍"};
+      const conFoto = !!a.foto_url;
+      return '<a class="aporte-card" data-aporte-id="'+esc(a.id)+'">'
+        + '<div class="ph-img" style="'+(conFoto ? ("background-image:url('"+esc(a.foto_url)+"')") : "background:var(--paper-2)")+'">'
+        + (conFoto ? '' : '<span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:1.5rem">'+cat.icon+'</span>')
+        + '</div>'
+        + '<div class="txt"><div class="aporte-cat">'+esc(cat.label)+'</div><div class="aporte-tit">'+esc(a.titulo||cat.label)+'</div></div></a>';
+    }).join("");
+    document.querySelectorAll("#avisosRow .aporte-card").forEach(el=>{
+      el.addEventListener("click", ()=>{
+        const id = el.getAttribute("data-aporte-id");
+        marcarAporteVisto(id);
+        pintarAvisosHome();
+        pintarBadgeVecinos();
+        abrirAporte(id);
+      });
+    });
+  }
+  document.getElementById("avisosVerTodos").addEventListener("click", (e)=>{ e.preventDefault(); abrirVecinos(); });
   function pintarBadgeVecinos(){
     const b = document.getElementById("navVecinosN");
     if(!b) return;
@@ -3423,12 +3474,16 @@
   // ================= FLOTANTE DE VECINOS =================
   function abrirVecinos(){
     const body = document.getElementById("vecinosBody");
+    let html = "";
+
+    // ---- avisos de vecinos ----
+    html += '<div class="rail-title" style="margin-bottom:10px">📍 Avisos de vecinos</div>';
     if(!(APORTES||[]).length){
-      body.innerHTML = '<div class="vacio"><div class="ic">📍</div><div class="t">Todavía no hay reportes</div>'
+      html += '<div class="vacio" style="padding:20px 10px 26px"><div class="ic">📍</div><div class="t">Todavía no hay reportes</div>'
         + '<div class="p">Acá van a aparecer los avisos de vecinos: baches, cortes de luz, agua estancada, alumbrado.</div>'
         + '<button class="b" id="vacioAportar2">+ Aportá un dato</button></div>';
     } else {
-      body.innerHTML = '<div style="text-align:right;padding:0 0 10px"><button id="verMisAportes2" style="font-family:var(--sans);font-size:.72rem;font-weight:700;color:var(--region);background:none;border:0">📋 Mis aportes ›</button></div>'
+      html += '<div style="text-align:right;padding:0 0 10px"><button id="verMisAportes2" style="font-family:var(--sans);font-size:.72rem;font-weight:700;color:var(--region);background:none;border:0">📋 Mis aportes ›</button></div>'
         + APORTES.map(a=>{
           const cat = CAT_APORTE.find(c=>c.id===a.categoria) || {label:"Aporte", icon:"📍"};
           const nC = CONFIRMACIONES[a.id] || 0;
@@ -3447,8 +3502,39 @@
             + '</div></div>';
         }).join("");
     }
-    body.querySelectorAll(".ap-card").forEach(el=>{
+
+    // ---- instituciones verificadas: quedan guardadas acá para consultar cuando quieras ----
+    if((INSTITUCIONES||[]).length){
+      html += '<div class="rail-title" style="margin:22px 0 10px">✓ Instituciones verificadas</div>';
+      html += INSTITUCIONES.map(i=>
+        '<div class="ap-card" data-inst-id="'+esc(i.id)+'">'
+        + '<span class="im" style="display:flex;align-items:center;justify-content:center;font-size:1.3rem">'+(ICONS_INST[i.tipo]||"📍")+'</span>'
+        + '<div class="tx"><div class="cat2">Institución verificada</div><div class="h">'+esc(i.nombre)+'</div>'
+        + (i.direccion ? '<div class="m">'+esc(i.direccion)+'</div>' : '') + '</div></div>'
+      ).join("");
+    }
+
+    // ---- historial de alertas cerca tuyo: se van acumulando acá, no desaparecen al cerrarlas ----
+    const historialUrg = (COMUNICADOS||[]).filter(c=>c.urgente);
+    if(historialUrg.length){
+      html += '<div class="rail-title" style="margin:22px 0 10px">⚡ Alertas cerca tuyo</div>';
+      html += historialUrg.map(c=>
+        '<div class="ap-card" data-com-id="'+esc(c.id)+'">'
+        + '<span class="im" style="display:flex;align-items:center;justify-content:center;font-size:1.3rem;color:var(--urgente)">⚡</span>'
+        + '<div class="tx"><div class="cat2">'+esc(c.institucion||"Alerta")+'</div><div class="h">'+esc(c.titulo||"")+'</div>'
+        + '<div class="m">'+tiempoDesde(c.created_at)+'</div></div></div>'
+      ).join("");
+    }
+
+    body.innerHTML = html;
+    body.querySelectorAll(".ap-card[data-aporte-id]").forEach(el=>{
       el.addEventListener("click", ()=>{ cerrarVecinos(); abrirAporte(el.getAttribute("data-aporte-id")); });
+    });
+    body.querySelectorAll(".ap-card[data-inst-id]").forEach(el=>{
+      el.addEventListener("click", ()=>{ cerrarVecinos(); abrirInstitucion(el.getAttribute("data-inst-id")); });
+    });
+    body.querySelectorAll(".ap-card[data-com-id]").forEach(el=>{
+      el.addEventListener("click", ()=>{ cerrarVecinos(); abrirComunicado(el.getAttribute("data-com-id")); });
     });
     const vm = document.getElementById("verMisAportes2");
     if(vm) vm.addEventListener("click", ()=>{ cerrarVecinos(); abrirMisAportes(); });
@@ -3456,6 +3542,7 @@
     if(va) va.addEventListener("click", ()=>{ cerrarVecinos(); document.getElementById("fabAportar").click(); });
     try{ localStorage.setItem("fonte_aportes_vistos", JSON.stringify((APORTES||[]).map(a=>String(a.id)).slice(0,200))); }catch(e){}
     pintarBadgeVecinos();
+    pintarAvisosHome();
     document.getElementById("backdropVecinos").classList.add("show");
     document.getElementById("sheetVecinos").classList.add("show");
   }

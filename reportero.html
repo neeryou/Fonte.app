@@ -2118,7 +2118,9 @@
     }
 
     // ---- pie común: marca + "Leelo completo en Fonte" ----
-    const claro = urgente;
+    // el pie va en claro tanto en "urgente" (fondo rojo) como en "foto" (el velo
+    // oscuro del degradé llega hasta abajo) — solo "tipografica" tiene fondo papel.
+    const claro = (diseño === "urgente" || diseño === "foto");
     ctx.fillStyle = claro ? "rgba(255,255,255,.35)" : TINTA;
     ctx.fillRect(80, H-260, W-160, claro ? 2 : 5);
     ctx.fillStyle = claro ? "#fff" : TINTA;
