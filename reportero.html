@@ -2095,9 +2095,8 @@
         ctx.font = "500 42px 'Work Sans',sans-serif"; ctx.fillStyle = "rgba(255,255,255,.92)";
         envolver(ctx, n.dato_extra, W-160, 4).forEach((l,i)=> ctx.fillText(l, 80, 1180 + i*58));
       }
-    } else if((diseño === "foto" || diseño === "cuadrada") && img){
-      // ---- foto de fondo a sangre completa, con velo y titular encima ----
-      // (misma pieza para "foto" y "cuadrada" — solo cambia H, todo acá adentro es relativo a H)
+    } else if(diseño === "foto" && img){
+      // ---- foto de fondo a sangre completa, formato historia (vertical) ----
       const escala = Math.max(W/img.width, H/img.height);
       const iw = img.width*escala, ih = img.height*escala;
       ctx.drawImage(img, (W-iw)/2, (H-ih)/2, iw, ih);
@@ -2118,6 +2117,32 @@
       const alturaTexto = ls.length * 100;
       const yInicio = H - 330 - alturaTexto;
       ls.forEach((l,i)=> ctx.fillText(l, 80, yInicio + i*100));
+    } else if(diseño === "cuadrada" && img){
+      // ---- cuadrada para feed: el título va lo más abajo posible (letra más chica,
+      // menos aire reservado) para tapar lo mínimo posible de la cara/foto ----
+      const escala = Math.max(W/img.width, H/img.height);
+      const iw = img.width*escala, ih = img.height*escala;
+      ctx.drawImage(img, (W-iw)/2, (H-ih)/2, iw, ih);
+      const velo = ctx.createLinearGradient(0, H*0.55, 0, H);
+      velo.addColorStop(0, "rgba(10,9,7,0)");
+      velo.addColorStop(0.55, "rgba(10,9,7,.5)");
+      velo.addColorStop(1, "rgba(10,9,7,.9)");
+      ctx.fillStyle = velo; ctx.fillRect(0, 0, W, H);
+      if(lugar){
+        ctx.font = "800 26px 'Work Sans',sans-serif";
+        const w = ctx.measureText(lugar).width + 46;
+        ctx.fillStyle = "#fff";
+        ctx.beginPath(); ctx.roundRect(70, 68, w, 48, 24); ctx.fill();
+        ctx.fillStyle = TINTA; ctx.fillText(lugar, 93, 100);
+      }
+      ctx.fillStyle = "#fff"; ctx.font = "700 58px 'Fraunces',Georgia,serif";
+      const ls = envolver(ctx, n.titulo, W-140, 6);
+      const alturaTexto = ls.length * 70;
+      // si además lleva cinta (oferta/comunicado/aviso de vecino), el título necesita más
+      // aire abajo para no pisarla; una nota (sin cinta) puede ir bien pegada al pie
+      const margenAbajo = cinta ? 320 : 240;
+      const yInicio = H - margenAbajo - alturaTexto;
+      ls.forEach((l,i)=> ctx.fillText(l, 70, yInicio + i*70));
     } else if(diseño === "editorial" && img){
       // ---- editorial: foto a la mitad de arriba, papel abajo con el título (solo Reportero) ----
       ctx.fillStyle = PAPEL; ctx.fillRect(0,0,W,H);
