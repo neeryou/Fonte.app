@@ -2170,7 +2170,7 @@
       return img ? "foto" : "tipografica";
     }
     let diseño = diseñoDePlaca();
-    if((diseño === "foto" || diseño === "editorial") && !img) diseño = "tipografica"; // pidió foto pero no hay
+    if((diseño === "foto" || diseño === "editorial" || diseño === "marco_foto") && !img) diseño = "tipografica"; // pidió foto pero no hay
 
     const feed = n.__dim === "feed";
     const W = 1080, H = feed ? 1080 : 1920;
@@ -2249,6 +2249,45 @@
       const eFont = feed?52:78, eLinea = feed?66:94, eOffset = feed?80:150, eMaxLineas = feed?4:6;
       ctx.fillStyle = TINTA; ctx.font = "700 "+eFont+"px 'Fraunces',Georgia,serif";
       envolver(ctx, n.titulo, W-160, eMaxLineas).forEach((l,i)=> ctx.fillText(l, 80, alto + eOffset + i*eLinea));
+    } else if(diseño === "marco_foto" && img){
+      // ---- marco con foto: el marco de siempre, con una foto circular anclada cerca
+      // del borde de abajo. El título y la bajada se acomodan en lo que quede libre
+      // arriba de la foto — la foto nunca se mueve, el texto se ajusta a ella. ----
+      ctx.fillStyle = PAPEL; ctx.fillRect(0,0,W,H);
+      const marcoBottom = 130 + (H-420);
+      ctx.strokeStyle = TINTA; ctx.lineWidth = 8;
+      ctx.strokeRect(80, 130, W-160, H-420);
+      if(lugar){
+        ctx.fillStyle = "#3E8557"; ctx.font = "800 34px 'Work Sans',sans-serif";
+        ctx.fillText("● " + lugar, 140, 250);
+      }
+      const radio = feed ? 100 : 190;
+      const cy = marcoBottom - radio - (feed ? 26 : 40);
+      const cx = W/2;
+
+      const tStart = feed ? 300 : 380;
+      const mFont = feed?50:84, mLinea = feed?62:102, mMaxLineas = feed?3:5;
+      ctx.fillStyle = TINTA; ctx.font = "700 "+mFont+"px 'Fraunces',Georgia,serif";
+      const ls = envolver(ctx, n.titulo, W-280, mMaxLineas);
+      ls.forEach((l,i)=> ctx.fillText(l, 140, tStart + i*mLinea));
+      const yLinea = tStart + ls.length*mLinea + 20;
+      ctx.fillStyle = CORAL; ctx.beginPath(); ctx.roundRect(140, yLinea, 120, 10, 5); ctx.fill();
+      const bajada = n.resumen_corto || "";
+      const dFont = feed?24:38, dLinea = feed?34:52;
+      const techoFoto = cy - radio - 24; // el texto no puede pisar la foto
+      const espacioLibre = techoFoto - (yLinea + 70);
+      const maxLineasBajada = Math.floor(espacioLibre / dLinea) + 1;
+      if(bajada && maxLineasBajada >= 1){
+        ctx.fillStyle = "#57503F"; ctx.font = "500 "+dFont+"px 'Fraunces',Georgia,serif";
+        envolver(ctx, bajada, W-280, Math.min(feed?2:4, maxLineasBajada)).forEach((l,i)=> ctx.fillText(l, 140, yLinea + 70 + i*dLinea));
+      }
+
+      ctx.save();
+      ctx.beginPath(); ctx.arc(cx, cy, radio, 0, Math.PI*2); ctx.clip();
+      const escalaF = Math.max((radio*2)/img.width, (radio*2)/img.height);
+      const iw2 = img.width*escalaF, ih2 = img.height*escalaF;
+      ctx.drawImage(img, cx-iw2/2, cy-ih2/2, iw2, ih2);
+      ctx.restore();
     } else {
       // ---- marco (tipográfica, sin foto) ----
       ctx.fillStyle = PAPEL; ctx.fillRect(0,0,W,H);
@@ -2349,9 +2388,9 @@
     return '<div class="field-label" style="margin-top:16px">Diseño</div>'
       + '<div class="srcchips" id="formatoShare-'+escA(obj.id)+'">'
       + chip("auto","Automático") + chip("foto","Foto de fondo") + chip("tipografica","Marco") + chip("urgente","Urgente")
-      + chip("editorial","Foto a la mitad")
+      + chip("editorial","Foto a la mitad") + chip("marco_foto","Marco con foto")
       + '</div>'
-      + '<div class="recorte-ayuda" style="margin-top:-4px;margin-bottom:8px">"Foto a la mitad" es solo para compartir desde acá — el vecino en la app nunca la ve.</div>'
+      + '<div class="recorte-ayuda" style="margin-top:-4px;margin-bottom:8px">"Foto a la mitad" y "Marco con foto" son solo para compartir desde acá — el vecino en la app nunca las ve.</div>'
       + '<div class="field-label">Tamaño</div>'
       + '<div class="srcchips" id="dimShare-'+escA(obj.id)+'">'
       + chipDim("historia","Para historia") + chipDim("feed","Para feed")
