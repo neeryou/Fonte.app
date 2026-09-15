@@ -2138,7 +2138,12 @@
       const alto = Math.round(H * 0.469); // misma proporción que la placa original (900/1920)
       const escala = Math.max(W/img.width, alto/img.height);
       const iw = img.width*escala, ih = img.height*escala;
+      // recorte: sin esto, con fotos "anchas" la imagen queda mucho más alta que "alto"
+      // y se mete en la mitad de papel, tapando el título — por eso se veía negro/oscuro ahí
+      ctx.save();
+      ctx.beginPath(); ctx.rect(0, 0, W, alto); ctx.clip();
       ctx.drawImage(img, (W-iw)/2, (alto-ih)/2, iw, ih);
+      ctx.restore();
       if(lugar){
         ctx.font = "800 32px 'Work Sans',sans-serif";
         const w = ctx.measureText(lugar).width + 64;
@@ -2146,29 +2151,36 @@
         ctx.beginPath(); ctx.roundRect(60, alto-96, w, 62, 31); ctx.fill();
         ctx.fillStyle = "#fff"; ctx.fillText(lugar, 92, alto-54);
       }
-      const eFont = feed?54:78, eLinea = feed?70:94, eOffset = feed?90:150;
+      const eFont = feed?52:78, eLinea = feed?66:94, eOffset = feed?80:150, eMaxLineas = feed?4:6;
       ctx.fillStyle = TINTA; ctx.font = "700 "+eFont+"px 'Fraunces',Georgia,serif";
-      envolver(ctx, n.titulo, W-160, 6).forEach((l,i)=> ctx.fillText(l, 80, alto + eOffset + i*eLinea));
+      envolver(ctx, n.titulo, W-160, eMaxLineas).forEach((l,i)=> ctx.fillText(l, 80, alto + eOffset + i*eLinea));
     } else {
       // ---- marco (tipográfica, sin foto) ----
       ctx.fillStyle = PAPEL; ctx.fillRect(0,0,W,H);
+      const marcoBottom = 130 + (H-420); // borde inferior real del cuadro
       ctx.strokeStyle = TINTA; ctx.lineWidth = 8;
       ctx.strokeRect(80, 130, W-160, H-420);
       if(lugar){
         ctx.fillStyle = "#3E8557"; ctx.font = "800 34px 'Work Sans',sans-serif";
         ctx.fillText("● " + lugar, 140, 250);
       }
-      const mFont = feed?66:88, mLinea = feed?80:106;
+      const tStart = feed ? 320 : 380;
+      const mFont = feed?56:88, mLinea = feed?68:106, mMaxLineas = feed?5:7;
       ctx.fillStyle = TINTA; ctx.font = "700 "+mFont+"px 'Fraunces',Georgia,serif";
-      const ls = envolver(ctx, n.titulo, W-280, 7);
-      ls.forEach((l,i)=> ctx.fillText(l, 140, 380 + i*mLinea));
-      const yLinea = 380 + ls.length*mLinea + 20;
+      const ls = envolver(ctx, n.titulo, W-280, mMaxLineas);
+      ls.forEach((l,i)=> ctx.fillText(l, 140, tStart + i*mLinea));
+      const yLinea = tStart + ls.length*mLinea + 20;
       ctx.fillStyle = CORAL; ctx.beginPath(); ctx.roundRect(140, yLinea, 120, 10, 5); ctx.fill();
       const bajada = n.resumen_corto || "";
-      if(bajada){
-        const dFont = feed?34:44, dLinea = feed?48:62;
+      // cuánto lugar queda realmente libre antes del borde del cuadro — si el título ya
+      // ocupó casi todo, la bajada se acorta sola (o directamente no se dibuja) en vez de
+      // desbordarse por fuera del marco como pasaba antes
+      const dFont = feed?30:44, dLinea = feed?42:62;
+      const espacioLibre = (marcoBottom - 40) - (yLinea + 90);
+      const maxLineasBajada = Math.floor(espacioLibre / dLinea) + 1;
+      if(bajada && maxLineasBajada >= 1){
         ctx.fillStyle = "#57503F"; ctx.font = "500 "+dFont+"px 'Fraunces',Georgia,serif";
-        envolver(ctx, bajada, W-280, 5).forEach((l,i)=> ctx.fillText(l, 140, yLinea + 90 + i*dLinea));
+        envolver(ctx, bajada, W-280, Math.min(feed?3:5, maxLineasBajada)).forEach((l,i)=> ctx.fillText(l, 140, yLinea + 90 + i*dLinea));
       }
     }
 
