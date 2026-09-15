@@ -2063,21 +2063,22 @@
     };
     const cinta = TIPOS[n.__tipo] || null;
 
-    // El vecino, desde la app, siempre ve/comparte con solo 3 formatos (foto de fondo /
+    // El vecino, desde la app, siempre ve/comparte con solo 3 diseños (foto de fondo /
     // marco / urgente) — eso lo sigue resolviendo diseñoDePlaca() abajo tal cual. Acá en
-    // Reportero, para publicar a redes, hay 2 formatos extra que SOLO existen en esta
-    // consola: "editorial" (foto a la mitad, pensada para feed) y "cuadrada" (1080x1080,
-    // ideal para publicaciones que no son historias). Nunca se generan solos/automático:
-    // solo cuando el reportero los elige a mano en el selector de formato.
+    // Reportero, para publicar a redes, hay un diseño extra ("editorial" — foto a la mitad)
+    // que SOLO existe en esta consola. Además, cualquier diseño se puede generar en 2
+    // tamaños: "historia" (vertical, 1080x1920) o "feed" (cuadrada, 1080x1080) — esto es
+    // independiente del diseño, así que cada uno ajusta su propia letra para el tamaño.
     function diseñoDePlaca(){
       if(n.estilo_placa && n.estilo_placa !== "auto") return n.estilo_placa;
       if(urgente) return "urgente";
       return img ? "foto" : "tipografica";
     }
     let diseño = diseñoDePlaca();
-    if((diseño === "foto" || diseño === "editorial" || diseño === "cuadrada") && !img) diseño = "tipografica"; // pidió foto pero no hay
+    if((diseño === "foto" || diseño === "editorial") && !img) diseño = "tipografica"; // pidió foto pero no hay
 
-    const W = 1080, H = (diseño === "cuadrada") ? 1080 : 1920;
+    const feed = n.__dim === "feed";
+    const W = 1080, H = feed ? 1080 : 1920;
     const c = document.createElement("canvas");
     c.width = W; c.height = H;
     const ctx = c.getContext("2d");
@@ -2089,64 +2090,52 @@
       ctx.beginPath(); ctx.roundRect(80, 150, 340, 76, 38); ctx.fill();
       ctx.fillStyle = ROJO; ctx.font = "800 34px 'Work Sans',sans-serif";
       ctx.fillText("⚡ URGENTE", 118, 200);
-      ctx.fillStyle = "#fff"; ctx.font = "700 86px 'Fraunces',Georgia,serif";
-      envolver(ctx, n.titulo, W-160, 6).forEach((l,i)=> ctx.fillText(l, 80, 360 + i*104));
+      const tFont = feed ? 60 : 86, tLinea = feed ? 76 : 104, tY0 = feed ? 280 : 360;
+      ctx.fillStyle = "#fff"; ctx.font = "700 "+tFont+"px 'Fraunces',Georgia,serif";
+      const lsU = envolver(ctx, n.titulo, W-160, 6);
+      lsU.forEach((l,i)=> ctx.fillText(l, 80, tY0 + i*tLinea));
       if(n.dato_extra){
-        ctx.font = "500 42px 'Work Sans',sans-serif"; ctx.fillStyle = "rgba(255,255,255,.92)";
-        envolver(ctx, n.dato_extra, W-160, 4).forEach((l,i)=> ctx.fillText(l, 80, 1180 + i*58));
+        // debajo de donde haya terminado el título, sea cual sea su largo — nunca a una
+        // altura fija, así no se sale del cuadro en el formato feed
+        const finTitulo = tY0 + (lsU.length-1)*tLinea;
+        const dFont = feed ? 30 : 42, dLinea = feed ? 42 : 58;
+        ctx.font = "500 "+dFont+"px 'Work Sans',sans-serif"; ctx.fillStyle = "rgba(255,255,255,.92)";
+        envolver(ctx, n.dato_extra, W-160, 4).forEach((l,i)=> ctx.fillText(l, 80, finTitulo + 100 + i*dLinea));
       }
     } else if(diseño === "foto" && img){
-      // ---- foto de fondo a sangre completa, formato historia (vertical) ----
+      // ---- foto de fondo a sangre completa ----
       const escala = Math.max(W/img.width, H/img.height);
       const iw = img.width*escala, ih = img.height*escala;
       ctx.drawImage(img, (W-iw)/2, (H-ih)/2, iw, ih);
-      const velo = ctx.createLinearGradient(0, H*0.30, 0, H);
+      const velo = ctx.createLinearGradient(0, H*(feed?0.55:0.30), 0, H);
       velo.addColorStop(0, "rgba(10,9,7,0)");
-      velo.addColorStop(0.45, "rgba(10,9,7,.62)");
-      velo.addColorStop(1, "rgba(10,9,7,.95)");
+      velo.addColorStop(feed?0.55:0.45, "rgba(10,9,7,"+(feed?".5":".62")+")");
+      velo.addColorStop(1, "rgba(10,9,7,"+(feed?".9":".95")+")");
       ctx.fillStyle = velo; ctx.fillRect(0, 0, W, H);
       if(lugar){
-        ctx.font = "800 32px 'Work Sans',sans-serif";
-        const w = ctx.measureText(lugar).width + 60;
+        const bFont = feed?26:32, bPad=feed?46:60, bY=feed?68:130, bH=feed?48:60, bR=feed?24:30;
+        ctx.font = "800 "+bFont+"px 'Work Sans',sans-serif";
+        const w = ctx.measureText(lugar).width + bPad;
         ctx.fillStyle = "#fff";
-        ctx.beginPath(); ctx.roundRect(80, 130, w, 60, 30); ctx.fill();
-        ctx.fillStyle = TINTA; ctx.fillText(lugar, 110, 170);
+        ctx.beginPath(); ctx.roundRect(feed?70:80, bY, w, bH, bR); ctx.fill();
+        ctx.fillStyle = TINTA; ctx.fillText(lugar, (feed?70:80)+23, bY+(feed?32:40));
       }
-      ctx.fillStyle = "#fff"; ctx.font = "700 84px 'Fraunces',Georgia,serif";
-      const ls = envolver(ctx, n.titulo, W-160, 6);
-      const alturaTexto = ls.length * 100;
-      const yInicio = H - 330 - alturaTexto;
-      ls.forEach((l,i)=> ctx.fillText(l, 80, yInicio + i*100));
-    } else if(diseño === "cuadrada" && img){
-      // ---- cuadrada para feed: el título va lo más abajo posible (letra más chica,
-      // menos aire reservado) para tapar lo mínimo posible de la cara/foto ----
-      const escala = Math.max(W/img.width, H/img.height);
-      const iw = img.width*escala, ih = img.height*escala;
-      ctx.drawImage(img, (W-iw)/2, (H-ih)/2, iw, ih);
-      const velo = ctx.createLinearGradient(0, H*0.55, 0, H);
-      velo.addColorStop(0, "rgba(10,9,7,0)");
-      velo.addColorStop(0.55, "rgba(10,9,7,.5)");
-      velo.addColorStop(1, "rgba(10,9,7,.9)");
-      ctx.fillStyle = velo; ctx.fillRect(0, 0, W, H);
-      if(lugar){
-        ctx.font = "800 26px 'Work Sans',sans-serif";
-        const w = ctx.measureText(lugar).width + 46;
-        ctx.fillStyle = "#fff";
-        ctx.beginPath(); ctx.roundRect(70, 68, w, 48, 24); ctx.fill();
-        ctx.fillStyle = TINTA; ctx.fillText(lugar, 93, 100);
-      }
-      ctx.fillStyle = "#fff"; ctx.font = "700 58px 'Fraunces',Georgia,serif";
-      const ls = envolver(ctx, n.titulo, W-140, 6);
-      const alturaTexto = ls.length * 70;
-      // si además lleva cinta (oferta/comunicado/aviso de vecino), el título necesita más
-      // aire abajo para no pisarla; una nota (sin cinta) puede ir bien pegada al pie
-      const margenAbajo = cinta ? 320 : 240;
+      // en feed: letra más chica y menos aire reservado abajo, para que el título quede
+      // lo más pegado posible al pie y tape lo mínimo posible de la foto
+      const tFont = feed?58:84, tLinea = feed?70:100, tMargenX = feed?70:80, tAncho = feed?140:160;
+      ctx.fillStyle = "#fff"; ctx.font = "700 "+tFont+"px 'Fraunces',Georgia,serif";
+      const ls = envolver(ctx, n.titulo, W-tAncho, 6);
+      const alturaTexto = ls.length * tLinea;
+      // si además lleva cinta (oferta/comunicado/aviso de vecino), necesita más aire abajo
+      // para no pisarla; una nota (sin cinta) puede ir bien pegada al pie
+      const margenAbajo = feed ? (cinta ? 320 : 240) : 330;
       const yInicio = H - margenAbajo - alturaTexto;
-      ls.forEach((l,i)=> ctx.fillText(l, 70, yInicio + i*70));
+      ls.forEach((l,i)=> ctx.fillText(l, tMargenX, yInicio + i*tLinea));
     } else if(diseño === "editorial" && img){
-      // ---- editorial: foto a la mitad de arriba, papel abajo con el título (solo Reportero) ----
+      // ---- editorial: foto arriba, papel abajo con el título (solo Reportero) ----
+      // la mitad de arriba es siempre foto, sea cual sea el tamaño final
       ctx.fillStyle = PAPEL; ctx.fillRect(0,0,W,H);
-      const alto = 900;
+      const alto = Math.round(H * 0.469); // misma proporción que la placa original (900/1920)
       const escala = Math.max(W/img.width, alto/img.height);
       const iw = img.width*escala, ih = img.height*escala;
       ctx.drawImage(img, (W-iw)/2, (alto-ih)/2, iw, ih);
@@ -2157,8 +2146,9 @@
         ctx.beginPath(); ctx.roundRect(60, alto-96, w, 62, 31); ctx.fill();
         ctx.fillStyle = "#fff"; ctx.fillText(lugar, 92, alto-54);
       }
-      ctx.fillStyle = TINTA; ctx.font = "700 78px 'Fraunces',Georgia,serif";
-      envolver(ctx, n.titulo, W-160, 6).forEach((l,i)=> ctx.fillText(l, 80, alto + 150 + i*94));
+      const eFont = feed?54:78, eLinea = feed?70:94, eOffset = feed?90:150;
+      ctx.fillStyle = TINTA; ctx.font = "700 "+eFont+"px 'Fraunces',Georgia,serif";
+      envolver(ctx, n.titulo, W-160, 6).forEach((l,i)=> ctx.fillText(l, 80, alto + eOffset + i*eLinea));
     } else {
       // ---- marco (tipográfica, sin foto) ----
       ctx.fillStyle = PAPEL; ctx.fillRect(0,0,W,H);
@@ -2168,15 +2158,17 @@
         ctx.fillStyle = "#3E8557"; ctx.font = "800 34px 'Work Sans',sans-serif";
         ctx.fillText("● " + lugar, 140, 250);
       }
-      ctx.fillStyle = TINTA; ctx.font = "700 88px 'Fraunces',Georgia,serif";
+      const mFont = feed?66:88, mLinea = feed?80:106;
+      ctx.fillStyle = TINTA; ctx.font = "700 "+mFont+"px 'Fraunces',Georgia,serif";
       const ls = envolver(ctx, n.titulo, W-280, 7);
-      ls.forEach((l,i)=> ctx.fillText(l, 140, 380 + i*106));
-      const yLinea = 380 + ls.length*106 + 20;
+      ls.forEach((l,i)=> ctx.fillText(l, 140, 380 + i*mLinea));
+      const yLinea = 380 + ls.length*mLinea + 20;
       ctx.fillStyle = CORAL; ctx.beginPath(); ctx.roundRect(140, yLinea, 120, 10, 5); ctx.fill();
       const bajada = n.resumen_corto || "";
       if(bajada){
-        ctx.fillStyle = "#57503F"; ctx.font = "500 44px 'Fraunces',Georgia,serif";
-        envolver(ctx, bajada, W-280, 5).forEach((l,i)=> ctx.fillText(l, 140, yLinea + 90 + i*62));
+        const dFont = feed?34:44, dLinea = feed?48:62;
+        ctx.fillStyle = "#57503F"; ctx.font = "500 "+dFont+"px 'Fraunces',Georgia,serif";
+        envolver(ctx, bajada, W-280, 5).forEach((l,i)=> ctx.fillText(l, 140, yLinea + 90 + i*dLinea));
       }
     }
 
@@ -2193,9 +2185,9 @@
     }
 
     // ---- pie común: marca + "Leelo completo en Fonte" ----
-    // el pie va en claro en "urgente" (fondo rojo) y en "foto"/"cuadrada" (el velo
-    // oscuro del degradé llega hasta abajo) — "tipografica" y "editorial" tienen fondo papel.
-    const claro = (diseño === "urgente" || diseño === "foto" || diseño === "cuadrada");
+    // el pie va en claro en "urgente" (fondo rojo) y en "foto" (el velo oscuro del
+    // degradé llega hasta abajo) — "tipografica" y "editorial" tienen fondo papel.
+    const claro = (diseño === "urgente" || diseño === "foto");
     ctx.fillStyle = claro ? "rgba(255,255,255,.35)" : TINTA;
     ctx.fillRect(80, H-260, W-160, claro ? 2 : 5);
     ctx.fillStyle = claro ? "#fff" : TINTA;
@@ -2241,16 +2233,23 @@
   // El reportero puede elegir con qué formato compartir cada pieza ya publicada,
   // sin tocar el estilo que quedó guardado. Se recuerda por id mientras dura la sesión.
   const formatoElegidoPorId = {};
+  const dimensionElegidaPorId = {};
   function bloqueFormatoCompartir(obj){
     const actual = formatoElegidoPorId[obj.id] || "auto";
+    const dimActual = dimensionElegidaPorId[obj.id] || "historia";
     const chip = (v, label) => '<button class="srcchip'+(actual===v?' on':'')+'" data-f="'+v+'">'+label+'</button>';
-    return '<div class="field-label" style="margin-top:16px">Formato para compartir</div>'
+    const chipDim = (v, label) => '<button class="srcchip'+(dimActual===v?' on':'')+'" data-d="'+v+'">'+label+'</button>';
+    return '<div class="field-label" style="margin-top:16px">Diseño</div>'
       + '<div class="srcchips" id="formatoShare-'+escA(obj.id)+'">'
       + chip("auto","Automático") + chip("foto","Foto de fondo") + chip("tipografica","Marco") + chip("urgente","Urgente")
-      + chip("editorial","Foto a la mitad") + chip("cuadrada","Cuadrada (feed)")
+      + chip("editorial","Foto a la mitad")
       + '</div>'
-      + '<div class="recorte-ayuda" style="margin-top:-4px;margin-bottom:8px">"Foto a la mitad" y "Cuadrada" son solo para compartir desde acá — el vecino en la app nunca las ve.</div>'
-      + '<button class="compartir" id="btnVerImagen-'+escA(obj.id)+'" style="background:none;border:1px solid var(--line);color:var(--ink)">👁 Ver la imagen antes de compartir</button>'
+      + '<div class="recorte-ayuda" style="margin-top:-4px;margin-bottom:8px">"Foto a la mitad" es solo para compartir desde acá — el vecino en la app nunca la ve.</div>'
+      + '<div class="field-label">Tamaño</div>'
+      + '<div class="srcchips" id="dimShare-'+escA(obj.id)+'">'
+      + chipDim("historia","Para historia") + chipDim("feed","Para feed")
+      + '</div>'
+      + '<button class="compartir" id="btnVerImagen-'+escA(obj.id)+'" style="background:none;border:1px solid var(--line);color:var(--ink);margin-top:14px">👁 Ver la imagen antes de compartir</button>'
       + '<div id="previewImg-'+escA(obj.id)+'" class="hide" style="margin-top:10px"></div>';
   }
   // URL del último blob generado por objeto, para poder liberarla al reemplazarla o al cambiar de formato
@@ -2264,6 +2263,7 @@
     const n = comoNota(obj, tipo);
     const formato = formatoElegidoPorId[obj.id];
     if(formato && formato !== "auto") n.estilo_placa = formato;
+    n.__dim = dimensionElegidaPorId[obj.id] || "historia";
     const cont = document.getElementById("previewImg-"+obj.id);
     if(!cont) return;
     const orig = btn.textContent;
@@ -2286,15 +2286,27 @@
   }
   function engancharFormatoCompartir(obj, tipo){
     const cont = document.getElementById("formatoShare-"+obj.id);
-    if(!cont) return;
-    cont.querySelectorAll(".srcchip").forEach(b=>{
-      b.addEventListener("click", ()=>{
-        cont.querySelectorAll(".srcchip").forEach(x=>x.classList.remove("on"));
-        b.classList.add("on");
-        formatoElegidoPorId[obj.id] = b.getAttribute("data-f");
-        limpiarPreview(obj.id); // la vista previa que estaba abierta ya no corresponde al formato nuevo
+    if(cont){
+      cont.querySelectorAll(".srcchip").forEach(b=>{
+        b.addEventListener("click", ()=>{
+          cont.querySelectorAll(".srcchip").forEach(x=>x.classList.remove("on"));
+          b.classList.add("on");
+          formatoElegidoPorId[obj.id] = b.getAttribute("data-f");
+          limpiarPreview(obj.id); // la vista previa que estaba abierta ya no corresponde al diseño nuevo
+        });
       });
-    });
+    }
+    const contDim = document.getElementById("dimShare-"+obj.id);
+    if(contDim){
+      contDim.querySelectorAll(".srcchip").forEach(b=>{
+        b.addEventListener("click", ()=>{
+          contDim.querySelectorAll(".srcchip").forEach(x=>x.classList.remove("on"));
+          b.classList.add("on");
+          dimensionElegidaPorId[obj.id] = b.getAttribute("data-d");
+          limpiarPreview(obj.id); // ídem: ya no corresponde al tamaño nuevo
+        });
+      });
+    }
     const btnVer = document.getElementById("btnVerImagen-"+obj.id);
     if(btnVer) btnVer.addEventListener("click", (e)=> verImagenConsola(obj, tipo, e.currentTarget));
   }
@@ -2313,6 +2325,7 @@
     const n = comoNota(obj, tipo);
     const formato = formatoElegidoPorId[obj.id];
     if(formato && formato !== "auto") n.estilo_placa = formato;
+    n.__dim = dimensionElegidaPorId[obj.id] || "historia";
     const texto = textoCompartir(n);
     const orig = btn ? btn.textContent : "";
     if(btn) btn.textContent = "Preparando…";
