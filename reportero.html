@@ -742,6 +742,12 @@
   let imagenDetectada = null;
   let videoDetectado = null;
   let fotoPropiaUrl = null;
+  // resumen_estructurado / terminos: el mismo "extra" que ya traen las notas de Más noticias
+  // (lede, datos destacados, subtítulos, cita). No hay campo en el formulario para tocarlo a
+  // mano — viaja tal cual lo devuelva Gemini, ya validado, desde el borrador hasta publicar.
+  let borradorEstructurado = null;
+  let borradorTerminos = null;
+  let extendidoOriginal = "";
 
   const CAT_APORTE = [
     {id:"agua_estancada", label:"Agua estancada", icon:"💧"},
@@ -959,6 +965,12 @@
       }
       imagenDetectada = b.imagen_url || null;
       videoDetectado = b.video_url || null;
+      // mismo chequeo que ya hace fonte-recolector antes de guardar: si Gemini no
+      // devolvió una lede en forma de texto, no confiamos en el resto de la estructura
+      borradorEstructurado = (b.resumen_estructurado && typeof b.resumen_estructurado.lede === "string")
+        ? b.resumen_estructurado : null;
+      borradorTerminos = Array.isArray(b.terminos) ? b.terminos : null;
+      extendidoOriginal = document.getElementById("pvExtendido").value; // ver chequeo al publicar
       const avisos = [];
       if(b.imagen_leida) avisos.push("🔍 se leyó la imagen");
       if(imagenDetectada) avisos.push("📷 foto encontrada");
@@ -995,6 +1007,10 @@
       accion_etiqueta: accionEtiqueta() || null,
       accion_url: (accionEtiqueta() ? document.getElementById("accionUrl").value.trim() : "") || null,
       resumen_extendido: document.getElementById("pvExtendido").value.trim(),
+      // si el reportero tocó el texto extendido después de generarlo, la lede/subtítulos/cita
+      // quedaron armados sobre el texto viejo — mejor no publicarlos desincronizados
+      resumen_estructurado: (document.getElementById("pvExtendido").value === extendidoOriginal) ? borradorEstructurado : null,
+      terminos: (document.getElementById("pvExtendido").value === extendidoOriginal) ? borradorTerminos : null,
       categoria: document.getElementById("pvCategoria").value,
       onda: document.getElementById("pvOnda").value,
       lugar: document.getElementById("pvLugar").value.trim(),
