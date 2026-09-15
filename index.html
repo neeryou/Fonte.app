@@ -2864,6 +2864,7 @@
   }
 
   async function registrarVisita(){
+    if(esDispositivoInterno()){ avisoDebug("registrarVisita — dispositivo marcado como interno, no se cuenta"); return; }
     const hoy = new Date().toISOString().slice(0,10);
     let ultima = null;
     try{ ultima = localStorage.getItem("fonte_ultima_visita"); }catch(e){}
@@ -3399,6 +3400,28 @@
     document.getElementById("btnUsarGPS").classList.add("on");
     document.getElementById("mapaAjuste").classList.add("hide");
   });
+
+  // ================= DISPOSITIVOS INTERNOS (no cuentan como visita) =================
+  // Para que "personas entraron" en el panel de Reportero mida gente de afuera, no vos
+  // ni la reportera revisando la app. Se marca UNA VEZ por dispositivo, abriendo
+  // fonte.city/?staff=CLAVE_INTERNA (cambiá la clave de abajo por la que quieras, y avisale
+  // a cada reportero cuál es). Para sacarlo, ?staff=quitar en ese mismo dispositivo.
+  const CLAVE_INTERNA = "quitilipi2026"; // cambiá esto por tu propia clave
+  function esDispositivoInterno(){
+    try{ return localStorage.getItem("fonte_interno") === "1"; }catch(e){ return false; }
+  }
+  function revisarClaveStaff(){
+    let p;
+    try{ p = new URLSearchParams(location.search); }catch(e){ return; }
+    const val = p.get("staff");
+    if(!val) return;
+    try{
+      if(val === CLAVE_INTERNA){ localStorage.setItem("fonte_interno", "1"); }
+      else if(val === "quitar"){ localStorage.removeItem("fonte_interno"); }
+    }catch(e){}
+    try{ history.replaceState(null, "", location.pathname); }catch(e){} // saca el ?staff=... de la barra de direcciones
+  }
+  revisarClaveStaff();
 
   registrarVisita();
 
