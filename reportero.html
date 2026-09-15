@@ -2263,7 +2263,7 @@
       }
       const radio = feed ? 100 : 190;
       const cy = marcoBottom - radio - (feed ? 26 : 40);
-      const cx = W/2;
+      const cx = 140 + radio; // alineada al mismo margen izquierdo que el título, no centrada
 
       const tStart = feed ? 300 : 380;
       const mFont = feed?50:84, mLinea = feed?62:102, mMaxLineas = feed?3:5;
