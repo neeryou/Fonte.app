@@ -323,6 +323,8 @@
   .avisos-row::-webkit-scrollbar{ display:none; }
   .aviso-mini{ flex:0 0 auto; width:92px; text-align:center; }
   .aviso-mini .ic-circle{ width:50px; height:50px; margin:0 auto 6px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.35rem; }
+  .aviso-mini .foto-mini{ width:56px; height:56px; margin:0 auto 6px; border-radius:14px; position:relative; background-size:cover; background-position:center; background-color:var(--paper-2); }
+  .aviso-mini .foto-mini .badge{ position:absolute; bottom:-4px; right:-4px; width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:.72rem; border:2px solid var(--paper); }
   .aviso-mini .cat{ font-family:var(--sans); font-size:.68rem; font-weight:700; color:var(--ink); line-height:1.22; }
   .aviso-mini .m{ font-family:var(--sans); font-size:.58rem; color:var(--ink-faint); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .aviso-mini .nuevo{ display:inline-block; margin-top:4px; font-family:var(--sans); font-size:.5rem; font-weight:800; text-transform:uppercase; letter-spacing:.02em; color:#fff; background:var(--urgente); padding:2px 6px; border-radius:999px; }
@@ -815,6 +817,24 @@
   </div>
   <main class="wrap" id="feed"></main>
 </div>
+
+<footer>
+  <div class="wrap" style="display:flex;align-items:center;justify-content:space-between;gap:16px">
+    <div style="font-family:var(--serif);font-weight:700;font-size:1.05rem">Fonte<span style="color:var(--urgente)">.</span></div>
+    <div style="display:flex;gap:16px">
+      <a href="https://www.instagram.com/fontecity_?stkn=MWkxOGJ2cDljOHphOQ==" target="_blank" rel="noopener" aria-label="Fonte en Instagram" style="color:var(--ink)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="23" height="23">
+          <rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.4" cy="6.6" r=".6" fill="currentColor" stroke="none"/>
+        </svg>
+      </a>
+      <a href="https://www.facebook.com/share/1DmiX3zBn9/" target="_blank" rel="noopener" aria-label="Fonte en Facebook" style="color:var(--ink)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="23" height="23">
+          <path d="M15 21v-7h2.4l.4-3H15V9c0-.9.3-1.5 1.6-1.5H18V4.8c-.3 0-1.3-.1-2.4-.1-2.4 0-4.1 1.5-4.1 4.2V11H9v3h2.5v7"/>
+        </svg>
+      </a>
+    </div>
+  </div>
+</footer>
 
 <button class="fab" id="fabAportar">+ Aportá un dato</button>
 <button class="refresh-btn" id="refreshBtn">↻ Actualizar</button>
@@ -2047,8 +2067,12 @@
       const cat = CAT_APORTE.find(c=>c.id===a.categoria) || {label:"Aporte", icon:"📍"};
       const color = CAT_APORTE_COLOR[a.categoria] || "var(--ink-faint)";
       const esReciente = a.created_at && (Date.now() - new Date(a.created_at).getTime()) < 20*60000;
+      // con foto: la miniatura con el ícono como placa en la esquina. sin foto: el círculo de color de siempre.
+      const imagen = a.foto_url
+        ? '<div class="foto-mini" style="background-image:url(\''+esc(a.foto_url)+'\')"><span class="badge" style="background:'+color+'">'+cat.icon+'</span></div>'
+        : '<span class="ic-circle" style="background:color-mix(in srgb,'+color+' 16%,var(--paper));color:'+color+'">'+cat.icon+'</span>';
       return '<a class="aviso-mini" data-aporte-id="'+esc(a.id)+'">'
-        + '<span class="ic-circle" style="background:color-mix(in srgb,'+color+' 16%,var(--paper));color:'+color+'">'+cat.icon+'</span>'
+        + imagen
         + '<div class="cat">'+esc(cat.label)+'</div>'
         + (a.lugar_texto ? '<div class="m">'+esc(a.lugar_texto)+'</div>' : '<div class="m">'+tiempoDesde(a.created_at)+'</div>')
         + (esReciente ? '<span class="nuevo">Recién publicado</span>' : '')
