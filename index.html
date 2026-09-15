@@ -150,6 +150,8 @@
   .rail-item{ display:block; padding:11px 0; border-top:1px solid var(--line); }
   .rail-item:first-of-type{ border-top:0; }
   .rail-item .h{ font-size:1rem; line-height:1.2; margin-top:5px; }
+  .rail-item.foto{ display:grid; grid-template-columns:44px 1fr; gap:11px; align-items:center; }
+  .rail-item.foto .h{ margin-top:2px; }
   .lead .h{ font-family:var(--serif); font-weight:700; font-size:clamp(1.6rem,5.6vw,2.3rem); line-height:1.14; margin-top:12px; }
   .lead .dek{ color:var(--ink-soft); font-size:1rem; margin:9px 0 0; }
   .lead .byl{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:10px; }
@@ -159,6 +161,12 @@
   .recientes .rail-item{ display:grid; grid-template-columns:auto 1fr; gap:11px; align-items:baseline; }
   .recientes .tt{ font-family:var(--sans); font-size:.62rem; color:var(--ink-faint); white-space:nowrap; }
   .recientes .h{ font-size:.96rem; margin-top:0; }
+  .recientes .rail-item.foto{ grid-template-columns:44px 1fr; align-items:center; }
+
+  /* ===== miniaturas chicas (riel y lista de zona) — compartidas ===== */
+  .mini{ border-radius:11px; background-size:cover; background-position:center; background-color:var(--paper-2); position:relative; flex:0 0 auto; }
+  .mini .pf{ position:absolute; bottom:-4px; right:-4px; background:var(--ink); color:#fff; font-family:var(--sans); font-size:.52rem; font-weight:800;
+    padding:2px 5px; border-radius:999px; display:flex; align-items:center; gap:2px; border:2px solid var(--paper); white-space:nowrap; }
 
   /* ZONAS densas */
   .zone{ padding:26px 0 6px; scroll-margin-top:60px; }
@@ -180,6 +188,8 @@
   .zlist .li::before{ content:''; position:absolute; left:0; top:12px; bottom:12px; width:3px; border-radius:2px; background:var(--ac,var(--ink-faint)); }
   .zlist .li .h{ font-size:1.02rem; line-height:1.2; margin-top:5px; }
   .zlist .li .meta-row{ display:flex; align-items:center; gap:6px; margin-top:6px; flex-wrap:wrap; }
+  .zlist .li.foto{ display:grid; grid-template-columns:56px 1fr; gap:12px; align-items:center; }
+  .zlist .li.foto .h{ margin-top:0; }
   .ctag{ font-family:var(--sans); font-size:.58rem; font-weight:700; padding:1px 8px; border-radius:999px; color:#fff; background:var(--ac,var(--ink-faint)); }
   .pulse-dot{ width:6px; height:6px; border-radius:50%; background:var(--barrio); animation:pulse 1.8s ease infinite; display:inline-block; margin-right:3px; }
   @keyframes pulse{ 0%,100%{opacity:1; transform:scale(1);} 50%{opacity:.35; transform:scale(.7);} }
@@ -1241,9 +1251,10 @@
   function tarjeta(n, tipoHtml){ return tipoHtml; }
 
   function tplLiSingle(it){
-    return '<a class="article li" data-id="'+esc(it.id)+'" style="--ac:'+it.color+'">'
-      + '<h4 class="h">'+esc(it.titulo)+'</h4>'
-      + '<div class="meta-row">'+it.catTag+it.fav+'<span class="src">'+it.lugar+'</span><span class="src">'+it.tiempo+'</span></div></a>';
+    return '<a class="article li'+(it.mini?' foto':'')+'" data-id="'+esc(it.id)+'" style="--ac:'+it.color+'">'
+      + (it.mini||'')
+      + '<div><h4 class="h">'+esc(it.titulo)+'</h4>'
+      + '<div class="meta-row">'+it.catTag+it.fav+'<span class="src">'+it.lugar+'</span><span class="src">'+it.tiempo+'</span></div></div></a>';
   }
   function tplLiPair(a,b){
     return '<div class="li li-pair" style="--ac:'+a.color+'">'
@@ -1318,9 +1329,11 @@
       html += '<aside class="pp-left"><div class="rail-title">Cerca tuyo</div>';
       cercanas.slice(2,6).forEach(n=>{
         const lugar = n.lugar ? esc(n.lugar) : nombreDe(n.onda);
-        html += '<a class="article rail-item" data-id="'+esc(n.id)+'" style="--w:'+colorDe(n.onda)+'">'
-          + '<span class="kicker"><span class="dot"></span>'+lugar+'</span>'
-          + '<h3 class="h">'+esc(n.titulo)+'</h3></a>';
+        const mini = miniFoto(n, 44);
+        html += '<a class="article rail-item'+(mini?' foto':'')+'" data-id="'+esc(n.id)+'" style="--w:'+colorDe(n.onda)+'">'
+          + mini
+          + '<div><span class="kicker"><span class="dot"></span>'+lugar+'</span>'
+          + '<h3 class="h">'+esc(n.titulo)+'</h3></div></a>';
       });
       html += '</aside>';
     }
@@ -1345,9 +1358,11 @@
 
     html += '<aside class="pp-right recientes"><div class="rail-title">Últimas</div>';
     recientes.forEach(n=>{
-      html += '<a class="article rail-item" data-id="'+esc(n.id)+'">'
-        + '<span class="tt">'+tiempoDesde(n.created_at)+'</span>'
-        + '<h3 class="h">'+esc(n.titulo)+'</h3></a>';
+      const mini = miniFoto(n, 44);
+      html += '<a class="article rail-item'+(mini?' foto':'')+'" data-id="'+esc(n.id)+'">'
+        + mini
+        + '<div><span class="tt">'+tiempoDesde(n.created_at)+'</span>'
+        + '<h3 class="h">'+esc(n.titulo)+'</h3></div></a>';
     });
     html += '</aside>';
 
@@ -1427,7 +1442,7 @@
           if(pendientePar){ html += tplLiSingle(pendientePar); pendientePar = null; }
           html += especial;
         } else {
-          const item = { id:n.id, titulo:n.titulo, catTag, fav, lugar, tiempo, color };
+          const item = { id:n.id, titulo:n.titulo, catTag, fav, lugar, tiempo, color, mini: miniFoto(n, 56) };
           if(pendientePar){ html += tplLiPair(pendientePar, item); pendientePar = null; }
           else { pendientePar = item; }
         }
@@ -3168,6 +3183,14 @@
     if(o.foto_url) return [o.foto_url];      // aportes
     if(o.imagen_url) return [o.imagen_url];  // noticias
     return [];
+  }
+  // miniatura chica para el riel y la lista de zona — vacío si la nota no tiene foto
+  // (en ese caso el ítem se queda como texto plano, sin ningún hueco ni relleno)
+  function miniFoto(n, tam){
+    const fotos = fotosDe(n);
+    if(!fotos.length) return "";
+    const extra = fotos.length > 1 ? '<span class="pf">📷 '+fotos.length+'</span>' : '';
+    return '<span class="mini" style="width:'+tam+'px;height:'+tam+'px;background-image:url(\''+esc(fotos[0])+'\')">'+extra+'</span>';
   }
   function htmlGaleria(lista){
     if(!lista.length) return "";
