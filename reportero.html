@@ -1654,6 +1654,8 @@
       + (lista.length ? '<br>📷 '+lista.length+(lista.length===1?' foto':' fotos') : '<br>Sin foto')
       + '</div>'
       + (n.url_original ? '<div class="meta"><a href="'+escA(n.url_original)+'" target="_blank" rel="noopener">Ver la fuente original ↗</a></div>' : '')
+      + '<button class="compartir" id="btnEditarLink" style="background:none;border:1px solid var(--line);color:var(--ink);margin-top:8px">🔗 '+(n.url_original?'Cambiar':'Agregar')+' el enlace original</button>'
+      + '<div id="editorLinkNota"></div>'
       + '<div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--line)">'
       + '<div class="field-label">Agregar más fotos a esta nota</div>'
       + '<input class="inp" type="file" id="masFotos" accept="image/*" multiple style="padding:9px">'
@@ -1666,6 +1668,7 @@
       + '</div>';
     abrirVisorHTML(h);
     engancharFormatoCompartir(n, "nota");
+    document.getElementById("btnEditarLink").addEventListener("click", ()=> editarLinkNota(n));
     document.getElementById("btnCompartirVisor").addEventListener("click", (e)=> compartirDesdeConsola(n, "nota", e.currentTarget));
     document.getElementById("btnCopiarTextoVisor").addEventListener("click", (e)=> copiarTextoConsola(n, "nota", e.currentTarget));
     document.getElementById("btnBorrarNota").addEventListener("click", async (e)=>{
@@ -1706,6 +1709,32 @@
       est.textContent = "✓ Ahora la nota tiene " + todas.length + " fotos.";
       toast("Fotos agregadas ✓");
       cargarPublicadoHoy();
+    });
+  }
+
+  // Solo el link — nada más de la nota se toca ni se puede tocar desde acá.
+  function editarLinkNota(n){
+    const cont = document.getElementById("editorLinkNota");
+    document.getElementById("btnEditarLink").classList.add("hide");
+    cont.innerHTML = '<div class="edit-box">'
+      + '<div class="fl">Link de la fuente original</div>'
+      + '<input class="inp" id="elLink" value="'+escA(n.url_original||"")+'" placeholder="https://...">'
+      + '<div class="acciones"><button class="btn-cancelar" id="elCancelar">Cancelar</button>'
+      + '<button class="btn-guardar" id="elGuardar">Guardar</button></div></div>';
+    document.getElementById("elCancelar").addEventListener("click", ()=>{
+      cont.innerHTML = "";
+      document.getElementById("btnEditarLink").classList.remove("hide");
+    });
+    document.getElementById("elGuardar").addEventListener("click", async ()=>{
+      const btn = document.getElementById("elGuardar");
+      btn.disabled = true; btn.textContent = "Guardando…";
+      const valor = document.getElementById("elLink").value.trim() || null;
+      const { error } = await sb.from("noticias").update({ url_original: valor }).eq("id", n.id);
+      if(error){ toast("No se pudo guardar: " + error.message); btn.disabled = false; btn.textContent = "Guardar"; return; }
+      n.url_original = valor;
+      toast("Enlace guardado ✓");
+      if(typeof cargarArchivo === "function") cargarArchivo();
+      abrirVisorNota(n); // redibuja el visor ya con el link actualizado (o el botón vuelto a "Agregar" si se borró)
     });
   }
 
