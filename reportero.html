@@ -1663,6 +1663,10 @@
       + '<input class="inp" type="file" id="masFotos" accept="image/*" multiple style="padding:9px">'
       + '<div id="masFotosEstado" style="font-family:var(--sans);font-size:.72rem;color:var(--ink-faint)"></div>'
       + '</div>'
+      + (lista.length > 1
+          ? '<button class="compartir" id="btnEditarPortada" style="background:none;border:1px solid var(--line);color:var(--ink);margin-top:8px">🖼️ Cambiar la foto de portada</button>'
+          : '')
+      + '<div id="editorPortada"></div>'
       + bloqueFormatoCompartir(n)
       + '<button class="compartir" id="btnCompartirVisor">↗ Compartir en redes</button>'
       + '<button class="compartir" id="btnCopiarTextoVisor" style="background:none;border:1px solid var(--line);color:var(--ink)">📋 Copiar el texto</button>'
@@ -1672,6 +1676,8 @@
     abrirVisorHTML(h);
     engancharFormatoCompartir(n, "nota");
     document.getElementById("btnEditarLink").addEventListener("click", ()=> editarLinkNota(n));
+    const btnEP = document.getElementById("btnEditarPortada");
+    if(btnEP) btnEP.addEventListener("click", ()=> editarPortadaNota(n));
     document.getElementById("btnCompartirVisor").addEventListener("click", (e)=> compartirDesdeConsola(n, "nota", e.currentTarget));
     document.getElementById("btnCopiarTextoVisor").addEventListener("click", (e)=> copiarTextoConsola(n, "nota", e.currentTarget));
     document.getElementById("btnCopiarLinkVisor").addEventListener("click", (e)=> copiarLinkConsola(n, "nota", e.currentTarget));
@@ -1739,6 +1745,42 @@
       toast("Enlace guardado ✓");
       if(typeof cargarArchivo === "function") cargarArchivo();
       abrirVisorNota(n); // redibuja el visor ya con el link actualizado (o el botón vuelto a "Agregar" si se borró)
+    });
+  }
+
+  // Elegir portada: se toca la miniatura que se quiere adelante, y esa pasa a ser fotos[0]
+  // (la que usa el resto de la app como portada y como imagen para compartir). El resto del
+  // orden entre las demás fotos no se toca.
+  function editarPortadaNota(n){
+    const fotos = fotosDeNota(n);
+    if(fotos.length <= 1) return;
+    const cont = document.getElementById("editorPortada");
+    document.getElementById("btnEditarPortada").classList.add("hide");
+    cont.innerHTML = '<div class="edit-box">'
+      + '<div class="fl">Tocá la foto que querés como portada</div>'
+      + '<div style="display:flex;gap:8px;overflow-x:auto;padding:6px 0 10px">'
+      + fotos.map((u,i)=> '<img src="'+escA(u)+'" data-i="'+i+'" style="width:72px;height:72px;object-fit:cover;border-radius:9px;cursor:pointer;flex:0 0 auto;'
+          + (i===0 ? 'border:3px solid var(--region)' : 'border:1px solid var(--line)') + '">').join("")
+      + '</div>'
+      + '<div class="acciones"><button class="btn-cancelar" id="epCancelar">Cancelar</button></div></div>';
+    document.getElementById("epCancelar").addEventListener("click", ()=>{
+      cont.innerHTML = "";
+      document.getElementById("btnEditarPortada").classList.remove("hide");
+    });
+    cont.querySelectorAll("img[data-i]").forEach(img=>{
+      img.addEventListener("click", async ()=>{
+        const i = parseInt(img.getAttribute("data-i"), 10);
+        if(i === 0){ cont.innerHTML = ""; document.getElementById("btnEditarPortada").classList.remove("hide"); return; }
+        const nuevas = fotos.slice();
+        const [elegida] = nuevas.splice(i, 1);
+        nuevas.unshift(elegida);
+        const { error } = await sb.from("noticias").update({ fotos: nuevas, imagen_url: nuevas[0] }).eq("id", n.id);
+        if(error){ toast("No se pudo guardar: " + error.message); return; }
+        n.fotos = nuevas; n.imagen_url = nuevas[0];
+        toast("Portada actualizada ✓");
+        if(typeof cargarArchivo === "function") cargarArchivo();
+        abrirVisorNota(n); // redibuja: la elegida ya se ve primera y con el marco
+      });
     });
   }
 
