@@ -1,0 +1,2912 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fonte · Redacción</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700&family=IBM+Plex+Mono:wght@500;600&family=Work+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+  :root{
+    --paper:#FBF8F1; --paper-2:#F4EFE4; --paper-3:#EDE6D6; --surface:#FFFDF9;
+    --ink:#14120D; --ink-soft:#4A4438; --ink-faint:#8B8474; --ink-20:#C3BCA9;
+    --line:#E3DCC9; --line-strong:#CFC5AC;
+    --barrio:#22503A; --region:#1B3A5C; --int:#8A6A22; --urgente:#A8382C; --ciudad:#3E8557;
+    --serif:'Fraunces',Georgia,'Times New Roman',Times,serif;
+    --sans:'Work Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;
+    --slab:'Alfa Slab One',Georgia,serif;
+    --mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+  }
+  *{ box-sizing:border-box; }
+  body{ margin:0; color:var(--ink); background:var(--paper); font-family:var(--serif); line-height:1.42; }
+  .wrap{ max-width:640px; margin:0 auto; padding:0 18px; }
+  button{ cursor:pointer; font-family:inherit; }
+  .hide{ display:none !important; }
+
+  /* ===== LOGIN ===== */
+  #loginView{ min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px; }
+  .login-card{ width:100%; max-width:340px; background:var(--paper-2); border:1px solid var(--line); border-radius:16px; padding:28px 24px; }
+  .login-card .brand{ font-family:var(--serif); font-weight:700; font-size:1.8rem; text-align:center; }
+  .login-card .sub{ font-family:var(--sans); font-size:.78rem; color:var(--ink-soft); text-align:center; margin:4px 0 22px; }
+  .field-label{ font-family:var(--sans); font-size:.66rem; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:var(--ink-faint); margin:0 0 6px; }
+  .inp{ width:100%; font-family:var(--sans); font-size:.9rem; color:var(--ink); background:var(--paper); border:1px solid var(--line-strong); border-radius:8px; padding:11px; margin-bottom:14px; }
+  .btn-primary{ width:100%; font-family:var(--sans); font-size:.86rem; font-weight:700; color:var(--paper); background:var(--ink); border:0; padding:13px; border-radius:10px; margin-top:4px; }
+  .login-err{ font-family:var(--sans); font-size:.76rem; color:#B23A2E; margin-top:10px; text-align:center; }
+
+  /* ===== CONSOLA ===== */
+  #consoleView{ min-height:100vh; }
+  .rep-top{ background:var(--ink); color:var(--paper); }
+  .rep-top .row{ display:flex; align-items:center; justify-content:space-between; padding:14px 0; }
+  .rep-brand{ display:flex; align-items:center; gap:10px; }
+  .rep-brand .b{ font-family:var(--serif); font-weight:700; font-size:1.2rem; }
+  .rep-badge{ font-family:var(--sans); font-size:.58rem; font-weight:700; text-transform:uppercase; letter-spacing:.1em; background:rgba(255,255,255,.14); padding:3px 8px; border-radius:999px; }
+  .rep-user{ font-family:var(--sans); font-size:.7rem; color:rgba(255,255,255,.75); display:flex; align-items:center; gap:9px; }
+  .logout-btn{ font-family:var(--sans); font-size:.64rem; font-weight:600; color:var(--paper); border:1px solid rgba(255,255,255,.3); padding:5px 10px; border-radius:999px; background:transparent; }
+  .rep-wrap{ max-width:640px; margin:0 auto; padding:24px 18px 70px; }
+  .rep-h{ font-family:var(--serif); font-weight:700; font-size:1.4rem; margin:0 0 4px; }
+  .rep-sub{ font-family:var(--sans); font-size:.78rem; color:var(--ink-soft); margin:0 0 20px; }
+  .card{ background:var(--paper-2); border:1px solid var(--line); border-radius:14px; padding:18px; margin-bottom:20px; }
+  textarea{ width:100%; font-family:var(--sans); font-size:.9rem; color:var(--ink); background:var(--paper); border:1px solid var(--line-strong); border-radius:8px; padding:11px; line-height:1.5; resize:vertical; min-height:120px; }
+  .srcchips{ display:flex; gap:7px; flex-wrap:wrap; margin:12px 0 4px; }
+  .srcchip{ font-family:var(--sans); font-size:.7rem; font-weight:600; color:var(--ink-soft); background:var(--paper); border:1px solid var(--line); padding:6px 11px; border-radius:999px; }
+  .srcchip.on{ background:var(--barrio); color:#fff; border-color:var(--barrio); }
+  .src-custom{ display:none; margin-top:8px; }
+  .btn-gen{ width:100%; font-family:var(--sans); font-size:.86rem; font-weight:700; color:var(--paper); background:var(--ink); border:0; padding:13px; border-radius:10px; margin-top:14px; display:flex; align-items:center; justify-content:center; gap:9px; }
+  .spinner{ width:15px; height:15px; border:2px solid rgba(255,255,255,.35); border-top-color:#fff; border-radius:50%; animation:spin .8s linear infinite; }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+
+  .err-msg{ font-family:var(--sans); font-size:.78rem; color:#B23A2E; margin-top:10px; }
+  .preview-head{ display:flex; align-items:center; gap:8px; margin-bottom:12px; }
+  .preview-head .badge{ font-family:var(--sans); font-size:.6rem; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:var(--barrio); background:color-mix(in srgb,var(--barrio) 14%,transparent); padding:3px 9px; border-radius:999px; }
+  .field-label .auto{ font-family:var(--sans); font-size:.56rem; font-weight:700; text-transform:uppercase; color:#6B5B95; background:color-mix(in srgb,#6B5B95 12%,transparent); padding:2px 7px; border-radius:999px; float:right; }
+  .pv-actions{ display:flex; gap:9px; margin-top:6px; }
+  .pv-actions button{ flex:1; font-family:var(--sans); font-size:.78rem; font-weight:700; padding:11px; border-radius:9px; }
+  .pub{ background:var(--barrio); color:#fff; border:0; }
+  .disc{ background:transparent; color:var(--ink-soft); border:1px solid var(--line); }
+  .today-item{ display:block; padding:11px 0; border-top:1px solid var(--line); }
+  .today-item:first-child{ border-top:0; }
+  .today-item .st{ font-family:var(--sans); font-size:.56rem; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--barrio); background:color-mix(in srgb,var(--barrio) 12%,transparent); padding:2px 8px; border-radius:999px; margin-right:7px; }
+  .today-item .h{ font-family:var(--serif); font-weight:700; font-size:.95rem; }
+  .toast{ position:fixed; left:50%; bottom:26px; transform:translateX(-50%) translateY(20px); background:var(--ink); color:var(--paper); font-family:var(--sans); font-size:.8rem; font-weight:600; padding:11px 18px; border-radius:999px; opacity:0; transition:all .3s ease; z-index:300; pointer-events:none; }
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+  /* ===== tabs ===== */
+  .rep-tabs{ display:flex; gap:2px; margin-bottom:20px; border:1px solid var(--line-strong); border-radius:999px; padding:3px;
+    background:var(--paper-2); overflow-x:auto; scrollbar-width:none; -webkit-overflow-scrolling:touch; }
+  .rep-tabs::-webkit-scrollbar{ display:none; }
+  .rep-tab{ flex:0 0 auto; white-space:nowrap; text-align:center; font-family:var(--sans); font-size:.76rem; font-weight:700;
+    padding:9px 14px; border-radius:999px; color:var(--ink-soft); background:none; border:0; }
+  .rep-tab.on{ background:var(--ink); color:var(--paper); }
+  .form-toggle{ width:100%; display:flex; align-items:center; justify-content:space-between; gap:10px;
+    font-family:var(--sans); font-size:.86rem; font-weight:700; color:var(--ink); background:var(--paper-2);
+    border:1px dashed var(--line-strong); border-radius:12px; padding:14px 16px; margin-bottom:16px; }
+  .form-toggle .chev{ font-size:.9rem; color:var(--ink-faint); transition:transform .2s; }
+  .form-toggle.abierto .chev{ transform:rotate(180deg); }
+  /* ===== barra inferior ===== */
+  .rep-nav{ position:fixed; left:0; right:0; bottom:0; z-index:150; display:flex; justify-content:space-around; align-items:flex-end;
+    background:var(--paper); border-top:1px solid var(--line-strong); padding:8px 6px calc(9px + env(safe-area-inset-bottom)); }
+  .rnv{ flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; background:none; border:0;
+    font-family:var(--sans); font-size:.6rem; font-weight:600; color:var(--ink-soft); position:relative; }
+  .rnv.on{ color:var(--ink); font-weight:700; }
+  .rnv svg{ width:20px; height:20px; }
+  .rnv .pip{ position:absolute; top:-2px; right:calc(50% - 16px); min-width:16px; height:16px; padding:0 4px; border-radius:999px;
+    background:var(--urgente); color:#fff; font-size:.55rem; font-weight:800; display:flex; align-items:center; justify-content:center;
+    border:2px solid var(--paper); }
+  body{ padding-bottom:76px; }
+
+  /* ===== bandeja de hoy ===== */
+  .sec-lbl{ font-family:var(--sans); font-size:.6rem; font-weight:800; text-transform:uppercase; letter-spacing:.08em;
+    color:var(--ink-faint); margin:22px 0 9px; display:flex; align-items:center; gap:6px; }
+  .sec-lbl .n{ background:var(--urgente); color:#fff; font-size:.56rem; padding:1px 7px; border-radius:999px; }
+  .task{ background:var(--surface, #fff); border:1px solid var(--line); border-radius:14px; padding:13px 14px;
+    display:flex; gap:11px; align-items:center; margin-bottom:9px; }
+  .task.urg{ border-color:color-mix(in srgb,var(--urgente) 40%,var(--line)); background:color-mix(in srgb,var(--urgente) 5%,var(--paper)); }
+  .task .ic{ width:38px; height:38px; border-radius:11px; flex:0 0 auto; display:flex; align-items:center; justify-content:center;
+    font-size:1.05rem; background:var(--paper-2); }
+  .task .tx{ flex:1; min-width:0; }
+  .task .t{ font-family:var(--sans); font-weight:700; font-size:.86rem; color:var(--ink); }
+  .task .s{ font-family:var(--sans); font-size:.7rem; color:var(--ink-faint); margin-top:2px; line-height:1.35; }
+  .task .go{ font-family:var(--sans); font-size:.68rem; font-weight:700; color:var(--region); white-space:nowrap; }
+  .task.ok{ border-color:color-mix(in srgb,var(--barrio) 30%,var(--line)); background:color-mix(in srgb,var(--barrio) 5%,var(--paper)); }
+  .task.ok .ic{ background:var(--barrio); color:#fff; }
+  .task.ok .go{ color:var(--barrio); }
+
+  .kpis{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; }
+  .kpi3{ background:var(--paper-2); border-radius:12px; padding:11px 8px; text-align:center; }
+  .kpi3 .ic{ display:block; font-size:1.1rem; margin-bottom:3px; }
+  .kpi3 .n{ font-family:var(--serif); font-weight:700; font-size:1.3rem; color:var(--ink); line-height:1; }
+  .kpi3 .l{ font-family:var(--sans); font-size:.58rem; color:var(--ink-faint); margin-top:4px; line-height:1.25; }
+
+  /* ===== archivo ===== */
+  .filtros{ display:flex; gap:6px; overflow-x:auto; padding-bottom:12px; scrollbar-width:none; }
+  .filtros::-webkit-scrollbar{ display:none; }
+  .filtros .f{ flex:0 0 auto; font-family:var(--sans); font-size:.7rem; font-weight:600; padding:6px 12px; border-radius:999px;
+    background:var(--paper-2); color:var(--ink-soft); border:0; white-space:nowrap; }
+  .filtros .f.on{ background:var(--ink); color:var(--paper); }
+  .arch-item{ background:var(--paper); border:1px solid var(--line); border-radius:12px; padding:11px;
+    display:flex; gap:10px; align-items:center; margin-bottom:8px; cursor:pointer; }
+  .arch-item .mini{ width:52px; height:52px; border-radius:9px; flex:0 0 auto; background:var(--paper-2); background-size:cover;
+    background-position:center; display:flex; align-items:center; justify-content:center; font-size:1.1rem; }
+  .arch-item .tx{ flex:1; min-width:0; }
+  .arch-item .t{ font-family:var(--serif); font-weight:700; font-size:.86rem; line-height:1.2; color:var(--ink); }
+  .arch-item .m{ font-family:var(--sans); font-size:.63rem; color:var(--ink-faint); margin-top:3px; display:flex; align-items:center; gap:5px; flex-wrap:wrap; }
+  .bdg{ font-family:var(--sans); font-size:.52rem; font-weight:800; text-transform:uppercase; padding:2px 6px; border-radius:5px; }
+  .bdg.nota{ background:color-mix(in srgb,var(--ciudad) 14%,var(--paper)); color:var(--ciudad); }
+  .bdg.oferta{ background:color-mix(in srgb,var(--int) 14%,var(--paper)); color:var(--int); }
+  .bdg.comunicado{ background:color-mix(in srgb,var(--barrio) 14%,var(--paper)); color:var(--barrio); }
+  .bdg.aporte{ background:color-mix(in srgb,var(--region) 14%,var(--paper)); color:var(--region); }
+  .vacio-txt{ font-family:var(--sans); font-size:.78rem; color:var(--ink-faint); }
+  .vacio-card{ background:var(--paper-2); border:1px dashed var(--line-strong); border-radius:14px; padding:26px 20px; text-align:center; }
+  .vacio-card .ic{ font-size:1.6rem; display:block; margin-bottom:8px; }
+  .vacio-card .t{ font-family:var(--serif); font-weight:700; font-size:.94rem; color:var(--ink); }
+  .vacio-card .s{ font-family:var(--sans); font-size:.74rem; color:var(--ink-faint); margin-top:4px; }
+
+  /* ===== botón compartir en el visor ===== */
+  /* ===== editor de aporte ===== */
+  .edit-box{ margin-top:14px; padding-top:14px; border-top:1px solid var(--line); }
+  .edit-box .fl{ font-family:var(--sans); font-size:.62rem; font-weight:700; text-transform:uppercase;
+    letter-spacing:.05em; color:var(--ink-faint); margin:10px 0 5px; }
+  .edit-box .acciones{ display:flex; gap:8px; margin-top:12px; }
+  .edit-box .acciones button{ flex:1; font-family:var(--sans); font-weight:700; font-size:.82rem;
+    padding:11px; border-radius:9px; border:0; }
+  .btn-guardar{ background:var(--barrio); color:#fff; }
+  .btn-cancelar{ background:none; border:1px solid var(--line-strong) !important; color:var(--ink-soft); }
+  .recorte{ position:relative; background:#16140F; border-radius:10px; overflow:hidden; touch-action:none; }
+  .recorte img{ width:100%; display:block; }
+  .recorte .marco{ position:absolute; border:2px solid #fff; box-shadow:0 0 0 9999px rgba(0,0,0,.5); cursor:move; }
+  .recorte .tirador{ position:absolute; right:-9px; bottom:-9px; width:22px; height:22px; border-radius:50%;
+    background:#fff; border:2px solid var(--barrio); }
+  .recorte-ayuda{ font-family:var(--sans); font-size:.7rem; color:var(--ink-faint); margin-top:6px; }
+
+  .visor .compartir{ width:100%; margin-top:14px; font-family:var(--sans); font-weight:700; font-size:.88rem;
+    padding:13px; border-radius:11px; border:0; background:var(--ink); color:var(--paper); display:flex;
+    align-items:center; justify-content:center; gap:8px; }
+
+  .tipos{ display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:18px; }
+  .tipo{ background:var(--paper); border:1.5px solid var(--line); border-radius:13px; padding:13px 12px; text-align:left;
+    display:flex; flex-direction:column; gap:4px; }
+  .tipo.on{ border-color:var(--ink); background:var(--ink); color:var(--paper); }
+  .tipo .e{ font-size:1.15rem; }
+  .tipo .t{ font-family:var(--sans); font-weight:700; font-size:.82rem; }
+  .tipo .s{ font-family:var(--sans); font-size:.63rem; opacity:.72; line-height:1.3; }
+
+  /* barra de acción con vista previa */
+  .barra-accion{ position:fixed; left:0; right:0; bottom:calc(62px + env(safe-area-inset-bottom)); z-index:140;
+    background:var(--paper); border-top:1px solid var(--line-strong); padding:10px 14px; display:none; gap:8px;
+    max-width:640px; margin:0 auto; }
+  .barra-accion.show{ display:flex; }
+  .b-prev{ flex:0 0 auto; font-family:var(--sans); font-weight:700; font-size:.8rem; padding:12px 15px; border-radius:10px;
+    border:1px solid var(--line-strong); background:var(--paper); color:var(--ink-soft); }
+  .prev-note{ background:var(--paper); border:1px solid var(--line); border-radius:13px; overflow:hidden; margin-bottom:14px; }
+  .prev-note .im{ width:100%; aspect-ratio:16/9; background:var(--paper-2); background-size:cover; background-position:center; }
+  .prev-note .cu{ padding:13px 14px 16px; }
+  .prev-note .k{ font-family:var(--sans); font-size:.56rem; font-weight:700; text-transform:uppercase; color:var(--ciudad); }
+  .prev-note .h{ font-family:var(--serif); font-weight:700; font-size:1.05rem; line-height:1.2; margin:5px 0 6px; }
+  .prev-note .p{ font-family:var(--serif); font-size:.8rem; color:var(--ink-soft); line-height:1.5; }
+  .prev-note .dt{ margin-top:10px; background:color-mix(in srgb,var(--int) 9%,var(--paper-2)); border-left:3px solid var(--int);
+    border-radius:0 8px 8px 0; padding:9px 11px; font-family:var(--sans); font-size:.76rem; }
+  .prev-note .bt{ margin-top:12px; background:var(--ciudad); color:#fff; font-family:var(--sans); font-weight:700;
+    font-size:.8rem; text-align:center; padding:11px; border-radius:9px; }
+
+  /* ===== acabado de imprenta (maqueta consola) ===== */
+  /* barra superior con filete doble */
+  .rep-top{ background:var(--ink); color:var(--paper); }
+  .rep-top .row{ padding:13px 0; }
+  .rep-brand .b{ font-family:var(--slab); font-size:1.05rem; }
+  .rep-badge{ font-family:var(--sans); font-size:.5rem; font-weight:800; letter-spacing:.16em;
+    background:rgba(255,255,255,.14); padding:3px 8px; border-radius:2px; text-transform:uppercase; }
+  .rep-user{ font-family:var(--mono); font-size:.58rem; opacity:.75; }
+  .logout-btn{ font-family:var(--sans); font-size:.6rem; font-weight:700; border:.5px solid rgba(255,255,255,.3);
+    background:none; color:var(--paper); padding:5px 11px; border-radius:2px; margin-left:9px; }
+
+  /* rótulo de sección con regla al costado */
+  .sec-lbl{ display:flex; align-items:center; gap:11px; margin:24px 0 11px; font-family:var(--sans);
+    font-size:.6rem; font-weight:800; letter-spacing:.2em; text-transform:uppercase; color:var(--ink); }
+  .sec-lbl::after{ content:''; order:2; flex:1; height:.5px; background:var(--line-strong); }
+  .sec-lbl .n{ order:3; font-family:var(--mono); font-size:.56rem; background:var(--urgente); color:#fff;
+    padding:1px 6px; border-radius:2px; }
+
+  /* tarea */
+  .task{ border-radius:3px; border:.5px solid var(--line-strong); }
+  .task.urg{ border-left:3px solid var(--urgente); }
+  .task .ic{ border-radius:2px; background:var(--paper-2); color:var(--ink-soft);
+    font-family:var(--mono); font-size:.62rem; font-weight:600; }
+  .task.urg .ic{ background:var(--urgente); color:#fff; }
+  .task .t{ font-family:var(--serif); font-weight:600; font-size:.9rem; letter-spacing:-.01em; }
+  .task .go{ font-family:var(--mono); font-size:.6rem; font-weight:500; color:var(--region); }
+
+  /* kpis con filete arriba y abajo */
+  .kpis{ border-top:.5px solid var(--ink); border-bottom:.5px solid var(--ink); gap:0; }
+  .kpi3{ border-right:.5px solid var(--line); border-radius:0; background:none; }
+  .kpi3:last-child{ border-right:0; }
+  .kpi3 .n{ font-family:var(--serif); font-weight:700; color:var(--region); font-variant-numeric:tabular-nums; letter-spacing:-.02em; }
+  .kpi3 .l{ letter-spacing:.09em; }
+
+  /* archivo numerado */
+  .arch-lista{ counter-reset:it; }
+  .arch-item{ counter-increment:it; padding-left:32px; position:relative; border-radius:3px; }
+  .arch-item::before{ content:counter(it,decimal-leading-zero); position:absolute; left:8px; top:14px;
+    font-family:var(--mono); font-size:.6rem; color:var(--ink-20); font-variant-numeric:tabular-nums; }
+  .arch-item .mini{ border-radius:2px; }
+  .arch-item .m{ font-family:var(--mono); font-size:.57rem; }
+
+  /* selector de tipo con siglas */
+  .tipo{ border-radius:3px; border:.5px solid var(--line-strong); }
+  .tipo.on{ border-color:var(--ink); }
+  .tipo .e{ display:none; }
+  .tipo::before{ content:attr(data-sig); font-family:var(--mono); font-size:.62rem; font-weight:600; color:var(--region); }
+  .tipo.on::before{ color:#fff; }
+
+  /* nav con filete doble arriba */
+  .rep-nav{ border-top:2.5px solid var(--ink); }
+  .rep-nav::before{ content:''; position:absolute; left:0; right:0; top:-4px; border-top:.5px solid var(--ink); }
+  .rnv{ letter-spacing:.05em; text-transform:uppercase; font-size:.55rem; }
+  .rnv .pip{ font-family:var(--mono); background:var(--urgente); }
+
+  /* filete doble bajo la barra */
+  .rep-top{ border-bottom:.5px solid var(--ink); position:relative; }
+
+  /* campos */
+  .field-label{ letter-spacing:.16em; }
+  .inp, textarea.inp, .btn-gen, .card, .form-toggle{ border-radius:3px; }
+  .srcchip, .chip{ border-radius:2px; }
+
+  /* ===== acabado viejo, se mantiene ===== */
+  .rep-h{ letter-spacing:-.018em; }
+  .kpi3 .n, .kpi .n, .arch-item .m, .fecha-row .m, .visor .meta{ font-variant-numeric:tabular-nums; }
+  .field-label, .sec-lbl, .lbl{ letter-spacing:.16em; }
+  .arch-item, .admin-item, .inst-block, .fecha-row, .task{ border-top-width:.5px; }
+  .arch-item, .aporte-review, .card, .task{ border-radius:3px; }
+  .rep-tabs, .rep-tab, .inp, textarea, .btn-gen, .form-toggle{ border-radius:3px; }
+  .rnv .pip, .bdg, .tab-badge{ border-radius:2px; }
+  /* filete doble bajo la barra superior, como en la app */
+  .rep-top{ border-bottom:2.5px solid var(--ink); position:relative; }
+  .rep-top::after{ content:''; position:absolute; left:0; right:0; bottom:-4px; border-top:.5px solid var(--ink); }
+  .rep-view{ display:none; }
+  .rep-view.on{ display:block; }
+  .tab-badge{ font-family:var(--sans); font-size:.62rem; font-weight:700; background:var(--urgente); color:#fff; padding:1px 6px; border-radius:999px; margin-left:4px; }
+
+  /* ===== foto propia en el form de nota ===== */
+  .foto-preview{ width:100%; aspect-ratio:16/9; object-fit:cover; border-radius:8px; margin-top:8px; display:none; background:var(--paper-3); }
+
+  /* ===== aportes pendientes ===== */
+  .aporte-review{ display:flex; gap:12px; }
+  .aporte-review img{ width:84px; height:84px; object-fit:cover; border-radius:8px; background:var(--paper-3); flex:0 0 auto; }
+  .aporte-review .info{ flex:1; min-width:0; }
+  .aporte-review .cat{ font-family:var(--sans); font-size:.66rem; font-weight:700; color:var(--barrio); }
+  .aporte-review .desc{ font-family:var(--sans); font-size:.82rem; color:var(--ink-soft); margin:4px 0; }
+  .aporte-review .meta{ font-family:var(--sans); font-size:.66rem; color:var(--ink-faint); }
+  .aporte-review .acts{ display:flex; gap:8px; margin-top:10px; }
+  .aporte-review .acts button{ flex:1; font-family:var(--sans); font-size:.76rem; font-weight:700; padding:9px; border-radius:8px; border:0; }
+  .aporte-review.publicado{ background:var(--paper); border:1px solid var(--line); }
+  .aporte-review.publicado.resuelto{ opacity:.68; }
+  .aporte-review .conf{ display:inline-block; font-family:var(--sans); font-size:.66rem; font-weight:700; color:var(--region);
+    background:color-mix(in srgb,var(--region) 12%,var(--paper)); padding:2px 8px; border-radius:999px; margin-top:6px; }
+  .aporte-review .estado-tag{ display:inline-block; font-family:var(--sans); font-size:.6rem; font-weight:800; text-transform:uppercase;
+    padding:3px 8px; border-radius:999px; margin-left:6px; }
+  .aporte-review .estado-tag.pub{ color:var(--region); background:color-mix(in srgb,var(--region) 13%,var(--paper)); }
+  .aporte-review .estado-tag.res{ color:var(--barrio); background:color-mix(in srgb,var(--barrio) 13%,var(--paper)); }
+  .aporte-review img{ cursor:pointer; }
+  .visor-back{ position:fixed; inset:0; z-index:400; background:rgba(20,18,14,.82); display:none;
+    align-items:center; justify-content:center; padding:18px; }
+  .visor-back.show{ display:flex; }
+  .visor{ max-width:640px; width:100%; max-height:92vh; overflow-y:auto; background:var(--paper); border-radius:16px; padding:0 0 18px; }
+  .visor img{ width:100%; max-height:52vh; object-fit:contain; background:#16140F; border-radius:16px 16px 0 0; display:block; }
+  .visor .cuerpo{ padding:16px 18px 0; }
+  .visor .cat{ font-family:var(--sans); font-size:.7rem; font-weight:700; color:var(--barrio); }
+  .visor h3{ font-family:var(--serif); font-size:1.2rem; margin:8px 0 6px; }
+  .visor .txt{ font-family:var(--sans); font-size:.88rem; color:var(--ink-soft); line-height:1.5; }
+  .visor .meta{ font-family:var(--sans); font-size:.72rem; color:var(--ink-faint); margin-top:12px; line-height:1.6; }
+  .visor .cerrar{ width:100%; margin-top:16px; font-family:var(--sans); font-weight:700; font-size:.86rem;
+    padding:12px; border-radius:10px; border:1px solid var(--line-strong); background:none; color:var(--ink-soft); }
+  .btn-aprobar{ background:var(--barrio); color:#fff; }
+  .btn-rechazar{ background:transparent; color:var(--ink-soft); border:1px solid var(--line) !important; }
+
+  /* ===== ofertas y comunicados (admin) ===== */
+  .admin-item{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px 0; border-top:1px solid var(--line); }
+  .admin-item:first-child{ border-top:0; }
+  .admin-item .h{ font-family:var(--serif); font-weight:700; font-size:.92rem; }
+  .admin-item .sub2{ font-family:var(--sans); font-size:.68rem; color:var(--ink-faint); margin-top:2px; }
+  .admin-item .del{ font-family:var(--sans); font-size:.66rem; font-weight:700; color:#B23A2E; background:none; border:1px solid #B23A2E; padding:6px 11px; border-radius:8px; flex:0 0 auto; }
+
+  /* ===== instituciones: fechas ===== */
+  .inst-block{ border-top:1px solid var(--line); padding:12px 0; }
+  .inst-block:first-child{ border-top:0; }
+  .inst-block-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  .inst-block-head .h{ font-family:var(--serif); font-weight:700; font-size:.92rem; }
+  .inst-block-head .sub2{ font-family:var(--sans); font-size:.68rem; color:var(--ink-faint); margin-top:2px; }
+  .inst-block-btns{ display:flex; gap:6px; flex:0 0 auto; }
+  .btn-mini{ font-family:var(--sans); font-size:.66rem; font-weight:700; padding:6px 10px; border-radius:8px; border:1px solid var(--line-strong); background:none; color:var(--ink-soft); }
+  .fechas-panel{ margin-top:10px; background:var(--paper); border:1px solid var(--line); border-radius:10px; padding:12px; }
+  .fecha-row{ display:flex; align-items:center; justify-content:space-between; gap:8px; padding:7px 0; border-top:1px solid var(--line); }
+  .fecha-row:first-child{ border-top:0; }
+  .fecha-row .t{ font-family:var(--sans); font-size:.78rem; font-weight:600; color:var(--ink); }
+  .fecha-row .m{ font-family:var(--sans); font-size:.66rem; color:var(--ink-faint); }
+  .fecha-add{ display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
+  .fecha-add input{ font-family:var(--sans); font-size:.78rem; border:1px solid var(--line-strong); border-radius:7px; padding:8px; background:var(--paper); color:var(--ink); }
+  .fecha-add input[name=titulo]{ flex:1 1 100%; }
+  .fecha-add input[name=fecha]{ flex:1 1 40%; }
+  .fecha-add input[name=lugar],.fecha-add input[name=horario]{ flex:1 1 45%; }
+
+  /* ===== métricas ===== */
+  .kpi-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:18px; }
+  .kpi{ background:var(--paper); border:1px solid var(--line); border-radius:12px; padding:13px 14px; }
+  .kpi .n{ font-family:var(--serif); font-weight:700; font-size:1.7rem; color:var(--ink); line-height:1; }
+  .kpi .l{ font-family:var(--sans); font-size:.68rem; font-weight:600; color:var(--ink-faint); margin-top:5px; line-height:1.3; }
+  .kpi.destacado{ background:color-mix(in srgb,var(--barrio) 8%,var(--paper)); border-color:color-mix(in srgb,var(--barrio) 35%,var(--line)); }
+  .kpi.destacado .n{ color:var(--barrio); }
+  .meta-bar{ margin:4px 0 18px; }
+  .meta-bar .track{ height:9px; background:var(--paper-2); border-radius:999px; overflow:hidden; }
+  .meta-bar .fill{ height:100%; background:var(--barrio); border-radius:999px; transition:width .4s; }
+  .meta-bar .cap{ font-family:var(--sans); font-size:.7rem; color:var(--ink-soft); margin-top:7px; }
+  .chart{ display:flex; align-items:flex-end; gap:3px; height:110px; padding:8px 0; }
+  .chart .col{ flex:1; display:flex; flex-direction:column; justify-content:flex-end; align-items:center; gap:4px; }
+  .chart .bar{ width:100%; background:var(--barrio); border-radius:3px 3px 0 0; min-height:2px; }
+  .chart .bar.hoy{ background:var(--int); }
+  .chart .d{ font-family:var(--sans); font-size:.54rem; color:var(--ink-faint); }
+  .chart-lbl{ font-family:var(--sans); font-size:.68rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-faint); margin-bottom:2px; }
+</style>
+</head>
+<body>
+
+<!-- ===== LOGIN ===== -->
+<div id="loginView">
+  <div class="login-card">
+    <div class="brand">Fonte</div>
+    <div class="sub">Acceso de reportero</div>
+    <div class="field-label">Email</div>
+    <input class="inp" id="loginEmail" type="email" autocomplete="username">
+    <div class="field-label">Contraseña</div>
+    <input class="inp" id="loginPass" type="password" autocomplete="current-password">
+    <button class="btn-primary" id="loginBtn">Entrar</button>
+    <div class="login-err hide" id="loginErr"></div>
+  </div>
+</div>
+
+<!-- ===== CONSOLA ===== -->
+<div id="consoleView" class="hide">
+  <div class="rep-top"><div class="wrap row">
+    <div class="rep-brand"><span class="b">Fonte</span><span class="rep-badge">Redacción</span></div>
+    <div class="rep-user"><span id="userEmail"></span><button class="logout-btn" id="logoutBtn">Salir</button></div>
+  </div></div>
+
+  <div class="rep-wrap">
+    <div class="rep-view on" id="viewHoy">
+      <h2 class="rep-h" id="hoySaludo">Hola</h2>
+      <p class="rep-sub" id="hoyFecha"></p>
+
+      <button class="btn-gen" id="btnPublicarAhora" style="margin-top:14px;margin-bottom:4px;background:var(--region)">Publicar ahora →</button>
+
+      <div class="sec-lbl">Para hacer ahora <span class="n hide" id="hoyPendN">0</span></div>
+      <div id="hoyTareas"></div>
+
+      <div class="sec-lbl">Hoy en Fonte</div>
+      <div class="kpis" id="hoyKpis"></div>
+
+      <div class="sec-lbl">Lo último que publicaste</div>
+      <div id="hoyUltimo"></div>
+    </div>
+
+    <div class="rep-view" id="viewArchivo">
+      <h2 class="rep-h">Archivo</h2>
+      <p class="rep-sub">Todo lo que publicaste. Tocá para ver cómo quedó o compartirlo.</p>
+      <input class="inp" id="archBuscar" placeholder="Buscar por título, comercio, institución…" style="margin-bottom:10px">
+      <div class="filtros" id="archFiltros">
+        <button class="f on" data-f="todo">Todo</button>
+        <button class="f" data-f="nota">Notas</button>
+        <button class="f" data-f="comunicado">Comunicados</button>
+        <button class="f" data-f="oferta">Ofertas</button>
+        <button class="f" data-f="aporte">Avisos de vecinos</button>
+      </div>
+      <div id="archLista" class="arch-lista"><p class="vacio-txt">Cargando…</p></div>
+    </div>
+
+    <div class="rep-view" id="viewCargar">
+    <h2 class="rep-h">Publicar</h2>
+    <p class="rep-sub">Elegí qué vas a cargar. Podés ver cómo queda antes de publicarlo.</p>
+
+    <div class="tipos" id="tiposPub">
+      <button class="tipo on" data-tipo="nota" data-sig="NO"><span class="e">📰</span><span class="t">Nota</span><span class="s">Una noticia de la ciudad o la zona</span></button>
+      <button class="tipo" data-tipo="comunicado" data-sig="CO"><span class="e">📢</span><span class="t">Comunicado</span><span class="s">Aviso de una institución</span></button>
+      <button class="tipo" data-tipo="oferta" data-sig="OF"><span class="e">🏷️</span><span class="t">Oferta</span><span class="s">Promoción de un comercio</span></button>
+      <button class="tipo" data-tipo="institucion" data-sig="IN"><span class="e">🏥</span><span class="t">Institución</span><span class="s">Ficha y fechas de un servicio</span></button>
+    </div>
+
+    <div id="panelNota">
+
+    <div class="card">
+      <div class="field-label">Lo que capturaste</div>
+      <textarea id="rawInput" placeholder="Pegá el texto tal cual, no hace falta prolijo... o pegá SOLO un link y Fonte va a buscar la nota sola."></textarea>
+
+      <div class="field-label" style="margin-top:14px">¿De qué fuente lo sacaste?</div>
+      <div class="srcchips" id="srcChips">
+        <button class="srcchip on" data-src="Facebook vecinal">Facebook vecinal</button>
+        <button class="srcchip" data-src="Radio Quitilipi">Radio Quitilipi</button>
+        <button class="srcchip" data-src="Municipio de Quitilipi">Municipio</button>
+        <button class="srcchip" data-src="Bomberos">Bomberos</button>
+        <button class="srcchip" data-src="__otra">Otra</button>
+      </div>
+      <input class="inp src-custom" id="srcCustom" placeholder="Escribí la fuente">
+      <input class="inp" id="srcLink" placeholder="Link de la fuente (opcional) — pegá acá el posteo o la nota original" style="margin-top:8px">
+
+      <div class="field-label" style="margin-top:14px">Foto propia (opcional — si no subís nada, se usa la que Fonte encuentre del link)</div>
+      <input class="inp" type="file" id="fotoPropia" accept="image/*" multiple style="padding:9px">
+      <img class="foto-preview" id="fotoPreview">
+
+      <div class="field-label" style="margin-top:14px">Video (opcional — pegá el enlace de YouTube, Facebook, TikTok o Instagram)</div>
+      <input class="inp" id="videoUrl" placeholder="https://www.facebook.com/...">
+      <div style="font-family:var(--sans);font-size:.7rem;color:var(--ink-faint);margin:-8px 0 14px;line-height:1.45">
+        El video no se sube a Fonte, se muestra desde donde ya está publicado.<br>
+        <b>YouTube y TikTok</b> se reproducen dentro de Fonte.
+        <b>Facebook e Instagram</b> no lo permiten: aparece un botón para verlo allá.
+        Si querés que se vea acá adentro, subilo a YouTube como “no listado”.
+      </div>
+
+      <button class="btn-gen" id="genBtn">✨ Generar con Fonte</button>
+      <button class="btn-gen hide" id="leerImgBtn" style="background:var(--int);margin-top:8px">🔍 Leer la imagen y armar la nota</button>
+      <div id="leerImgAyuda" class="hide" style="font-family:var(--sans);font-size:.7rem;color:var(--ink-faint);margin-top:6px;line-height:1.45">
+        Si el flyer tiene toda la información escrita adentro, tocá este botón: Fonte lee la imagen y arma la nota, aunque no pegues ningún texto.
+      </div>
+      <div class="err-msg hide" id="genErr"></div>
+    </div>
+
+    <div class="card hide" id="previewCard">
+      <div class="preview-head"><span class="badge">Vista previa</span><span id="pvMedia" style="font-family:var(--sans);font-size:.7rem;color:var(--ink-soft)"></span></div>
+      <div class="pv-field" style="margin-bottom:12px">
+        <div class="field-label">Título<span class="auto">auto</span></div>
+        <input class="inp" id="pvTitulo">
+      </div>
+      <div class="pv-field" style="margin-bottom:12px">
+        <div class="field-label">Resumen corto<span class="auto">auto</span></div>
+        <textarea id="pvCorto" style="min-height:60px"></textarea>
+      </div>
+      <div class="pv-field" style="margin-bottom:12px">
+        <div class="field-label">Resumen extendido<span class="auto">auto</span></div>
+        <textarea id="pvExtendido" style="min-height:130px"></textarea>
+      </div>
+
+      <div class="pv-field" style="margin-bottom:12px">
+        <div class="field-label">Imagen al compartir</div>
+        <div class="srcchips" id="placaChips">
+          <button class="srcchip on" data-placa="auto">Automático</button>
+          <button class="srcchip" data-placa="foto">Foto de fondo</button>
+          <button class="srcchip" data-placa="tipografica">Marco</button>
+          <button class="srcchip" data-placa="urgente">Urgente</button>
+        </div>
+        <div style="font-family:var(--sans);font-size:.7rem;color:var(--ink-faint);margin-top:6px;line-height:1.45">
+          <b>Automático</b> elige solo. <b>Foto completa</b> para cuando la imagen es la noticia
+          (una persona buscada, un ganador). <b>Solo texto</b> si la foto no aporta o es de otro medio.
+        </div>
+      </div>
+
+      <div class="pv-field" style="margin-bottom:12px">
+        <div class="field-label">Dato que el resumen no captó (opcional)</div>
+        <input class="inp" id="pvDato" placeholder="Ej: la inscripción cierra el 12 de septiembre">
+      </div>
+
+      <div class="pv-field" style="margin-bottom:12px">
+        <div class="field-label">¿Hay algo para hacer? (opcional)</div>
+        <div class="srcchips" id="accionChips">
+          <button class="srcchip on" data-accion="">Nada</button>
+          <button class="srcchip" data-accion="Registrate en la plataforma">Registrate</button>
+          <button class="srcchip" data-accion="Ingresá a ver">Ingresá a ver</button>
+          <button class="srcchip" data-accion="Descargá el formulario">Formulario</button>
+          <button class="srcchip" data-accion="Escribí a este número">Contacto</button>
+          <button class="srcchip" data-accion="__otra">Otra</button>
+        </div>
+        <input class="inp hide" id="accionCustom" placeholder="Escribí el texto del botón">
+        <input class="inp hide" id="accionUrl" placeholder="https://... (a dónde lleva)">
+      </div>
+      <div style="display:flex;gap:10px;margin-bottom:12px">
+        <div style="flex:1">
+          <div class="field-label">Categoría<span class="auto">auto</span></div>
+          <select class="inp" id="pvCategoria">
+            <option value="local">Local</option><option value="economia">Economía</option>
+            <option value="cripto">Cripto</option><option value="geopolitica">Geopolítica</option>
+            <option value="tecnologia">Tecnología</option><option value="desastres">Desastres</option>
+            <option value="deportes">Deportes</option><option value="espectaculos">Espectáculos</option>
+            <option value="politica">Política</option><option value="religion">Religión</option>
+            <option value="policiales">Policiales</option><option value="obras">Obras y servicios</option>
+            <option value="educacion">Educación</option><option value="otros">Otros</option>
+          </select>
+        </div>
+        <div style="flex:1">
+          <div class="field-label">Onda<span class="auto">auto</span></div>
+          <select class="inp" id="pvOnda">
+            <option value="barrio">Barrio</option><option value="ciudad">Ciudad</option>
+            <option value="region">Región</option><option value="pais">Argentina</option>
+            <option value="mundo">Mundo</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;margin-bottom:6px">
+        <div style="flex:1">
+          <div class="field-label">Lugar<span class="auto">auto</span></div>
+          <input class="inp" id="pvLugar">
+        </div>
+        <div style="flex:0 0 auto;display:flex;align-items:center;gap:7px;margin-top:20px">
+          <input type="checkbox" id="pvUrgente" style="width:16px;height:16px">
+          <label for="pvUrgente" style="font-family:var(--sans);font-size:.8rem">Urgente</label>
+        </div>
+      </div>
+      <div class="pv-actions">
+        <button class="disc" id="discBtn">Descartar</button>
+        <button class="pub hide" id="pubBtn">Publicar en Fonte</button>
+      </div>
+    </div>
+
+    <h2 class="rep-h" style="font-size:1.1rem;margin-top:26px">Publicado hoy</h2>
+    <div id="todayList"><p style="font-family:var(--sans);font-size:.78rem;color:var(--ink-faint)">Nada todavía.</p></div>
+    </div>
+
+    <div id="panelComunicado" class="hide"></div>
+    <div id="panelOferta" class="hide"></div>
+    <div id="panelInstitucion" class="hide"></div>
+    </div>
+
+    <div class="rep-view" id="viewAportes">
+      <h2 class="rep-h">Aportes pendientes</h2>
+      <p class="rep-sub">Categorías fijas, con foto y ubicación — revisalos antes de que aparezcan en Fonte.</p>
+      <div id="aportesList"><p style="font-family:var(--sans);font-size:.78rem;color:var(--ink-faint)">Cargando…</p></div>
+
+      <h2 class="rep-h" style="font-size:1.05rem;margin-top:28px">Avisos publicados</h2>
+      <p class="rep-sub">Lo que aprobaste y ya se ve en Fonte. Podés quitarlo cuando deje de ser relevante.</p>
+      <div id="avisosPublicadosList"><p style="font-family:var(--sans);font-size:.78rem;color:var(--ink-faint)">Cargando…</p></div>
+    </div>
+
+    <div class="rep-view" id="viewOfertas">
+      <h2 class="rep-h">Ofertas y avisos verificados</h2>
+      <p class="rep-sub">Por ahora es gratis para el comercio — más adelante puede pasar a ser un espacio pago. Lo que cargues acá sale en Fonte con la insignia de verificado.</p>
+
+      <button class="form-toggle" data-form="formOferta"><span>+ Cargar una oferta</span><span class="chev">⌄</span></button>
+      <div class="card hide" id="formOferta">
+        <div class="field-label">Comercio</div>
+        <input class="inp" id="ofNegocio" placeholder="Ej: Panadería San Martín">
+        <div class="field-label">Oferta / título</div>
+        <input class="inp" id="ofTitulo" placeholder="Ej: 2x1 en facturas los sábados">
+        <div class="field-label">Detalle (opcional)</div>
+        <textarea id="ofDesc" style="min-height:64px" placeholder="Condiciones, horarios, lo que haga falta aclarar"></textarea>
+        <div class="field-label" style="margin-top:14px">Dirección (opcional)</div>
+        <input class="inp" id="ofDireccion" placeholder="Av. San Martín 340, Quitilipi">
+        <div class="field-label">Válido hasta (opcional)</div>
+        <input class="inp" id="ofValido" placeholder="Ej: 31 de agosto">
+        <div class="field-label">Foto (opcional)</div>
+        <input class="inp" type="file" id="ofFoto" accept="image/*" style="padding:9px">
+        <img class="foto-preview" id="ofFotoPreview">
+        <button class="btn-gen" id="ofPublicarBtn">Publicar oferta</button>
+        <div class="err-msg hide" id="ofErr"></div>
+      </div>
+
+      <h2 class="rep-h" style="font-size:1.05rem">Ofertas activas</h2>
+      <div class="card" id="ofertasAdminList"><p style="font-family:var(--sans);font-size:.78rem;color:var(--ink-faint)">Cargando…</p></div>
+
+      <h2 class="rep-h" style="margin-top:28px">Comunicado oficial</h2>
+      <p class="rep-sub">Para avisos del municipio u otras instituciones ya verificadas.</p>
+      <button class="form-toggle" data-form="formComunicado"><span>+ Publicar un comunicado</span><span class="chev">⌄</span></button>
+      <div class="card hide" id="formComunicado">
+        <div class="field-label">Institución</div>
+        <select class="inp" id="coInstitucionSel">
+          <option value="">— Otra / sin vincular —</option>
+        </select>
+        <input class="inp" id="coInstitucion" placeholder="Nombre de la institución" value="Municipalidad de Quitilipi">
+        <div class="field-label">Título</div>
+        <input class="inp" id="coTitulo" placeholder="Ej: Corte de agua programado el viernes">
+        <div class="field-label">Texto</div>
+        <textarea id="coTexto" style="min-height:84px" placeholder="Contenido completo del comunicado"></textarea>
+        <div class="field-label" style="margin-top:14px">Foto (opcional)</div>
+        <input class="inp" type="file" id="coFoto" accept="image/*" style="padding:9px">
+        <img class="foto-preview" id="coFotoPreview">
+        <div class="field-label" style="margin-top:14px">Video (opcional — enlace de YouTube, Facebook, TikTok o Instagram)</div>
+        <input class="inp" id="coVideo" placeholder="https://www.facebook.com/...">
+        <label style="display:flex;gap:10px;align-items:flex-start;margin-top:14px;padding:12px;background:color-mix(in srgb,#B23A2E 6%,var(--paper));border:1px solid color-mix(in srgb,#B23A2E 25%,var(--line));border-radius:10px;cursor:pointer">
+          <input type="checkbox" id="coUrgente" style="margin-top:2px;width:18px;height:18px;flex:0 0 auto">
+          <span style="font-family:var(--sans);font-size:.8rem;color:var(--ink)"><b>Es un aviso urgente</b><br>
+          <span style="font-size:.72rem;color:var(--ink-soft)">Cortes de servicio, alertas, emergencias. Se muestra abierto en la portada durante 48 hs y dispara notificación. Los avisos comunes solo aparecen dentro de la ficha de la institución.</span></span>
+        </label>
+        <button class="btn-gen" id="coPublicarBtn">Publicar comunicado</button>
+        <div class="err-msg hide" id="coErr"></div>
+      </div>
+
+      <h2 class="rep-h" style="font-size:1.05rem">Comunicados publicados</h2>
+      <div class="card" id="comunicadosAdminList"><p style="font-family:var(--sans);font-size:.78rem;color:var(--ink-faint)">Cargando…</p></div>
+    </div>
+
+    <div class="rep-view" id="viewMetricas">
+      <h2 class="rep-h">Métricas</h2>
+      <p class="rep-sub">La cifra que importa es <b>usuarios recurrentes</b>: gente que volvió 3 o más días distintos. Es la señal de que Fonte se volvió un hábito, no una visita suelta.</p>
+      <div id="metricasBody"><p style="font-family:var(--sans);font-size:.78rem;color:var(--ink-faint)">Cargando…</p></div>
+    </div>
+
+    <div class="rep-view" id="viewInstituciones">
+      <div id="avisoVencidas" class="hide" style="background:color-mix(in srgb,#B23A2E 10%,var(--paper));border:1px solid color-mix(in srgb,#B23A2E 30%,var(--line));border-radius:10px;padding:12px 14px;margin-bottom:16px;font-family:var(--sans);font-size:.8rem;color:#B23A2E;font-weight:600"></div>
+      <h2 class="rep-h">Instituciones verificadas</h2>
+      <p class="rep-sub">Hospital, desarrollo social, municipio, etc. Cargá la ficha una vez; después solo actualizás la fecha cuando cambie (ej: la próxima entrega de mercadería).</p>
+
+      <button class="form-toggle" data-form="formInstitucion"><span>+ Agregar una institución</span><span class="chev">⌄</span></button>
+      <div class="card hide" id="formInstitucion">
+        <div class="field-label">Nombre</div>
+        <input class="inp" id="inNombre" placeholder="Ej: Hospital Municipal">
+        <div class="field-label">Tipo (define el ícono)</div>
+        <select class="inp" id="inTipo">
+          <option value="salud">🏥 Salud</option>
+          <option value="social">📦 Desarrollo social</option>
+          <option value="municipio">🏛️ Municipio</option>
+          <option value="seguridad">🚓 Seguridad</option>
+          <option value="educacion">🏫 Educación</option>
+          <option value="cultura">🎭 Cultura</option>
+          <option value="deporte">⚽ Deporte</option>
+          <option value="otro">📍 Otro</option>
+        </select>
+        <div class="field-label">Descripción (opcional)</div>
+        <textarea id="inDesc" style="min-height:60px" placeholder="Qué hace esta institución"></textarea>
+        <div class="field-label" style="margin-top:14px">Dirección (opcional)</div>
+        <input class="inp" id="inDireccion" placeholder="Av. San Martín 210, Quitilipi">
+        <div class="field-label">Horario de atención (opcional)</div>
+        <input class="inp" id="inHorario" placeholder="Lunes a viernes, 7 a 13 hs">
+        <div class="field-label">Teléfono (opcional)</div>
+        <input class="inp" id="inTelefono" placeholder="(03731) 42-0000">
+        <div class="field-label">Link externo (opcional)</div>
+        <input class="inp" id="inLink" placeholder="https://...">
+        <div class="field-label">Foto / logo (opcional)</div>
+        <input class="inp" type="file" id="inFoto" accept="image/*" style="padding:9px">
+        <img class="foto-preview" id="inFotoPreview">
+        <button class="btn-gen" id="inPublicarBtn">Guardar institución</button>
+        <div class="err-msg hide" id="inErr"></div>
+      </div>
+
+      <h2 class="rep-h" style="font-size:1.05rem">Instituciones cargadas</h2>
+      <div class="card" id="institucionesAdminList"><p style="font-family:var(--sans);font-size:.78rem;color:var(--ink-faint)">Cargando…</p></div>
+    </div>
+  </div>
+</div>
+
+<div class="rep-view" id="viewPrevia">
+  <h2 class="rep-h">Así va a quedar</h2>
+  <p class="rep-sub">Exactamente como lo va a ver el vecino en Fonte.</p>
+  <div id="previaCont"></div>
+</div>
+
+<div class="barra-accion" id="barraAccion">
+  <button class="b-prev hide" id="btnVistaPrevia">👁 Vista previa</button>
+  <button class="btn-gen" id="btnPublicarBarra" style="flex:1;margin:0">Publicar en Fonte</button>
+</div>
+
+<nav class="rep-nav">
+  <button class="rnv on" data-v="viewHoy">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
+    <span>Hoy</span><span class="pip hide" id="navPendN">0</span></button>
+  <button class="rnv" data-v="viewCargar">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+    <span>Publicar</span></button>
+  <button class="rnv" data-v="viewArchivo">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+    <span>Archivo</span></button>
+  <button class="rnv" data-v="viewMetricas">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>
+    <span>Panel</span></button>
+</nav>
+
+<div class="toast" id="toast"></div>
+
+<div class="visor-back" id="visorBack">
+  <div class="visor" id="visor"></div>
+</div>
+
+<script>
+  // ================= COMPRESIÓN DE IMÁGENES =================
+  // Las fotos de celular pesan 3-8 MB. Se achican antes de subir para no
+  // quemar el ancho de banda y para que carguen rápido en el pueblo.
+  const FOTO_MAX_LADO = 1400;
+  const FOTO_CALIDAD = 0.72;
+  function comprimirImagen(file){
+    return new Promise((resolve)=>{
+      if(!file || !file.type || !file.type.startsWith("image/")) return resolve(file);
+      if(file.size < 300*1024) return resolve(file); // ya es chica, no vale la pena
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = ()=>{
+        URL.revokeObjectURL(url);
+        let { width:w, height:h } = img;
+        if(Math.max(w,h) > FOTO_MAX_LADO){
+          const f = FOTO_MAX_LADO / Math.max(w,h);
+          w = Math.round(w*f); h = Math.round(h*f);
+        }
+        try{
+          const c = document.createElement("canvas");
+          c.width = w; c.height = h;
+          const ctx = c.getContext("2d");
+          ctx.drawImage(img, 0, 0, w, h);
+          c.toBlob((blob)=>{
+            if(!blob || blob.size >= file.size) return resolve(file);
+            resolve(new File([blob], (file.name||"foto").replace(/\.[^.]+$/,"") + ".jpg", { type:"image/jpeg" }));
+          }, "image/jpeg", FOTO_CALIDAD);
+        }catch(e){ resolve(file); }
+      };
+      img.onerror = ()=>{ URL.revokeObjectURL(url); resolve(file); };
+      img.src = url;
+    });
+  }
+
+  const SUPABASE_URL = "https://skpfycmkilahghvoxqxw.supabase.co";
+  const SUPABASE_KEY = "sb_publishable_3YK9XChJ8YeJzlXymHXUeQ_TbCPQReT";
+  const FUNCION_GENERAR = SUPABASE_URL + "/functions/v1/fonte-generar-nota";
+
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  const loginView = document.getElementById("loginView");
+  const consoleView = document.getElementById("consoleView");
+  let sesion = null;
+  let fuenteElegida = "Facebook vecinal";
+  let imagenDetectada = null;
+  let videoDetectado = null;
+  let fotoPropiaUrl = null;
+  // resumen_estructurado / terminos: el mismo "extra" que ya traen las notas de Más noticias
+  // (lede, datos destacados, subtítulos, cita). No hay campo en el formulario para tocarlo a
+  // mano — viaja tal cual lo devuelva Gemini, ya validado, desde el borrador hasta publicar.
+  let borradorEstructurado = null;
+  let borradorTerminos = null;
+  let extendidoOriginal = "";
+
+  const CAT_APORTE = [
+    {id:"agua_estancada", label:"Agua estancada", icon:"💧"},
+    {id:"calle_mal_estado", label:"Calle en mal estado", icon:"🕳️"},
+    {id:"corte_luz", label:"Corte de luz", icon:"⚡"},
+    {id:"corte_agua", label:"Corte de agua", icon:"🚱"},
+    {id:"alumbrado", label:"Alumbrado público", icon:"💡"},
+    {id:"residuos", label:"Basural / residuos", icon:"🗑️"},
+    {id:"arbol_caido", label:"Árbol o poste caído", icon:"🌳"},
+    {id:"otro_riesgo", label:"Otro riesgo", icon:"⚠️"}
+  ];
+
+  const VISTAS = ["viewHoy","viewCargar","viewArchivo","viewMetricas","viewAportes","viewOfertas","viewInstituciones"];
+  function irAVista(v){
+    VISTAS.forEach(x=>{
+      const el = document.getElementById(x);
+      if(el) el.classList.toggle("on", x === v);
+    });
+    document.querySelectorAll(".rnv").forEach(b=> b.classList.toggle("on", b.getAttribute("data-v") === v));
+    // La barra "Ver / Publicar" solo corresponde al formulario de nota
+    const barra = document.getElementById("barraAccion");
+    if(barra) barra.classList.toggle("show", v === "viewCargar" && (typeof tipoPub === "undefined" || tipoPub === "nota"));
+    if(v !== "viewCargar" && typeof enPrevia !== "undefined" && enPrevia){
+      enPrevia = false;
+      document.getElementById("viewPrevia").classList.remove("on");
+      document.getElementById("btnVistaPrevia").textContent = "👁 Vista previa";
+    }
+    if(v === "viewHoy"){ cargarHoy(); }
+    if(v === "viewArchivo"){ cargarArchivo(); }
+    if(v === "viewMetricas"){ cargarMetricas(); }
+    if(v === "viewAportes"){ cargarAportesPendientes(); cargarAvisosPublicados(); }
+    if(v === "viewCargar"){ cargarPublicadoHoy(); cargarOfertasAdmin(); cargarComunicadosAdmin(); cargarInstitucionesAdmin(); }
+    window.scrollTo({ top:0, behavior:"instant" });
+  }
+  // compatibilidad con llamadas viejas
+  function irAPestana(tabId){
+    if(tabId === "tabOfertas"){ irAVista("viewCargar"); irATipo("oferta"); return; }
+    if(tabId === "tabInstituciones"){ irAVista("viewCargar"); irATipo("institucion"); return; }
+    const map = { tabCargar:"viewCargar", tabAportes:"viewAportes", tabMetricas:"viewMetricas" };
+    irAVista(map[tabId] || "viewHoy");
+  }
+  document.querySelectorAll(".rnv").forEach(b=>{
+    b.addEventListener("click", ()=> irAVista(b.getAttribute("data-v")));
+  });
+  document.getElementById("btnPublicarAhora").addEventListener("click", ()=> irAVista("viewCargar"));
+
+  let fotosPropias = [];
+  document.getElementById("fotoPropia").addEventListener("change", async (e)=>{
+    const files = Array.from(e.target.files || []).slice(0, 6);
+    fotosPropias = []; fotoPropiaUrl = null;
+    const prev = document.getElementById("fotoPreview");
+    if(!files.length){ prev.style.display = "none"; prev.innerHTML = ""; return; }
+    prev.style.display = "flex";
+    prev.innerHTML = files.map(f=>'<img src="'+URL.createObjectURL(f)+'" style="width:56px;height:56px;border-radius:8px;object-fit:cover;border:1px solid var(--line)">').join("")
+      + '<div class="estado-fotos" style="font-family:var(--sans);font-size:.68rem;color:var(--ink-faint);width:100%;margin-top:4px">Subiendo…</div>';
+    for(let i = 0; i < files.length; i++){
+      try{
+        const chico = await comprimirImagen(files[i]);
+        const nombre = Date.now() + "-" + i + "." + ((chico.name||files[i].name).split(".").pop() || "jpg");
+        const { error } = await sb.storage.from("notas-fotos").upload(nombre, chico);
+        if(!error){
+          const { data } = sb.storage.from("notas-fotos").getPublicUrl(nombre);
+          fotosPropias.push(data.publicUrl);
+        }
+      }catch(err){ /* si falla una, seguimos con las demás */ }
+    }
+    fotoPropiaUrl = fotosPropias[0] || null;
+    document.getElementById("leerImgBtn").classList.toggle("hide", !fotoPropiaUrl);
+    document.getElementById("leerImgAyuda").classList.toggle("hide", !fotoPropiaUrl);
+    const est = prev.querySelector(".estado-fotos");
+    if(est) est.textContent = fotosPropias.length
+      ? "✓ " + fotosPropias.length + (fotosPropias.length===1 ? " foto lista" : " fotos listas")
+      : "No se pudieron subir las fotos.";
+  });
+
+  let ofFotoUrl = null;
+  document.getElementById("ofFoto").addEventListener("change", async (e)=>{
+    const file = e.target.files[0];
+    ofFotoUrl = null;
+    if(!file) return;
+    const preview = document.getElementById("ofFotoPreview");
+    preview.src = URL.createObjectURL(file);
+    preview.style.display = "block";
+    try{
+      const chico = await comprimirImagen(file);
+      const nombre = Date.now() + "." + ((chico.name||file.name).split(".").pop() || "jpg");
+      const { error } = await sb.storage.from("ofertas-fotos").upload(nombre, chico);
+      if(!error){
+        const { data } = sb.storage.from("ofertas-fotos").getPublicUrl(nombre);
+        ofFotoUrl = data.publicUrl;
+      }
+    }catch(err){ /* si falla la subida, se publica igual sin foto */ }
+  });
+
+  let inFotoUrl = null;
+  document.getElementById("inFoto").addEventListener("change", async (e)=>{
+    const file = e.target.files[0];
+    inFotoUrl = null;
+    if(!file) return;
+    const preview = document.getElementById("inFotoPreview");
+    preview.src = URL.createObjectURL(file);
+    preview.style.display = "block";
+    try{
+      const chico = await comprimirImagen(file);
+      const nombre = Date.now() + "." + ((chico.name||file.name).split(".").pop() || "jpg");
+      const { error } = await sb.storage.from("instituciones-fotos").upload(nombre, chico);
+      if(!error){
+        const { data } = sb.storage.from("instituciones-fotos").getPublicUrl(nombre);
+        inFotoUrl = data.publicUrl;
+      }
+    }catch(err){ /* si falla la subida, se guarda igual sin foto */ }
+  });
+
+  function toast(msg){
+    const t = document.getElementById("toast"); t.textContent = msg; t.classList.add("show");
+    setTimeout(()=>t.classList.remove("show"), 2400);
+  }
+
+  async function revisarSesion(){
+    const { data } = await sb.auth.getSession();
+    sesion = data.session;
+    if(sesion){
+      loginView.classList.add("hide");
+      consoleView.classList.remove("hide");
+      document.getElementById("userEmail").textContent = sesion.user.email;
+      irAVista("viewHoy");
+      cargarPublicadoHoy();
+      cargarAportesPendientes();
+    } else {
+      loginView.classList.remove("hide");
+      consoleView.classList.add("hide");
+    }
+  }
+
+  document.getElementById("loginBtn").addEventListener("click", async ()=>{
+    const email = document.getElementById("loginEmail").value.trim();
+    const pass = document.getElementById("loginPass").value;
+    const errEl = document.getElementById("loginErr");
+    errEl.classList.add("hide");
+    const { error } = await sb.auth.signInWithPassword({ email, password: pass });
+    if(error){
+      errEl.textContent = "No se pudo entrar: revisá el email y la contraseña.";
+      errEl.classList.remove("hide");
+      return;
+    }
+    revisarSesion();
+  });
+
+  document.getElementById("logoutBtn").addEventListener("click", async ()=>{
+    await sb.auth.signOut();
+    revisarSesion();
+  });
+
+  // fuentes (solo los chips de #srcChips: los de acción usan la misma clase)
+  document.querySelectorAll("#srcChips .srcchip").forEach(b=>{
+    b.addEventListener("click", ()=>{
+      document.querySelectorAll("#srcChips .srcchip").forEach(x=>x.classList.remove("on"));
+      b.classList.add("on");
+      const custom = document.getElementById("srcCustom");
+      if(b.getAttribute("data-src") === "__otra"){
+        custom.classList.add("src-custom-show");
+        custom.style.display = "block";
+        fuenteElegida = custom.value.trim() || "Otra fuente";
+      } else {
+        custom.style.display = "none";
+        fuenteElegida = b.getAttribute("data-src");
+      }
+    });
+  });
+  document.getElementById("srcCustom").addEventListener("input", (e)=>{ fuenteElegida = e.target.value.trim() || "Otra fuente"; });
+
+  // generar con Fonte
+  // Un solo generador para los dos botones: con texto, con imagen, o con ambos.
+  async function generarNota({ conImagen }){
+    const texto = document.getElementById("rawInput").value.trim();
+    const errEl = document.getElementById("genErr");
+    errEl.classList.add("hide");
+    const imagen = conImagen ? (fotoPropiaUrl || null) : null;
+    if(!imagen && texto.length < 15){
+      errEl.textContent = "Pegá un poco más de texto, o subí una imagen para leer.";
+      errEl.classList.remove("hide");
+      return;
+    }
+
+    const btn = document.getElementById(conImagen ? "leerImgBtn" : "genBtn");
+    const etiquetaOriginal = btn.innerHTML;
+    btn.innerHTML = '<span class="spinner"></span> ' + (conImagen ? "Fonte está leyendo la imagen..." : "Fonte está leyendo y resumiendo...");
+    btn.disabled = true;
+    document.getElementById("previewCard").classList.add("hide");
+
+    try{
+      const res = await fetch(FUNCION_GENERAR, {
+        method: "POST",
+        headers: { "content-type": "application/json", "Authorization": "Bearer " + sesion.access_token },
+        body: JSON.stringify({ texto, fuente_etiqueta: fuenteElegida, imagen_url: imagen }),
+      });
+      const data = await res.json();
+      if(!res.ok || !data.ok){
+        errEl.textContent = data.error || "No se pudo generar la nota, probá de nuevo.";
+        errEl.classList.remove("hide");
+        return;
+      }
+      const b = data.borrador;
+      document.getElementById("pvTitulo").value = b.titulo || "";
+      document.getElementById("pvCorto").value = b.resumen_corto || "";
+      document.getElementById("pvExtendido").value = b.resumen_extendido || "";
+      document.getElementById("pvCategoria").value = b.categoria || "otros";
+      document.getElementById("pvOnda").value = b.onda || "ciudad";
+      document.getElementById("pvLugar").value = b.lugar || "Quitilipi";
+      document.getElementById("pvUrgente").checked = !!b.urgente;
+      // si lo que se pegó era solo un link, lo usamos también como link de la fuente
+      const esSoloUnLink = /^https?:\/\/\S+$/i.test(texto);
+      if(esSoloUnLink && !document.getElementById("srcLink").value.trim()){
+        document.getElementById("srcLink").value = texto;
+      }
+      imagenDetectada = b.imagen_url || null;
+      videoDetectado = b.video_url || null;
+      // mismo chequeo que ya hace fonte-recolector antes de guardar: si Gemini no
+      // devolvió una lede en forma de texto, no confiamos en el resto de la estructura
+      borradorEstructurado = (b.resumen_estructurado && typeof b.resumen_estructurado.lede === "string")
+        ? b.resumen_estructurado : null;
+      borradorTerminos = Array.isArray(b.terminos) ? b.terminos : null;
+      extendidoOriginal = document.getElementById("pvExtendido").value; // ver chequeo al publicar
+      const avisos = [];
+      if(b.imagen_leida) avisos.push("🔍 se leyó la imagen");
+      if(imagenDetectada) avisos.push("📷 foto encontrada");
+      if(videoDetectado) avisos.push("🎬 video encontrado");
+      document.getElementById("pvMedia").textContent = avisos.join(" · ");
+      document.getElementById("previewCard").classList.remove("hide");
+      document.getElementById("btnVistaPrevia").classList.remove("hide");
+      document.getElementById("previewCard").scrollIntoView({ behavior: "smooth", block: "center" });
+    }catch(e){
+      errEl.textContent = "Error de conexión, probá de nuevo.";
+      errEl.classList.remove("hide");
+    }finally{
+      btn.innerHTML = etiquetaOriginal;
+      btn.disabled = false;
+    }
+  }
+  document.getElementById("genBtn").addEventListener("click", ()=> generarNota({ conImagen:false }));
+  document.getElementById("leerImgBtn").addEventListener("click", ()=> generarNota({ conImagen:true }));
+
+  document.getElementById("discBtn").addEventListener("click", ()=>{
+    document.getElementById("previewCard").classList.add("hide");
+    document.getElementById("btnVistaPrevia").classList.add("hide");
+  });
+
+  document.getElementById("pubBtn").addEventListener("click", async ()=>{
+    const btn = document.getElementById("pubBtn");
+    btn.textContent = "Publicando...";
+    btn.disabled = true;
+    const registro = {
+      titulo: document.getElementById("pvTitulo").value.trim(),
+      resumen_corto: document.getElementById("pvCorto").value.trim(),
+      dato_extra: document.getElementById("pvDato").value.trim() || null,
+      estilo_placa: placaSel,
+      accion_etiqueta: accionEtiqueta() || null,
+      accion_url: (accionEtiqueta() ? document.getElementById("accionUrl").value.trim() : "") || null,
+      resumen_extendido: document.getElementById("pvExtendido").value.trim(),
+      // si el reportero tocó el texto extendido después de generarlo, la lede/subtítulos/cita
+      // quedaron armados sobre el texto viejo — mejor no publicarlos desincronizados
+      resumen_estructurado: (document.getElementById("pvExtendido").value === extendidoOriginal) ? borradorEstructurado : null,
+      terminos: (document.getElementById("pvExtendido").value === extendidoOriginal) ? borradorTerminos : null,
+      categoria: document.getElementById("pvCategoria").value,
+      onda: document.getElementById("pvOnda").value,
+      lugar: document.getElementById("pvLugar").value.trim(),
+      urgente: document.getElementById("pvUrgente").checked,
+      fuente_etiqueta: "vía " + fuenteElegida,
+      url_original: document.getElementById("srcLink").value.trim() || null,
+      origen: "reportero",
+      imagen_url: fotoPropiaUrl || imagenDetectada,
+      fotos: fotosPropias.length ? fotosPropias : null,
+      video_url: (document.getElementById("videoUrl").value.trim() || videoDetectado || null),
+      publicada: true,
+      creada_por: sesion.user.id,
+    };
+    const { error } = await sb.from("noticias").insert(registro);
+    btn.textContent = "Publicar en Fonte";
+    btn.disabled = false;
+    if(error){
+      toast("No se pudo publicar: " + error.message);
+      return;
+    }
+    toast("Publicado en Fonte ✓");
+    document.getElementById("previewCard").classList.add("hide");
+    document.getElementById("btnVistaPrevia").classList.add("hide");
+    document.getElementById("rawInput").value = "";
+    document.getElementById("fotoPropia").value = "";
+    document.getElementById("fotoPreview").style.display = "none";
+    document.getElementById("fotoPreview").innerHTML = "";
+    fotosPropias = [];
+    document.getElementById("videoUrl").value = "";
+    document.getElementById("srcLink").value = "";
+    document.getElementById("pvDato").value = "";
+    document.getElementById("accionUrl").value = "";
+    document.getElementById("accionCustom").value = "";
+    accionSel = "";
+    document.querySelectorAll("#accionChips .srcchip").forEach((x,i)=>x.classList.toggle("on", i===0));
+    document.getElementById("accionCustom").classList.add("hide");
+    document.getElementById("accionUrl").classList.add("hide");
+    fotoPropiaUrl = null;
+    cargarPublicadoHoy();
+  });
+
+  async function cargarPublicadoHoy(){
+    const inicioHoy = new Date(); inicioHoy.setHours(0,0,0,0);
+    const { data, error } = await sb.from("noticias")
+      .select("*")
+      .eq("creada_por", sesion.user.id)
+      .gte("created_at", inicioHoy.toISOString())
+      .order("created_at", { ascending: false });
+    const cont = document.getElementById("todayList");
+    if(error || !data || !data.length){
+      cont.innerHTML = '<p style="font-family:var(--sans);font-size:.78rem;color:var(--ink-faint)">Nada todavía.</p>';
+      return;
+    }
+    const NOMBRE_ONDA = { barrio:"Barrio", ciudad:"Ciudad", region:"Región", pais:"Argentina", mundo:"Mundo" };
+    cont.innerHTML = data.map(n =>
+      '<div class="today-item" data-id="'+escA(n.id)+'" style="cursor:pointer">'
+      + '<span class="st">'+(NOMBRE_ONDA[n.onda]||n.onda)+'</span>'
+      + '<span class="h">'+escA(n.titulo)+'</span>'
+      + '<span style="font-family:var(--sans);font-size:.66rem;color:var(--region);font-weight:700;white-space:nowrap">Ver ›</span>'
+      + '</div>'
+    ).join("");
+    cont.querySelectorAll(".today-item").forEach(el=>{
+      el.addEventListener("click", ()=>{
+        const n = data.find(x=>String(x.id)===String(el.getAttribute("data-id")));
+        if(n) abrirVisorNota(n);
+      });
+    });
+  }
+
+  const escA = (s) => (s||"").toString().replace(/[<>&]/g, c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));
+
+  async function cargarAportesPendientes(){
+    const { data, error } = await sb.from("aportes").select("*").eq("estado","pendiente").order("created_at",{ascending:true});
+    const cont = document.getElementById("aportesList");
+    const badge = document.getElementById("badgeAportes"); // ya no existe: el contador vive en la barra inferior
+    if(badge){
+      if(data && data.length){ badge.textContent = data.length; badge.classList.remove("hide"); }
+      else { badge.classList.add("hide"); }
+    }
+    if(error || !data || !data.length){
+      cont.innerHTML = '<p style="font-family:var(--sans);font-size:.78rem;color:var(--ink-faint)">No hay aportes pendientes de revisión.</p>';
+      return;
+    }
+    cont.innerHTML = data.map(a=>{
+      const cat = CAT_APORTE.find(c=>c.id===a.categoria) || {label:a.categoria, icon:"📍"};
+      const mapa = (a.lat && a.lng) ? '<a href="https://www.google.com/maps?q='+a.lat+','+a.lng+'" target="_blank">Ver ubicación</a>' : "sin ubicación";
+      const fecha = a.created_at ? new Date(a.created_at).toLocaleString("es-AR") : "";
+      return '<div class="card aporte-review" data-id="'+escA(a.id)+'">'
+        + '<img src="'+escA(a.foto_url||"")+'">'
+        + '<div class="info">'
+        + '<div class="cat">'+cat.icon+' '+escA(cat.label)+'</div>'
+        + '<div class="desc">'+(a.titulo?('<b>'+escA(a.titulo)+'</b> — '):'')+escA(a.descripcion||"sin descripción")+'</div>'
+        + '<div class="meta">'+mapa+' · '+fecha+'</div>'
+        + '<div class="acts"><button class="btn-aprobar" data-accion="revisado">Publicar</button><button class="btn-rechazar" data-accion="descartado">Descartar</button></div>'
+        + '</div></div>';
+    }).join("");
+    cont.querySelectorAll(".aporte-review").forEach(card=>{
+      const id = card.getAttribute("data-id");
+      card.addEventListener("click", (e)=>{
+        if(e.target.closest("button") || e.target.closest("a")) return;
+        const a = data.find(x=>String(x.id)===String(id));
+        if(a) abrirVisor(a);
+      });
+      card.querySelectorAll("button[data-accion]").forEach(btn=>{
+        btn.addEventListener("click", async ()=>{
+          btn.disabled = true;
+          const estado = btn.getAttribute("data-accion");
+          const { error } = await sb.from("aportes").update({ estado, revisado_por: sesion.user.id }).eq("id", id);
+          if(error){ toast("No se pudo actualizar: " + error.message); console.error("Fonte / error al actualizar aporte:", error); btn.disabled=false; return; }
+          toast(estado === "revisado" ? "Aporte publicado ✓" : "Aporte descartado");
+          cargarAportesPendientes();
+        });
+      });
+    });
+  }
+
+  async function cargarAvisosPublicados(){
+    const [{ data, error }, confRes] = await Promise.all([
+      sb.from("aportes").select("*").in("estado",["revisado","resuelto"]).order("created_at",{ascending:false}),
+      sb.from("aporte_confirmaciones").select("aporte_id")
+    ]);
+    const conteo = {};
+    (confRes.data||[]).forEach(c=>{ conteo[c.aporte_id] = (conteo[c.aporte_id]||0)+1; });
+    const cont = document.getElementById("avisosPublicadosList");
+    if(error || !data || !data.length){
+      cont.innerHTML = '<p style="font-family:var(--sans);font-size:.78rem;color:var(--ink-faint)">Todavía no publicaste ningún aviso.</p>';
+      return;
+    }
+    cont.innerHTML = data.map(a=>{
+      const cat = CAT_APORTE.find(c=>c.id===a.categoria) || {label:a.categoria, icon:"📍"};
+      const n = conteo[a.id] || 0;
+      const resuelto = a.estado === "resuelto";
+      const mapa = (a.lat && a.lng) ? '<a href="https://www.google.com/maps?q='+a.lat+','+a.lng+'" target="_blank">Ver ubicación</a>' : "sin ubicación";
+      const fecha = a.created_at ? new Date(a.created_at).toLocaleString("es-AR") : "";
+      const foto = a.foto_url ? '<img src="'+escA(a.foto_url)+'">' : '<img alt="sin foto">';
+      return '<div class="card aporte-review publicado'+(resuelto?" resuelto":"")+'" data-id="'+escA(a.id)+'">'
+        + foto
+        + '<div class="info">'
+        + '<div class="cat">'+cat.icon+' '+escA(cat.label)
+        + '<span class="estado-tag '+(resuelto?"res":"pub")+'">'+(resuelto?"✓ Resuelto":"Publicado")+'</span></div>'
+        + '<div class="desc">'+(a.titulo?('<b>'+escA(a.titulo)+'</b>'+(a.descripcion?" — ":"")):'')+escA(a.descripcion||"")+'</div>'
+        + '<div class="meta">'+mapa+' · '+fecha+'</div>'
+        + (n ? '<span class="conf">👥 '+n+(n===1?" vecino lo confirmó":" vecinos lo confirmaron")+'</span>' : '')
+        + '<div class="acts">'
+        + (resuelto
+            ? '<button class="btn-rechazar" data-reabrir="1">Reabrir</button>'
+            : '<button class="btn-aprobar" data-resolver="1">✓ Marcar resuelto</button>')
+        + '<button class="btn-rechazar del" style="color:#B23A2E;border-color:#B23A2E !important">Quitar</button>'
+        + '</div></div></div>';
+    }).join("");
+    async function cambiarEstado(btn, estado, msg){
+      const id = btn.closest(".aporte-review").getAttribute("data-id");
+      btn.disabled = true;
+      const { error } = await sb.from("aportes").update({ estado }).eq("id", id);
+      if(error){ toast("No se pudo actualizar: " + error.message); btn.disabled=false; return; }
+      toast(msg);
+      cargarAvisosPublicados();
+    }
+    cont.querySelectorAll("[data-resolver]").forEach(btn=>{
+      btn.addEventListener("click", ()=> cambiarEstado(btn, "resuelto", "Marcado como resuelto ✓"));
+    });
+    cont.querySelectorAll("[data-reabrir]").forEach(btn=>{
+      btn.addEventListener("click", ()=> cambiarEstado(btn, "revisado", "Aviso reabierto"));
+    });
+    cont.querySelectorAll(".aporte-review .del").forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        if(!confirm("¿Quitar este aviso de Fonte?")) return;
+        cambiarEstado(btn, "descartado", "Aviso quitado");
+      });
+    });
+    cont.querySelectorAll(".aporte-review").forEach(card=>{
+      card.addEventListener("click", (e)=>{
+        if(e.target.closest("button") || e.target.closest("a")) return;
+        const id = card.getAttribute("data-id");
+        const a = data.find(x=>String(x.id)===String(id));
+        if(a) abrirVisor(a);
+      });
+    });
+  }
+
+  // ================= OFERTAS DE COMERCIOS =================
+  async function cargarOfertasAdmin(){
+    const { data, error } = await sb.from("ofertas").select("*").eq("activa", true).order("created_at", { ascending:false });
+    const cont = document.getElementById("ofertasAdminList");
+    if(error || !data || !data.length){
+      cont.innerHTML = '<p style="font-family:var(--sans);font-size:.78rem;color:var(--ink-faint)">Todavía no cargaste ninguna oferta.</p>';
+      return;
+    }
+    cont.innerHTML = data.map(o=>
+      '<div class="admin-item" data-id="'+escA(o.id)+'">'
+      + '<div><div class="h">'+escA(o.negocio||"")+'</div><div class="sub2">'+escA(o.titulo||"")+'</div></div>'
+      + '<button class="del">Quitar</button></div>'
+    ).join("");
+    cont.querySelectorAll(".admin-item").forEach(el=>{
+      el.style.cursor = "pointer";
+      el.addEventListener("click", (e)=>{
+        if(e.target.closest("button")) return;
+        const o = data.find(x=>String(x.id)===String(el.getAttribute("data-id")));
+        if(o) abrirVisorOferta(o);
+      });
+    });
+    cont.querySelectorAll(".admin-item .del").forEach(btn=>{
+      btn.addEventListener("click", async ()=>{
+        const id = btn.closest(".admin-item").getAttribute("data-id");
+        if(!confirm("¿Quitar esta oferta de Fonte?")) return;
+        btn.disabled = true;
+        const { error } = await sb.from("ofertas").delete().eq("id", id);
+        if(error){ toast("No se pudo quitar: " + error.message); btn.disabled=false; return; }
+        toast("Oferta quitada");
+        cargarOfertasAdmin();
+      });
+    });
+  }
+
+  document.getElementById("ofPublicarBtn").addEventListener("click", async ()=>{
+    const errEl = document.getElementById("ofErr");
+    errEl.classList.add("hide");
+    const negocio = document.getElementById("ofNegocio").value.trim();
+    const titulo = document.getElementById("ofTitulo").value.trim();
+    if(!negocio || !titulo){
+      errEl.textContent = "Completá al menos el comercio y el título de la oferta.";
+      errEl.classList.remove("hide");
+      return;
+    }
+    const btn = document.getElementById("ofPublicarBtn");
+    btn.textContent = "Publicando...";
+    btn.disabled = true;
+    const registro = {
+      negocio, titulo,
+      descripcion: document.getElementById("ofDesc").value.trim() || null,
+      direccion: document.getElementById("ofDireccion").value.trim() || null,
+      valido_hasta: document.getElementById("ofValido").value.trim() || null,
+      imagen_url: ofFotoUrl,
+      activa: true,
+    };
+    const { error } = await sb.from("ofertas").insert(registro);
+    btn.textContent = "Publicar oferta";
+    btn.disabled = false;
+    if(error){ toast("No se pudo publicar: " + error.message); return; }
+    toast("Oferta publicada ✓");
+    document.getElementById("formOferta").classList.add("hide");
+    document.querySelector('[data-form="formOferta"]').classList.remove("abierto");
+    document.getElementById("ofNegocio").value = "";
+    document.getElementById("ofTitulo").value = "";
+    document.getElementById("ofDesc").value = "";
+    document.getElementById("ofDireccion").value = "";
+    document.getElementById("ofValido").value = "";
+    document.getElementById("ofFoto").value = "";
+    document.getElementById("ofFotoPreview").style.display = "none";
+    ofFotoUrl = null;
+    cargarOfertasAdmin();
+  });
+
+  // ================= COMUNICADOS OFICIALES =================
+  async function cargarComunicadosAdmin(){
+    const { data, error } = await sb.from("comunicados").select("*").order("created_at", { ascending:false });
+    const cont = document.getElementById("comunicadosAdminList");
+    if(error || !data || !data.length){
+      cont.innerHTML = '<p style="font-family:var(--sans);font-size:.78rem;color:var(--ink-faint)">Todavía no publicaste ningún comunicado.</p>';
+      return;
+    }
+    cont.innerHTML = data.map(c=>
+      '<div class="admin-item" data-id="'+escA(c.id)+'">'
+      + '<div><div class="h">'+escA(c.titulo||"")+(c.urgente?' <span style="font-size:.6rem;font-weight:800;color:#B23A2E">URGENTE</span>':'')+'</div><div class="sub2">'+escA(c.institucion||"")+'</div></div>'
+      + '<button class="del">Quitar</button></div>'
+    ).join("");
+    cont.querySelectorAll(".admin-item").forEach(el=>{
+      el.style.cursor = "pointer";
+      el.addEventListener("click", (e)=>{
+        if(e.target.closest("button")) return;
+        const c = data.find(x=>String(x.id)===String(el.getAttribute("data-id")));
+        if(c) abrirVisorComunicado(c);
+      });
+    });
+    cont.querySelectorAll(".admin-item .del").forEach(btn=>{
+      btn.addEventListener("click", async ()=>{
+        const id = btn.closest(".admin-item").getAttribute("data-id");
+        if(!confirm("¿Quitar este comunicado de Fonte?")) return;
+        btn.disabled = true;
+        const { error } = await sb.from("comunicados").delete().eq("id", id);
+        if(error){ toast("No se pudo quitar."); btn.disabled=false; return; }
+        toast("Comunicado quitado");
+        cargarComunicadosAdmin();
+      });
+    });
+  }
+
+  document.getElementById("coPublicarBtn").addEventListener("click", async ()=>{
+    const errEl = document.getElementById("coErr");
+    errEl.classList.add("hide");
+    const titulo = document.getElementById("coTitulo").value.trim();
+    const texto = document.getElementById("coTexto").value.trim();
+    if(!titulo || !texto){
+      errEl.textContent = "Completá el título y el texto del comunicado.";
+      errEl.classList.remove("hide");
+      return;
+    }
+    const btn = document.getElementById("coPublicarBtn");
+    btn.textContent = "Publicando...";
+    btn.disabled = true;
+    const registro = {
+      institucion: document.getElementById("coInstitucion").value.trim() || "Municipalidad de Quitilipi",
+      institucion_id: document.getElementById("coInstitucionSel").value || null,
+      urgente: document.getElementById("coUrgente").checked,
+      video_url: document.getElementById("coVideo").value.trim() || null,
+      imagen_url: coFotoUrl,
+      titulo, texto,
+    };
+    const { error } = await sb.from("comunicados").insert(registro);
+    btn.textContent = "Publicar comunicado";
+    btn.disabled = false;
+    if(error){ toast("No se pudo publicar: " + error.message); return; }
+    toast("Comunicado publicado ✓");
+    document.getElementById("formComunicado").classList.add("hide");
+    document.querySelector('[data-form="formComunicado"]').classList.remove("abierto");
+    document.getElementById("coTitulo").value = "";
+    document.getElementById("coTexto").value = "";
+    document.getElementById("coUrgente").checked = false;
+    document.getElementById("coVideo").value = "";
+    document.getElementById("coFoto").value = "";
+    document.getElementById("coFotoPreview").style.display = "none";
+    coFotoUrl = null;
+    cargarComunicadosAdmin();
+  });
+
+  // ================= INSTITUCIONES VERIFICADAS =================
+  const ICONS_INST = { salud:"🏥", social:"📦", municipio:"🏛️", seguridad:"🚓", educacion:"🏫", cultura:"🎭", deporte:"⚽", otro:"📍" };
+  async function cargarInstitucionesAdmin(){
+    const { data, error } = await sb.from("instituciones").select("*").eq("activa", true).order("created_at", { ascending:false });
+    revisarFechasVencidas();
+    const sel = document.getElementById("coInstitucionSel");
+    sel.innerHTML = '<option value="">— Otra / sin vincular —</option>' +
+      (data||[]).map(i=>'<option value="'+i.id+'">'+(ICONS_INST[i.tipo]||"📍")+" "+escA(i.nombre)+'</option>').join("");
+    const cont = document.getElementById("institucionesAdminList");
+    if(error || !data || !data.length){
+      cont.innerHTML = '<p style="font-family:var(--sans);font-size:.78rem;color:var(--ink-faint)">Todavía no cargaste ninguna institución.</p>';
+      return;
+    }
+    cont.innerHTML = data.map(i=>
+      '<div class="inst-block" data-id="'+escA(i.id)+'">'
+      + '<div class="inst-block-head"><div><div class="h">'+(ICONS_INST[i.tipo]||"📍")+" "+escA(i.nombre)+'</div><div class="sub2">'+escA(i.direccion||"")+'</div></div>'
+      + '<div class="inst-block-btns"><button class="btn-mini fechas-toggle">Fechas</button><button class="del">Quitar</button></div></div>'
+      + '<div class="fechas-panel hide" id="fechasPanel-'+escA(i.id)+'"></div>'
+      + '</div>'
+    ).join("");
+    cont.querySelectorAll(".inst-block .del").forEach(btn=>{
+      btn.addEventListener("click", async ()=>{
+        const id = btn.closest(".inst-block").getAttribute("data-id");
+        if(!confirm("¿Quitar esta institución (y todas sus fechas) de Fonte?")) return;
+        btn.disabled = true;
+        const { error } = await sb.from("instituciones").delete().eq("id", id);
+        if(error){ toast("No se pudo quitar: " + error.message); btn.disabled=false; return; }
+        toast("Institución quitada");
+        cargarInstitucionesAdmin();
+      });
+    });
+    cont.querySelectorAll(".fechas-toggle").forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        const id = btn.closest(".inst-block").getAttribute("data-id");
+        const panel = document.getElementById("fechasPanel-"+id);
+        panel.classList.toggle("hide");
+        if(!panel.classList.contains("hide")) cargarFechasDe(id, panel);
+      });
+    });
+  }
+
+  async function revisarFechasVencidas(){
+    const hoyStr = new Date().toISOString().slice(0,10);
+    const { data } = await sb.from("institucion_fechas").select("id,fecha,titulo,institucion_id").eq("activa", true).lt("fecha", hoyStr);
+    const el = document.getElementById("avisoVencidas");
+    if(!data || !data.length){ el.classList.add("hide"); return; }
+    el.classList.remove("hide");
+    el.textContent = "⚠️ Hay " + data.length + (data.length===1 ? " fecha vencida" : " fechas vencidas") + ". Abrí \u201CFechas\u201D en la institución y cargá la próxima para que la ficha no quede vacía en Fonte.";
+  }
+
+  async function cargarFechasDe(institucionId, panel){
+    panel.innerHTML = "Cargando…";
+    const { data, error } = await sb.from("institucion_fechas").select("*").eq("institucion_id", institucionId).eq("activa", true).order("fecha", { ascending:true });
+    const fechas = error ? [] : data;
+    const hoyStr = new Date().toISOString().slice(0,10);
+    const vencidas = fechas.filter(f=>f.fecha < hoyStr).length;
+    panel.innerHTML =
+      (vencidas ? '<div style="background:color-mix(in srgb,#B23A2E 10%,var(--paper));border:1px solid color-mix(in srgb,#B23A2E 30%,var(--line));border-radius:8px;padding:9px 11px;margin-bottom:10px;font-family:var(--sans);font-size:.72rem;color:#B23A2E;font-weight:600">⚠️ '+vencidas+(vencidas===1?' fecha ya pasó':' fechas ya pasaron')+'. Actualizala o quitala para que la ficha no quede vacía.</div>' : '')
+      + (fechas.length ? fechas.map(f=>
+        '<div class="fecha-row" data-fecha-id="'+escA(f.id)+'"'+(f.fecha < hoyStr ? ' style="opacity:.55"' : '')+'><div><div class="t">'+escA(f.titulo)+(f.fecha < hoyStr ? ' <span style="font-size:.6rem;color:#B23A2E;font-weight:800">VENCIDA</span>' : '')+'</div><div class="m">'+escA(f.fecha)+(f.lugar?" · "+escA(f.lugar):"")+'</div></div><button class="del" style="padding:4px 8px">✕</button></div>'
+      ).join("") : '<p style="font-family:var(--sans);font-size:.72rem;color:var(--ink-faint);margin:0 0 8px">Sin fechas cargadas.</p>')
+      + '<div class="fecha-add">'
+      + '<input name="titulo" placeholder="Ej: Entrega de mercadería">'
+      + '<input name="fecha" type="date">'
+      + '<input name="lugar" placeholder="Lugar (opcional)">'
+      + '<input name="horario" placeholder="Horario (opcional)">'
+      + '<button class="btn-mini" style="width:100%;background:var(--barrio);color:#fff;border-color:var(--barrio)" data-add="'+escA(institucionId)+'">+ Agregar fecha</button>'
+      + '</div>';
+    panel.querySelectorAll(".fecha-row .del").forEach(btn=>{
+      btn.addEventListener("click", async ()=>{
+        const id = btn.closest(".fecha-row").getAttribute("data-fecha-id");
+        btn.disabled = true;
+        const { error } = await sb.from("institucion_fechas").delete().eq("id", id);
+        if(error){ toast("No se pudo quitar la fecha."); btn.disabled=false; return; }
+        cargarFechasDe(institucionId, panel);
+      });
+    });
+    panel.querySelector("[data-add]").addEventListener("click", async (e)=>{
+      const btn = e.target;
+      const titulo = panel.querySelector('[name="titulo"]').value.trim();
+      const fecha = panel.querySelector('[name="fecha"]').value;
+      if(!titulo || !fecha){ toast("Completá el título y la fecha."); return; }
+      btn.disabled = true;
+      const registro = {
+        institucion_id: institucionId, titulo, fecha,
+        lugar: panel.querySelector('[name="lugar"]').value.trim() || null,
+        horario: panel.querySelector('[name="horario"]').value.trim() || null,
+      };
+      const { error } = await sb.from("institucion_fechas").insert(registro);
+      btn.disabled = false;
+      if(error){ toast("No se pudo agregar: " + error.message); return; }
+      toast("Fecha agregada ✓");
+      cargarFechasDe(institucionId, panel);
+    });
+  }
+
+  document.getElementById("inPublicarBtn").addEventListener("click", async ()=>{
+    const errEl = document.getElementById("inErr");
+    errEl.classList.add("hide");
+    const nombre = document.getElementById("inNombre").value.trim();
+    if(!nombre){
+      errEl.textContent = "Completá al menos el nombre de la institución.";
+      errEl.classList.remove("hide");
+      return;
+    }
+    const btn = document.getElementById("inPublicarBtn");
+    btn.textContent = "Guardando...";
+    btn.disabled = true;
+    const registro = {
+      nombre,
+      tipo: document.getElementById("inTipo").value,
+      descripcion: document.getElementById("inDesc").value.trim() || null,
+      direccion: document.getElementById("inDireccion").value.trim() || null,
+      horario: document.getElementById("inHorario").value.trim() || null,
+      telefono: document.getElementById("inTelefono").value.trim() || null,
+      link_url: document.getElementById("inLink").value.trim() || null,
+      foto_url: inFotoUrl,
+      activa: true,
+    };
+    const { error } = await sb.from("instituciones").insert(registro);
+    btn.textContent = "Guardar institución";
+    btn.disabled = false;
+    if(error){ toast("No se pudo guardar: " + error.message); return; }
+    toast("Institución guardada ✓");
+    document.getElementById("formInstitucion").classList.add("hide");
+    document.querySelector('[data-form="formInstitucion"]').classList.remove("abierto");
+    document.getElementById("inNombre").value = "";
+    document.getElementById("inDesc").value = "";
+    document.getElementById("inDireccion").value = "";
+    document.getElementById("inHorario").value = "";
+    document.getElementById("inTelefono").value = "";
+    document.getElementById("inLink").value = "";
+    document.getElementById("inFoto").value = "";
+    document.getElementById("inFotoPreview").style.display = "none";
+    inFotoUrl = null;
+    cargarInstitucionesAdmin();
+  });
+
+  // ================= MÉTRICAS =================
+  async function cargarMetricas(){
+    const cont = document.getElementById("metricasBody");
+    const desde = new Date(Date.now() - 29*86400000).toISOString().slice(0,10);
+    const { data, error } = await sb.from("visitas").select("dispositivo_id,fecha,es_nuevo,instalada").gte("fecha", desde);
+    if(error){
+      cont.innerHTML = '<p style="font-family:var(--sans);font-size:.78rem;color:#B23A2E">No se pudieron cargar las métricas: '+escA(error.message)+'</p>';
+      return;
+    }
+    const filas = data || [];
+    const hoy = new Date().toISOString().slice(0,10);
+    const hace7 = new Date(Date.now() - 6*86400000).toISOString().slice(0,10);
+
+    const diasPorDisp = {};
+    filas.forEach(f=>{
+      (diasPorDisp[f.dispositivo_id] = diasPorDisp[f.dispositivo_id] || new Set()).add(f.fecha);
+    });
+    const dispositivos = Object.keys(diasPorDisp);
+    const recurrentes = dispositivos.filter(d=> diasPorDisp[d].size >= 3).length;
+    const hoyUnicos = new Set(filas.filter(f=>f.fecha===hoy).map(f=>f.dispositivo_id)).size;
+    const semanaUnicos = new Set(filas.filter(f=>f.fecha>=hace7).map(f=>f.dispositivo_id)).size;
+    const instalada = new Set(filas.filter(f=>f.instalada).map(f=>f.dispositivo_id)).size;
+    const nuevosSemana = new Set(filas.filter(f=>f.es_nuevo && f.fecha>=hace7).map(f=>f.dispositivo_id)).size;
+    const META = 50;
+    const pct = Math.min(100, Math.round(recurrentes / META * 100));
+
+    const dias = [];
+    for(let i=13;i>=0;i--){
+      const f = new Date(Date.now() - i*86400000).toISOString().slice(0,10);
+      dias.push({ fecha:f, n: new Set(filas.filter(x=>x.fecha===f).map(x=>x.dispositivo_id)).size });
+    }
+    const maxN = Math.max(1, ...dias.map(d=>d.n));
+
+    // Gasto estimado de la IA este mes (aproximado: el número real está en Google)
+    const inicioMes = new Date(); inicioMes.setDate(1); inicioMes.setHours(0,0,0,0);
+    let notasMes = 0;
+    try{
+      const r = await sb.from("noticias").select("id", { count:"exact", head:true })
+        .gte("created_at", inicioMes.toISOString());
+      notasMes = r.count || 0;
+    }catch(e){}
+    const COSTO_POR_NOTA = 0.006;                 // dólares, aproximado
+    const gasto = (notasMes * COSTO_POR_NOTA);
+    const TOPE_USD = 10;
+    const pctGasto = Math.min(100, Math.round(gasto / TOPE_USD * 100));
+
+    cont.innerHTML =
+      '<div class="kpi-grid">'
+      + '<div class="kpi destacado"><div class="n">'+recurrentes+'</div><div class="l">Usuarios recurrentes<br>(3+ días en el último mes)</div></div>'
+      + '<div class="kpi"><div class="n">'+hoyUnicos+'</div><div class="l">Personas hoy</div></div>'
+      + '<div class="kpi"><div class="n">'+semanaUnicos+'</div><div class="l">Personas esta semana</div></div>'
+      + '<div class="kpi"><div class="n">'+dispositivos.length+'</div><div class="l">Personas en 30 días</div></div>'
+      + '<div class="kpi"><div class="n">'+nuevosSemana+'</div><div class="l">Nuevos esta semana</div></div>'
+      + '<div class="kpi"><div class="n">'+instalada+'</div><div class="l">La instalaron como app</div></div>'
+      + '</div>'
+      + '<div class="meta-bar"><div class="track"><div class="fill" style="width:'+pct+'%"></div></div>'
+      + '<div class="cap"><b>'+recurrentes+' de '+META+'</b> usuarios recurrentes — la meta antes de activar el contacto en la Provincia.</div></div>'
+      + '<div class="chart-lbl">Personas por día (últimos 14)</div>'
+      + '<div class="chart">' + dias.map(d=>{
+          const alto = Math.round(d.n / maxN * 92);
+          const dd = d.fecha.slice(8,10);
+          return '<div class="col"><div class="bar'+(d.fecha===hoy?" hoy":"")+'" style="height:'+alto+'px" title="'+d.fecha+': '+d.n+'"></div><div class="d">'+dd+'</div></div>';
+        }).join("") + '</div>'
+      + (dispositivos.length === 0 ? '<p style="font-family:var(--sans);font-size:.78rem;color:var(--ink-faint);margin-top:14px">Todavía no hay visitas registradas. Van a aparecer a partir de que la gente entre a Fonte.</p>' : '')
+      + '<div class="sec-lbl" style="margin-top:24px">Gasto de la IA este mes</div>'
+      + '<div class="kpi-grid" style="grid-template-columns:1fr 1fr">'
+      + '<div class="kpi"><div class="n">'+notasMes+'</div><div class="l">notas generadas</div></div>'
+      + '<div class="kpi"><div class="n">US$'+gasto.toFixed(2)+'</div><div class="l">estimado</div></div>'
+      + '</div>'
+      + '<div class="meta-bar"><div class="track"><div class="fill" style="width:'+pctGasto+'%;background:'
+      + (pctGasto > 80 ? '#B23A2E' : 'var(--int)')+'"></div></div>'
+      + '<div class="cap">Sobre un tope de US$'+TOPE_USD+'. Es un cálculo aproximado '
+      + '(unos US$0,006 por nota); el número exacto está en Google AI Studio.</div></div>';
+  }
+
+  // ================= VISOR DE AVISO =================
+  function abrirVisor(a){
+    const cat = CAT_APORTE.find(c=>c.id===a.categoria) || {label:a.categoria, icon:"📍"};
+    const fecha = a.created_at ? new Date(a.created_at).toLocaleString("es-AR") : "";
+    const mapa = (a.lat && a.lng)
+      ? '<a href="https://www.google.com/maps?q='+a.lat+','+a.lng+'" target="_blank" rel="noopener">Ver ubicación en el mapa ↗</a>'
+      : "Sin ubicación";
+    const estados = { pendiente:"En revisión", revisado:"Publicado", resuelto:"Resuelto", descartado:"No publicado" };
+    document.getElementById("visor").innerHTML =
+      (a.foto_url ? '<img src="'+escA(a.foto_url)+'" alt="">' : '')
+      + '<div class="cuerpo">'
+      + '<div class="cat">'+cat.icon+' '+escA(cat.label)+'</div>'
+      + '<h3>'+escA(a.titulo || cat.label)+'</h3>'
+      + '<div class="txt">'+escA(a.descripcion || a.texto || "Sin descripción.")+'</div>'
+      + '<div class="meta">'+mapa+'<br>'+fecha+'<br>Estado: <b>'+(estados[a.estado]||a.estado)+'</b></div>'
+      + (a.foto_url ? '<div class="meta"><a href="'+escA(a.foto_url)+'" target="_blank" rel="noopener">Abrir foto en tamaño completo ↗</a></div>' : '')
+      + bloqueFormatoCompartir(a)
+      + '<button class="compartir" id="btnCompartirVisor">↗ Compartir en redes</button>'
+      + '<button class="compartir" id="btnCopiarTextoVisor" style="background:none;border:1px solid var(--line);color:var(--ink)">📋 Copiar el texto</button>'
+      + '<button class="compartir" id="btnCopiarLinkVisor" style="background:none;border:1px solid var(--line);color:var(--ink)">🔗 Copiar el enlace</button>'
+      + '<button class="compartir" id="btnCopiarIgVisor" style="background:none;border:1.5px dashed var(--region);color:var(--region)">📱 Copiar texto para Instagram</button>'
+      + '<button class="compartir" id="visorEditar" style="background:var(--region);margin-top:8px">✎ Editar este aviso</button>'
+      + '<button class="compartir" id="visorBorrarAporte" style="background:none;border:1px solid #A8382C;color:#A8382C;margin-top:8px">🗑 Borrar este aporte</button>'
+      + '<div id="editorAporte"></div>'
+      + '<button class="cerrar" id="visorCerrar">Cerrar</button>'
+      + '</div>';
+    document.getElementById("visorBack").classList.add("show");
+    engancharFormatoCompartir(a, "aporte");
+    document.getElementById("btnCompartirVisor").addEventListener("click", (e)=> compartirDesdeConsola(a, "aporte", e.currentTarget));
+    document.getElementById("btnCopiarTextoVisor").addEventListener("click", (e)=> copiarTextoConsola(a, "aporte", e.currentTarget));
+    document.getElementById("btnCopiarLinkVisor").addEventListener("click", (e)=> copiarLinkConsola(a, "aporte", e.currentTarget));
+    document.getElementById("btnCopiarIgVisor").addEventListener("click", (e)=> copiarTextoInstagramConsola(a, "aporte", e.currentTarget));
+    document.getElementById("visorCerrar").addEventListener("click", cerrarVisor);
+    document.getElementById("visorEditar").addEventListener("click", ()=> abrirEditorAporte(a));
+    document.getElementById("visorBorrarAporte").addEventListener("click", async (e)=>{
+      if(!confirm("¿Borrar este aporte para siempre? No se puede deshacer.")) return;
+      e.currentTarget.disabled = true;
+      // borra también las confirmaciones asociadas, si las hubiera
+      try{ await sb.from("aporte_confirmaciones").delete().eq("aporte_id", a.id); }catch(err){}
+      const { error } = await sb.from("aportes").delete().eq("id", a.id);
+      if(error){ toast("No se pudo borrar: " + error.message); e.currentTarget.disabled = false; return; }
+      toast("Aporte borrado");
+      cerrarVisor();
+      if(typeof cargarAportesPendientes === "function") cargarAportesPendientes();
+      if(typeof cargarAvisosPublicados === "function") cargarAvisosPublicados();
+      if(typeof cargarArchivo === "function") cargarArchivo();
+    });
+  }
+  function cerrarVisor(){ document.getElementById("visorBack").classList.remove("show"); }
+  document.getElementById("visorBack").addEventListener("click", (e)=>{
+    if(e.target.id === "visorBack") cerrarVisor();
+  });
+
+  // ================= ACCIÓN DE LA NOTA =================
+  let accionSel = "";
+  function accionEtiqueta(){
+    if(accionSel === "__otra") return document.getElementById("accionCustom").value.trim();
+    return accionSel;
+  }
+  document.querySelectorAll("#accionChips .srcchip").forEach(b=>{
+    b.addEventListener("click", ()=>{
+      document.querySelectorAll("#accionChips .srcchip").forEach(x=>x.classList.remove("on"));
+      b.classList.add("on");
+      accionSel = b.getAttribute("data-accion");
+      document.getElementById("accionCustom").classList.toggle("hide", accionSel !== "__otra");
+      document.getElementById("accionUrl").classList.toggle("hide", accionSel === "");
+    });
+  });
+
+  // ================= VISORES: ver cómo quedó publicado =================
+  function abrirVisorHTML(html){
+    document.getElementById("visor").innerHTML = html
+      + '<div class="cuerpo"><button class="cerrar" id="visorCerrar">Cerrar</button></div>';
+    document.getElementById("visorBack").classList.add("show");
+    document.getElementById("visorCerrar").addEventListener("click", cerrarVisor);
+  }
+  function galeriaVisor(lista){
+    if(!lista || !lista.length) return "";
+    if(lista.length === 1) return '<img class="foto-zoom" src="'+escA(lista[0])+'" alt="" style="cursor:zoom-in">';
+    return '<div style="display:flex;gap:6px;overflow-x:auto;background:#16140F;scroll-snap-type:x mandatory">'
+      + lista.map(u=>'<img class="foto-zoom" src="'+escA(u)+'" style="flex:0 0 100%;scroll-snap-align:center;max-height:56vh;object-fit:contain;cursor:zoom-in" alt="">').join("")
+      + '</div><div style="font-family:var(--sans);font-size:.7rem;color:var(--ink-faint);padding:8px 18px 0">'
+      + lista.length + ' fotos — deslizá al costado, tocá para verla en grande</div>';
+  }
+  function fotosDeNota(n){
+    // 'fotos' puede venir como arreglo o como texto JSON según cómo lo devuelva la base
+    let arr = n.fotos;
+    if(typeof arr === "string"){ try{ arr = JSON.parse(arr); }catch(e){ arr = null; } }
+    if(Array.isArray(arr) && arr.length) return arr;
+    if(n.imagen_url) return [n.imagen_url];   // noticias
+    if(n.foto_url) return [n.foto_url];        // aportes de vecinos
+    return [];
+  }
+
+  function abrirVisorNota(n){
+    const lista = fotosDeNota(n);
+    const fecha = n.created_at ? new Date(n.created_at).toLocaleString("es-AR") : "";
+    let h = galeriaVisor(lista);
+    h += '<div class="cuerpo">'
+      + '<div class="cat">'+escA(n.lugar || "")+(n.urgente?' · ⚡ URGENTE':'')+'</div>'
+      + '<h3>'+escA(n.titulo||"")+'</h3>'
+      + '<div class="txt">'+escA(n.resumen_extendido || n.resumen_corto || "")+'</div>'
+      + (n.dato_extra ? '<div class="txt" style="margin-top:12px;padding:10px 12px;background:var(--paper-2);border-left:3px solid var(--int);border-radius:0 8px 8px 0">📌 '+escA(n.dato_extra)+'</div>' : '')
+      + (n.accion_etiqueta && n.accion_url ? '<div class="meta" style="margin-top:12px"><b>Botón:</b> '+escA(n.accion_etiqueta)+' → <a href="'+escA(n.accion_url)+'" target="_blank" rel="noopener">'+escA(n.accion_url)+'</a></div>' : '')
+      + '<div class="meta">'+escA(n.fuente_etiqueta || "sin fuente")+'<br>'+fecha
+      + (n.video_url ? '<br>🎬 Con video' : '')
+      + (lista.length ? '<br>📷 '+lista.length+(lista.length===1?' foto':' fotos') : '<br>Sin foto')
+      + '</div>'
+      + (n.url_original ? '<div class="meta"><a href="'+escA(n.url_original)+'" target="_blank" rel="noopener">Ver la fuente original ↗</a></div>' : '')
+      + '<button class="compartir" id="btnEditarLink" style="background:none;border:1px solid var(--line);color:var(--ink);margin-top:8px">🔗 '+(n.url_original?'Cambiar':'Agregar')+' el enlace original</button>'
+      + '<div id="editorLinkNota"></div>'
+      + '<div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--line)">'
+      + '<div class="field-label">Agregar más fotos a esta nota</div>'
+      + '<input class="inp" type="file" id="masFotos" accept="image/*" multiple style="padding:9px">'
+      + '<div id="masFotosEstado" style="font-family:var(--sans);font-size:.72rem;color:var(--ink-faint)"></div>'
+      + '</div>'
+      + (lista.length > 1
+          ? '<button class="compartir" id="btnEditarPortada" style="background:none;border:1px solid var(--line);color:var(--ink);margin-top:8px">🖼️ Cambiar la foto de portada</button>'
+          : '')
+      + '<div id="editorPortada"></div>'
+      + bloqueFormatoCompartir(n)
+      + '<button class="compartir" id="btnCompartirVisor">↗ Compartir en redes</button>'
+      + '<button class="compartir" id="btnCopiarTextoVisor" style="background:none;border:1px solid var(--line);color:var(--ink)">📋 Copiar el texto</button>'
+      + '<button class="compartir" id="btnCopiarLinkVisor" style="background:none;border:1px solid var(--line);color:var(--ink)">🔗 Copiar el enlace</button>'
+      + '<button class="compartir" id="btnCopiarIgVisor" style="background:none;border:1.5px dashed var(--region);color:var(--region)">📱 Copiar texto para Instagram</button>'
+      + '<button class="compartir" id="btnBorrarNota" style="background:none;border:1px solid #B23A2E;color:#B23A2E;margin-top:8px">🗑 Borrar esta nota</button>'
+      + '</div>';
+    abrirVisorHTML(h);
+    engancharFormatoCompartir(n, "nota");
+    document.getElementById("btnEditarLink").addEventListener("click", ()=> editarLinkNota(n));
+    const btnEP = document.getElementById("btnEditarPortada");
+    if(btnEP) btnEP.addEventListener("click", ()=> editarPortadaNota(n));
+    document.getElementById("btnCompartirVisor").addEventListener("click", (e)=> compartirDesdeConsola(n, "nota", e.currentTarget));
+    document.getElementById("btnCopiarTextoVisor").addEventListener("click", (e)=> copiarTextoConsola(n, "nota", e.currentTarget));
+    document.getElementById("btnCopiarLinkVisor").addEventListener("click", (e)=> copiarLinkConsola(n, "nota", e.currentTarget));
+    document.getElementById("btnCopiarIgVisor").addEventListener("click", (e)=> copiarTextoInstagramConsola(n, "nota", e.currentTarget));
+    document.getElementById("btnBorrarNota").addEventListener("click", async (e)=>{
+      if(!confirm("¿Borrar esta nota de Fonte? No se puede deshacer.")) return;
+      e.currentTarget.disabled = true;
+      const { error } = await sb.from("noticias").delete().eq("id", n.id);
+      if(error){ toast("No se pudo borrar: " + error.message); e.currentTarget.disabled = false; return; }
+      toast("Nota borrada");
+      cerrarVisor();
+      cargarPublicadoHoy();
+      if(typeof cargarArchivo === "function") cargarArchivo();
+    });
+    document.getElementById("masFotos").addEventListener("change", async (e)=>{
+      const files = Array.from(e.target.files || []).slice(0, 6);
+      if(!files.length) return;
+      const est = document.getElementById("masFotosEstado");
+      est.textContent = "Subiendo…";
+      const nuevas = [];
+      for(let i = 0; i < files.length; i++){
+        try{
+          const chico = await comprimirImagen(files[i]);
+          const nombre = Date.now() + "-x" + i + "." + ((chico.name||files[i].name).split(".").pop() || "jpg");
+          const { error } = await sb.storage.from("notas-fotos").upload(nombre, chico);
+          if(!error){
+            const { data } = sb.storage.from("notas-fotos").getPublicUrl(nombre);
+            nuevas.push(data.publicUrl);
+          }
+        }catch(err){}
+      }
+      if(!nuevas.length){ est.textContent = "No se pudieron subir."; return; }
+      const actuales = fotosDeNota(n);
+      const todas = actuales.concat(nuevas).slice(0, 10);
+      const upd = { fotos: todas };
+      if(!n.imagen_url) upd.imagen_url = todas[0];
+      const { error } = await sb.from("noticias").update(upd).eq("id", n.id);
+      if(error){ est.textContent = "No se pudo guardar: " + error.message; return; }
+      n.fotos = todas;
+      est.textContent = "✓ Ahora la nota tiene " + todas.length + " fotos.";
+      toast("Fotos agregadas ✓");
+      cargarPublicadoHoy();
+    });
+  }
+
+  // Solo el link — nada más de la nota se toca ni se puede tocar desde acá.
+  function editarLinkNota(n){
+    const cont = document.getElementById("editorLinkNota");
+    document.getElementById("btnEditarLink").classList.add("hide");
+    cont.innerHTML = '<div class="edit-box">'
+      + '<div class="fl">Link de la fuente original</div>'
+      + '<input class="inp" id="elLink" value="'+escA(n.url_original||"")+'" placeholder="https://...">'
+      + '<div class="acciones"><button class="btn-cancelar" id="elCancelar">Cancelar</button>'
+      + '<button class="btn-guardar" id="elGuardar">Guardar</button></div></div>';
+    document.getElementById("elCancelar").addEventListener("click", ()=>{
+      cont.innerHTML = "";
+      document.getElementById("btnEditarLink").classList.remove("hide");
+    });
+    document.getElementById("elGuardar").addEventListener("click", async ()=>{
+      const btn = document.getElementById("elGuardar");
+      btn.disabled = true; btn.textContent = "Guardando…";
+      const valor = document.getElementById("elLink").value.trim() || null;
+      const { error } = await sb.from("noticias").update({ url_original: valor }).eq("id", n.id);
+      if(error){ toast("No se pudo guardar: " + error.message); btn.disabled = false; btn.textContent = "Guardar"; return; }
+      n.url_original = valor;
+      toast("Enlace guardado ✓");
+      if(typeof cargarArchivo === "function") cargarArchivo();
+      abrirVisorNota(n); // redibuja el visor ya con el link actualizado (o el botón vuelto a "Agregar" si se borró)
+    });
+  }
+
+  // Elegir portada: se toca la miniatura que se quiere adelante, y esa pasa a ser fotos[0]
+  // (la que usa el resto de la app como portada y como imagen para compartir). El resto del
+  // orden entre las demás fotos no se toca.
+  function editarPortadaNota(n){
+    const fotos = fotosDeNota(n);
+    if(fotos.length <= 1) return;
+    const cont = document.getElementById("editorPortada");
+    document.getElementById("btnEditarPortada").classList.add("hide");
+    cont.innerHTML = '<div class="edit-box">'
+      + '<div class="fl">Tocá la foto que querés como portada</div>'
+      + '<div style="display:flex;gap:8px;overflow-x:auto;padding:6px 0 10px">'
+      + fotos.map((u,i)=> '<img src="'+escA(u)+'" data-i="'+i+'" style="width:72px;height:72px;object-fit:cover;border-radius:9px;cursor:pointer;flex:0 0 auto;'
+          + (i===0 ? 'border:3px solid var(--region)' : 'border:1px solid var(--line)') + '">').join("")
+      + '</div>'
+      + '<div class="acciones"><button class="btn-cancelar" id="epCancelar">Cancelar</button></div></div>';
+    document.getElementById("epCancelar").addEventListener("click", ()=>{
+      cont.innerHTML = "";
+      document.getElementById("btnEditarPortada").classList.remove("hide");
+    });
+    cont.querySelectorAll("img[data-i]").forEach(img=>{
+      img.addEventListener("click", async ()=>{
+        const i = parseInt(img.getAttribute("data-i"), 10);
+        if(i === 0){ cont.innerHTML = ""; document.getElementById("btnEditarPortada").classList.remove("hide"); return; }
+        const nuevas = fotos.slice();
+        const [elegida] = nuevas.splice(i, 1);
+        nuevas.unshift(elegida);
+        const { error } = await sb.from("noticias").update({ fotos: nuevas, imagen_url: nuevas[0] }).eq("id", n.id);
+        if(error){ toast("No se pudo guardar: " + error.message); return; }
+        n.fotos = nuevas; n.imagen_url = nuevas[0];
+        toast("Portada actualizada ✓");
+        if(typeof cargarArchivo === "function") cargarArchivo();
+        abrirVisorNota(n); // redibuja: la elegida ya se ve primera y con el marco
+      });
+    });
+  }
+
+  function abrirVisorOferta(o){
+    let h = o.imagen_url ? '<img src="'+escA(o.imagen_url)+'" alt="">' : "";
+    h += '<div class="cuerpo">'
+      + '<div class="cat">🏷️ '+escA(o.negocio||"")+'</div>'
+      + '<h3>'+escA(o.titulo||"")+'</h3>'
+      + (o.descripcion ? '<div class="txt">'+escA(o.descripcion)+'</div>' : '')
+      + '<div class="meta">'
+      + (o.direccion ? '📍 '+escA(o.direccion)+'<br>' : '')
+      + (o.valido_hasta ? '🕐 Válido hasta: '+escA(o.valido_hasta)+'<br>' : '')
+      + (o.imagen_url ? '📷 Con foto' : 'Sin foto')
+      + '</div>'
+      + bloqueFormatoCompartir(o)
+      + '<button class="compartir" id="btnCompartirVisor">↗ Compartir en redes</button>'
+      + '<button class="compartir" id="btnCopiarTextoVisor" style="background:none;border:1px solid var(--line);color:var(--ink)">📋 Copiar el texto</button>'
+      + '<button class="compartir" id="btnCopiarLinkVisor" style="background:none;border:1px solid var(--line);color:var(--ink)">🔗 Copiar el enlace</button>'
+      + '<button class="compartir" id="btnCopiarIgVisor" style="background:none;border:1.5px dashed var(--region);color:var(--region)">📱 Copiar texto para Instagram</button>'
+      + '<button class="compartir" id="btnBorrarOferta" style="background:none;border:1px solid #A8382C;color:#A8382C;margin-top:8px">🗑 Borrar esta oferta</button>'
+      + '</div>';
+    abrirVisorHTML(h);
+    engancharFormatoCompartir(o, "oferta");
+    document.getElementById("btnCompartirVisor").addEventListener("click", (e)=> compartirDesdeConsola(o, "oferta", e.currentTarget));
+    document.getElementById("btnCopiarTextoVisor").addEventListener("click", (e)=> copiarTextoConsola(o, "oferta", e.currentTarget));
+    document.getElementById("btnCopiarLinkVisor").addEventListener("click", (e)=> copiarLinkConsola(o, "oferta", e.currentTarget));
+    document.getElementById("btnCopiarIgVisor").addEventListener("click", (e)=> copiarTextoInstagramConsola(o, "oferta", e.currentTarget));
+    document.getElementById("btnBorrarOferta").addEventListener("click", async (e)=>{
+      if(!confirm("¿Borrar esta oferta para siempre?")) return;
+      e.currentTarget.disabled = true;
+      const { error } = await sb.from("ofertas").delete().eq("id", o.id);
+      if(error){ toast("No se pudo borrar: " + error.message); e.currentTarget.disabled = false; return; }
+      toast("Oferta borrada");
+      cerrarVisor();
+      if(typeof cargarOfertasAdmin === "function") cargarOfertasAdmin();
+      if(typeof cargarArchivo === "function") cargarArchivo();
+    });
+  }
+
+  function abrirVisorComunicado(c){
+    const fecha = c.created_at ? new Date(c.created_at).toLocaleString("es-AR") : "";
+    let h = '<div class="cuerpo">'
+      + '<div class="cat">'+(c.urgente?'⚡ URGENTE · ':'✓ ')+escA(c.institucion||"")+'</div>'
+      + '<h3>'+escA(c.titulo||"")+'</h3>'
+      + '<div class="txt">'+escA(c.texto||"")+'</div>'
+      + '<div class="meta">'+fecha
+      + (c.urgente ? '<br>Se muestra abierto en la portada por 48 hs' : '<br>Solo dentro de la ficha de la institución')
+      + (c.video_url ? '<br>🎬 Con video' : '')
+      + '</div>'
+      + bloqueFormatoCompartir(c)
+      + '<button class="compartir" id="btnCompartirVisor">↗ Compartir en redes</button>'
+      + '<button class="compartir" id="btnCopiarTextoVisor" style="background:none;border:1px solid var(--line);color:var(--ink)">📋 Copiar el texto</button>'
+      + '<button class="compartir" id="btnCopiarLinkVisor" style="background:none;border:1px solid var(--line);color:var(--ink)">🔗 Copiar el enlace</button>'
+      + '<button class="compartir" id="btnCopiarIgVisor" style="background:none;border:1.5px dashed var(--region);color:var(--region)">📱 Copiar texto para Instagram</button>'
+      + '<button class="compartir" id="btnEditarComunicado" style="background:var(--region);margin-top:8px">✎ Editar</button>'
+      + '<button class="compartir" id="btnBorrarComunicado" style="background:none;border:1px solid #A8382C;color:#A8382C;margin-top:8px">🗑 Borrar</button>'
+      + '<div id="editorComunicado"></div></div>';
+    abrirVisorHTML(h);
+    engancharFormatoCompartir(c, "comunicado");
+    document.getElementById("btnCompartirVisor").addEventListener("click", (e)=> compartirDesdeConsola(c, "comunicado", e.currentTarget));
+    document.getElementById("btnCopiarTextoVisor").addEventListener("click", (e)=> copiarTextoConsola(c, "comunicado", e.currentTarget));
+    document.getElementById("btnCopiarLinkVisor").addEventListener("click", (e)=> copiarLinkConsola(c, "comunicado", e.currentTarget));
+    document.getElementById("btnCopiarIgVisor").addEventListener("click", (e)=> copiarTextoInstagramConsola(c, "comunicado", e.currentTarget));
+    document.getElementById("btnBorrarComunicado").addEventListener("click", async (e)=>{
+      if(!confirm("¿Borrar este comunicado para siempre?")) return;
+      e.currentTarget.disabled = true;
+      const { error } = await sb.from("comunicados").delete().eq("id", c.id);
+      if(error){ toast("No se pudo borrar: " + error.message); e.currentTarget.disabled = false; return; }
+      toast("Comunicado borrado");
+      cerrarVisor();
+      cargarComunicadosAdmin();
+      if(typeof cargarArchivo === "function") cargarArchivo();
+    });
+    document.getElementById("btnEditarComunicado").addEventListener("click", ()=> editarComunicado(c));
+  }
+
+  function editarComunicado(c){
+    const cont = document.getElementById("editorComunicado");
+    document.getElementById("btnEditarComunicado").classList.add("hide");
+    cont.innerHTML = '<div class="edit-box">'
+      + '<div class="fl">Título</div>'
+      + '<input class="inp" id="ecTitulo" value="'+escA(c.titulo||"")+'">'
+      + '<div class="fl">Texto</div>'
+      + '<textarea class="inp" id="ecTexto" style="min-height:100px">'+escA(c.texto||"")+'</textarea>'
+      + '<label style="display:flex;gap:9px;align-items:center;margin-top:12px;font-family:var(--sans);font-size:.82rem">'
+      + '<input type="checkbox" id="ecUrgente" '+(c.urgente?"checked":"")+' style="width:18px;height:18px"> Es un aviso urgente</label>'
+      + '<div class="acciones"><button class="btn-cancelar" id="ecCancelar">Cancelar</button>'
+      + '<button class="btn-guardar" id="ecGuardar">Guardar cambios</button></div></div>';
+    document.getElementById("ecCancelar").addEventListener("click", ()=>{
+      cont.innerHTML = "";
+      document.getElementById("btnEditarComunicado").classList.remove("hide");
+    });
+    document.getElementById("ecGuardar").addEventListener("click", async ()=>{
+      const btn = document.getElementById("ecGuardar");
+      btn.disabled = true; btn.textContent = "Guardando…";
+      const { error } = await sb.from("comunicados").update({
+        titulo: document.getElementById("ecTitulo").value.trim(),
+        texto: document.getElementById("ecTexto").value.trim(),
+        urgente: document.getElementById("ecUrgente").checked,
+      }).eq("id", c.id);
+      btn.disabled = false; btn.textContent = "Guardar cambios";
+      if(error){ toast("No se pudo guardar: " + error.message); return; }
+      toast("Comunicado actualizado ✓");
+      cerrarVisor();
+      cargarComunicadosAdmin();
+    });
+  }
+
+  // ================= HOY: bandeja de trabajo =================
+  async function cargarHoy(){
+    const hoy = new Date();
+    const inicioHoy = new Date(); inicioHoy.setHours(0,0,0,0);
+    const hoyIso = hoy.toISOString().slice(0,10);
+    document.getElementById("hoySaludo").textContent =
+      (hoy.getHours() < 13 ? "Buen día" : hoy.getHours() < 20 ? "Buenas tardes" : "Buenas noches")
+      + (sesion && sesion.user ? ", " + (sesion.user.email||"").split("@")[0] : "");
+    document.getElementById("hoyFecha").textContent =
+      hoy.toLocaleDateString("es-AR",{weekday:"long",day:"numeric",month:"long"}) + " · Esto es lo que necesita tu atención.";
+
+    const [pend, venc, urg, notasHoy, visitasHoy] = await Promise.all([
+      sb.from("aportes").select("id,created_at").eq("estado","pendiente").order("created_at",{ascending:true}),
+      sb.from("institucion_fechas").select("id,titulo,fecha,institucion_id").eq("activa",true).lt("fecha", hoyIso),
+      sb.from("comunicados").select("id,titulo,created_at").eq("urgente",true).order("created_at",{ascending:false}).limit(5),
+      sb.from("noticias").select("*").eq("creada_por", sesion.user.id).gte("created_at", inicioHoy.toISOString()).order("created_at",{ascending:false}),
+      sb.from("visitas").select("dispositivo_id").eq("fecha", hoyIso),
+    ]);
+
+    const tareas = [];
+    const nPend = (pend.data||[]).length;
+    if(nPend){
+      const viejo = pend.data[0].created_at ? tiempoRel(pend.data[0].created_at) : "";
+      tareas.push({ urg:true, ic:"AP", t: nPend + (nPend===1?" aporte esperando revisión":" aportes esperando revisión"),
+                    s: viejo ? "El más viejo, "+viejo : "", go:"Revisar ›", v:"viewAportes" });
+    }
+    const nVenc = (venc.data||[]).length;
+    if(nVenc){
+      tareas.push({ urg:true, ic:"FE", t: nVenc + (nVenc===1?" fecha vencida":" fechas vencidas"),
+                    s: (venc.data[0].titulo||"") + " — actualizala o la ficha queda vacía", go:"Actualizar ›", v:"institucion" });
+    }
+    const urgVigentes = (urg.data||[]).filter(c=>{
+      if(!c.created_at) return false;
+      return (Date.now() - new Date(c.created_at).getTime()) < 48*3600000;
+    });
+    urgVigentes.forEach(c=>{
+      const horas = Math.max(0, Math.round(48 - (Date.now()-new Date(c.created_at).getTime())/3600000));
+      tareas.push({ urg:false, ic:"UR", t:"Aviso urgente en portada",
+                    s:'"'+(c.titulo||"")+'" sale de portada en '+horas+" h", go:"Ver ›", v:"comunicado" });
+    });
+
+    const cont = document.getElementById("hoyTareas");
+    const badge = document.getElementById("hoyPendN");
+    const navPip = document.getElementById("navPendN");
+    const totalPend = nPend + nVenc;
+    if(totalPend){ badge.textContent = totalPend; badge.classList.remove("hide"); navPip.textContent = totalPend; navPip.classList.remove("hide"); }
+    else { badge.classList.add("hide"); navPip.classList.add("hide"); }
+
+    cont.innerHTML = tareas.length
+      ? tareas.map((t,i)=>'<div class="task'+(t.urg?" urg":"")+'" data-i="'+i+'">'
+          + '<span class="ic">'+t.ic+'</span><div class="tx"><div class="t">'+escA(t.t)+'</div>'
+          + (t.s?'<div class="s">'+escA(t.s)+'</div>':'') + '</div><span class="go">'+t.go+'</span></div>').join("")
+      : '<div class="task ok"><span class="ic">✓</span><div class="tx"><div class="t">Todo al día</div>'
+        + '<div class="s">No hay nada pendiente de revisión.</div></div></div>';
+    cont.querySelectorAll(".task[data-i]").forEach(el=>{
+      el.addEventListener("click", ()=>{
+        const destino = tareas[parseInt(el.getAttribute("data-i"),10)].v;
+        if(["nota","comunicado","oferta","institucion"].includes(destino)){
+          irAVista("viewCargar"); irATipo(destino);
+        } else irAVista(destino);
+      });
+    });
+
+    const personasHoy = new Set((visitasHoy.data||[]).map(v=>v.dispositivo_id)).size;
+    document.getElementById("hoyKpis").innerHTML =
+      '<div class="kpi3"><span class="ic">📄</span><div class="n">'+(notasHoy.data||[]).length+'</div><div class="l">notas publicadas</div></div>'
+      + '<div class="kpi3"><span class="ic">👥</span><div class="n">'+personasHoy+'</div><div class="l">personas entraron</div></div>'
+      + '<div class="kpi3"><span class="ic">💬</span><div class="n">'+nPend+'</div><div class="l">aportes por revisar</div></div>';
+
+    const ult = (notasHoy.data||[]).slice(0,3);
+    const ultCont = document.getElementById("hoyUltimo");
+    ultCont.innerHTML = ult.length
+      ? ult.map(n=>itemArchivo(n,"nota")).join("")
+      : '<div class="vacio-card"><span class="ic">📝</span><div class="t">Aún no hay publicaciones</div><div class="s">Las notas que publiques aparecerán aquí.</div></div>';
+    enganchArchivo(ultCont, ult.map(n=>({o:n,tipo:"nota"})));
+  }
+
+  function tiempoRel(iso){
+    const min = Math.round((Date.now() - new Date(iso).getTime())/60000);
+    if(min < 60) return "hace " + min + " min";
+    const h = Math.round(min/60);
+    if(h < 24) return "hace " + h + " h";
+    return "hace " + Math.round(h/24) + " días";
+  }
+
+  // ================= ARCHIVO =================
+  let ARCHIVO = [];
+  let filtroArch = "todo";
+  function itemArchivo(o, tipo){
+    const NOM = { nota:"Nota", oferta:"Oferta", comunicado:"Oficial", aporte:"Vecino" };
+    let titulo = "", meta = "", mini = "", fondo = "";
+    if(tipo === "nota"){
+      titulo = o.titulo || "";
+      const f = fotosDeNota(o);
+      fondo = f[0] || "";
+      mini = fondo ? "" : "📰";
+      meta = (o.lugar||"") + " · " + tiempoRel(o.created_at) + (f.length>1?" · 📷 "+f.length:"") + (o.video_url?" · 🎬":"");
+    } else if(tipo === "oferta"){
+      titulo = o.titulo || "";
+      fondo = o.imagen_url || ""; mini = fondo ? "" : "🏷️";
+      meta = (o.negocio||"") + " · activa";
+    } else if(tipo === "comunicado"){
+      titulo = o.titulo || ""; mini = "📢";
+      meta = (o.institucion||"") + (o.urgente?" · ⚡ urgente":"") + " · " + tiempoRel(o.created_at);
+    } else {
+      const cat = CAT_APORTE.find(c=>c.id===o.categoria) || {label:o.categoria, icon:"📍"};
+      titulo = o.titulo || cat.label;
+      fondo = o.foto_url || ""; mini = fondo ? "" : cat.icon;
+      meta = cat.label + " · " + (o.estado==="resuelto"?"resuelto":"publicado");
+    }
+    const estilo = fondo ? 'style="background-image:url('+"'"+escA(fondo)+"'"+')"' : "";
+    return '<div class="arch-item" data-tipo="'+tipo+'" data-id="'+escA(o.id)+'">'
+      + '<span class="mini" '+estilo+'>'+mini+'</span>'
+      + '<div class="tx"><div class="t">'+escA(titulo)+'</div>'
+      + '<div class="m"><span class="bdg '+tipo+'">'+NOM[tipo]+'</span>'+escA(meta)+'</div></div></div>';
+  }
+  function enganchArchivo(cont, lista){
+    cont.querySelectorAll(".arch-item").forEach(el=>{
+      el.addEventListener("click", ()=>{
+        const id = el.getAttribute("data-id"), tipo = el.getAttribute("data-tipo");
+        const it = lista.find(x=>String(x.o.id)===String(id) && x.tipo===tipo);
+        if(!it) return;
+        if(tipo === "nota") abrirVisorNota(it.o);
+        else if(tipo === "oferta") abrirVisorOferta(it.o);
+        else if(tipo === "comunicado") abrirVisorComunicado(it.o);
+        else abrirVisor(it.o);
+      });
+    });
+  }
+  async function cargarArchivo(){
+    const cont = document.getElementById("archLista");
+    cont.innerHTML = '<p class="vacio-txt">Cargando…</p>';
+    // Nota: acá van TODAS las notas (no solo las que publicó este reportero), porque el
+    // Archivo también sirve para encontrar y compartir lo que aparece en "Más noticias"
+    // aunque lo haya cargado otra persona.
+    const [n, o, c, a] = await Promise.all([
+      sb.from("noticias").select("*").order("created_at",{ascending:false}).limit(200),
+      sb.from("ofertas").select("*").eq("activa",true).order("created_at",{ascending:false}),
+      sb.from("comunicados").select("*").order("created_at",{ascending:false}).limit(40),
+      sb.from("aportes").select("*").in("estado",["revisado","resuelto"]).order("created_at",{ascending:false}).limit(40),
+    ]);
+    ARCHIVO = []
+      .concat((n.data||[]).map(x=>({o:x,tipo:"nota"})))
+      .concat((o.data||[]).map(x=>({o:x,tipo:"oferta"})))
+      .concat((c.data||[]).map(x=>({o:x,tipo:"comunicado"})))
+      .concat((a.data||[]).map(x=>({o:x,tipo:"aporte"})))
+      .sort((x,y)=> new Date(y.o.created_at||0) - new Date(x.o.created_at||0));
+    pintarArchivo();
+  }
+  function pintarArchivo(){
+    const cont = document.getElementById("archLista");
+    const q = (document.getElementById("archBuscar").value||"").toLowerCase().trim();
+    const lista = ARCHIVO.filter(it=>{
+      if(filtroArch !== "todo" && it.tipo !== filtroArch) return false;
+      if(!q) return true;
+      const txt = [it.o.titulo, it.o.negocio, it.o.institucion, it.o.descripcion, it.o.lugar].join(" ").toLowerCase();
+      return txt.includes(q);
+    });
+    cont.innerHTML = lista.length
+      ? lista.map(it=>itemArchivo(it.o, it.tipo)).join("")
+      : '<p class="vacio-txt">No hay nada que coincida con la búsqueda.</p>';
+    enganchArchivo(cont, lista);
+  }
+  document.getElementById("archBuscar").addEventListener("input", pintarArchivo);
+  document.querySelectorAll("#archFiltros .f").forEach(b=>{
+    b.addEventListener("click", ()=>{
+      document.querySelectorAll("#archFiltros .f").forEach(x=>x.classList.remove("on"));
+      b.classList.add("on");
+      filtroArch = b.getAttribute("data-f");
+      pintarArchivo();
+    });
+  });
+
+
+  // ================= COMPARTIR DESDE LA CONSOLA =================
+  // Dominio fijo: lo compartido siempre apunta a fonte.city, aunque estés
+  // entrando por la dirección vieja de Vercel.
+  const URL_FONTE = "https://fonte.city/";
+  function urlDe(n, tipo){
+    if(!n || !n.id) return URL_FONTE;
+    return URL_FONTE + "?" + (tipo || "n") + "=" + encodeURIComponent(n.id);
+  }
+
+  function textoCompartir(n, paraInstagram){
+    const partes = [];
+    // Aclaramos arriba de todo qué es, para que nadie lo confunda con una noticia.
+    if(n.__tipo === "o") partes.push("🏷️ ESPACIO DE UN COMERCIO", "");
+    else if(n.__tipo === "c") partes.push("📢 COMUNICADO OFICIAL", "");
+    else if(n.__tipo === "a") partes.push("📍 AVISO DE UN VECINO", "");
+    partes.push(n.titulo || "");
+    const resumen = n.resumen_corto || n.resumen_extendido || "";
+    if(resumen) partes.push("", resumen.length > 220 ? resumen.slice(0,220).trim() + "…" : resumen);
+    if(n.dato_extra) partes.push("", "📌 " + n.dato_extra);
+    if(n.accion_etiqueta && n.accion_url) partes.push("", "📎 " + n.accion_etiqueta + " → " + n.accion_url);
+    if(n.fuente_etiqueta) partes.push("", "Fuente: " + n.fuente_etiqueta);
+    // Instagram no deja tocar links sueltos en el texto de un post o historia — ahí se manda
+    // a la bio en vez del link real. En cualquier otro lado (WhatsApp, Facebook, mail) el
+    // link de siempre queda tocable, así que ese sigue siendo el comportamiento por defecto.
+    partes.push("", paraInstagram ? "🔗 Mirala completa en el link de la bio" : "👉 Leelo completo en Fonte: " + urlDe(n, n.__tipo));
+    return partes.join("\n");
+  }
+
+  // Dibuja la placa 1080x1920. Si no hay foto usa el diseño tipográfico.
+  // Las fuentes se cargan una sola vez y quedan listas para todas las placas.
+  let _fuentes = null;
+  function fuentesListas(){
+    if(_fuentes) return _fuentes;
+    _fuentes = (async ()=>{
+      try{
+        if(document.fonts && document.fonts.load){
+          await Promise.all([
+            document.fonts.load("400 76px 'Alfa Slab One'"),
+            document.fonts.load("700 88px 'Lora'"),
+            document.fonts.load("500 44px 'Lora'"),
+            document.fonts.load("800 34px 'Work Sans'"),
+            document.fonts.load("700 34px 'Work Sans'"),
+          ]);
+        }
+      }catch(e){}
+    })();
+    return _fuentes;
+  }
+  // Empezamos a cargarlas apenas abre la app, así compartir sale al toque.
+  setTimeout(fuentesListas, 1500);
+
+  const _imgCache = {};
+  function cargarImagen(src, msTope){
+    return new Promise((res)=>{
+      if(!src) return res(null);
+      if(_imgCache[src] !== undefined) return res(_imgCache[src]);
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      let listo = false;
+      const terminar = (v)=>{ if(listo) return; listo = true; _imgCache[src] = v; res(v); };
+      img.onload = ()=> terminar(img);
+      img.onerror = ()=> terminar(null);
+      // si la foto tarda demasiado, la placa sale igual sin ella
+      setTimeout(()=> terminar(null), msTope || 3500);
+      img.src = src;
+    });
+  }
+  function envolver(ctx, texto, maxAncho, maxLineas){
+    const palabras = String(texto||"").split(/\s+/);
+    const lineas = []; let linea = "";
+    for(const p of palabras){
+      const prueba = linea ? linea + " " + p : p;
+      if(ctx.measureText(prueba).width > maxAncho && linea){ lineas.push(linea); linea = p; }
+      else linea = prueba;
+      if(lineas.length === maxLineas) break;
+    }
+    if(linea && lineas.length < maxLineas) lineas.push(linea);
+    if(lineas.length === maxLineas){
+      let ult = lineas[maxLineas-1];
+      while(ctx.measureText(ult + "…").width > maxAncho && ult.length > 4) ult = ult.slice(0,-1);
+      lineas[maxLineas-1] = ult.trim() + "…";
+    }
+    return lineas;
+  }
+  async function generarPlaca(n){
+    await fuentesListas();
+    const urgente = !!n.urgente;
+    const lista = (typeof fotosDeNota === "function") ? fotosDeNota(n) : (n.imagen_url ? [n.imagen_url] : []);
+    const img = urgente ? null : await cargarImagen(lista[0]);
+
+    const TINTA = "#16140F", PAPEL = "#FDFCF9", CORAL = "#FF4B3E", ROJO = "#B23A2E";
+    const DORADO = "#8A6A22", VERDE = "#22503A", AZUL = "#1B3A5C";
+    const lugar = (n.lugar || "").toUpperCase();
+
+    // Cinta que dice qué es: un anuncio (o un aviso de vecino) nunca puede parecer una noticia.
+    const TIPOS = {
+      o: { txt:"ESPACIO DE UN COMERCIO", color:DORADO },
+      c: { txt:"COMUNICADO OFICIAL",     color:VERDE  },
+      a: { txt:"AVISO DE UN VECINO",     color:AZUL   },
+    };
+    const cinta = TIPOS[n.__tipo] || null;
+
+    // El vecino, desde la app, siempre ve/comparte con solo 3 diseños (foto de fondo /
+    // marco / urgente) — eso lo sigue resolviendo diseñoDePlaca() abajo tal cual. Acá en
+    // Reportero, para publicar a redes, hay un diseño extra ("editorial" — foto a la mitad)
+    // que SOLO existe en esta consola. Además, cualquier diseño se puede generar en 2
+    // tamaños: "historia" (vertical, 1080x1920) o "feed" (cuadrada, 1080x1080) — esto es
+    // independiente del diseño, así que cada uno ajusta su propia letra para el tamaño.
+    function diseñoDePlaca(){
+      if(n.estilo_placa && n.estilo_placa !== "auto") return n.estilo_placa;
+      if(urgente) return "urgente";
+      return img ? "foto" : "tipografica";
+    }
+    let diseño = diseñoDePlaca();
+    if((diseño === "foto" || diseño === "editorial" || diseño === "marco_foto") && !img) diseño = "tipografica"; // pidió foto pero no hay
+
+    const feed = n.__dim === "feed";
+    const W = 1080, H = feed ? 1080 : 1920;
+    const c = document.createElement("canvas");
+    c.width = W; c.height = H;
+    const ctx = c.getContext("2d");
+
+    if(diseño === "urgente"){
+      // ---- placa urgente ----
+      ctx.fillStyle = ROJO; ctx.fillRect(0,0,W,H);
+      ctx.fillStyle = "#fff";
+      ctx.beginPath(); ctx.roundRect(80, 150, 340, 76, 38); ctx.fill();
+      ctx.fillStyle = ROJO; ctx.font = "800 34px 'Work Sans',sans-serif";
+      ctx.fillText("⚡ URGENTE", 118, 200);
+      const tFont = feed ? 60 : 86, tLinea = feed ? 76 : 104, tY0 = feed ? 280 : 360;
+      ctx.fillStyle = "#fff"; ctx.font = "700 "+tFont+"px 'Fraunces',Georgia,serif";
+      const lsU = envolver(ctx, n.titulo, W-160, 6);
+      lsU.forEach((l,i)=> ctx.fillText(l, 80, tY0 + i*tLinea));
+      if(n.dato_extra){
+        // debajo de donde haya terminado el título, sea cual sea su largo — nunca a una
+        // altura fija, así no se sale del cuadro en el formato feed
+        const finTitulo = tY0 + (lsU.length-1)*tLinea;
+        const dFont = feed ? 30 : 42, dLinea = feed ? 42 : 58;
+        ctx.font = "500 "+dFont+"px 'Work Sans',sans-serif"; ctx.fillStyle = "rgba(255,255,255,.92)";
+        envolver(ctx, n.dato_extra, W-160, 4).forEach((l,i)=> ctx.fillText(l, 80, finTitulo + 100 + i*dLinea));
+      }
+    } else if(diseño === "foto" && img){
+      // ---- foto de fondo a sangre completa ----
+      const escala = Math.max(W/img.width, H/img.height);
+      const iw = img.width*escala, ih = img.height*escala;
+      ctx.drawImage(img, (W-iw)/2, (H-ih)/2, iw, ih);
+      const velo = ctx.createLinearGradient(0, H*(feed?0.55:0.30), 0, H);
+      velo.addColorStop(0, "rgba(10,9,7,0)");
+      velo.addColorStop(feed?0.55:0.45, "rgba(10,9,7,"+(feed?".5":".62")+")");
+      velo.addColorStop(1, "rgba(10,9,7,"+(feed?".9":".95")+")");
+      ctx.fillStyle = velo; ctx.fillRect(0, 0, W, H);
+      if(lugar){
+        const bFont = feed?26:32, bPad=feed?46:60, bY=feed?68:130, bH=feed?48:60, bR=feed?24:30;
+        ctx.font = "800 "+bFont+"px 'Work Sans',sans-serif";
+        const w = ctx.measureText(lugar).width + bPad;
+        ctx.fillStyle = "#fff";
+        ctx.beginPath(); ctx.roundRect(feed?70:80, bY, w, bH, bR); ctx.fill();
+        ctx.fillStyle = TINTA; ctx.fillText(lugar, (feed?70:80)+23, bY+(feed?32:40));
+      }
+      // en feed: letra más chica y menos aire reservado abajo, para que el título quede
+      // lo más pegado posible al pie y tape lo mínimo posible de la foto
+      const tFont = feed?58:84, tLinea = feed?70:100, tMargenX = feed?70:80, tAncho = feed?140:160;
+      ctx.fillStyle = "#fff"; ctx.font = "700 "+tFont+"px 'Fraunces',Georgia,serif";
+      const ls = envolver(ctx, n.titulo, W-tAncho, 6);
+      const alturaTexto = ls.length * tLinea;
+      // si además lleva cinta (oferta/comunicado/aviso de vecino), necesita más aire abajo
+      // para no pisarla; una nota (sin cinta) puede ir bien pegada al pie
+      const margenAbajo = feed ? (cinta ? 320 : 240) : 330;
+      const yInicio = H - margenAbajo - alturaTexto;
+      ls.forEach((l,i)=> ctx.fillText(l, tMargenX, yInicio + i*tLinea));
+    } else if(diseño === "editorial" && img){
+      // ---- editorial: foto arriba, papel abajo con el título (solo Reportero) ----
+      // la mitad de arriba es siempre foto, sea cual sea el tamaño final
+      ctx.fillStyle = PAPEL; ctx.fillRect(0,0,W,H);
+      const alto = Math.round(H * 0.469); // misma proporción que la placa original (900/1920)
+      const escala = Math.max(W/img.width, alto/img.height);
+      const iw = img.width*escala, ih = img.height*escala;
+      // recorte: sin esto, con fotos "anchas" la imagen queda mucho más alta que "alto"
+      // y se mete en la mitad de papel, tapando el título — por eso se veía negro/oscuro ahí
+      ctx.save();
+      ctx.beginPath(); ctx.rect(0, 0, W, alto); ctx.clip();
+      ctx.drawImage(img, (W-iw)/2, (alto-ih)/2, iw, ih);
+      ctx.restore();
+      if(lugar){
+        ctx.font = "800 32px 'Work Sans',sans-serif";
+        const w = ctx.measureText(lugar).width + 64;
+        ctx.fillStyle = "#3E8557";
+        ctx.beginPath(); ctx.roundRect(60, alto-96, w, 62, 31); ctx.fill();
+        ctx.fillStyle = "#fff"; ctx.fillText(lugar, 92, alto-54);
+      }
+      const eFont = feed?52:78, eLinea = feed?66:94, eOffset = feed?80:150, eMaxLineas = feed?4:6;
+      ctx.fillStyle = TINTA; ctx.font = "700 "+eFont+"px 'Fraunces',Georgia,serif";
+      envolver(ctx, n.titulo, W-160, eMaxLineas).forEach((l,i)=> ctx.fillText(l, 80, alto + eOffset + i*eLinea));
+    } else if(diseño === "marco_foto" && img){
+      // ---- marco con foto: el marco de siempre, con una foto circular anclada cerca
+      // del borde de abajo. El título y la bajada se acomodan en lo que quede libre
+      // arriba de la foto — la foto nunca se mueve, el texto se ajusta a ella. ----
+      ctx.fillStyle = PAPEL; ctx.fillRect(0,0,W,H);
+      const marcoBottom = 130 + (H-420);
+      ctx.strokeStyle = TINTA; ctx.lineWidth = 8;
+      ctx.strokeRect(80, 130, W-160, H-420);
+      if(lugar){
+        ctx.fillStyle = "#3E8557"; ctx.font = "800 34px 'Work Sans',sans-serif";
+        ctx.fillText("● " + lugar, 140, 250);
+      }
+      const radio = feed ? 100 : 190;
+      const cy = marcoBottom - radio - (feed ? 26 : 40);
+      const cx = 140 + radio; // alineada al mismo margen izquierdo que el título, no centrada
+
+      const tStart = feed ? 300 : 380;
+      const mFont = feed?50:84, mLinea = feed?62:102, mMaxLineas = feed?3:5;
+      ctx.fillStyle = TINTA; ctx.font = "700 "+mFont+"px 'Fraunces',Georgia,serif";
+      const ls = envolver(ctx, n.titulo, W-280, mMaxLineas);
+      ls.forEach((l,i)=> ctx.fillText(l, 140, tStart + i*mLinea));
+      const yLinea = tStart + ls.length*mLinea + 20;
+      ctx.fillStyle = CORAL; ctx.beginPath(); ctx.roundRect(140, yLinea, 120, 10, 5); ctx.fill();
+      const bajada = n.resumen_corto || "";
+      const dFont = feed?24:38, dLinea = feed?34:52;
+      const techoFoto = cy - radio - 24; // el texto no puede pisar la foto
+      const espacioLibre = techoFoto - (yLinea + 70);
+      const maxLineasBajada = Math.floor(espacioLibre / dLinea) + 1;
+      if(bajada && maxLineasBajada >= 1){
+        ctx.fillStyle = "#57503F"; ctx.font = "500 "+dFont+"px 'Fraunces',Georgia,serif";
+        envolver(ctx, bajada, W-280, Math.min(feed?2:4, maxLineasBajada)).forEach((l,i)=> ctx.fillText(l, 140, yLinea + 70 + i*dLinea));
+      }
+
+      ctx.save();
+      ctx.beginPath(); ctx.arc(cx, cy, radio, 0, Math.PI*2); ctx.clip();
+      const escalaF = Math.max((radio*2)/img.width, (radio*2)/img.height);
+      const iw2 = img.width*escalaF, ih2 = img.height*escalaF;
+      ctx.drawImage(img, cx-iw2/2, cy-ih2/2, iw2, ih2);
+      ctx.restore();
+    } else {
+      // ---- marco (tipográfica, sin foto) ----
+      ctx.fillStyle = PAPEL; ctx.fillRect(0,0,W,H);
+      const marcoBottom = 130 + (H-420); // borde inferior real del cuadro
+      ctx.strokeStyle = TINTA; ctx.lineWidth = 8;
+      ctx.strokeRect(80, 130, W-160, H-420);
+      if(lugar){
+        ctx.fillStyle = "#3E8557"; ctx.font = "800 34px 'Work Sans',sans-serif";
+        ctx.fillText("● " + lugar, 140, 250);
+      }
+      const tStart = feed ? 320 : 380;
+      const mFont = feed?56:88, mLinea = feed?68:106, mMaxLineas = feed?5:7;
+      ctx.fillStyle = TINTA; ctx.font = "700 "+mFont+"px 'Fraunces',Georgia,serif";
+      const ls = envolver(ctx, n.titulo, W-280, mMaxLineas);
+      ls.forEach((l,i)=> ctx.fillText(l, 140, tStart + i*mLinea));
+      const yLinea = tStart + ls.length*mLinea + 20;
+      ctx.fillStyle = CORAL; ctx.beginPath(); ctx.roundRect(140, yLinea, 120, 10, 5); ctx.fill();
+      const bajada = n.resumen_corto || "";
+      // cuánto lugar queda realmente libre antes del borde del cuadro — si el título ya
+      // ocupó casi todo, la bajada se acorta sola (o directamente no se dibuja) en vez de
+      // desbordarse por fuera del marco como pasaba antes
+      const dFont = feed?30:44, dLinea = feed?42:62;
+      const espacioLibre = (marcoBottom - 40) - (yLinea + 90);
+      const maxLineasBajada = Math.floor(espacioLibre / dLinea) + 1;
+      if(bajada && maxLineasBajada >= 1){
+        ctx.fillStyle = "#57503F"; ctx.font = "500 "+dFont+"px 'Fraunces',Georgia,serif";
+        envolver(ctx, bajada, W-280, Math.min(feed?3:5, maxLineasBajada)).forEach((l,i)=> ctx.fillText(l, 140, yLinea + 90 + i*dLinea));
+      }
+    }
+
+    // ---- cinta de tipo: solo si no es una nota ----
+    if(cinta){
+      const yC = H - 330;
+      ctx.fillStyle = cinta.color;
+      ctx.fillRect(0, yC, W, 74);
+      ctx.fillStyle = "#fff";
+      ctx.font = "800 34px 'Work Sans',sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText(cinta.txt, W/2, yC + 48);
+      ctx.textAlign = "left";
+    }
+
+    // ---- pie común: marca + "Leelo completo en Fonte" ----
+    // el pie va en claro en "urgente" (fondo rojo) y en "foto" (el velo oscuro del
+    // degradé llega hasta abajo) — "tipografica" y "editorial" tienen fondo papel.
+    const claro = (diseño === "urgente" || diseño === "foto");
+    ctx.fillStyle = claro ? "rgba(255,255,255,.35)" : TINTA;
+    ctx.fillRect(80, H-260, W-160, claro ? 2 : 5);
+    ctx.fillStyle = claro ? "#fff" : TINTA;
+    ctx.font = "400 76px 'Alfa Slab One',Georgia,serif";
+    ctx.fillText("Fonte", 80, H-150);
+    const anchoMarca = ctx.measureText("Fonte").width;
+    ctx.fillStyle = CORAL;
+    ctx.beginPath(); ctx.arc(80 + anchoMarca + 22, H-198, 11, 0, Math.PI*2); ctx.fill();
+    ctx.textAlign = "right";
+    ctx.fillStyle = claro ? "rgba(255,255,255,.8)" : "#57503F";
+    ctx.font = "700 34px 'Work Sans',sans-serif";
+    ctx.fillText("Leelo completo en Fonte", W-80, H-186);
+    ctx.font = "600 30px 'Work Sans',sans-serif";
+    ctx.fillStyle = claro ? "rgba(255,255,255,.65)" : "#9A9384";
+    ctx.fillText(URL_FONTE.replace(/^https?:\/\//,"").replace(/\/$/,""), W-80, H-138);
+    ctx.textAlign = "left";
+
+    return new Promise(res=> c.toBlob(res, "image/jpeg", 0.9));
+  }
+
+
+  // Convierte oferta/comunicado al formato que entiende la placa
+  function comoNota(o, tipo){
+    if(tipo === "oferta"){
+      return { id:o.id, __tipo:"o", titulo:o.titulo, resumen_corto:o.descripcion || "", lugar:o.negocio || "",
+               imagen_url:o.imagen_url, dato_extra:o.valido_hasta ? ("Válido hasta " + o.valido_hasta) : null,
+               accion_etiqueta:null, fuente_etiqueta:o.negocio };
+    }
+    if(tipo === "comunicado"){
+      return { id:o.id, __tipo:"c", titulo:o.titulo, resumen_corto:o.texto || "", lugar:o.institucion || "",
+               urgente:!!o.urgente, imagen_url:null, fuente_etiqueta:o.institucion };
+    }
+    if(tipo === "aporte"){
+      const cat = CAT_APORTE.find(x=>x.id===o.categoria) || {label:o.categoria || "Aviso"};
+      return { id:o.id, __tipo:"a", titulo:o.titulo || cat.label, resumen_corto:o.descripcion || "",
+               lugar:o.lugar_texto || "", imagen_url:o.foto_url || null, fotos:o.fotos || null,
+               fuente_etiqueta:"Aviso de un vecino" };
+    }
+    return Object.assign({}, o, { __tipo:"n" });
+  }
+
+  // ================= FORMATO Y TEXTO AL COMPARTIR DESDE EL ARCHIVO =================
+  // El reportero puede elegir con qué formato compartir cada pieza ya publicada,
+  // sin tocar el estilo que quedó guardado. Se recuerda por id mientras dura la sesión.
+  const formatoElegidoPorId = {};
+  const dimensionElegidaPorId = {};
+  function bloqueFormatoCompartir(obj){
+    const actual = formatoElegidoPorId[obj.id] || "auto";
+    const dimActual = dimensionElegidaPorId[obj.id] || "historia";
+    const chip = (v, label) => '<button class="srcchip'+(actual===v?' on':'')+'" data-f="'+v+'">'+label+'</button>';
+    const chipDim = (v, label) => '<button class="srcchip'+(dimActual===v?' on':'')+'" data-d="'+v+'">'+label+'</button>';
+    return '<div class="field-label" style="margin-top:16px">Diseño</div>'
+      + '<div class="srcchips" id="formatoShare-'+escA(obj.id)+'">'
+      + chip("auto","Automático") + chip("foto","Foto de fondo") + chip("tipografica","Marco") + chip("urgente","Urgente")
+      + chip("editorial","Foto a la mitad") + chip("marco_foto","Marco con foto")
+      + '</div>'
+      + '<div class="recorte-ayuda" style="margin-top:-4px;margin-bottom:8px">"Foto a la mitad" y "Marco con foto" son solo para compartir desde acá — el vecino en la app nunca las ve.</div>'
+      + '<div class="field-label">Tamaño</div>'
+      + '<div class="srcchips" id="dimShare-'+escA(obj.id)+'">'
+      + chipDim("historia","Para historia") + chipDim("feed","Para feed")
+      + '</div>'
+      + '<button class="compartir" id="btnVerImagen-'+escA(obj.id)+'" style="background:none;border:1px solid var(--line);color:var(--ink);margin-top:14px">👁 Ver la imagen antes de compartir</button>'
+      + '<div id="previewImg-'+escA(obj.id)+'" class="hide" style="margin-top:10px"></div>';
+  }
+  // URL del último blob generado por objeto, para poder liberarla al reemplazarla o al cambiar de formato
+  const previewUrlPorId = {};
+  function limpiarPreview(id){
+    const cont = document.getElementById("previewImg-"+id);
+    if(cont){ cont.classList.add("hide"); cont.innerHTML = ""; }
+    if(previewUrlPorId[id]){ URL.revokeObjectURL(previewUrlPorId[id]); delete previewUrlPorId[id]; }
+  }
+  async function verImagenConsola(obj, tipo, btn){
+    const n = comoNota(obj, tipo);
+    const formato = formatoElegidoPorId[obj.id];
+    if(formato && formato !== "auto") n.estilo_placa = formato;
+    n.__dim = dimensionElegidaPorId[obj.id] || "historia";
+    const cont = document.getElementById("previewImg-"+obj.id);
+    if(!cont) return;
+    const orig = btn.textContent;
+    btn.textContent = "Generando…"; btn.disabled = true;
+    try{
+      const blob = await generarPlaca(n);
+      if(!blob){ toast("No se pudo generar la imagen"); return; }
+      limpiarPreview(obj.id); // saca cualquier vista previa vieja antes de poner la nueva
+      const url = URL.createObjectURL(blob);
+      previewUrlPorId[obj.id] = url;
+      cont.innerHTML = '<img src="'+url+'" alt="" style="width:100%;display:block;border-radius:10px;border:1px solid var(--line)">'
+        + '<a class="compartir" href="'+url+'" download="fonte.jpg" style="text-decoration:none;background:none;border:1px solid var(--line);color:var(--ink)">⬇ Descargar esta imagen</a>';
+      cont.classList.remove("hide");
+      cont.scrollIntoView({ behavior:"smooth", block:"nearest" });
+    }catch(e){
+      toast("No se pudo generar la imagen");
+    }finally{
+      btn.textContent = orig; btn.disabled = false;
+    }
+  }
+  function engancharFormatoCompartir(obj, tipo){
+    const cont = document.getElementById("formatoShare-"+obj.id);
+    if(cont){
+      cont.querySelectorAll(".srcchip").forEach(b=>{
+        b.addEventListener("click", ()=>{
+          cont.querySelectorAll(".srcchip").forEach(x=>x.classList.remove("on"));
+          b.classList.add("on");
+          formatoElegidoPorId[obj.id] = b.getAttribute("data-f");
+          limpiarPreview(obj.id); // la vista previa que estaba abierta ya no corresponde al diseño nuevo
+        });
+      });
+    }
+    const contDim = document.getElementById("dimShare-"+obj.id);
+    if(contDim){
+      contDim.querySelectorAll(".srcchip").forEach(b=>{
+        b.addEventListener("click", ()=>{
+          contDim.querySelectorAll(".srcchip").forEach(x=>x.classList.remove("on"));
+          b.classList.add("on");
+          dimensionElegidaPorId[obj.id] = b.getAttribute("data-d");
+          limpiarPreview(obj.id); // ídem: ya no corresponde al tamaño nuevo
+        });
+      });
+    }
+    const btnVer = document.getElementById("btnVerImagen-"+obj.id);
+    if(btnVer) btnVer.addEventListener("click", (e)=> verImagenConsola(obj, tipo, e.currentTarget));
+  }
+  async function copiarTextoConsola(obj, tipo, btn){
+    const n = comoNota(obj, tipo);
+    const texto = textoCompartir(n);
+    const orig = btn ? btn.textContent : "";
+    try{
+      await navigator.clipboard.writeText(texto);
+      if(btn){ btn.textContent = "✓ Copiado"; setTimeout(()=> btn.textContent = orig, 1600); }
+      else toast("Texto copiado ✓");
+    }catch(e){ toast("No se pudo copiar"); }
+  }
+  // Solo el link de Fonte, nada más — separado de "Copiar el texto" (que sigue trayendo
+  // título + resumen + el link al final, como hasta ahora, sin tocarle nada).
+  async function copiarLinkConsola(obj, tipo, btn){
+    const n = comoNota(obj, tipo);
+    const link = urlDe(n, n.__tipo);
+    const orig = btn ? btn.textContent : "";
+    try{
+      await navigator.clipboard.writeText(link);
+      if(btn){ btn.textContent = "✓ Copiado"; setTimeout(()=> btn.textContent = orig, 1600); }
+      else toast("Enlace copiado ✓");
+    }catch(e){ toast("No se pudo copiar"); }
+  }
+  async function copiarTextoInstagramConsola(obj, tipo, btn){
+    const n = comoNota(obj, tipo);
+    const texto = textoCompartir(n, true);
+    const orig = btn ? btn.textContent : "";
+    try{
+      await navigator.clipboard.writeText(texto);
+      if(btn){ btn.textContent = "✓ Copiado"; setTimeout(()=> btn.textContent = orig, 1600); }
+      else toast("Texto para Instagram copiado ✓");
+    }catch(e){ toast("No se pudo copiar"); }
+  }
+
+  async function compartirDesdeConsola(obj, tipo, btn){
+    const n = comoNota(obj, tipo);
+    const formato = formatoElegidoPorId[obj.id];
+    if(formato && formato !== "auto") n.estilo_placa = formato;
+    n.__dim = dimensionElegidaPorId[obj.id] || "historia";
+    const texto = textoCompartir(n);
+    const orig = btn ? btn.textContent : "";
+    if(btn) btn.textContent = "Preparando…";
+    try{
+      let blob = null;
+      try{ blob = await generarPlaca(n); }catch(e){ blob = null; }
+      const archivo = blob ? new File([blob], "fonte.jpg", { type:"image/jpeg" }) : null;
+      if(archivo && navigator.canShare && navigator.canShare({ files:[archivo] })){
+        await navigator.share({ files:[archivo], text: texto });
+      } else if(navigator.share){
+        await navigator.share({ title: n.titulo, text: texto, url: urlDe(n, n.__tipo) });
+      } else {
+        await navigator.clipboard.writeText(texto);
+        toast("Texto copiado");
+      }
+    }catch(e){}
+    if(btn) btn.textContent = orig;
+  }
+
+  // ================= SELECTOR DE TIPO EN PUBLICAR =================
+  // Los formularios de oferta/comunicado/institución ya existen en sus vistas.
+  // Acá los movemos a los paneles de "Publicar" para tenerlos todos en un solo lugar.
+  let tipoPub = "nota";
+  (function moverFormularios(){
+    // Oferta y comunicado viven en viewOfertas; institución en viewInstituciones.
+    // Los movemos a los paneles de "Publicar" sin duplicar código ni listeners.
+    const vOf = document.getElementById("viewOfertas");
+    const vIn = document.getElementById("viewInstituciones");
+    const pOf = document.getElementById("panelOferta");
+    const pCo = document.getElementById("panelComunicado");
+    const pIn = document.getElementById("panelInstitucion");
+    if(vOf && pOf && pCo){
+      while(vOf.firstChild) pOf.appendChild(vOf.firstChild);
+      // el bloque de comunicado arranca en su propio título: lo separamos
+      const hs = pOf.querySelectorAll("h2.rep-h");
+      const hCom = Array.from(hs).find(h => /comunicado oficial/i.test(h.textContent));
+      if(hCom){
+        let nodo = hCom;
+        const mueve = [];
+        while(nodo){ mueve.push(nodo); nodo = nodo.nextSibling; }
+        mueve.forEach(n => pCo.appendChild(n));
+      }
+    }
+    if(vIn && pIn){ while(vIn.firstChild) pIn.appendChild(vIn.firstChild); }
+  })();
+
+  function irATipo(t){
+    tipoPub = t;
+    document.querySelectorAll("#tiposPub .tipo").forEach(b=> b.classList.toggle("on", b.getAttribute("data-tipo") === t));
+    ["nota","comunicado","oferta","institucion"].forEach(x=>{
+      const p = document.getElementById("panel" + x.charAt(0).toUpperCase() + x.slice(1));
+      if(p) p.classList.toggle("hide", x !== t);
+    });
+    const enPublicar = document.getElementById("viewCargar").classList.contains("on");
+    document.getElementById("barraAccion").classList.toggle("show", enPublicar && t === "nota");
+    window.scrollTo({ top:0, behavior:"instant" });
+  }
+  document.querySelectorAll("#tiposPub .tipo").forEach(b=>{
+    b.addEventListener("click", ()=> irATipo(b.getAttribute("data-tipo")));
+  });
+  irATipo("nota");
+
+  // ================= VISTA PREVIA ANTES DE PUBLICAR =================
+  let enPrevia = false;
+  function borradorActual(){
+    const fotos = (typeof fotosPropias !== "undefined" && fotosPropias.length) ? fotosPropias : [];
+    return {
+      titulo: (document.getElementById("pvTitulo")||{}).value || "",
+      resumen_corto: (document.getElementById("pvCorto")||{}).value || "",
+      resumen_extendido: (document.getElementById("pvExtendido")||{}).value || "",
+      dato_extra: (document.getElementById("pvDato")||{}).value || "",
+      accion_etiqueta: (typeof accionEtiqueta === "function" ? accionEtiqueta() : ""),
+      accion_url: (document.getElementById("accionUrl")||{}).value || "",
+      lugar: (document.getElementById("pvLugar")||{}).value || "Quitilipi",
+      fotos, imagen_url: fotos[0] || null,
+      video_url: (document.getElementById("videoUrl")||{}).value || "",
+      fuente_etiqueta: (typeof fuenteElegida !== "undefined" ? fuenteElegida : ""),
+    };
+  }
+  function pintarPrevia(){
+    const n = borradorActual();
+    if(!n.titulo){
+      document.getElementById("previaCont").innerHTML =
+        '<p class="vacio-txt">Todavía no hay nada para ver. Generá la nota con Fonte primero.</p>';
+      return;
+    }
+    const foto = n.fotos[0];
+    document.getElementById("previaCont").innerHTML =
+      '<div class="prev-note">'
+      + (foto ? '<div class="im" style="background-image:url(\''+escA(foto)+'\')"></div>' : '')
+      + '<div class="cu">'
+      + '<div class="k">● Tu ciudad · '+escA(n.lugar)+'</div>'
+      + '<div class="h">'+escA(n.titulo)+'</div>'
+      + '<div class="p">'+escA(n.resumen_corto || n.resumen_extendido)+'</div>'
+      + (n.dato_extra ? '<div class="dt">📌 '+escA(n.dato_extra)+'</div>' : '')
+      + (n.accion_etiqueta && n.accion_url ? '<div class="bt">'+escA(n.accion_etiqueta)+' ↗</div>' : '')
+      + '</div></div>'
+      + '<p class="rep-sub">'
+      + (n.fotos.length ? '📷 '+n.fotos.length+(n.fotos.length===1?' foto':' fotos') : 'Sin foto')
+      + (n.video_url ? ' · 🎬 con video' : '')
+      + (n.fuente_etiqueta ? ' · vía '+escA(n.fuente_etiqueta) : '')
+      + '</p>';
+  }
+  document.getElementById("btnVistaPrevia").addEventListener("click", ()=>{
+    enPrevia = !enPrevia;
+    document.getElementById("viewCargar").classList.toggle("on", !enPrevia);
+    document.getElementById("viewPrevia").classList.toggle("on", enPrevia);
+    document.getElementById("btnVistaPrevia").textContent = enPrevia ? "✎ Editar" : "👁 Vista previa";
+    if(enPrevia) pintarPrevia();
+    window.scrollTo({ top:0, behavior:"instant" });
+  });
+  document.getElementById("btnPublicarBarra").addEventListener("click", ()=>{
+    const real = document.getElementById("pubBtn");
+    if(real) real.click();
+    else toast("Generá la nota con Fonte antes de publicar.");
+  });
+
+  // ================= EDITAR UN APORTE =================
+  // El vecino a veces escribe apurado o la foto sale torcida. Esto permite
+  // corregir el texto y recortar la imagen, sin cambiar lo que reportó.
+  // Todas las fotos del aporte, sea que vengan en 'fotos' (varias) o solo en 'foto_url' (una vieja)
+  function fotosDelAporte(a){
+    let arr = a.fotos;
+    if(typeof arr === "string"){ try{ arr = JSON.parse(arr); }catch(e){ arr = null; } }
+    if(Array.isArray(arr) && arr.length) return arr.filter(Boolean);
+    if(a.foto_url) return [a.foto_url];
+    return [];
+  }
+
+  let EDIT_FOTOS = [];   // copia editable de las fotos de este aporte (se puede borrar de acá)
+  let EDIT_FOTO_IDX = 0; // cuál está en el recortador ahora
+
+  function abrirEditorAporte(a){
+    const cont = document.getElementById("editorAporte");
+    EDIT_FOTOS = fotosDelAporte(a);
+    EDIT_FOTO_IDX = 0;
+    RECORTES = {};   // se arranca limpio para este aporte
+    cont.innerHTML = '<div class="edit-box">'
+      + '<div class="fl">Título</div>'
+      + '<input class="inp" id="edTitulo" value="'+escA(a.titulo||"")+'" placeholder="Ej: Pozo en calle San Martín">'
+      + '<div class="fl">Descripción</div>'
+      + '<textarea class="inp" id="edDesc" style="min-height:80px">'+escA(a.descripcion||"")+'</textarea>'
+      + '<div class="fl">Fotos <span style="text-transform:none;letter-spacing:0;font-weight:500">— tocá una para recortarla</span></div>'
+      + '<div id="edMiniaturas"></div>'
+      + '<div id="edRecorteWrap"></div>'
+      + '<div class="acciones">'
+      + '<button class="btn-cancelar" id="edCancelar">Cancelar</button>'
+      + '<button class="btn-guardar" id="edGuardar">Guardar cambios</button>'
+      + '</div></div>';
+    document.getElementById("visorEditar").classList.add("hide");
+    pintarMiniaturasEdicion();
+    if(EDIT_FOTOS.length) abrirRecorteDe(0);
+    document.getElementById("edCancelar").addEventListener("click", ()=>{
+      cont.innerHTML = "";
+      document.getElementById("visorEditar").classList.remove("hide");
+    });
+    document.getElementById("edGuardar").addEventListener("click", ()=> guardarAporte(a));
+  }
+
+  function pintarMiniaturasEdicion(){
+    const cont = document.getElementById("edMiniaturas");
+    if(!cont) return;
+    if(!EDIT_FOTOS.length){
+      cont.innerHTML = '<p style="font-family:var(--sans);font-size:.76rem;color:var(--ink-faint)">Este aviso no tiene fotos.</p>';
+      return;
+    }
+    cont.style.cssText = "display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px";
+    cont.innerHTML = EDIT_FOTOS.map((url,i)=>
+      '<div style="position:relative">'
+      + '<img data-idx="'+i+'" src="'+escA(url)+'" style="width:60px;height:60px;object-fit:cover;border-radius:6px;cursor:pointer;'
+      + 'border:2px solid '+(i===EDIT_FOTO_IDX?"var(--barrio)":"transparent")+'">'
+      + '<button data-del="'+i+'" style="position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;'
+      + 'background:#A8382C;color:#fff;border:0;font-size:.65rem;line-height:1">✕</button>'
+      + '</div>'
+    ).join("");
+    cont.querySelectorAll("img[data-idx]").forEach(img=>{
+      img.addEventListener("click", ()=> abrirRecorteDe(parseInt(img.getAttribute("data-idx"),10)));
+    });
+    cont.querySelectorAll("[data-del]").forEach(btn=>{
+      btn.addEventListener("click", (e)=>{
+        e.stopPropagation();
+        const i = parseInt(btn.getAttribute("data-del"),10);
+        if(!confirm("¿Quitar esta foto del aviso?")) return;
+        EDIT_FOTOS.splice(i,1);
+        if(EDIT_FOTO_IDX >= EDIT_FOTOS.length) EDIT_FOTO_IDX = Math.max(0, EDIT_FOTOS.length-1);
+        pintarMiniaturasEdicion();
+        if(EDIT_FOTOS.length) abrirRecorteDe(EDIT_FOTO_IDX);
+        else document.getElementById("edRecorteWrap").innerHTML = "";
+      });
+    });
+  }
+
+  function abrirRecorteDe(i){
+    EDIT_FOTO_IDX = i;
+    pintarMiniaturasEdicion();
+    const wrap = document.getElementById("edRecorteWrap");
+    wrap.innerHTML = '<div class="recorte" id="recorte"><img id="recorteImg" src="'+escA(EDIT_FOTOS[i])+'" alt="">'
+      + '<div class="marco" id="recorteMarco"><span class="tirador"></span></div></div>'
+      + '<div class="recorte-ayuda">Arrastrá el marco para elegir qué parte queda de esta foto. '
+      + 'Si no lo tocás, se guarda igual. Podés recortar cada foto por separado.</div>';
+    prepararRecorte();
+  }
+
+  // Marco de recorte que se puede mover y agrandar con el dedo
+  let RECORTES = {};   // uno por índice de foto, para no perder el trabajo al cambiar de foto
+  let RECORTE = null;  // el que está activo ahora mismo (referencia dentro de RECORTES[idx])
+  function prepararRecorte(){
+    const cont = document.getElementById("recorte");
+    const marco = document.getElementById("recorteMarco");
+    const img = document.getElementById("recorteImg");
+    if(!RECORTES[EDIT_FOTO_IDX]) RECORTES[EDIT_FOTO_IDX] = { x:10, y:10, w:80, h:60, tocado:false };
+    RECORTE = RECORTES[EDIT_FOTO_IDX];   // en porcentaje
+    function pintar(){
+      marco.style.left = RECORTE.x + "%";
+      marco.style.top = RECORTE.y + "%";
+      marco.style.width = RECORTE.w + "%";
+      marco.style.height = RECORTE.h + "%";
+    }
+    img.onload = pintar; pintar();
+
+    let modo = null, x0 = 0, y0 = 0, base = null;
+    function pos(e){ const t = e.touches ? e.touches[0] : e; return { x:t.clientX, y:t.clientY }; }
+    function empieza(e){
+      const p = pos(e);
+      modo = e.target.classList.contains("tirador") ? "tamaño" : "mover";
+      x0 = p.x; y0 = p.y; base = { ...RECORTE };
+      RECORTE.tocado = true;
+      e.preventDefault();
+    }
+    function mueve(e){
+      if(!modo) return;
+      const p = pos(e), r = cont.getBoundingClientRect();
+      const dx = (p.x - x0) / r.width * 100, dy = (p.y - y0) / r.height * 100;
+      if(modo === "mover"){
+        RECORTE.x = Math.max(0, Math.min(100 - base.w, base.x + dx));
+        RECORTE.y = Math.max(0, Math.min(100 - base.h, base.y + dy));
+      } else {
+        RECORTE.w = Math.max(15, Math.min(100 - RECORTE.x, base.w + dx));
+        RECORTE.h = Math.max(15, Math.min(100 - RECORTE.y, base.h + dy));
+      }
+      pintar();
+      e.preventDefault();
+    }
+    function termina(){ modo = null; }
+    marco.addEventListener("touchstart", empieza, { passive:false });
+    marco.addEventListener("mousedown", empieza);
+    document.addEventListener("touchmove", mueve, { passive:false });
+    document.addEventListener("mousemove", mueve);
+    document.addEventListener("touchend", termina);
+    document.addEventListener("mouseup", termina);
+  }
+
+  async function recortarFoto(url){
+    // Bajamos la foto como blob antes de dibujarla: si se carga la <img> directo desde
+    // la URL pública con crossOrigin, cualquier falla de CORS del storage deja el canvas
+    // "contaminado" y toBlob() devuelve null SIN avisar — así se evita ese problema de raíz.
+    try{
+      const resp = await fetch(url);
+      if(!resp.ok) throw new Error("no se pudo descargar la foto (" + resp.status + ")");
+      const srcBlob = await resp.blob();
+      const objectUrl = URL.createObjectURL(srcBlob);
+      try{
+        const img = await new Promise((res, rej)=>{
+          const im = new Image();
+          im.onload = ()=> res(im);
+          im.onerror = ()=> rej(new Error("no se pudo leer la imagen descargada"));
+          im.src = objectUrl;
+        });
+        const sx = img.width  * RECORTE.x / 100;
+        const sy = img.height * RECORTE.y / 100;
+        const sw = img.width  * RECORTE.w / 100;
+        const sh = img.height * RECORTE.h / 100;
+        const c = document.createElement("canvas");
+        const escala = Math.min(1, 1400 / Math.max(sw, sh));
+        c.width = Math.round(sw * escala);
+        c.height = Math.round(sh * escala);
+        c.getContext("2d").drawImage(img, sx, sy, sw, sh, 0, 0, c.width, c.height);
+        const blob = await new Promise(res=> c.toBlob(res, "image/jpeg", 0.85));
+        if(!blob) throw new Error("el canvas no pudo generar el archivo recortado");
+        return blob;
+      } finally {
+        URL.revokeObjectURL(objectUrl);
+      }
+    }catch(e){
+      console.error("recortarFoto:", e);
+      huboErrorDeRecorte = true;
+      return null;
+    }
+  }
+
+  // Recorta una foto puntual y la sube; devuelve la URL nueva o la original si no se tocó / falla
+  let huboErrorDeRecorte = false;
+  async function recortarFotoDe(idx){
+    const url = EDIT_FOTOS[idx];
+    const r = RECORTES[idx];
+    if(!url || !r || !r.tocado) return url;
+    RECORTE = r;   // recortarFoto() usa la variable global RECORTE
+    const blob = await recortarFoto(url);
+    if(!blob) return url;
+    try{
+      const nombre = "recorte-" + Date.now() + "-" + idx + ".jpg";
+      const { error } = await sb.storage.from("aportes-fotos").upload(nombre, blob, { contentType:"image/jpeg" });
+      if(error){ huboErrorDeRecorte = true; return url; }
+      const { data } = sb.storage.from("aportes-fotos").getPublicUrl(nombre);
+      return data.publicUrl;
+    }catch(e){ huboErrorDeRecorte = true; return url; }
+  }
+
+  async function guardarAporte(a){
+    const btn = document.getElementById("edGuardar");
+    btn.disabled = true; btn.textContent = "Guardando…";
+    huboErrorDeRecorte = false;
+    const cambios = {
+      titulo: document.getElementById("edTitulo").value.trim() || null,
+      descripcion: document.getElementById("edDesc").value.trim() || null,
+    };
+    // se procesan TODAS las fotos tocadas, en el orden en que quedaron (después de borrar/reordenar)
+    if(EDIT_FOTOS.length){
+      const finales = [];
+      for(let i = 0; i < EDIT_FOTOS.length; i++){
+        if(RECORTES[i] && RECORTES[i].tocado) btn.textContent = "Recortando foto " + (i+1) + " de " + EDIT_FOTOS.length + "…";
+        finales.push(await recortarFotoDe(i));
+      }
+      cambios.fotos = finales;
+      cambios.foto_url = finales[0];
+    } else {
+      cambios.fotos = null;
+      cambios.foto_url = null;
+    }
+    if(huboErrorDeRecorte && !confirm("Una o más fotos no se pudieron recortar (CORS del storage) y se van a guardar completas, sin recortar. ¿Seguir de todos modos?")){
+      btn.disabled = false; btn.textContent = "Guardar cambios";
+      return;
+    }
+    const { error } = await sb.from("aportes").update(cambios).eq("id", a.id);
+    btn.disabled = false; btn.textContent = "Guardar cambios";
+    if(error){ toast("No se pudo guardar: " + error.message); return; }
+    toast("Aviso actualizado ✓");
+    cerrarVisor();
+    cargarAvisosPublicados();
+    cargarAportesPendientes();
+  }
+
+  // Estilo de la imagen que se genera al compartir
+  let placaSel = "auto";
+  document.querySelectorAll("#placaChips .srcchip").forEach(b=>{
+    b.addEventListener("click", ()=>{
+      document.querySelectorAll("#placaChips .srcchip").forEach(x=>x.classList.remove("on"));
+      b.classList.add("on");
+      placaSel = b.getAttribute("data-placa");
+    });
+  });
+
+  // Foto del comunicado
+  let coFotoUrl = null;
+  document.getElementById("coFoto").addEventListener("change", async (e)=>{
+    const file = e.target.files[0];
+    coFotoUrl = null;
+    if(!file) return;
+    const prev = document.getElementById("coFotoPreview");
+    prev.src = URL.createObjectURL(file);
+    prev.style.display = "block";
+    try{
+      const chico = await comprimirImagen(file);
+      const nombre = "com-" + Date.now() + "." + ((chico.name||file.name).split(".").pop() || "jpg");
+      const { error } = await sb.storage.from("notas-fotos").upload(nombre, chico);
+      if(!error){
+        const { data } = sb.storage.from("notas-fotos").getPublicUrl(nombre);
+        coFotoUrl = data.publicUrl;
+      }
+    }catch(err){ /* si falla, se publica igual sin foto */ }
+  });
+
+  // ================= FOTO A PANTALLA COMPLETA =================
+  (function(){
+    const lb = document.createElement("div");
+    lb.id = "repLightbox";
+    lb.style.cssText = "position:fixed;inset:0;z-index:600;background:#0C0B08;display:none;"
+      + "align-items:center;justify-content:center;padding:14px";
+    lb.innerHTML = '<img id="repLightboxImg" style="max-width:100%;max-height:100%;object-fit:contain">'
+      + '<button style="position:absolute;top:16px;right:16px;background:rgba(255,255,255,.15);border:0;'
+      + 'color:#fff;font-family:var(--sans);font-weight:700;font-size:.8rem;padding:9px 14px;border-radius:2px">Cerrar ✕</button>';
+    document.body.appendChild(lb);
+    lb.addEventListener("click", ()=>{ lb.style.display = "none"; lb.querySelector("img").src = ""; });
+    document.addEventListener("click", (e)=>{
+      const img = e.target.closest(".foto-zoom");
+      if(img && img.src){
+        lb.querySelector("#repLightboxImg").src = img.src;
+        lb.style.display = "flex";
+      }
+    });
+  })();
+
+  document.querySelectorAll(".form-toggle").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      const f = document.getElementById(btn.getAttribute("data-form"));
+      if(!f) return;
+      f.classList.toggle("hide");
+      btn.classList.toggle("abierto", !f.classList.contains("hide"));
+    });
+  });
+
+  revisarSesion();
+</script>
+</body>
+</html>
