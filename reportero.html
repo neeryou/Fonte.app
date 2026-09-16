@@ -1569,6 +1569,7 @@
       + '<button class="compartir" id="btnCompartirVisor">↗ Compartir en redes</button>'
       + '<button class="compartir" id="btnCopiarTextoVisor" style="background:none;border:1px solid var(--line);color:var(--ink)">📋 Copiar el texto</button>'
       + '<button class="compartir" id="btnCopiarLinkVisor" style="background:none;border:1px solid var(--line);color:var(--ink)">🔗 Copiar el enlace</button>'
+      + '<button class="compartir" id="btnCopiarIgVisor" style="background:none;border:1.5px dashed var(--region);color:var(--region)">📱 Copiar texto para Instagram</button>'
       + '<button class="compartir" id="visorEditar" style="background:var(--region);margin-top:8px">✎ Editar este aviso</button>'
       + '<button class="compartir" id="visorBorrarAporte" style="background:none;border:1px solid #A8382C;color:#A8382C;margin-top:8px">🗑 Borrar este aporte</button>'
       + '<div id="editorAporte"></div>'
@@ -1579,6 +1580,7 @@
     document.getElementById("btnCompartirVisor").addEventListener("click", (e)=> compartirDesdeConsola(a, "aporte", e.currentTarget));
     document.getElementById("btnCopiarTextoVisor").addEventListener("click", (e)=> copiarTextoConsola(a, "aporte", e.currentTarget));
     document.getElementById("btnCopiarLinkVisor").addEventListener("click", (e)=> copiarLinkConsola(a, "aporte", e.currentTarget));
+    document.getElementById("btnCopiarIgVisor").addEventListener("click", (e)=> copiarTextoInstagramConsola(a, "aporte", e.currentTarget));
     document.getElementById("visorCerrar").addEventListener("click", cerrarVisor);
     document.getElementById("visorEditar").addEventListener("click", ()=> abrirEditorAporte(a));
     document.getElementById("visorBorrarAporte").addEventListener("click", async (e)=>{
@@ -1671,6 +1673,7 @@
       + '<button class="compartir" id="btnCompartirVisor">↗ Compartir en redes</button>'
       + '<button class="compartir" id="btnCopiarTextoVisor" style="background:none;border:1px solid var(--line);color:var(--ink)">📋 Copiar el texto</button>'
       + '<button class="compartir" id="btnCopiarLinkVisor" style="background:none;border:1px solid var(--line);color:var(--ink)">🔗 Copiar el enlace</button>'
+      + '<button class="compartir" id="btnCopiarIgVisor" style="background:none;border:1.5px dashed var(--region);color:var(--region)">📱 Copiar texto para Instagram</button>'
       + '<button class="compartir" id="btnBorrarNota" style="background:none;border:1px solid #B23A2E;color:#B23A2E;margin-top:8px">🗑 Borrar esta nota</button>'
       + '</div>';
     abrirVisorHTML(h);
@@ -1681,6 +1684,7 @@
     document.getElementById("btnCompartirVisor").addEventListener("click", (e)=> compartirDesdeConsola(n, "nota", e.currentTarget));
     document.getElementById("btnCopiarTextoVisor").addEventListener("click", (e)=> copiarTextoConsola(n, "nota", e.currentTarget));
     document.getElementById("btnCopiarLinkVisor").addEventListener("click", (e)=> copiarLinkConsola(n, "nota", e.currentTarget));
+    document.getElementById("btnCopiarIgVisor").addEventListener("click", (e)=> copiarTextoInstagramConsola(n, "nota", e.currentTarget));
     document.getElementById("btnBorrarNota").addEventListener("click", async (e)=>{
       if(!confirm("¿Borrar esta nota de Fonte? No se puede deshacer.")) return;
       e.currentTarget.disabled = true;
@@ -1799,6 +1803,7 @@
       + '<button class="compartir" id="btnCompartirVisor">↗ Compartir en redes</button>'
       + '<button class="compartir" id="btnCopiarTextoVisor" style="background:none;border:1px solid var(--line);color:var(--ink)">📋 Copiar el texto</button>'
       + '<button class="compartir" id="btnCopiarLinkVisor" style="background:none;border:1px solid var(--line);color:var(--ink)">🔗 Copiar el enlace</button>'
+      + '<button class="compartir" id="btnCopiarIgVisor" style="background:none;border:1.5px dashed var(--region);color:var(--region)">📱 Copiar texto para Instagram</button>'
       + '<button class="compartir" id="btnBorrarOferta" style="background:none;border:1px solid #A8382C;color:#A8382C;margin-top:8px">🗑 Borrar esta oferta</button>'
       + '</div>';
     abrirVisorHTML(h);
@@ -1806,6 +1811,7 @@
     document.getElementById("btnCompartirVisor").addEventListener("click", (e)=> compartirDesdeConsola(o, "oferta", e.currentTarget));
     document.getElementById("btnCopiarTextoVisor").addEventListener("click", (e)=> copiarTextoConsola(o, "oferta", e.currentTarget));
     document.getElementById("btnCopiarLinkVisor").addEventListener("click", (e)=> copiarLinkConsola(o, "oferta", e.currentTarget));
+    document.getElementById("btnCopiarIgVisor").addEventListener("click", (e)=> copiarTextoInstagramConsola(o, "oferta", e.currentTarget));
     document.getElementById("btnBorrarOferta").addEventListener("click", async (e)=>{
       if(!confirm("¿Borrar esta oferta para siempre?")) return;
       e.currentTarget.disabled = true;
@@ -1832,6 +1838,7 @@
       + '<button class="compartir" id="btnCompartirVisor">↗ Compartir en redes</button>'
       + '<button class="compartir" id="btnCopiarTextoVisor" style="background:none;border:1px solid var(--line);color:var(--ink)">📋 Copiar el texto</button>'
       + '<button class="compartir" id="btnCopiarLinkVisor" style="background:none;border:1px solid var(--line);color:var(--ink)">🔗 Copiar el enlace</button>'
+      + '<button class="compartir" id="btnCopiarIgVisor" style="background:none;border:1.5px dashed var(--region);color:var(--region)">📱 Copiar texto para Instagram</button>'
       + '<button class="compartir" id="btnEditarComunicado" style="background:var(--region);margin-top:8px">✎ Editar</button>'
       + '<button class="compartir" id="btnBorrarComunicado" style="background:none;border:1px solid #A8382C;color:#A8382C;margin-top:8px">🗑 Borrar</button>'
       + '<div id="editorComunicado"></div></div>';
@@ -1840,6 +1847,7 @@
     document.getElementById("btnCompartirVisor").addEventListener("click", (e)=> compartirDesdeConsola(c, "comunicado", e.currentTarget));
     document.getElementById("btnCopiarTextoVisor").addEventListener("click", (e)=> copiarTextoConsola(c, "comunicado", e.currentTarget));
     document.getElementById("btnCopiarLinkVisor").addEventListener("click", (e)=> copiarLinkConsola(c, "comunicado", e.currentTarget));
+    document.getElementById("btnCopiarIgVisor").addEventListener("click", (e)=> copiarTextoInstagramConsola(c, "comunicado", e.currentTarget));
     document.getElementById("btnBorrarComunicado").addEventListener("click", async (e)=>{
       if(!confirm("¿Borrar este comunicado para siempre?")) return;
       e.currentTarget.disabled = true;
@@ -2068,7 +2076,7 @@
     return URL_FONTE + "?" + (tipo || "n") + "=" + encodeURIComponent(n.id);
   }
 
-  function textoCompartir(n){
+  function textoCompartir(n, paraInstagram){
     const partes = [];
     // Aclaramos arriba de todo qué es, para que nadie lo confunda con una noticia.
     if(n.__tipo === "o") partes.push("🏷️ ESPACIO DE UN COMERCIO", "");
@@ -2080,7 +2088,10 @@
     if(n.dato_extra) partes.push("", "📌 " + n.dato_extra);
     if(n.accion_etiqueta && n.accion_url) partes.push("", "📎 " + n.accion_etiqueta + " → " + n.accion_url);
     if(n.fuente_etiqueta) partes.push("", "Fuente: " + n.fuente_etiqueta);
-    partes.push("", "👉 Leelo completo en Fonte: " + urlDe(n, n.__tipo));
+    // Instagram no deja tocar links sueltos en el texto de un post o historia — ahí se manda
+    // a la bio en vez del link real. En cualquier otro lado (WhatsApp, Facebook, mail) el
+    // link de siempre queda tocable, así que ese sigue siendo el comportamiento por defecto.
+    partes.push("", paraInstagram ? "🔗 Mirala completa en el link de la bio" : "👉 Leelo completo en Fonte: " + urlDe(n, n.__tipo));
     return partes.join("\n");
   }
 
@@ -2476,6 +2487,16 @@
       await navigator.clipboard.writeText(link);
       if(btn){ btn.textContent = "✓ Copiado"; setTimeout(()=> btn.textContent = orig, 1600); }
       else toast("Enlace copiado ✓");
+    }catch(e){ toast("No se pudo copiar"); }
+  }
+  async function copiarTextoInstagramConsola(obj, tipo, btn){
+    const n = comoNota(obj, tipo);
+    const texto = textoCompartir(n, true);
+    const orig = btn ? btn.textContent : "";
+    try{
+      await navigator.clipboard.writeText(texto);
+      if(btn){ btn.textContent = "✓ Copiado"; setTimeout(()=> btn.textContent = orig, 1600); }
+      else toast("Texto para Instagram copiado ✓");
     }catch(e){ toast("No se pudo copiar"); }
   }
 
