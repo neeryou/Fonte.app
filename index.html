@@ -23,9 +23,9 @@
 <meta name="twitter:image" content="https://fonte.city/compartir.png">
 <link rel="manifest" href="/manifest.json">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-<link rel="icon" type="image/png" href="/favicon96x96.png" sizes="96x96">
-<link rel="apple-touch-icon" href="/appletouchicon.png">
-<meta name="theme-color" content="#FBF8F1">
+<link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#22201A">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Fonte">
@@ -270,6 +270,9 @@
 
   /* sheet */
   .backdrop{ position:fixed; inset:0; background:rgba(30,28,22,.42); z-index:170; opacity:0; pointer-events:none; transition:opacity .3s; }
+  .mas-grupo.hide, #masSobreVista.hide, #mapaAjuste.hide{ display:none; }
+  .riel-marco{ touch-action:pan-y; }
+  .riel-marco #panelCiudad, .riel-marco #panelMas{ width:100%; }
   .backdrop.show{ opacity:1; pointer-events:auto; }
   .sheet{ position:fixed; left:0; right:0; bottom:0; z-index:180; max-width:640px; margin:0 auto; height:90vh;
     background:var(--paper); border-radius:20px 20px 0 0; box-shadow:none; visibility:hidden;
@@ -683,6 +686,18 @@
   .sheet2-top{ display:flex; justify-content:space-between; align-items:center; padding:14px 18px 10px; border-bottom:1px solid var(--line); }
   .sheet2-top .b{ font-family:var(--serif); font-weight:700; font-size:1.1rem; }
   .sheet2-body{ padding:16px 18px 30px; }
+  .mas-grupo{ margin-bottom:20px; }
+  .mas-grupo:last-child{ margin-bottom:4px; }
+  .mas-titulo{ font-family:var(--sans); font-size:.62rem; font-weight:800; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-faint); margin-bottom:6px; }
+  .mas-item{ display:flex; align-items:center; gap:13px; width:100%; padding:12px 4px; border:0; border-top:1px solid var(--line);
+    background:none; text-align:left; text-decoration:none; color:var(--ink); font-family:var(--sans); cursor:pointer; }
+  .mas-grupo .mas-item:first-child{ border-top:0; }
+  .mas-item .ic{ font-size:1.15rem; width:24px; text-align:center; flex:0 0 auto; }
+  .mas-item .tx{ font-size:.86rem; font-weight:600; }
+  .mas-item .tx .sub{ display:block; font-size:.7rem; font-weight:500; color:var(--ink-faint); margin-top:1px; }
+  .mas-volver{ display:block; font-family:var(--sans); font-size:.78rem; font-weight:700; color:var(--region); background:none; border:0; padding:0 0 14px; cursor:pointer; }
+  .mas-sobre-txt p{ font-family:var(--sans); font-size:.86rem; line-height:1.55; color:var(--ink-soft); margin:0 0 14px; }
+  .mas-sobre-txt p b{ color:var(--ink); }
   .field-lbl{ font-family:var(--sans); font-size:.66rem; font-weight:700; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.06em; margin:14px 0 7px; }
   .cat-grid{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
   .cat-opt{ font-family:var(--sans); font-size:.78rem; border:1.5px solid var(--line-strong); border-radius:10px; padding:9px; text-align:center; cursor:pointer; }
@@ -796,6 +811,7 @@
   </div>
 </nav>
 
+<div class="riel-marco" id="rielMarco">
 <div id="panelCiudad">
   <div id="urgentesWrap" style="display:none">
     <div class="urg-row" id="urgRow"></div>
@@ -826,6 +842,7 @@
     </button>
   </div>
   <main class="wrap" id="feed"></main>
+</div>
 </div>
 
 <footer>
@@ -1062,10 +1079,63 @@
   <button class="bn-item" id="navBuscar">
     <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
     <span>Buscar</span></button>
-  <button class="bn-item" id="navReportero">
-    <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M17 6l3 3M14 9l2 2"/></svg>
-    <span>Reportero</span></button>
+  <button class="bn-item" id="navMas">
+    <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>
+    <span>Más</span></button>
 </nav>
+
+<div class="backdrop" id="backdropMas"></div>
+<div class="sheet2" id="sheetMas">
+  <div class="sheet2-top"><span class="b">Más</span><button class="close" id="closeMas">Cerrar ✕</button></div>
+  <div class="sheet2-body">
+    <div class="mas-grupo" id="masGrupoReportero">
+      <div class="mas-titulo">Para quien reporta</div>
+      <a class="mas-item" href="reportero.html">
+        <span class="ic">🔑</span>
+        <span class="tx">Reportero<span class="sub">Publicar notas, avisos, comunicados</span></span>
+      </a>
+    </div>
+    <div class="mas-grupo" id="masGrupoAjustes">
+      <div class="mas-titulo">Ajustes</div>
+      <button class="mas-item" id="masTema" type="button">
+        <span class="ic">🌗</span>
+        <span class="tx">Tema claro / oscuro</span>
+      </button>
+      <button class="mas-item" id="masNotif" type="button">
+        <span class="ic">🔔</span>
+        <span class="tx">Notificaciones</span>
+      </button>
+    </div>
+    <div class="mas-grupo" id="masGrupoFonte">
+      <div class="mas-titulo">Fonte</div>
+      <button class="mas-item" id="masSobre" type="button">
+        <span class="ic">ℹ️</span>
+        <span class="tx">Sobre Fonte</span>
+      </button>
+      <button class="mas-item" id="masCompartir" type="button">
+        <span class="ic">📤</span>
+        <span class="tx">Compartir la app</span>
+      </button>
+      <a class="mas-item" href="https://www.instagram.com/fontecity_?stkn=MWkxOGJ2cDljOHphOQ==" target="_blank" rel="noopener">
+        <span class="ic">📸</span>
+        <span class="tx">Instagram</span>
+      </a>
+      <a class="mas-item" href="https://www.facebook.com/share/1DmiX3zBn9/" target="_blank" rel="noopener">
+        <span class="ic">👍</span>
+        <span class="tx">Facebook</span>
+      </a>
+    </div>
+    <div id="masSobreVista" class="hide">
+      <button class="mas-volver" id="masVolver" type="button">‹ Volver</button>
+      <div class="mas-sobre-txt">
+        <p><b>Fonte</b> es un diario hecho para Quitilipi — ordena las noticias por cercanía, no por qué tan virales son. Lo que pasa en tu barrio y tu ciudad va primero; la región, el país y el mundo, después.</p>
+        <p>Se arma con dos patas: una parte la aportan los propios vecinos — un corte de agua, una calle rota, algo que está pasando ahora — y otra la organiza inteligencia artificial a partir de fuentes locales y nacionales, siempre con alguien revisando antes de publicar.</p>
+        <p>No le vendemos exclusividad de información a nadie — ni a gobiernos, ni a nadie más.</p>
+        <p>Si ves algo que debería estar acá, avisanos con "Aportá un dato". Y si te copa contar lo que pasa en tu ciudad más seguido, sumate como reportero.</p>
+      </div>
+    </div>
+  </div>
+</div>
 
 <script>
   // ================= COMPRESIÓN DE IMÁGENES =================
@@ -3378,32 +3448,96 @@
     try{ history.replaceState({ fonte:true }, ""); }catch(e){}
   })();
 
-  // ================= DESLIZAR ENTRE CIUDAD Y MÁS NOTICIAS =================
+  // ================= DESLIZAR ENTRE CIUDAD Y MÁS NOTICIAS (arrastre real) =================
+  // Durante el gesto, los dos paneles se ponen uno al lado del otro un instante y se mueven
+  // juntos con el dedo — así se ve venir la otra sección antes de soltar. Apenas termina el
+  // gesto (se confirme el cambio o no), se saca toda esa posición especial y todo vuelve a
+  // ser exactamente como antes: los mismos display:none/block de siempre, con
+  // irAPestanaPrincipal() haciendo el cambio real y todos sus efectos (el conteo de
+  // novedades, recordar la pestaña, volver arriba, etc.) intactos.
   (function(){
-    let x0 = null, y0 = null, siguiendo = false;
-    const MIN_X = 60;      // cuánto hay que arrastrar para que cuente
-    const MAX_Y = 45;      // si sube o baja más que esto, es scroll, no deslizamiento
+    const marco = document.getElementById("rielMarco");
+    const pCiudad = document.getElementById("panelCiudad");
+    const pMas = document.getElementById("panelMas");
+    if(!marco || !pCiudad || !pMas) return;
+
+    let x0=null, y0=null, siguiendo=false, decidido=false, esVertical=false, preparado=false, ancho=0;
+    const UMBRAL = 70;
+
+    function estaEnMas(){ return pMas.style.display === "block"; }
+
+    function preparar(){
+      ancho = marco.getBoundingClientRect().width;
+      const activo = estaEnMas() ? pMas : pCiudad;
+      const altura = activo.getBoundingClientRect().height;
+      marco.style.position = "relative";
+      marco.style.height = altura + "px";
+      marco.style.overflow = "hidden";
+      [pCiudad, pMas].forEach(el=>{
+        el.style.display = "block"; el.style.position = "absolute"; el.style.top = "0"; el.style.transition = "none";
+      });
+      pCiudad.style.left = estaEnMas() ? (-ancho + "px") : "0px";
+      pMas.style.left = estaEnMas() ? "0px" : (ancho + "px");
+      preparado = true;
+    }
+    function limpiar(){
+      [pCiudad, pMas].forEach(el=>{
+        el.style.position = ""; el.style.top = ""; el.style.left = ""; el.style.transform = ""; el.style.transition = "";
+      });
+      marco.style.position = ""; marco.style.height = ""; marco.style.overflow = "";
+      preparado = false;
+    }
 
     function empieza(e){
-      // no interferir con carruseles ni con nada abierto
-      if(e.target.closest(".urg-row, .inst-row, .ofertas-bar, .gal-row, .waves-in, .cats-in, .fav-in, .sheet, .sheet2, .lightbox")) {
+      if(e.target.closest(".urg-row, .inst-row, .ofertas-bar, .gal-row, .waves-in, .cats-in, .fav-in, .sheet, .sheet2, .lightbox, .backdrop")){
         siguiendo = false; return;
       }
       const t = e.touches[0];
-      x0 = t.clientX; y0 = t.clientY; siguiendo = true;
+      x0 = t.clientX; y0 = t.clientY; siguiendo = true; decidido = false; esVertical = false;
+    }
+    function mueve(e){
+      if(!siguiendo || x0===null) return;
+      const t = e.touches[0];
+      const dx = t.clientX - x0, dy = t.clientY - y0;
+      if(!decidido){
+        if(Math.abs(dx) < 10 && Math.abs(dy) < 10) return;
+        decidido = true;
+        esVertical = Math.abs(dy) > Math.abs(dx);
+        if(esVertical){ siguiendo = false; return; } // es scroll normal de la página: no tocamos nada
+      }
+      if(esVertical) return;
+      if(!preparado) preparar();
+      const enMas = estaEnMas();
+      const libre = (dx<0 && !enMas) || (dx>0 && enMas);
+      const mov = libre ? dx : dx*0.28; // resistencia si ya estás en la punta de ese lado
+      pCiudad.style.transform = "translateX(" + mov + "px)";
+      pMas.style.transform = "translateX(" + mov + "px)";
     }
     function termina(e){
-      if(!siguiendo || x0 === null) return;
+      if(!siguiendo || x0===null){ x0=null; return; }
       siguiendo = false;
       const t = e.changedTouches[0];
-      const dx = t.clientX - x0, dy = t.clientY - y0;
+      const dx = t.clientX - x0;
       x0 = null;
-      if(Math.abs(dy) > MAX_Y || Math.abs(dx) < MIN_X) return;
-      const enMas = document.getElementById("panelMas").style.display === "block";
-      if(dx < 0 && !enMas) irAPestanaPrincipal("mas");        // arrastra a la izquierda
-      else if(dx > 0 && enMas) irAPestanaPrincipal("ciudad"); // arrastra a la derecha
+      if(!preparado) return; // nunca llegó a moverse: no hay nada que decidir ni limpiar
+      const enMas = estaEnMas();
+      const vaAMas = dx < -UMBRAL && !enMas;
+      const vaACiudad = dx > UMBRAL && enMas;
+      pCiudad.style.transition = "transform .26s cubic-bezier(.22,.61,.36,1)";
+      pMas.style.transition = "transform .26s cubic-bezier(.22,.61,.36,1)";
+      if(vaAMas || vaACiudad){
+        const destino = vaAMas ? -ancho : ancho;
+        pCiudad.style.transform = "translateX(" + destino + "px)";
+        pMas.style.transform = "translateX(" + destino + "px)";
+        setTimeout(()=>{ limpiar(); irAPestanaPrincipal(vaAMas ? "mas" : "ciudad"); }, 260);
+      } else {
+        pCiudad.style.transform = "translateX(0px)";
+        pMas.style.transform = "translateX(0px)";
+        setTimeout(limpiar, 260);
+      }
     }
     document.addEventListener("touchstart", empieza, { passive:true });
+    document.addEventListener("touchmove", mueve, { passive:true });
     document.addEventListener("touchend", termina, { passive:true });
   })();
 
@@ -3501,11 +3635,54 @@
       marcar(this);
       abrirBuscar();
     });
-    document.getElementById("navReportero").addEventListener("click", function(){
-      window.location.href = "reportero.html";
-    });
     document.getElementById("navPublicar").addEventListener("click", function(){
       document.getElementById("fabAportar").click();
+    });
+    document.getElementById("navMas").addEventListener("click", function(){
+      marcar(this);
+      document.getElementById("backdropMas").classList.add("show");
+      document.getElementById("sheetMas").classList.add("show");
+    });
+    function cerrarMas(){
+      document.getElementById("backdropMas").classList.remove("show");
+      document.getElementById("sheetMas").classList.remove("show");
+      // al cerrar, siempre vuelve al menú principal (no se queda trabado en "Sobre Fonte")
+      document.getElementById("masSobreVista").classList.add("hide");
+      document.getElementById("masGrupoReportero").classList.remove("hide");
+      document.getElementById("masGrupoAjustes").classList.remove("hide");
+      document.getElementById("masGrupoFonte").classList.remove("hide");
+    }
+    document.getElementById("closeMas").addEventListener("click", cerrarMas);
+    document.getElementById("backdropMas").addEventListener("click", cerrarMas);
+    // reusa el mismo interruptor de tema que ya existe en la barra de clima
+    document.getElementById("masTema").addEventListener("click", ()=>{
+      const btnReal = document.getElementById("temaBtn");
+      if(btnReal) btnReal.click();
+    });
+    // reusa el mismo flujo de notificaciones que ya existe en la barra de clima
+    document.getElementById("masNotif").addEventListener("click", ()=>{
+      const btnReal = document.getElementById("notifActivar");
+      if(btnReal) btnReal.click();
+      cerrarMas();
+    });
+    document.getElementById("masCompartir").addEventListener("click", async ()=>{
+      const datos = { title:"Fonte", text:"Noticias de Quitilipi, ordenadas por cercanía.", url:URL_FONTE };
+      try{
+        if(navigator.share){ await navigator.share(datos); }
+        else{ await navigator.clipboard.writeText(URL_FONTE); toastFonte("Enlace copiado ✓"); }
+      }catch(e){}
+    });
+    document.getElementById("masSobre").addEventListener("click", ()=>{
+      document.getElementById("masGrupoReportero").classList.add("hide");
+      document.getElementById("masGrupoAjustes").classList.add("hide");
+      document.getElementById("masGrupoFonte").classList.add("hide");
+      document.getElementById("masSobreVista").classList.remove("hide");
+    });
+    document.getElementById("masVolver").addEventListener("click", ()=>{
+      document.getElementById("masSobreVista").classList.add("hide");
+      document.getElementById("masGrupoReportero").classList.remove("hide");
+      document.getElementById("masGrupoAjustes").classList.remove("hide");
+      document.getElementById("masGrupoFonte").classList.remove("hide");
     });
   })();
 
