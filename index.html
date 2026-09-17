@@ -3512,6 +3512,15 @@
       const mov = libre ? dx : dx*0.28; // resistencia si ya estás en la punta de ese lado
       pCiudad.style.transform = "translateX(" + mov + "px)";
       pMas.style.transform = "translateX(" + mov + "px)";
+      // el título de arriba y la rayita de abajo ya reaccionan a mitad de camino, no recién al soltar
+      if(libre){
+        const pasaLaMitad = Math.abs(mov) / ancho > 0.5;
+        const mostrarMas = enMas ? !pasaLaMitad : pasaLaMitad;
+        document.getElementById("tabCiudad").classList.toggle("on", !mostrarMas);
+        document.getElementById("tabMas").classList.toggle("on", mostrarMas);
+        const _sl = document.getElementById("tabsSlider");
+        if(_sl) _sl.style.left = mostrarMas ? "50%" : "4px";
+      }
     }
     function termina(e){
       if(!siguiendo || x0===null){ x0=null; return; }
@@ -3533,6 +3542,11 @@
       } else {
         pCiudad.style.transform = "translateX(0px)";
         pMas.style.transform = "translateX(0px)";
+        // no llegó al umbral: el indicador de arriba tiene que volver a como estaba
+        document.getElementById("tabCiudad").classList.toggle("on", !enMas);
+        document.getElementById("tabMas").classList.toggle("on", enMas);
+        const _sl = document.getElementById("tabsSlider");
+        if(_sl) _sl.style.left = enMas ? "50%" : "4px";
         setTimeout(limpiar, 260);
       }
     }
