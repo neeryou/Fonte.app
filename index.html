@@ -3462,13 +3462,15 @@
     if(!marco || !pCiudad || !pMas) return;
 
     let x0=null, y0=null, siguiendo=false, decidido=false, esVertical=false, preparado=false, ancho=0;
+    let empezóEnMas = false; // pestaña al inicio del gesto (no confiar en display durante el arrastre)
     const UMBRAL = 70;
 
     function estaEnMas(){ return pMas.style.display === "block"; }
 
     function preparar(){
+      // Usa empezóEnMas: durante el gesto ambos paneles pasan a display:block
       ancho = marco.getBoundingClientRect().width;
-      const activo = estaEnMas() ? pMas : pCiudad;
+      const activo = empezóEnMas ? pMas : pCiudad;
       const altura = activo.getBoundingClientRect().height;
       marco.style.position = "relative";
       marco.style.height = altura + "px";
@@ -3476,8 +3478,8 @@
       [pCiudad, pMas].forEach(el=>{
         el.style.display = "block"; el.style.position = "absolute"; el.style.top = "0"; el.style.transition = "none";
       });
-      pCiudad.style.left = estaEnMas() ? (-ancho + "px") : "0px";
-      pMas.style.left = estaEnMas() ? "0px" : (ancho + "px");
+      pCiudad.style.left = empezóEnMas ? (-ancho + "px") : "0px";
+      pMas.style.left = empezóEnMas ? "0px" : (ancho + "px");
       preparado = true;
     }
     function limpiar(){
@@ -3494,6 +3496,8 @@
       }
       const t = e.touches[0];
       x0 = t.clientX; y0 = t.clientY; siguiendo = true; decidido = false; esVertical = false;
+      // Capturar ANTES de preparar(), cuando solo un panel está en display:block
+      empezóEnMas = (pMas.style.display === "block");
     }
     function mueve(e){
       if(!siguiendo || x0===null) return;
@@ -3507,7 +3511,7 @@
       }
       if(esVertical) return;
       if(!preparado) preparar();
-      const enMas = estaEnMas();
+      const enMas = empezóEnMas; // no usar estaEnMas() acá
       const libre = (dx<0 && !enMas) || (dx>0 && enMas);
       const mov = libre ? dx : dx*0.28; // resistencia si ya estás en la punta de ese lado
       pCiudad.style.transform = "translateX(" + mov + "px)";
@@ -3529,7 +3533,7 @@
       const dx = t.clientX - x0;
       x0 = null;
       if(!preparado) return; // nunca llegó a moverse: no hay nada que decidir ni limpiar
-      const enMas = estaEnMas();
+      const enMas = empezóEnMas; // no usar estaEnMas() acá
       const vaAMas = dx < -UMBRAL && !enMas;
       const vaACiudad = dx > UMBRAL && enMas;
       pCiudad.style.transition = "transform .26s cubic-bezier(.22,.61,.36,1)";
