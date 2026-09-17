@@ -730,21 +730,25 @@
 
   @media (prefers-reduced-motion:reduce){ *{ transition:none !important; } .spinner{ animation:none; } }
 
-  /* ===== pestañas principales: Todo / Vecinos ===== */
-  .tabs-main{ position:sticky; top:0; z-index:60; padding:12px 18px 9px;
+  /* ===== pestañas principales: Ciudad / Más noticias (segmented + dots) ===== */
+  .tabs-main{ position:sticky; top:0; z-index:60; padding:10px 18px 8px;
     background:color-mix(in srgb,var(--paper) 94%,transparent);
     backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); border-bottom:1px solid var(--line); }
-  .tabs-in{ position:relative; display:flex; border:.5px solid var(--line-strong); border-radius:2px; overflow:hidden; }
+  .tabs-in{ position:relative; display:flex; gap:4px; background:var(--paper-2); border:1px solid var(--line-strong);
+    border-radius:999px; padding:4px; overflow:visible; }
   .tabs-in .sl{ display:none; }
-  .tab-main{ flex:1; position:relative; z-index:1; background:none; border:0; border-right:.5px solid var(--line-strong); padding:10px 0;
-    font-family:var(--sans); font-weight:700; font-size:.7rem; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-faint);
-    display:flex; align-items:center; justify-content:center; gap:6px; }
+  .tab-main{ flex:1; position:relative; z-index:1; background:none; border:0; border-radius:999px; padding:9px 8px;
+    font-family:var(--sans); font-weight:700; font-size:.72rem; letter-spacing:.04em; color:var(--ink-faint);
+    display:flex; align-items:center; justify-content:center; gap:6px; transition:background .18s,color .18s; }
   .tab-main:last-child{ border-right:0; }
-  .tab-main.on{ background:var(--ink); color:var(--paper); }
+  .tab-main.on{ background:var(--ink); color:var(--paper); box-shadow:0 1px 3px rgba(20,18,13,.18); }
   .tab-main .e{ font-size:.9rem; }
   .tab-main .n{ font-family:var(--mono); font-size:.58rem; font-weight:600; color:var(--ink-faint); }
-  .tab-main.on .n{ color:rgba(253,252,249,.65); }
-  .tab-main .n.nuevo{ background:var(--urgente); color:#fff; font-weight:600; padding:1px 5px; border-radius:2px; }
+  .tab-main.on .n{ color:rgba(253,252,249,.7); }
+  .tab-main .n.nuevo{ background:var(--urgente); color:#fff; font-weight:600; padding:1px 5px; border-radius:999px; }
+  .tabs-dots{ display:flex; justify-content:center; align-items:center; gap:6px; padding:8px 0 2px; }
+  .tabs-dots .dot{ width:6px; height:6px; border-radius:50%; background:var(--ink-20); transition:background .18s,transform .18s; }
+  .tabs-dots .dot.on{ background:var(--ink); transform:scale(1.15); }
 
   /* ===== barra flotante de ofertas (se esconde al bajar) ===== */
   .ofertas-bar{ position:fixed; left:0; right:0; bottom:calc(64px + env(safe-area-inset-bottom)); z-index:140;
@@ -827,6 +831,10 @@
     <span class="sl" id="tabsSlider"></span>
     <button class="tab-main on" id="tabCiudad">Ciudad <span class="n" id="tabCiudadN"></span></button>
     <button class="tab-main" id="tabMas">Más noticias <span class="n" id="tabMasN"></span></button>
+  </div>
+  <div class="tabs-dots" id="tabsDots" aria-hidden="true">
+    <span class="dot on" id="dotCiudad"></span>
+    <span class="dot" id="dotMas"></span>
   </div>
 </nav>
 
@@ -3549,6 +3557,7 @@
         const mostrarMas = enMas ? !pasaLaMitad : pasaLaMitad;
         document.getElementById("tabCiudad").classList.toggle("on", !mostrarMas);
         document.getElementById("tabMas").classList.toggle("on", mostrarMas);
+        if(typeof actualizarDotsPestana === "function") actualizarDotsPestana(mostrarMas);
         const _sl = document.getElementById("tabsSlider");
         if(_sl) _sl.style.left = mostrarMas ? "50%" : "4px";
       }
@@ -3580,6 +3589,7 @@
         pMas.style.transform = "translateX(0px)";
         document.getElementById("tabCiudad").classList.toggle("on", !enMas);
         document.getElementById("tabMas").classList.toggle("on", enMas);
+        if(typeof actualizarDotsPestana === "function") actualizarDotsPestana(enMas);
         const _sl = document.getElementById("tabsSlider");
         if(_sl) _sl.style.left = enMas ? "50%" : "4px";
         setTimeout(()=> limpiar(enMas), 260);
@@ -3736,10 +3746,17 @@
   })();
 
   // ================= PESTAÑAS: CIUDAD / MÁS NOTICIAS =================
+  function actualizarDotsPestana(esMas){
+    const dC = document.getElementById("dotCiudad");
+    const dM = document.getElementById("dotMas");
+    if(dC) dC.classList.toggle("on", !esMas);
+    if(dM) dM.classList.toggle("on", !!esMas);
+  }
   function irAPestanaPrincipal(cual){
     const esMas = cual === "mas";
     document.getElementById("tabCiudad").classList.toggle("on", !esMas);
     document.getElementById("tabMas").classList.toggle("on", esMas);
+    actualizarDotsPestana(esMas);
     const _sl = document.getElementById("tabsSlider"); if(_sl) _sl.style.left = esMas ? "50%" : "4px";
     document.getElementById("panelCiudad").style.display = esMas ? "none" : "block";
     document.getElementById("panelMas").style.display = esMas ? "block" : "none";
