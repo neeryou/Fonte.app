@@ -686,18 +686,37 @@
   .sheet2-top{ display:flex; justify-content:space-between; align-items:center; padding:14px 18px 10px; border-bottom:1px solid var(--line); }
   .sheet2-top .b{ font-family:var(--serif); font-weight:700; font-size:1.1rem; }
   .sheet2-body{ padding:16px 18px 30px; }
-  .mas-grupo{ margin-bottom:20px; }
-  .mas-grupo:last-child{ margin-bottom:4px; }
-  .mas-titulo{ font-family:var(--sans); font-size:.62rem; font-weight:800; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-faint); margin-bottom:6px; }
-  .mas-item{ display:flex; align-items:center; gap:13px; width:100%; padding:12px 4px; border:0; border-top:1px solid var(--line);
-    background:none; text-align:left; text-decoration:none; color:var(--ink); font-family:var(--sans); cursor:pointer; }
-  .mas-grupo .mas-item:first-child{ border-top:0; }
-  .mas-item .ic{ font-size:1.15rem; width:24px; text-align:center; flex:0 0 auto; }
-  .mas-item .tx{ font-size:.86rem; font-weight:600; }
-  .mas-item .tx .sub{ display:block; font-size:.7rem; font-weight:500; color:var(--ink-faint); margin-top:1px; }
-  .mas-volver{ display:block; font-family:var(--sans); font-size:.78rem; font-weight:700; color:var(--region); background:none; border:0; padding:0 0 14px; cursor:pointer; }
-  .mas-sobre-txt p{ font-family:var(--sans); font-size:.86rem; line-height:1.55; color:var(--ink-soft); margin:0 0 14px; }
-  .mas-sobre-txt p b{ color:var(--ink); }
+  .mas-grupo{ margin-bottom:26px; }
+  .mas-grupo:last-child{ margin-bottom:8px; }
+  .mas-titulo{
+    font-family:var(--sans); font-size:.58rem; font-weight:800; text-transform:uppercase;
+    letter-spacing:.18em; color:var(--ink-faint); margin:0 0 10px; padding-bottom:8px;
+    border-bottom:.5px solid var(--line-strong);
+  }
+  .mas-item{
+    display:flex; align-items:center; gap:14px; width:100%; padding:14px 2px;
+    border:0; border-bottom:.5px solid var(--line); background:none; text-align:left;
+    text-decoration:none; color:var(--ink); font-family:var(--sans); cursor:pointer;
+  }
+  .mas-grupo .mas-item:last-child{ border-bottom:0; }
+  .mas-item .ic{
+    width:36px; height:36px; flex:0 0 auto; border-radius:10px;
+    background:var(--paper-2); border:1px solid var(--line);
+    display:flex; align-items:center; justify-content:center; color:var(--ink-soft);
+  }
+  .mas-item .ic svg{ width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+  .mas-item .tx{ font-size:.92rem; font-weight:600; letter-spacing:-.01em; line-height:1.25; }
+  .mas-item .tx .sub{ display:block; font-size:.7rem; font-weight:500; color:var(--ink-faint); margin-top:3px; letter-spacing:0; }
+  .mas-item:active{ opacity:.72; }
+  .mas-volver{
+    display:inline-flex; align-items:center; gap:4px; font-family:var(--sans);
+    font-size:.72rem; font-weight:700; letter-spacing:.04em; text-transform:uppercase;
+    color:var(--region); background:none; border:0; padding:0 0 16px; cursor:pointer;
+  }
+  .mas-sobre-txt p{ font-family:var(--serif); font-size:.95rem; line-height:1.55; color:var(--ink-soft); margin:0 0 16px; }
+  .mas-sobre-txt p b{ color:var(--ink); font-weight:700; }
+  .sheet2-top .b{ font-family:var(--serif); font-weight:700; font-size:1.15rem; letter-spacing:-.01em; }
+  .sheet2-body{ padding:18px 18px 36px; }
   .field-lbl{ font-family:var(--sans); font-size:.66rem; font-weight:700; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.06em; margin:14px 0 7px; }
   .cat-grid{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
   .cat-opt{ font-family:var(--sans); font-size:.78rem; border:1.5px solid var(--line-strong); border-radius:10px; padding:9px; text-align:center; cursor:pointer; }
@@ -1086,42 +1105,42 @@
 
 <div class="backdrop" id="backdropMas"></div>
 <div class="sheet2" id="sheetMas">
-  <div class="sheet2-top"><span class="b">Más</span><button class="close" id="closeMas">Cerrar ✕</button></div>
+  <div class="sheet2-top"><span class="b">Más</span><button class="close" id="closeMas">Cerrar</button></div>
   <div class="sheet2-body">
     <div class="mas-grupo" id="masGrupoReportero">
       <div class="mas-titulo">Para quien reporta</div>
       <a class="mas-item" href="reportero.html">
-        <span class="ic">🔑</span>
-        <span class="tx">Reportero<span class="sub">Publicar notas, avisos, comunicados</span></span>
+        <span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg></span>
+        <span class="tx">Reportero<span class="sub">Publicar notas, avisos y comunicados</span></span>
       </a>
     </div>
     <div class="mas-grupo" id="masGrupoAjustes">
       <div class="mas-titulo">Ajustes</div>
       <button class="mas-item" id="masTema" type="button">
-        <span class="ic">🌗</span>
+        <span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></span>
         <span class="tx">Tema claro / oscuro</span>
       </button>
       <button class="mas-item" id="masNotif" type="button">
-        <span class="ic">🔔</span>
+        <span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></span>
         <span class="tx">Notificaciones</span>
       </button>
     </div>
     <div class="mas-grupo" id="masGrupoFonte">
       <div class="mas-titulo">Fonte</div>
       <button class="mas-item" id="masSobre" type="button">
-        <span class="ic">ℹ️</span>
+        <span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
         <span class="tx">Sobre Fonte</span>
       </button>
       <button class="mas-item" id="masCompartir" type="button">
-        <span class="ic">📤</span>
+        <span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg></span>
         <span class="tx">Compartir la app</span>
       </button>
-      <a class="mas-item" href="https://www.instagram.com/fontecity_?stkn=MWkxOGJ2cDljOHphOQ==" target="_blank" rel="noopener">
-        <span class="ic">📸</span>
+      <a class="mas-item" href="https://www.instagram.com/fontecity_" target="_blank" rel="noopener">
+        <span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r=".8" fill="currentColor" stroke="none"/></svg></span>
         <span class="tx">Instagram</span>
       </a>
       <a class="mas-item" href="https://www.facebook.com/share/1DmiX3zBn9/" target="_blank" rel="noopener">
-        <span class="ic">👍</span>
+        <span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg></span>
         <span class="tx">Facebook</span>
       </a>
     </div>
@@ -1131,7 +1150,7 @@
         <p><b>Fonte</b> es un diario hecho para Quitilipi — ordena las noticias por cercanía, no por qué tan virales son. Lo que pasa en tu barrio y tu ciudad va primero; la región, el país y el mundo, después.</p>
         <p>Se arma con dos patas: una parte la aportan los propios vecinos — un corte de agua, una calle rota, algo que está pasando ahora — y otra la organiza inteligencia artificial a partir de fuentes locales y nacionales, siempre con alguien revisando antes de publicar.</p>
         <p>No le vendemos exclusividad de información a nadie — ni a gobiernos, ni a nadie más.</p>
-        <p>Si ves algo que debería estar acá, avisanos con "Aportá un dato". Y si te copa contar lo que pasa en tu ciudad más seguido, sumate como reportero.</p>
+        <p>Si ves algo que debería estar acá, avisanos con «Aportá un dato». Y si te copa contar lo que pasa en tu ciudad más seguido, sumate como reportero.</p>
       </div>
     </div>
   </div>
@@ -3482,10 +3501,16 @@
       pMas.style.left = empezóEnMas ? "0px" : (ancho + "px");
       preparado = true;
     }
-    function limpiar(){
+    // Restaura estilos del gesto y deja visible SOLO la pestaña correcta.
+    // (Antes, al cancelar el gesto ambos paneles quedaban en display:block y el próximo swipe se confundía.)
+    function limpiar(dejarEnMas){
+      const enMas = (typeof dejarEnMas === "boolean") ? dejarEnMas : empezóEnMas;
       [pCiudad, pMas].forEach(el=>{
-        el.style.position = ""; el.style.top = ""; el.style.left = ""; el.style.transform = ""; el.style.transition = "";
+        el.style.position = ""; el.style.top = ""; el.style.left = "";
+        el.style.transform = ""; el.style.transition = ""; el.style.display = "";
       });
+      pCiudad.style.display = enMas ? "none" : "block";
+      pMas.style.display = enMas ? "block" : "none";
       marco.style.position = ""; marco.style.height = ""; marco.style.overflow = "";
       preparado = false;
     }
@@ -3494,6 +3519,8 @@
       if(e.target.closest(".urg-row, .inst-row, .ofertas-bar, .gal-row, .waves-in, .cats-in, .fav-in, .sheet, .sheet2, .lightbox, .backdrop")){
         siguiendo = false; return;
       }
+      // Si quedó un gesto a medias, no arrancar otro encima
+      if(preparado) return;
       const t = e.touches[0];
       x0 = t.clientX; y0 = t.clientY; siguiendo = true; decidido = false; esVertical = false;
       // Capturar ANTES de preparar(), cuando solo un panel está en display:block
@@ -3511,12 +3538,12 @@
       }
       if(esVertical) return;
       if(!preparado) preparar();
-      const enMas = empezóEnMas; // no usar estaEnMas() acá
+      const enMas = empezóEnMas;
+      // Solo se puede ir en la dirección válida; el otro lado es tope con mucha resistencia
       const libre = (dx<0 && !enMas) || (dx>0 && enMas);
-      const mov = libre ? dx : dx*0.28; // resistencia si ya estás en la punta de ese lado
+      const mov = libre ? dx : dx * 0.12;
       pCiudad.style.transform = "translateX(" + mov + "px)";
       pMas.style.transform = "translateX(" + mov + "px)";
-      // el título de arriba y la rayita de abajo ya reaccionan a mitad de camino, no recién al soltar
       if(libre){
         const pasaLaMitad = Math.abs(mov) / ancho > 0.5;
         const mostrarMas = enMas ? !pasaLaMitad : pasaLaMitad;
@@ -3532,8 +3559,9 @@
       const t = e.changedTouches[0];
       const dx = t.clientX - x0;
       x0 = null;
-      if(!preparado) return; // nunca llegó a moverse: no hay nada que decidir ni limpiar
-      const enMas = empezóEnMas; // no usar estaEnMas() acá
+      if(!preparado) return;
+      const enMas = empezóEnMas;
+      // Solo cambia de pestaña si el gesto va en la dirección correcta y supera el umbral
       const vaAMas = dx < -UMBRAL && !enMas;
       const vaACiudad = dx > UMBRAL && enMas;
       pCiudad.style.transition = "transform .26s cubic-bezier(.22,.61,.36,1)";
@@ -3542,16 +3570,19 @@
         const destino = vaAMas ? -ancho : ancho;
         pCiudad.style.transform = "translateX(" + destino + "px)";
         pMas.style.transform = "translateX(" + destino + "px)";
-        setTimeout(()=>{ limpiar(); irAPestanaPrincipal(vaAMas ? "mas" : "ciudad"); }, 260);
+        setTimeout(()=>{
+          limpiar(vaAMas); // deja el display correcto
+          irAPestanaPrincipal(vaAMas ? "mas" : "ciudad");
+        }, 260);
       } else {
+        // Tope o gesto corto: volver al mismo panel, sin cambiar de pestaña
         pCiudad.style.transform = "translateX(0px)";
         pMas.style.transform = "translateX(0px)";
-        // no llegó al umbral: el indicador de arriba tiene que volver a como estaba
         document.getElementById("tabCiudad").classList.toggle("on", !enMas);
         document.getElementById("tabMas").classList.toggle("on", enMas);
         const _sl = document.getElementById("tabsSlider");
         if(_sl) _sl.style.left = enMas ? "50%" : "4px";
-        setTimeout(limpiar, 260);
+        setTimeout(()=> limpiar(enMas), 260);
       }
     }
     document.addEventListener("touchstart", empieza, { passive:true });
