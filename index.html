@@ -484,9 +484,14 @@
   .urg-card .f{ font-family:var(--sans); font-size:.61rem; color:var(--ink-faint); margin-top:7px; display:flex; align-items:center; gap:5px; }
   .urg-card .f .verif-badge{ width:13px; height:13px; background:var(--barrio); }
   .urg-card .x{ position:absolute; top:9px; right:9px; background:none; border:0; color:var(--ink-faint); font-size:.8rem; padding:2px 4px; }
+  /* comunicado oficial (no urgente): misma tarjeta, sin rojo */
+  .urg-card.oficial{ background:color-mix(in srgb,var(--barrio) 6%,var(--paper-2));
+    border-color:color-mix(in srgb,var(--barrio) 28%,var(--line)); }
+  .urg-card.oficial .lbl{ background:var(--barrio); }
   .dots{ display:flex; justify-content:center; gap:4px; padding:9px 0 0; }
   .dots i{ width:5px; height:5px; border-radius:50%; background:var(--line-strong); transition:.2s; }
-  .dots i.on{ background:var(--urgente); width:15px; border-radius:999px; }
+  .dots i.on{ background:var(--ink-soft); width:15px; border-radius:999px; }
+  .dots i.on.urg{ background:var(--urgente); }
 
   /* ===== contador de vecinos en la barra inferior ===== */
   .bn-badge{ position:absolute; top:-1px; right:calc(50% - 17px); min-width:16px; height:16px; padding:0 4px;
@@ -2408,37 +2413,50 @@
     renderComunicadosEn();
   }
   const HORAS_RECIENTE = 48;
-  function urgentesVigentes(){
+  // Urgentes y comunicados normales recientes: se muestran en portada mientras estén vigentes.
+  // Si el usuario los cierra (✕) o pasan las 48 hs, desaparecen.
+  function comunicadosVigentes(){
     const ahora = Date.now();
     let cerrados = [];
     try{ cerrados = JSON.parse(localStorage.getItem("fonte_urg_cerrados") || "[]"); }catch(e){}
     return (COMUNICADOS||[]).filter(c=>{
-      if(!c.urgente) return false;
       if(cerrados.includes(String(c.id))) return false;
       if(!c.created_at) return true;
       return (ahora - new Date(c.created_at).getTime()) < HORAS_RECIENTE*3600000;
     });
   }
+  function urgentesVigentes(){
+    // se mantiene por compatibilidad con otras partes que la llamen
+    return comunicadosVigentes().filter(c => !!c.urgente);
+  }
   function renderComunicadosEn(){
     const wrap = document.getElementById("urgentesWrap");
     const row = document.getElementById("urgRow");
     const dots = document.getElementById("urgDots");
-    const lista = urgentesVigentes();
+    // urgentes primero, después oficiales normales
+    const lista = comunicadosVigentes().slice().sort((a,b)=>{
+      const ua = a.urgente ? 1 : 0, ub = b.urgente ? 1 : 0;
+      if(ua !== ub) return ub - ua;
+      return new Date(b.created_at||0) - new Date(a.created_at||0);
+    });
     if(!lista.length){ wrap.style.display = "none"; row.innerHTML = ""; dots.innerHTML = ""; return; }
     wrap.style.display = "block";
-    row.innerHTML = lista.map(c=>
-      '<div class="urg-card" data-com-id="'+esc(c.id)+'">'
-      + '<button class="x" data-cerrar="'+esc(c.id)+'" aria-label="Cerrar">✕</button>'
-      + '<span class="lbl">⚡ Urgente</span>'
-      + '<div class="h">'+esc(c.titulo||"")+'</div>'
-      + '<div class="p">'+esc((c.texto||"").length > 130 ? (c.texto||"").slice(0,130)+"…" : (c.texto||""))+'</div>'
-      + '<div class="f"><span class="verif-badge">'+check+'</span>'+esc(c.institucion||"Municipalidad de Quitilipi")+' · '+tiempoDesde(c.created_at)+'</div>'
-      + '</div>'
-    ).join("");
-    dots.innerHTML = lista.length > 1 ? lista.map((_,i)=>'<i class="'+(i===0?"on":"")+'"></i>').join("") : "";
+    row.innerHTML = lista.map(c=>{
+      const esUrg = !!c.urgente;
+      return '<div class="urg-card'+(esUrg?"":" oficial")+'" data-com-id="'+esc(c.id)+'">'
+        + '<button class="x" data-cerrar="'+esc(c.id)+'" aria-label="Cerrar">✕</button>'
+        + '<span class="lbl">'+(esUrg ? "⚡ Urgente" : "Oficial")+'</span>'
+        + '<div class="h">'+esc(c.titulo||"")+'</div>'
+        + '<div class="p">'+esc((c.texto||"").length > 130 ? (c.texto||"").slice(0,130)+"…" : (c.texto||""))+'</div>'
+        + '<div class="f"><span class="verif-badge">'+check+'</span>'+esc(c.institucion||"Municipalidad de Quitilipi")+' · '+tiempoDesde(c.created_at)+'</div>'
+        + '</div>';
+    }).join("");
+    dots.innerHTML = lista.length > 1
+      ? lista.map((c,i)=>'<i class="'+(i===0?"on":"")+(c.urgente?" urg":"")+'"></i>').join("")
+      : "";
     row.querySelectorAll(".urg-card").forEach(el=>{
       el.addEventListener("click", (e)=>{
-        if(e.target.hasAttribute("data-cerrar")) return;
+        if(e.target.hasAttribute("data-cerrar") || e.target.closest("[data-cerrar]")) return;
         abrirComunicado(el.getAttribute("data-com-id"));
       });
     });
@@ -2456,7 +2474,7 @@
       });
     });
     row.onscroll = ()=>{
-      const i = Math.round(row.scrollLeft / Math.max(1, row.scrollWidth / lista.length));
+      const i = Math.round(row.scrollLeft / Math.max(1, row.clientWidth * 0.9));
       [...dots.children].forEach((d,k)=> d.classList.toggle("on", k === Math.min(i, lista.length-1)));
     };
   }
@@ -3490,7 +3508,7 @@
 
     let x0=null, y0=null, siguiendo=false, decidido=false, esVertical=false, preparado=false, ancho=0;
     let empezóEnMas = false; // pestaña al inicio del gesto (no confiar en display durante el arrastre)
-    const UMBRAL = 70;
+    const UMBRAL = 55;
 
     function estaEnMas(){ return pMas.style.display === "block"; }
 
@@ -3573,16 +3591,16 @@
       // Solo cambia de pestaña si el gesto va en la dirección correcta y supera el umbral
       const vaAMas = dx < -UMBRAL && !enMas;
       const vaACiudad = dx > UMBRAL && enMas;
-      pCiudad.style.transition = "transform .26s cubic-bezier(.22,.61,.36,1)";
-      pMas.style.transition = "transform .26s cubic-bezier(.22,.61,.36,1)";
+      pCiudad.style.transition = "transform .16s cubic-bezier(.2,.7,.3,1)";
+      pMas.style.transition = "transform .16s cubic-bezier(.2,.7,.3,1)";
       if(vaAMas || vaACiudad){
         const destino = vaAMas ? -ancho : ancho;
         pCiudad.style.transform = "translateX(" + destino + "px)";
         pMas.style.transform = "translateX(" + destino + "px)";
         setTimeout(()=>{
-          limpiar(vaAMas); // deja el display correcto
+          limpiar(vaAMas);
           irAPestanaPrincipal(vaAMas ? "mas" : "ciudad");
-        }, 260);
+        }, 160);
       } else {
         // Tope o gesto corto: volver al mismo panel, sin cambiar de pestaña
         pCiudad.style.transform = "translateX(0px)";
@@ -3592,7 +3610,7 @@
         if(typeof actualizarDotsPestana === "function") actualizarDotsPestana(enMas);
         const _sl = document.getElementById("tabsSlider");
         if(_sl) _sl.style.left = enMas ? "50%" : "4px";
-        setTimeout(()=> limpiar(enMas), 260);
+        setTimeout(()=> limpiar(enMas), 160);
       }
     }
     document.addEventListener("touchstart", empieza, { passive:true });
