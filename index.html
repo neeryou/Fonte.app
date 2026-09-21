@@ -481,8 +481,26 @@
     font-family:var(--sans); font-size:.54rem; font-weight:800; text-transform:uppercase; letter-spacing:.05em; padding:3px 8px; border-radius:999px; }
   .urg-card .h{ font-family:var(--serif); font-weight:700; font-size:.95rem; margin-top:8px; line-height:1.24; color:var(--ink); }
   .urg-card .p{ font-family:var(--sans); font-size:.74rem; color:var(--ink-soft); margin-top:4px; line-height:1.4; }
-  .urg-card .f{ font-family:var(--sans); font-size:.61rem; color:var(--ink-faint); margin-top:7px; display:flex; align-items:center; gap:5px; }
+  .urg-card .f{ font-family:var(--sans); font-size:.61rem; color:var(--ink-faint); margin-top:7px; display:flex; align-items:center; gap:5px; flex-wrap:wrap; }
   .urg-card .f .verif-badge{ width:13px; height:13px; background:var(--barrio); }
+  .urg-card .inst-pill{
+    display:inline-flex; align-items:center; gap:5px; font-family:var(--sans); font-size:.6rem; font-weight:700;
+    color:var(--ink); background:var(--paper); border:1px solid var(--line-strong); border-radius:999px;
+    padding:3px 9px; max-width:100%;
+  }
+  .urg-card .inst-pill .n{
+    min-width:16px; height:16px; padding:0 5px; border-radius:999px; background:var(--terracota); color:#fff;
+    font-size:.52rem; font-weight:800; display:inline-flex; align-items:center; justify-content:center;
+  }
+  .urg-card.oficial .inst-pill{ border-color:color-mix(in srgb,var(--barrio) 35%,var(--line)); }
+  .svc-search{ width:100%; font-family:var(--sans); font-size:.8rem; color:var(--ink); background:var(--paper);
+    border:1px solid var(--line-strong); border-radius:10px; padding:10px 12px; margin:8px 0 10px; }
+  .svc-item{ display:flex; justify-content:space-between; gap:10px; padding:9px 0; border-top:.5px solid var(--line); }
+  .svc-item:first-of-type{ border-top:0; }
+  .svc-item .k{ font-family:var(--sans); font-weight:700; font-size:.82rem; color:var(--ink); }
+  .svc-item .v{ font-family:var(--mono); font-size:.72rem; color:var(--ink-soft); text-align:right; white-space:nowrap; }
+  .svc-sec-title{ font-family:var(--sans); font-size:.58rem; font-weight:800; text-transform:uppercase; letter-spacing:.1em;
+    color:var(--ink-faint); margin:14px 0 4px; }
   .urg-card .x{ position:absolute; top:9px; right:9px; background:none; border:0; color:var(--ink-faint); font-size:.8rem; padding:2px 4px; }
   /* comunicado oficial (no urgente): misma tarjeta, sin rojo */
   .urg-card.oficial{ background:color-mix(in srgb,var(--barrio) 6%,var(--paper-2));
@@ -2441,14 +2459,30 @@
     });
     if(!lista.length){ wrap.style.display = "none"; row.innerHTML = ""; dots.innerHTML = ""; return; }
     wrap.style.display = "block";
+    function countHoyInst(c){
+      const key = c.institucion_id ? ("id:"+c.institucion_id) : ("nm:"+(c.institucion||"").toLowerCase());
+      const hoy = new Date(); hoy.setHours(0,0,0,0);
+      return comunicadosVigentes().filter(x=>{
+        const k2 = x.institucion_id ? ("id:"+x.institucion_id) : ("nm:"+(x.institucion||"").toLowerCase());
+        if(k2 !== key) return false;
+        if(!x.created_at) return true;
+        const d = new Date(x.created_at); d.setHours(0,0,0,0);
+        return d.getTime() === hoy.getTime();
+      }).length;
+    }
     row.innerHTML = lista.map(c=>{
       const esUrg = !!c.urgente;
+      const nHoy = countHoyInst(c);
+      const nom = c.institucion || "Institución";
+      const pill = c.institucion_id
+        ? '<button type="button" class="inst-pill" data-ir-inst="'+esc(c.institucion_id)+'">'+esc(nom)+(nHoy>1?' <span class="n">'+nHoy+'</span>':'')+'</button>'
+        : '<span class="inst-pill">'+esc(nom)+(nHoy>1?' <span class="n">'+nHoy+'</span>':'')+'</span>';
       return '<div class="urg-card'+(esUrg?"":" oficial")+'" data-com-id="'+esc(c.id)+'">'
         + '<button class="x" data-cerrar="'+esc(c.id)+'" aria-label="Cerrar">✕</button>'
         + '<span class="lbl">'+(esUrg ? "⚡ Urgente" : "Oficial")+'</span>'
         + '<div class="h">'+esc(c.titulo||"")+'</div>'
         + '<div class="p">'+esc((c.texto||"").length > 130 ? (c.texto||"").slice(0,130)+"…" : (c.texto||""))+'</div>'
-        + '<div class="f"><span class="verif-badge">'+check+'</span>'+esc(c.institucion||"Municipalidad de Quitilipi")+' · '+tiempoDesde(c.created_at)+'</div>'
+        + '<div class="f"><span class="verif-badge">'+check+'</span>'+pill+' · '+tiempoDesde(c.created_at)+'</div>'
         + '</div>';
     }).join("");
     dots.innerHTML = lista.length > 1
@@ -2457,7 +2491,15 @@
     row.querySelectorAll(".urg-card").forEach(el=>{
       el.addEventListener("click", (e)=>{
         if(e.target.hasAttribute("data-cerrar") || e.target.closest("[data-cerrar]")) return;
+        if(e.target.closest("[data-ir-inst]")) return;
         abrirComunicado(el.getAttribute("data-com-id"));
+      });
+    });
+    row.querySelectorAll("[data-ir-inst]").forEach(b=>{
+      b.addEventListener("click", (e)=>{
+        e.stopPropagation();
+        const id = b.getAttribute("data-ir-inst");
+        if(id && typeof abrirInstitucion === "function") abrirInstitucion(id);
       });
     });
     row.querySelectorAll("[data-cerrar]").forEach(b=>{
@@ -2647,9 +2689,10 @@
         return '<div class="f-svc"><span class="d"></span><div><div class="t">'+esc(f.titulo)+'</div><div class="m">'+fm.full+(f.lugar?" · "+esc(f.lugar):"")+'</div></div></div>';
       }).join("") + '</div>';
     }
+    // Avisos recientes primero
     const comInst = comunicadosDe(id);
     if(comInst.length){
-      html += '<div class="ficha-sec"><div class="h">Comunicados de esta institución</div>' + comInst.slice(0,6).map(c=>{
+      html += '<div class="ficha-sec"><div class="h">Avisos de hoy / recientes</div>' + comInst.slice(0,8).map(c=>{
         const cuando = c.created_at ? new Date(c.created_at).toLocaleDateString("es-AR",{day:"numeric",month:"short"}) : "";
         const prev = (c.texto||"").length > 110 ? (c.texto||"").slice(0,110)+"…" : (c.texto||"");
         const urgPend = c.urgente && !urgenteDescartado(c.id);
@@ -2664,6 +2707,33 @@
           + '</div>';
       }).join("") + '</div>';
     }
+    // Servicios fijos (recolección por barrio, horarios, etc.)
+    let servicios = [];
+    try{
+      const raw = inst.servicios;
+      if(typeof raw === "string") servicios = JSON.parse(raw||"[]");
+      else if(Array.isArray(raw)) servicios = raw;
+    }catch(e){ servicios = []; }
+    if(servicios.length){
+      const porSec = {};
+      servicios.forEach(s=>{
+        const sec = (s.seccion||"Servicios").trim() || "Servicios";
+        if(!porSec[sec]) porSec[sec] = [];
+        porSec[sec].push(s);
+      });
+      html += '<div class="ficha-sec" id="serviciosFicha"><div class="h">Horarios y servicios</div>';
+      html += '<input class="svc-search" id="svcBuscar" type="search" placeholder="Buscar barrio o servicio…" autocomplete="off">';
+      html += '<div id="svcLista">';
+      Object.keys(porSec).forEach(sec=>{
+        html += '<div class="svc-grupo" data-sec="'+esc(sec)+'"><div class="svc-sec-title">'+esc(sec)+'</div>';
+        porSec[sec].forEach(s=>{
+          html += '<div class="svc-item" data-q="'+esc(((s.clave||"")+" "+(s.valor||"")+" "+sec).toLowerCase())+'">'
+            + '<span class="k">'+esc(s.clave||"")+'</span><span class="v">'+esc(s.valor||"")+'</span></div>';
+        });
+        html += '</div>';
+      });
+      html += '</div></div>';
+    }
     let contact = "";
     if(inst.direccion) contact += '<div>📍 <b>Dónde:</b> '+esc(inst.direccion)+'</div>';
     if(inst.horario) contact += '<div>🕐 <b>Atención:</b> '+esc(inst.horario)+'</div>';
@@ -2671,6 +2741,20 @@
     if(inst.link_url) contact += '<div>🔗 <a href="'+esc(inst.link_url)+'" target="_blank" rel="noopener">Más información</a></div>';
     if(contact) html += '<div class="ficha-contact">'+contact+'</div>';
     document.getElementById("institucionBody").innerHTML = html;
+    const svcBuscar = document.getElementById("svcBuscar");
+    if(svcBuscar){
+      svcBuscar.addEventListener("input", ()=>{
+        const q = (svcBuscar.value||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim();
+        document.querySelectorAll("#svcLista .svc-item").forEach(it=>{
+          const hay = (it.getAttribute("data-q")||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+          it.style.display = (!q || hay.includes(q)) ? "" : "none";
+        });
+        document.querySelectorAll("#svcLista .svc-grupo").forEach(g=>{
+          const visibles = [...g.querySelectorAll(".svc-item")].some(it=> it.style.display !== "none");
+          g.style.display = visibles ? "" : "none";
+        });
+      });
+    }
     document.querySelectorAll("#institucionBody .f-com .tx[data-abrir]").forEach(el=>{
       el.addEventListener("click", ()=>{ cerrarInstitucion(); abrirComunicado(el.getAttribute("data-abrir")); });
     });

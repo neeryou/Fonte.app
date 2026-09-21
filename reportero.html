@@ -319,7 +319,7 @@
   .inst-block-head .sub2{ font-family:var(--sans); font-size:.68rem; color:var(--ink-faint); margin-top:2px; }
   .inst-block-btns{ display:flex; gap:6px; flex:0 0 auto; }
   .btn-mini{ font-family:var(--sans); font-size:.66rem; font-weight:700; padding:6px 10px; border-radius:8px; border:1px solid var(--line-strong); background:none; color:var(--ink-soft); }
-  .fechas-panel{ margin-top:10px; background:var(--paper); border:1px solid var(--line); border-radius:10px; padding:12px; }
+  .svc-panel, .fechas-panel{ margin-top:10px; background:var(--paper); border:1px solid var(--line); border-radius:10px; padding:12px; }
   .fecha-row{ display:flex; align-items:center; justify-content:space-between; gap:8px; padding:7px 0; border-top:1px solid var(--line); }
   .fecha-row:first-child{ border-top:0; }
   .fecha-row .t{ font-family:var(--sans); font-size:.78rem; font-weight:600; color:var(--ink); }
@@ -1383,7 +1383,8 @@
     cont.innerHTML = data.map(i=>
       '<div class="inst-block" data-id="'+escA(i.id)+'">'
       + '<div class="inst-block-head"><div><div class="h">'+(ICONS_INST[i.tipo]||"📍")+" "+escA(i.nombre)+'</div><div class="sub2">'+escA(i.direccion||"")+'</div></div>'
-      + '<div class="inst-block-btns"><button class="btn-mini fechas-toggle">Fechas</button><button class="del">Quitar</button></div></div>'
+      + '<div class="inst-block-btns"><button class="btn-mini svc-toggle">Servicios</button><button class="btn-mini fechas-toggle">Fechas</button><button class="del">Quitar</button></div></div>'
+      + '<div class="svc-panel hide" id="svcPanel-'+escA(i.id)+'"></div>'
       + '<div class="fechas-panel hide" id="fechasPanel-'+escA(i.id)+'"></div>'
       + '</div>'
     ).join("");
@@ -1402,9 +1403,103 @@
       btn.addEventListener("click", ()=>{
         const id = btn.closest(".inst-block").getAttribute("data-id");
         const panel = document.getElementById("fechasPanel-"+id);
+        const svc = document.getElementById("svcPanel-"+id);
+        if(svc) svc.classList.add("hide");
         panel.classList.toggle("hide");
         if(!panel.classList.contains("hide")) cargarFechasDe(id, panel);
       });
+    });
+    cont.querySelectorAll(".svc-toggle").forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        const id = btn.closest(".inst-block").getAttribute("data-id");
+        const panel = document.getElementById("svcPanel-"+id);
+        const fec = document.getElementById("fechasPanel-"+id);
+        if(fec) fec.classList.add("hide");
+        panel.classList.toggle("hide");
+        if(!panel.classList.contains("hide")) {
+          const inst = (data||[]).find(x=>String(x.id)===String(id));
+          cargarServiciosDe(id, panel, inst);
+        }
+      });
+    });
+  }
+
+  function parseServicios(raw){
+    try{
+      if(typeof raw === "string") return JSON.parse(raw||"[]") || [];
+      if(Array.isArray(raw)) return raw;
+    }catch(e){}
+    return [];
+  }
+
+  async function cargarServiciosDe(institucionId, panel, inst){
+    // Preferimos el objeto en memoria; si no, pedimos de nuevo la fila
+    let servicios = parseServicios(inst && inst.servicios);
+    if(inst == null){
+      const { data } = await sb.from("instituciones").select("servicios").eq("id", institucionId).maybeSingle();
+      servicios = parseServicios(data && data.servicios);
+    }
+    panel.innerHTML =
+      '<p style="font-family:var(--sans);font-size:.72rem;color:var(--ink-faint);margin:0 0 10px;line-height:1.4">'
+      + 'Horarios fijos (recolección por barrio, especialistas, atención). No salen como comunicados: viven en la ficha. '
+      + 'Ejemplo: sección <b>Recolección</b>, ítem <b>Centro</b> → <b>martes y viernes</b>.</p>'
+      + (servicios.length
+        ? servicios.map((s,i)=>
+            '<div class="fecha-row" data-svc-i="'+i+'">'
+            + '<div><div class="t">'+escA(s.clave||"")+'</div>'
+            + '<div class="sub2">'+escA(s.seccion||"Servicios")+' · '+escA(s.valor||"")+'</div></div>'
+            + '<button class="del" type="button">Quitar</button></div>'
+          ).join("")
+        : '<p style="font-family:var(--sans);font-size:.72rem;color:var(--ink-faint);margin:0 0 8px">Sin servicios cargados.</p>')
+      + '<div class="fecha-add">'
+      + '<input name="seccion" placeholder="Sección (ej: Recolección de residuos)">'
+      + '<input name="clave" placeholder="Barrio / ítem (ej: Centro)">'
+      + '<input name="valor" placeholder="Horario o dato (ej: martes y viernes)">'
+      + '<button class="btn-mini" style="width:100%;background:var(--barrio);color:#fff;border-color:var(--barrio)" data-add-svc="'+escA(institucionId)+'">+ Agregar servicio</button>'
+      + '</div>'
+      + '<p class="err-msg hide" id="svcErr-'+escA(institucionId)+'" style="margin-top:8px"></p>';
+
+    panel.querySelectorAll(".fecha-row .del").forEach(btn=>{
+      btn.addEventListener("click", async ()=>{
+        const i = parseInt(btn.closest(".fecha-row").getAttribute("data-svc-i"), 10);
+        const next = servicios.slice();
+        next.splice(i, 1);
+        btn.disabled = true;
+        const { error } = await sb.from("instituciones").update({ servicios: next }).eq("id", institucionId);
+        if(error){
+          toast("No se pudo guardar. ¿Agregaste la columna servicios? " + error.message);
+          btn.disabled = false;
+          return;
+        }
+        toast("Servicio quitado");
+        // refrescar inst en data
+        if(inst) inst.servicios = next;
+        cargarServiciosDe(institucionId, panel, inst || { servicios: next });
+      });
+    });
+    panel.querySelector("[data-add-svc]").addEventListener("click", async (e)=>{
+      const btn = e.target;
+      const seccion = panel.querySelector('[name="seccion"]').value.trim() || "Servicios";
+      const clave = panel.querySelector('[name="clave"]').value.trim();
+      const valor = panel.querySelector('[name="valor"]').value.trim();
+      const err = document.getElementById("svcErr-"+institucionId);
+      if(err) err.classList.add("hide");
+      if(!clave || !valor){ toast("Completá el barrio/ítem y el horario o dato."); return; }
+      const next = servicios.concat([{ seccion, clave, valor }]);
+      btn.disabled = true;
+      const { error } = await sb.from("instituciones").update({ servicios: next }).eq("id", institucionId);
+      btn.disabled = false;
+      if(error){
+        toast("No se pudo guardar servicios: " + error.message);
+        if(err){
+          err.textContent = "En Supabase corré: alter table instituciones add column if not exists servicios jsonb default '[]'::jsonb;";
+          err.classList.remove("hide");
+        }
+        return;
+      }
+      toast("Servicio agregado ✓");
+      if(inst) inst.servicios = next;
+      cargarServiciosDe(institucionId, panel, inst || { servicios: next });
     });
   }
 
