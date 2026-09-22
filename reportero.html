@@ -1762,15 +1762,26 @@
   function fotosDeNota(n){
     // 'fotos' puede venir como arreglo o como texto JSON según cómo lo devuelva la base
     let arr = n.fotos;
-    if(typeof arr === "string"){ try{ arr = JSON.parse(arr); }catch(e){ arr = null; } }
-    if(Array.isArray(arr) && arr.length) return arr;
-    if(n.imagen_url) return [n.imagen_url];   // noticias
-    if(n.foto_url) return [n.foto_url];        // aportes de vecinos
+    if(typeof arr === "string"){
+      try{ arr = JSON.parse(arr); }
+      catch(e){
+        const m = String(arr).match(/^\{(.*)\}$/);
+        arr = m ? m[1].split(",").map(s=>s.trim().replace(/^"|"$/g,"")).filter(Boolean) : null;
+      }
+    }
+    if(Array.isArray(arr) && arr.length){
+      const limpio = arr.map(u => (u||"").toString().trim()).filter(Boolean);
+      if(limpio.length) return limpio;
+    }
+    if(n.imagen_url) return [String(n.imagen_url).trim()].filter(Boolean);
+    if(n.foto_url) return [String(n.foto_url).trim()].filter(Boolean);
     return [];
   }
 
   function abrirVisorNota(n){
     const lista = fotosDeNota(n);
+    // precarga para compartir (CORS) mientras se mira el visor
+    if(lista[0]){ try{ cargarImagen(lista[0], 8000); }catch(e){} }
     const fecha = n.created_at ? new Date(n.created_at).toLocaleString("es-AR") : "";
     let h = galeriaVisor(lista);
     h += '<div class="cuerpo">'
@@ -2245,20 +2256,71 @@
   setTimeout(fuentesListas, 1500);
 
   const _imgCache = {};
-  function cargarImagen(src, msTope){
+  // Misma lógica que la app: ver la foto en el visor no requiere CORS;
+  // dibujarla en el canvas al compartir sí. En notas de Más noticias las
+  // fotos suelen ser de portales externos → hay que reintentar con proxy.
+  function esHostPropio(url){
+    try{
+      const h = new URL(url, location.href).hostname;
+      return /supabase\.co$/i.test(h) || /fonte\.city$/i.test(h) || h === location.hostname;
+    }catch(e){ return false; }
+  }
+  function urlProxyCors(url){
+    const limpia = String(url||"").replace(/^https?:\/\//i, "");
+    return "https://wsrv.nl/?url=" + encodeURIComponent(limpia) + "&output=jpg&q=85&w=1200";
+  }
+  function probarCanvas(img){
+    try{
+      const t = document.createElement("canvas");
+      t.width = 2; t.height = 2;
+      t.getContext("2d").drawImage(img, 0, 0, 2, 2);
+      t.toDataURL();
+      return true;
+    }catch(e){ return false; }
+  }
+  function cargarImagenUna(url, msTope){
     return new Promise((res)=>{
-      if(!src) return res(null);
-      if(_imgCache[src] !== undefined) return res(_imgCache[src]);
-      const img = new Image();
-      img.crossOrigin = "anonymous";
+      if(!url) return res(null);
       let listo = false;
-      const terminar = (v)=>{ if(listo) return; listo = true; _imgCache[src] = v; res(v); };
-      img.onload = ()=> terminar(img);
-      img.onerror = ()=> terminar(null);
-      // si la foto tarda demasiado, la placa sale igual sin ella
-      setTimeout(()=> terminar(null), msTope || 3500);
-      img.src = src;
+      const fin = (v)=>{ if(listo) return; listo = true; res(v); };
+      const tope = setTimeout(()=> fin(null), msTope || 7000);
+      (async ()=>{
+        try{
+          const r = await fetch(url, { mode:"cors", credentials:"omit" });
+          if(!r.ok) throw new Error("http");
+          const blob = await r.blob();
+          if(!blob || blob.size < 80) throw new Error("vacio");
+          const obj = URL.createObjectURL(blob);
+          const img = new Image();
+          img.onload = ()=>{
+            clearTimeout(tope);
+            const ok = probarCanvas(img);
+            setTimeout(()=>{ try{ URL.revokeObjectURL(obj); }catch(e){} }, 20000);
+            fin(ok ? img : null);
+          };
+          img.onerror = ()=>{ clearTimeout(tope); try{ URL.revokeObjectURL(obj); }catch(e){} fin(null); };
+          img.src = obj;
+        }catch(e){
+          const img = new Image();
+          img.crossOrigin = "anonymous";
+          img.onload = ()=>{ clearTimeout(tope); fin(probarCanvas(img) ? img : null); };
+          img.onerror = ()=>{ clearTimeout(tope); fin(null); };
+          img.src = url;
+        }
+      })();
     });
+  }
+  async function cargarImagen(src, msTope){
+    if(!src || typeof src !== "string") return null;
+    src = src.trim();
+    if(!src) return null;
+    if(_imgCache[src]) return _imgCache[src];
+    let img = await cargarImagenUna(src, msTope || 7000);
+    if(!img && /^https?:\/\//i.test(src) && !esHostPropio(src) && src.indexOf("wsrv.nl") === -1){
+      img = await cargarImagenUna(urlProxyCors(src), msTope || 8000);
+    }
+    if(img) _imgCache[src] = img;
+    return img;
   }
   function envolver(ctx, texto, maxAncho, maxLineas){
     const palabras = String(texto||"").split(/\s+/);
@@ -2281,7 +2343,13 @@
     await fuentesListas();
     const urgente = !!n.urgente;
     const lista = (typeof fotosDeNota === "function") ? fotosDeNota(n) : (n.imagen_url ? [n.imagen_url] : []);
-    const img = urgente ? null : await cargarImagen(lista[0]);
+    let img = null;
+    if(!urgente){
+      for(const u of lista.slice(0, 2)){
+        img = await cargarImagen(u, 8000);
+        if(img) break;
+      }
+    }
 
     const TINTA = "#16140F", PAPEL = "#FDFCF9", CORAL = "#FF4B3E", ROJO = "#B23A2E";
     const DORADO = "#8A6A22", VERDE = "#22503A", AZUL = "#1B3A5C";
