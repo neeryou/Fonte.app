@@ -1737,6 +1737,8 @@
         heroEl.setAttribute("style", "display:block;margin-bottom:16px;aspect-ratio:auto;overflow:visible;background:none");
         heroEl.innerHTML = '<img src="'+esc(listaN[0])+'" alt="" '
           + 'style="width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:10px;cursor:zoom-in">';
+        // precarga en caché de compartir (CORS) mientras leés la nota
+        try{ cargarImagen(listaN[0], 8000); }catch(e){}
       } else {
         heroEl.innerHTML = "";
         heroEl.style.display = "block";
@@ -1976,20 +1978,74 @@
   setTimeout(fuentesListas, 1500);
 
   const _imgCache = {};
-  function cargarImagen(src, msTope){
+  // ¿La URL es usable en un <canvas> al compartir?
+  // En la app la foto se VE igual (CSS/img no piden CORS). Al compartir sí hace falta.
+  // En "Más noticias" muchas fotos son de portales externos sin CORS → fallan.
+  // Estrategia: 1) directo  2) proxy wsrv.nl (solo si el host no es el nuestro)
+  function esHostPropio(url){
+    try{
+      const h = new URL(url, location.href).hostname;
+      return /supabase\.co$/i.test(h) || /fonte\.city$/i.test(h) || h === location.hostname;
+    }catch(e){ return false; }
+  }
+  function urlProxyCors(url){
+    // wsrv.nl re-sirve la imagen con cabeceras CORS (uso solo como respaldo)
+    const limpia = String(url||"").replace(/^https?:\/\//i, "");
+    return "https://wsrv.nl/?url=" + encodeURIComponent(limpia) + "&output=jpg&q=85&w=1200";
+  }
+  function probarCanvas(img){
+    try{
+      const t = document.createElement("canvas");
+      t.width = 2; t.height = 2;
+      t.getContext("2d").drawImage(img, 0, 0, 2, 2);
+      t.toDataURL();
+      return true;
+    }catch(e){ return false; }
+  }
+  function cargarImagenUna(url, msTope){
     return new Promise((res)=>{
-      if(!src) return res(null);
-      if(_imgCache[src] !== undefined) return res(_imgCache[src]);
-      const img = new Image();
-      img.crossOrigin = "anonymous";
+      if(!url) return res(null);
       let listo = false;
-      const terminar = (v)=>{ if(listo) return; listo = true; _imgCache[src] = v; res(v); };
-      img.onload = ()=> terminar(img);
-      img.onerror = ()=> terminar(null);
-      // si la foto tarda demasiado, la placa sale igual sin ella
-      setTimeout(()=> terminar(null), msTope || 3500);
-      img.src = src;
+      const fin = (v)=>{ if(listo) return; listo = true; res(v); };
+      const tope = setTimeout(()=> fin(null), msTope || 7000);
+      (async ()=>{
+        try{
+          const r = await fetch(url, { mode:"cors", credentials:"omit" });
+          if(!r.ok) throw new Error("http");
+          const blob = await r.blob();
+          if(!blob || blob.size < 80) throw new Error("vacio");
+          const obj = URL.createObjectURL(blob);
+          const img = new Image();
+          img.onload = ()=>{
+            clearTimeout(tope);
+            const ok = probarCanvas(img);
+            setTimeout(()=>{ try{ URL.revokeObjectURL(obj); }catch(e){} }, 20000);
+            fin(ok ? img : null);
+          };
+          img.onerror = ()=>{ clearTimeout(tope); try{ URL.revokeObjectURL(obj); }catch(e){} fin(null); };
+          img.src = obj;
+        }catch(e){
+          const img = new Image();
+          img.crossOrigin = "anonymous";
+          img.onload = ()=>{ clearTimeout(tope); fin(probarCanvas(img) ? img : null); };
+          img.onerror = ()=>{ clearTimeout(tope); fin(null); };
+          img.src = url;
+        }
+      })();
     });
+  }
+  async function cargarImagen(src, msTope){
+    if(!src || typeof src !== "string") return null;
+    src = src.trim();
+    if(!src) return null;
+    if(_imgCache[src]) return _imgCache[src];
+    let img = await cargarImagenUna(src, msTope || 7000);
+    // Respaldo para fotos de portales externos (típico de Más noticias)
+    if(!img && /^https?:\/\//i.test(src) && !esHostPropio(src) && src.indexOf("wsrv.nl") === -1){
+      img = await cargarImagenUna(urlProxyCors(src), msTope || 8000);
+    }
+    if(img) _imgCache[src] = img;
+    return img;
   }
   function envolver(ctx, texto, maxAncho, maxLineas){
     const palabras = String(texto||"").split(/\s+/);
@@ -2017,7 +2073,15 @@
 
     const urgente = !!n.urgente;
     const lista = (typeof fotosDe === "function") ? fotosDe(n) : (n.imagen_url ? [n.imagen_url] : []);
-    const img = urgente ? null : await cargarImagen(lista[0]);
+    // Probamos hasta 2 URLs: en Más noticias a veces la 1ª falla por CORS del host
+    // de origen y la 2ª (o un reintento) sí entra.
+    let img = null;
+    if(!urgente){
+      for(const u of lista.slice(0, 2)){
+        img = await cargarImagen(u, 7000);
+        if(img) break;
+      }
+    }
 
     const TINTA = "#16140F", PAPEL = "#FDFCF9", CORAL = "#FF4B3E", ROJO = "#B23A2E";
     const DORADO = "#8A6A22", VERDE = "#22503A";
@@ -3378,9 +3442,12 @@
         arr = m ? m[1].split(",").map(s=>s.trim().replace(/^"|"$/g,"")).filter(Boolean) : null;
       }
     }
-    if(Array.isArray(arr) && arr.length) return arr;
-    if(o.foto_url) return [o.foto_url];      // aportes
-    if(o.imagen_url) return [o.imagen_url];  // noticias
+    if(Array.isArray(arr) && arr.length){
+      const limpio = arr.map(u => (u||"").toString().trim()).filter(Boolean);
+      if(limpio.length) return limpio;
+    }
+    if(o.foto_url) return [String(o.foto_url).trim()].filter(Boolean);      // aportes
+    if(o.imagen_url) return [String(o.imagen_url).trim()].filter(Boolean);  // noticias
     return [];
   }
   // miniatura chica para el riel y la lista de zona — vacío si la nota no tiene foto
