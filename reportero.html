@@ -318,14 +318,26 @@
   .admin-item .sub2{ font-family:var(--sans); font-size:.68rem; color:var(--ink-faint); margin-top:2px; }
   .admin-item .del{ font-family:var(--sans); font-size:.66rem; font-weight:700; color:#B23A2E; background:none; border:1px solid #B23A2E; padding:6px 11px; border-radius:8px; flex:0 0 auto; }
 
-  /* ===== instituciones: fechas ===== */
-  .inst-block{ border-top:1px solid var(--line); padding:12px 0; }
-  .inst-block:first-child{ border-top:0; }
-  .inst-block-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
-  .inst-block-head .h{ font-family:var(--serif); font-weight:700; font-size:.92rem; }
-  .inst-block-head .sub2{ font-family:var(--sans); font-size:.68rem; color:var(--ink-faint); margin-top:2px; }
-  .inst-block-btns{ display:flex; gap:6px; flex:0 0 auto; }
-  .btn-mini{ font-family:var(--sans); font-size:.66rem; font-weight:700; padding:6px 10px; border-radius:8px; border:1px solid var(--line-strong); background:none; color:var(--ink-soft); }
+  /* ===== ciudad: fichas de institución ===== */
+  .ciudad-nueva{ width:100%; font-family:var(--sans); font-size:.86rem; font-weight:700;
+    padding:13px; border-radius:12px; border:1px dashed var(--line-strong);
+    background:var(--paper); color:var(--ink); margin-bottom:12px; }
+  .ciudad-nueva.abierto{ border-style:solid; }
+  #institucionesAdminList.card{ background:transparent; border:0; padding:0; }
+  .inst-block{ background:var(--paper); border:1px solid var(--line-strong); border-radius:14px;
+    padding:14px 14px 12px; margin-bottom:10px; }
+  .inst-block:first-child{ }
+  .inst-block-head{ display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
+  .inst-ico{ width:36px; height:36px; border-radius:50%; background:var(--paper-2); display:flex;
+    align-items:center; justify-content:center; font-size:1.05rem; flex:0 0 auto; }
+  .inst-block-head .h{ font-family:var(--serif); font-weight:700; font-size:.98rem; line-height:1.2; }
+  .inst-block-head .sub2{ font-family:var(--sans); font-size:.68rem; color:var(--ink-faint); margin-top:3px; }
+  .inst-badge{ font-family:var(--sans); font-size:.62rem; font-weight:700; color:var(--barrio);
+    border:1px solid color-mix(in srgb,var(--barrio) 35%,var(--line)); background:color-mix(in srgb,var(--barrio) 10%,var(--paper));
+    padding:3px 8px; border-radius:999px; white-space:nowrap; }
+  .inst-block-btns{ display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+  .btn-mini{ font-family:var(--sans); font-size:.68rem; font-weight:700; padding:6px 10px; border-radius:8px; border:1px solid var(--line-strong); background:none; color:var(--ink-soft); }
+  .btn-mini.del{ margin-left:auto; color:var(--ink-faint); }
   .svc-panel, .fechas-panel{ margin-top:10px; background:var(--paper); border:1px solid var(--line); border-radius:10px; padding:12px; }
   .fecha-row{ display:flex; align-items:center; justify-content:space-between; gap:8px; padding:7px 0; border-top:1px solid var(--line); }
   .fecha-row:first-child{ border-top:0; }
@@ -650,7 +662,7 @@
       <h2 class="rep-h">Ciudad</h2>
       <p class="rep-sub">Instituciones verificadas — se cargan una vez. Después solo actualizás horarios o fechas.</p>
 
-      <button class="form-toggle" data-form="formInstitucion"><span>+ Agregar una institución</span><span class="chev">⌄</span></button>
+      <button class="ciudad-nueva form-toggle" data-form="formInstitucion"><span>+ Nueva institución</span><span class="chev">⌄</span></button>
       <div class="card hide" id="formInstitucion">
         <div class="field-label">Nombre</div>
         <input class="inp" id="inNombre" placeholder="Ej: Hospital Municipal">
@@ -682,7 +694,6 @@
         <div class="err-msg hide" id="inErr"></div>
       </div>
 
-      <h2 class="rep-h" style="font-size:1.05rem">Instituciones cargadas</h2>
       <div class="card" id="institucionesAdminList"><p style="font-family:var(--sans);font-size:.78rem;color:var(--ink-faint)">Cargando…</p></div>
     </div>
   </div>
@@ -1410,14 +1421,28 @@
       cont.innerHTML = '<p style="font-family:var(--sans);font-size:.78rem;color:var(--ink-faint)">Todavía no cargaste ninguna institución.</p>';
       return;
     }
-    cont.innerHTML = data.map(i=>
-      '<div class="inst-block" data-id="'+escA(i.id)+'">'
-      + '<div class="inst-block-head"><div><div class="h">'+(ICONS_INST[i.tipo]||"📍")+" "+escA(i.nombre)+'</div><div class="sub2">'+escA(i.direccion||"")+'</div></div>'
-      + '<div class="inst-block-btns"><button class="btn-mini svc-toggle">Servicios</button><button class="btn-mini fechas-toggle">Fechas</button><button class="del">Quitar</button></div></div>'
+    cont.innerHTML = data.map(i=>{
+      let nSvc = 0;
+      try{
+        const raw = i.servicios;
+        const arr = typeof raw === "string" ? JSON.parse(raw||"[]") : (Array.isArray(raw)?raw:[]);
+        nSvc = Array.isArray(arr) ? arr.length : 0;
+      }catch(e){ nSvc = 0; }
+      const badge = nSvc
+        ? '<span class="inst-badge">🕐 '+nSvc+(nSvc===1?' horario':' horarios')+'</span>'
+        : '';
+      return '<div class="inst-block" data-id="'+escA(i.id)+'">'
+      + '<div class="inst-block-head">'
+      + '<div style="display:flex;gap:10px;align-items:flex-start;min-width:0">'
+      + '<span class="inst-ico">'+(ICONS_INST[i.tipo]||"📍")+'</span>'
+      + '<div><div class="h">'+escA(i.nombre)+'</div>'
+      + (i.direccion ? '<div class="sub2">'+escA(i.direccion)+'</div>' : '')
+      + '</div></div>'+badge+'</div>'
+      + '<div class="inst-block-btns"><button class="btn-mini svc-toggle">Servicios</button><button class="btn-mini fechas-toggle">Fechas</button><button class="btn-mini del">Quitar</button></div>'
       + '<div class="svc-panel hide" id="svcPanel-'+escA(i.id)+'"></div>'
       + '<div class="fechas-panel hide" id="fechasPanel-'+escA(i.id)+'"></div>'
-      + '</div>'
-    ).join("");
+      + '</div>';
+    }).join("");
     cont.querySelectorAll(".inst-block .del").forEach(btn=>{
       btn.addEventListener("click", async ()=>{
         const id = btn.closest(".inst-block").getAttribute("data-id");
