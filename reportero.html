@@ -232,12 +232,19 @@
   .arch-item .mini{ border-radius:2px; }
   .arch-item .m{ font-family:var(--mono); font-size:.57rem; }
 
-  /* selector de tipo con siglas */
-  .tipo{ border-radius:3px; border:.5px solid var(--line-strong); }
-  .tipo.on{ border-color:var(--ink); }
-  .tipo .e{ display:none; }
-  .tipo::before{ content:attr(data-sig); font-family:var(--mono); font-size:.62rem; font-weight:600; color:var(--region); }
-  .tipo.on::before{ color:#fff; }
+  /* selector de tipo: tres tiras como la maqueta */
+  .tipos{ display:flex; flex-direction:column; gap:9px; margin-bottom:16px; }
+  .tipo{ display:flex; flex-direction:row; align-items:center; gap:14px;
+    background:var(--paper); border:1px solid var(--line-strong); border-radius:12px;
+    padding:16px 16px; text-align:left; }
+  .tipo .e{ display:flex; width:36px; height:36px; flex:0 0 auto; align-items:center; justify-content:center;
+    font-size:1.25rem; border-right:1px solid var(--line); padding-right:12px; margin-right:2px; }
+  .tipo::before{ content:none; }
+  .tipo .t{ font-family:var(--serif); font-weight:700; font-size:1.05rem; letter-spacing:-.02em; display:block; }
+  .tipo .s{ font-family:var(--sans); font-size:.72rem; opacity:.7; font-weight:500; }
+  .tipo.on{ background:var(--paper); color:var(--ink); border-color:var(--ink); box-shadow:inset 3px 0 0 var(--ink); }
+  .tipo.on .e{ border-color:var(--line); }
+  .hint-ciudad{ font-family:var(--sans); font-size:.72rem; color:var(--ink-faint); margin:-8px 0 16px; }
 
   /* nav con filete doble arriba */
   .rep-nav{ border-top:2.5px solid var(--ink); }
@@ -422,13 +429,14 @@
 
     <div class="rep-view" id="viewCargar">
     <h2 class="rep-h">Publicar</h2>
-    <p class="rep-sub">Elegí qué vas a cargar. Podés ver cómo queda antes de publicarlo.</p>
+    <p class="rep-sub">Lo que sale hoy en Fonte.</p>
 
     <div class="tipos" id="tiposPub">
       <button class="tipo on" data-tipo="nota" data-sig="NO"><span class="e">📰</span><span class="t">Nota</span><span class="s">Una noticia de la ciudad o la zona</span></button>
       <button class="tipo" data-tipo="comunicado" data-sig="CO"><span class="e">📢</span><span class="t">Comunicado</span><span class="s">Aviso de una institución</span></button>
       <button class="tipo" data-tipo="oferta" data-sig="OF"><span class="e">🏷️</span><span class="t">Oferta</span><span class="s">Promoción de un comercio</span></button>
     </div>
+    <p class="hint-ciudad">Las instituciones se editan en Ciudad ›</p>
 
     <div id="panelNota">
 
@@ -639,8 +647,8 @@
 
     <div class="rep-view" id="viewInstituciones">
       <div id="avisoVencidas" class="hide" style="background:color-mix(in srgb,#B23A2E 10%,var(--paper));border:1px solid color-mix(in srgb,#B23A2E 30%,var(--line));border-radius:10px;padding:12px 14px;margin-bottom:16px;font-family:var(--sans);font-size:.8rem;color:#B23A2E;font-weight:600"></div>
-      <h2 class="rep-h">Instituciones verificadas</h2>
-      <p class="rep-sub">Hospital, desarrollo social, municipio, etc. Cargá la ficha una vez; después solo actualizás la fecha cuando cambie (ej: la próxima entrega de mercadería).</p>
+      <h2 class="rep-h">Ciudad</h2>
+      <p class="rep-sub">Instituciones verificadas — se cargan una vez. Después solo actualizás horarios o fechas.</p>
 
       <button class="form-toggle" data-form="formInstitucion"><span>+ Agregar una institución</span><span class="chev">⌄</span></button>
       <div class="card hide" id="formInstitucion">
@@ -704,7 +712,7 @@
   <button class="rnv" data-v="viewMetricas">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>
     <span>Panel</span></button>
-  <button class="rnv" data-v="viewCargar" data-ciudad="1">
+  <button class="rnv" data-v="viewInstituciones">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 21h18M5 21V8l7-5 7 5v13M9 21v-6h6v6"/></svg>
     <span>Ciudad</span></button>
 </nav>
@@ -800,25 +808,20 @@
     if(v === "viewArchivo"){ cargarArchivo(); }
     if(v === "viewMetricas"){ cargarMetricas(); }
     if(v === "viewAportes"){ cargarAportesPendientes(); cargarAvisosPublicados(); }
-    if(v === "viewCargar"){ cargarPublicadoHoy(); cargarOfertasAdmin(); cargarComunicadosAdmin(); cargarInstitucionesAdmin(); }
+    if(v === "viewCargar"){ cargarPublicadoHoy(); cargarOfertasAdmin(); cargarComunicadosAdmin(); }
+    if(v === "viewInstituciones"){ cargarInstitucionesAdmin(); }
     window.scrollTo({ top:0, behavior:"instant" });
   }
   // compatibilidad con llamadas viejas
   function irAPestana(tabId){
     if(tabId === "tabOfertas"){ irAVista("viewCargar"); irATipo("oferta"); return; }
-    if(tabId === "tabInstituciones"){ irAVista("viewCargar"); setTimeout(()=>{ const el=document.getElementById("panelInstitucion"); if(el) el.scrollIntoView({behavior:"smooth"}); }, 80); return; }
+    if(tabId === "tabInstituciones"){ irAVista("viewInstituciones"); return; }
     const map = { tabCargar:"viewCargar", tabAportes:"viewAportes", tabMetricas:"viewMetricas" };
     irAVista(map[tabId] || "viewHoy");
   }
   document.querySelectorAll(".rnv").forEach(b=>{
     b.addEventListener("click", ()=>{
       irAVista(b.getAttribute("data-v"));
-      if(b.getAttribute("data-ciudad")){
-        setTimeout(()=>{
-          const el = document.getElementById("panelInstitucion");
-          if(el) el.scrollIntoView({ behavior:"smooth", block:"start" });
-        }, 80);
-      }
     });
   });
   document.getElementById("btnPublicarAhora").addEventListener("click", ()=> irAVista("viewCargar"));
@@ -2839,7 +2842,8 @@
         mueve.forEach(n => pCo.appendChild(n));
       }
     }
-    if(vIn && pIn){ while(vIn.firstChild) pIn.appendChild(vIn.firstChild); pIn.classList.remove("hide"); }
+    // Instituciones viven en su vista Ciudad, no se mezclan con Publicar.
+    if(pIn) pIn.classList.add("hide");
   })();
 
   function irATipo(t){
@@ -2850,7 +2854,7 @@
       if(p) p.classList.toggle("hide", x !== t);
     });
     const pIn = document.getElementById("panelInstitucion");
-    if(pIn) pIn.classList.remove("hide");
+    if(pIn) pIn.classList.add("hide");
     const enPublicar = document.getElementById("viewCargar").classList.contains("on");
     document.getElementById("barraAccion").classList.toggle("show", enPublicar && t === "nota");
     window.scrollTo({ top:0, behavior:"instant" });
