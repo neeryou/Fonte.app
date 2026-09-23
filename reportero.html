@@ -1450,22 +1450,11 @@
   }
 
   async function cargarServiciosDe(institucionId, panel, inst, seccionActiva){
-    // Siempre releemos servicios desde la base: si solo usamos la fila en memoria
-    // (cargada antes de crear la columna o de un guardado previo), parece que
-    // "no se guarda" aunque el update haya andado.
-    let servicios = [];
-    try{
-      const { data, error } = await sb.from("instituciones").select("servicios").eq("id", institucionId).maybeSingle();
-      if(error){
-        // columna inexistente o RLS: avisamos y seguimos con lo que haya en memoria
-        console.warn("servicios select:", error.message);
-        servicios = parseServicios(inst && inst.servicios);
-      } else {
-        servicios = parseServicios(data && data.servicios);
-        if(inst) inst.servicios = servicios;
-      }
-    }catch(e){
-      servicios = parseServicios(inst && inst.servicios);
+    // Preferimos el objeto en memoria; si no, pedimos de nuevo la fila
+    let servicios = parseServicios(inst && inst.servicios);
+    if(inst == null){
+      const { data } = await sb.from("instituciones").select("servicios").eq("id", institucionId).maybeSingle();
+      servicios = parseServicios(data && data.servicios);
     }
 
     // servicios existentes, agrupados por sección, en el orden en que aparecieron
@@ -1536,11 +1525,13 @@
         const next = servicios.slice();
         next.splice(i, 1);
         btn.disabled = true;
-        const { error } = await sb.from("instituciones").update({ servicios: next }).eq("id", institucionId);
-        if(error){ toast("No se pudo guardar. ¿Agregaste la columna servicios? " + error.message); btn.disabled = false; return; }
+        const { data: row, error } = await sb.from("instituciones").update({ servicios: next }).eq("id", institucionId).select("id,servicios").maybeSingle();
+        btn.disabled = false;
+        if(error){ toast("No se pudo guardar: " + error.message); return; }
+        if(!row){ toast("No se actualizó (permiso RLS o id). En Supabase: Policies de instituciones → permitir UPDATE al rol authenticated."); return; }
         toast("Servicio quitado");
-        if(inst) inst.servicios = next;
-        cargarServiciosDe(institucionId, panel, inst || { servicios: next }, activa);
+        if(inst) inst.servicios = row.servicios || next;
+        cargarServiciosDe(institucionId, panel, inst || { servicios: row.servicios || next }, activa);
       });
     });
     // agregar una entrada a la sección activa — queda todo listo para cargar la siguiente al toque
@@ -1552,21 +1543,31 @@
         const err = document.getElementById("svcErr-"+institucionId);
         if(err) err.classList.add("hide");
         if(!clave || !valor){ toast("Completá el barrio/ítem y el horario o dato."); return; }
+        if(!activa){ toast("Primero creá un servicio con «+ Nuevo servicio» (ej: Recolección)."); return; }
         const next = servicios.concat([{ seccion: activa, clave, valor }]);
         btnAgregar.disabled = true;
-        const { error } = await sb.from("instituciones").update({ servicios: next }).eq("id", institucionId);
+        const { data: row, error } = await sb.from("instituciones").update({ servicios: next }).eq("id", institucionId).select("id,servicios").maybeSingle();
         btnAgregar.disabled = false;
         if(error){
-          toast("No se pudo guardar servicios: " + error.message);
+          toast("No se pudo guardar: " + error.message);
           if(err){
-            err.textContent = "En Supabase corré: alter table instituciones add column if not exists servicios jsonb default '[]'::jsonb;";
+            err.textContent = error.message + " — Si falta la columna: alter table instituciones add column if not exists servicios jsonb default '[]'::jsonb;";
+            err.classList.remove("hide");
+          }
+          return;
+        }
+        if(!row){
+          toast("No se guardó: la base no actualizó la fila (casi siempre es RLS).");
+          if(err){
+            err.textContent = "En Supabase → Authentication no; Table Editor no. Andá a: Authentication no → Authentication no. Corré en SQL: ver mensaje de abajo.";
+            err.innerHTML = "La columna existe, pero el rol del reportero no puede hacer UPDATE. En <b>SQL Editor</b> corré:<br><code style='font-size:.65rem'>create policy \"inst_update\" on instituciones for update to authenticated using (true) with check (true);</code><br>Si ya hay policies más estrictas, ajustalas para incluir UPDATE en servicios.";
             err.classList.remove("hide");
           }
           return;
         }
         toast("Agregado ✓");
-        if(inst) inst.servicios = next;
-        cargarServiciosDe(institucionId, panel, inst || { servicios: next }, activa);
+        if(inst) inst.servicios = row.servicios || next;
+        cargarServiciosDe(institucionId, panel, inst || { servicios: row.servicios || next }, activa);
       };
       btnAgregar.addEventListener("click", hacerAlta);
       // enter en "horario" también agrega — así se cargan varios barrios seguidos sin tocar el mouse
