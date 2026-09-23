@@ -428,7 +428,6 @@
       <button class="tipo on" data-tipo="nota" data-sig="NO"><span class="e">📰</span><span class="t">Nota</span><span class="s">Una noticia de la ciudad o la zona</span></button>
       <button class="tipo" data-tipo="comunicado" data-sig="CO"><span class="e">📢</span><span class="t">Comunicado</span><span class="s">Aviso de una institución</span></button>
       <button class="tipo" data-tipo="oferta" data-sig="OF"><span class="e">🏷️</span><span class="t">Oferta</span><span class="s">Promoción de un comercio</span></button>
-      <button class="tipo" data-tipo="institucion" data-sig="IN"><span class="e">🏥</span><span class="t">Institución</span><span class="s">Ficha y fechas de un servicio</span></button>
     </div>
 
     <div id="panelNota">
@@ -705,6 +704,9 @@
   <button class="rnv" data-v="viewMetricas">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>
     <span>Panel</span></button>
+  <button class="rnv" data-v="viewCargar" data-ciudad="1">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 21h18M5 21V8l7-5 7 5v13M9 21v-6h6v6"/></svg>
+    <span>Ciudad</span></button>
 </nav>
 
 <div class="toast" id="toast"></div>
@@ -804,12 +806,20 @@
   // compatibilidad con llamadas viejas
   function irAPestana(tabId){
     if(tabId === "tabOfertas"){ irAVista("viewCargar"); irATipo("oferta"); return; }
-    if(tabId === "tabInstituciones"){ irAVista("viewCargar"); irATipo("institucion"); return; }
+    if(tabId === "tabInstituciones"){ irAVista("viewCargar"); setTimeout(()=>{ const el=document.getElementById("panelInstitucion"); if(el) el.scrollIntoView({behavior:"smooth"}); }, 80); return; }
     const map = { tabCargar:"viewCargar", tabAportes:"viewAportes", tabMetricas:"viewMetricas" };
     irAVista(map[tabId] || "viewHoy");
   }
   document.querySelectorAll(".rnv").forEach(b=>{
-    b.addEventListener("click", ()=> irAVista(b.getAttribute("data-v")));
+    b.addEventListener("click", ()=>{
+      irAVista(b.getAttribute("data-v"));
+      if(b.getAttribute("data-ciudad")){
+        setTimeout(()=>{
+          const el = document.getElementById("panelInstitucion");
+          if(el) el.scrollIntoView({ behavior:"smooth", block:"start" });
+        }, 80);
+      }
+    });
   });
   document.getElementById("btnPublicarAhora").addEventListener("click", ()=> irAVista("viewCargar"));
 
@@ -1513,9 +1523,23 @@
     const btnNuevo = document.getElementById("svcChipNuevo-"+institucionId);
     if(btnNuevo){
       btnNuevo.addEventListener("click", ()=>{
-        const nombre = (prompt("¿Cómo se llama el servicio? (ej: Recolección de residuos)")||"").trim();
-        if(!nombre) return;
-        cargarServiciosDe(institucionId, panel, inst || { servicios }, nombre);
+        if(panel.querySelector("#svcNombreNuevo")) return;
+        const wrap = document.createElement("div");
+        wrap.style.cssText = "display:flex;gap:6px;margin:8px 0";
+        wrap.innerHTML = '<input class="inp" id="svcNombreNuevo" placeholder="Ej: Recolección de residuos" style="margin:0;flex:1">'
+          + '<button type="button" class="btn-mini" id="svcNombreOk">Crear</button>';
+        const chips = panel.querySelector(".svc-chips");
+        if(chips) chips.after(wrap);
+        else panel.prepend(wrap);
+        const inp = wrap.querySelector("#svcNombreNuevo");
+        inp.focus();
+        const crear = ()=>{
+          const nombre = inp.value.trim();
+          if(!nombre){ toast("Escribí el nombre del servicio"); return; }
+          cargarServiciosDe(institucionId, panel, inst || { servicios }, nombre);
+        };
+        wrap.querySelector("#svcNombreOk").addEventListener("click", crear);
+        inp.addEventListener("keydown", e=>{ if(e.key==="Enter"){ e.preventDefault(); crear(); } });
       });
     }
     // quitar una entrada puntual
@@ -2815,16 +2839,18 @@
         mueve.forEach(n => pCo.appendChild(n));
       }
     }
-    if(vIn && pIn){ while(vIn.firstChild) pIn.appendChild(vIn.firstChild); }
+    if(vIn && pIn){ while(vIn.firstChild) pIn.appendChild(vIn.firstChild); pIn.classList.remove("hide"); }
   })();
 
   function irATipo(t){
     tipoPub = t;
     document.querySelectorAll("#tiposPub .tipo").forEach(b=> b.classList.toggle("on", b.getAttribute("data-tipo") === t));
-    ["nota","comunicado","oferta","institucion"].forEach(x=>{
+    ["nota","comunicado","oferta"].forEach(x=>{
       const p = document.getElementById("panel" + x.charAt(0).toUpperCase() + x.slice(1));
       if(p) p.classList.toggle("hide", x !== t);
     });
+    const pIn = document.getElementById("panelInstitucion");
+    if(pIn) pIn.classList.remove("hide");
     const enPublicar = document.getElementById("viewCargar").classList.contains("on");
     document.getElementById("barraAccion").classList.toggle("show", enPublicar && t === "nota");
     window.scrollTo({ top:0, behavior:"instant" });
