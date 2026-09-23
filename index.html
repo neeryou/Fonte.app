@@ -4022,15 +4022,24 @@
         }).join("");
     }
 
-    // ---- instituciones verificadas: quedan guardadas acá para consultar cuando quieras ----
+    // ---- instituciones verificadas: tocás una y se abre la ficha (ahí viven los servicios) ----
     if((INSTITUCIONES||[]).length){
       html += '<div class="rail-title" style="margin:22px 0 10px">✓ Instituciones verificadas</div>';
-      html += INSTITUCIONES.map(i=>
-        '<div class="ap-card" data-inst-id="'+esc(i.id)+'">'
-        + '<span class="im" style="display:flex;align-items:center;justify-content:center;font-size:1.3rem">'+(ICONS_INST[i.tipo]||"📍")+'</span>'
-        + '<div class="tx"><div class="cat2">Institución verificada</div><div class="h">'+esc(i.nombre)+'</div>'
-        + (i.direccion ? '<div class="m">'+esc(i.direccion)+'</div>' : '') + '</div></div>'
-      ).join("");
+      html += INSTITUCIONES.map(i=>{
+        let nSvc = 0;
+        try{
+          const raw = i.servicios;
+          const arr = typeof raw === "string" ? JSON.parse(raw||"[]") : (Array.isArray(raw) ? raw : []);
+          nSvc = Array.isArray(arr) ? arr.length : 0;
+        }catch(e){ nSvc = 0; }
+        const metaSvc = nSvc
+          ? '<div class="m" style="color:var(--barrio);font-weight:600">🕐 Horarios y servicios · '+nSvc+(nSvc===1?' dato':' datos')+'</div>'
+          : (i.direccion ? '<div class="m">'+esc(i.direccion)+'</div>' : '');
+        return '<div class="ap-card" data-inst-id="'+esc(i.id)+'">'
+          + '<span class="im" style="display:flex;align-items:center;justify-content:center;font-size:1.3rem">'+(ICONS_INST[i.tipo]||"📍")+'</span>'
+          + '<div class="tx"><div class="cat2">Institución verificada</div><div class="h">'+esc(i.nombre)+'</div>'
+          + metaSvc + '</div></div>';
+      }).join("");
     }
 
     // ---- historial de alertas cerca tuyo: se van acumulando acá, no desaparecen al cerrarlas ----
