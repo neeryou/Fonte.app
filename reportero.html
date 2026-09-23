@@ -1450,11 +1450,22 @@
   }
 
   async function cargarServiciosDe(institucionId, panel, inst, seccionActiva){
-    // Preferimos el objeto en memoria; si no, pedimos de nuevo la fila
-    let servicios = parseServicios(inst && inst.servicios);
-    if(inst == null){
-      const { data } = await sb.from("instituciones").select("servicios").eq("id", institucionId).maybeSingle();
-      servicios = parseServicios(data && data.servicios);
+    // Siempre releemos servicios desde la base: si solo usamos la fila en memoria
+    // (cargada antes de crear la columna o de un guardado previo), parece que
+    // "no se guarda" aunque el update haya andado.
+    let servicios = [];
+    try{
+      const { data, error } = await sb.from("instituciones").select("servicios").eq("id", institucionId).maybeSingle();
+      if(error){
+        // columna inexistente o RLS: avisamos y seguimos con lo que haya en memoria
+        console.warn("servicios select:", error.message);
+        servicios = parseServicios(inst && inst.servicios);
+      } else {
+        servicios = parseServicios(data && data.servicios);
+        if(inst) inst.servicios = servicios;
+      }
+    }catch(e){
+      servicios = parseServicios(inst && inst.servicios);
     }
 
     // servicios existentes, agrupados por sección, en el orden en que aparecieron
