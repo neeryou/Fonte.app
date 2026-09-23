@@ -328,6 +328,23 @@
   .fecha-add input{ font-family:var(--sans); font-size:.78rem; border:1px solid var(--line-strong); border-radius:7px; padding:8px; background:var(--paper); color:var(--ink); }
   .fecha-add input[name=titulo]{ flex:1 1 100%; }
   .fecha-add input[name=fecha]{ flex:1 1 40%; }
+  /* ---- servicios: chip por sección + carga rápida en fila ---- */
+  .svc-chips{ display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px; }
+  .svc-chip{ font-family:var(--sans); font-size:.72rem; font-weight:700; padding:6px 12px; border-radius:999px; border:1px solid var(--line-strong); background:var(--paper); color:var(--ink-soft); }
+  .svc-chip.on{ background:var(--ink); color:var(--paper); border-color:var(--ink); }
+  .svc-chip.nuevo{ border-style:dashed; color:var(--region); border-color:var(--region); }
+  .panel-activo{ background:var(--paper); border:1px solid var(--line); border-radius:10px; padding:12px; }
+  .panel-activo .titulo-svc{ font-family:var(--serif); font-weight:700; font-size:.94rem; margin-bottom:2px; }
+  .panel-activo .cant{ font-family:var(--sans); font-size:.66rem; color:var(--ink-faint); margin-bottom:8px; }
+  .fila-existente{ display:flex; justify-content:space-between; align-items:center; gap:8px; padding:7px 0; border-top:1px solid var(--line); }
+  .fila-existente:first-of-type{ border-top:0; }
+  .fila-existente .t{ font-family:var(--sans); font-size:.78rem; font-weight:600; color:var(--ink); }
+  .fila-existente .v{ font-family:var(--sans); font-size:.68rem; color:var(--ink-faint); }
+  .fila-existente .quitar{ font-size:.64rem; color:var(--urgente); background:none; border:0; font-weight:700; flex:0 0 auto; }
+  .fila-agregar{ display:flex; gap:6px; margin-top:10px; padding-top:10px; border-top:2px solid var(--line-strong); }
+  .fila-agregar input{ font-family:var(--sans); font-size:.76rem; padding:8px 9px; border-radius:7px; border:1px solid var(--line-strong); background:var(--paper); flex:1; min-width:0; }
+  .fila-agregar .agregar{ font-family:var(--sans); font-size:.8rem; font-weight:800; padding:8px 13px; border-radius:7px; border:0; background:var(--barrio); color:#fff; flex:0 0 auto; }
+  .pista-agregar{ font-family:var(--sans); font-size:.64rem; color:var(--ink-faint); margin:6px 0 0; }
   .fecha-add input[name=lugar],.fecha-add input[name=horario]{ flex:1 1 45%; }
 
   /* ===== métricas ===== */
@@ -1432,75 +1449,119 @@
     return [];
   }
 
-  async function cargarServiciosDe(institucionId, panel, inst){
+  async function cargarServiciosDe(institucionId, panel, inst, seccionActiva){
     // Preferimos el objeto en memoria; si no, pedimos de nuevo la fila
     let servicios = parseServicios(inst && inst.servicios);
     if(inst == null){
       const { data } = await sb.from("instituciones").select("servicios").eq("id", institucionId).maybeSingle();
       servicios = parseServicios(data && data.servicios);
     }
+
+    // servicios existentes, agrupados por sección, en el orden en que aparecieron
+    const porSec = {};
+    const ordenSec = [];
+    servicios.forEach(s=>{
+      const sec = (s.seccion||"Servicios").trim() || "Servicios";
+      if(!porSec[sec]){ porSec[sec] = []; ordenSec.push(sec); }
+      porSec[sec].push(s);
+    });
+
+    // qué servicio queda "activo" (elegido) para seguir cargándole barrios/horarios
+    let activa = (seccionActiva !== undefined && seccionActiva !== null) ? seccionActiva : (ordenSec[0] || null);
+
+    const chips = ordenSec.map(sec=>
+        '<button type="button" class="svc-chip'+(sec===activa?' on':'')+'" data-sec="'+escA(sec)+'">'+escA(sec)+'</button>'
+      ).join("")
+      + '<button type="button" class="svc-chip nuevo" id="svcChipNuevo-'+institucionId+'">+ Nuevo servicio</button>';
+
+    let panelActivoHtml;
+    if(activa){
+      const entradas = porSec[activa] || [];
+      panelActivoHtml = '<div class="panel-activo">'
+        + '<div class="titulo-svc">'+escA(activa)+'</div>'
+        + '<div class="cant">'+entradas.length+(entradas.length===1?' barrio/ítem cargado':' barrios/ítems cargados')+'</div>'
+        + entradas.map(s=>
+            '<div class="fila-existente" data-svc-i="'+servicios.indexOf(s)+'">'
+            + '<div><div class="t">'+escA(s.clave||"")+'</div><div class="v">'+escA(s.valor||"")+'</div></div>'
+            + '<button type="button" class="quitar">Quitar</button></div>'
+          ).join("")
+        + '<div class="fila-agregar">'
+        + '<input name="clave" placeholder="Barrio / ítem">'
+        + '<input name="valor" placeholder="Días y horario">'
+        + '<button type="button" class="agregar">＋</button>'
+        + '</div>'
+        + '<p class="pista-agregar">Se guarda al toque y queda listo para el siguiente — no hace falta volver a elegir el servicio.</p>'
+        + '<p class="err-msg hide" id="svcErr-'+institucionId+'"></p>'
+        + '</div>';
+    } else {
+      panelActivoHtml = '<p style="font-family:var(--sans);font-size:.72rem;color:var(--ink-faint)">Elegí un servicio de arriba, o creá uno nuevo, para empezar a cargar horarios.</p>';
+    }
+
     panel.innerHTML =
       '<p style="font-family:var(--sans);font-size:.72rem;color:var(--ink-faint);margin:0 0 10px;line-height:1.4">'
-      + 'Horarios fijos (recolección por barrio, especialistas, atención). No salen como comunicados: viven en la ficha. '
-      + 'Ejemplo: sección <b>Recolección</b>, ítem <b>Centro</b> → <b>martes y viernes</b>.</p>'
-      + (servicios.length
-        ? servicios.map((s,i)=>
-            '<div class="fecha-row" data-svc-i="'+i+'">'
-            + '<div><div class="t">'+escA(s.clave||"")+'</div>'
-            + '<div class="sub2">'+escA(s.seccion||"Servicios")+' · '+escA(s.valor||"")+'</div></div>'
-            + '<button class="del" type="button">Quitar</button></div>'
-          ).join("")
-        : '<p style="font-family:var(--sans);font-size:.72rem;color:var(--ink-faint);margin:0 0 8px">Sin servicios cargados.</p>')
-      + '<div class="fecha-add">'
-      + '<input name="seccion" placeholder="Sección (ej: Recolección de residuos)">'
-      + '<input name="clave" placeholder="Barrio / ítem (ej: Centro)">'
-      + '<input name="valor" placeholder="Horario o dato (ej: martes y viernes)">'
-      + '<button class="btn-mini" style="width:100%;background:var(--barrio);color:#fff;border-color:var(--barrio)" data-add-svc="'+escA(institucionId)+'">+ Agregar servicio</button>'
-      + '</div>'
-      + '<p class="err-msg hide" id="svcErr-'+escA(institucionId)+'" style="margin-top:8px"></p>';
+      + 'Horarios fijos (recolección por barrio, turnos, etc.). No salen como comunicados: viven en la ficha, con buscador para el vecino.</p>'
+      + '<div class="svc-chips">' + chips + '</div>'
+      + panelActivoHtml;
 
-    panel.querySelectorAll(".fecha-row .del").forEach(btn=>{
+    // tocar un chip existente: solo cambia cuál está a la vista, no guarda nada
+    panel.querySelectorAll(".svc-chip[data-sec]").forEach(chip=>{
+      chip.addEventListener("click", ()=>{
+        cargarServiciosDe(institucionId, panel, inst || { servicios }, chip.getAttribute("data-sec"));
+      });
+    });
+    // "+ Nuevo servicio": pide el nombre una sola vez y lo deja activo, vacío, listo para cargar
+    const btnNuevo = document.getElementById("svcChipNuevo-"+institucionId);
+    if(btnNuevo){
+      btnNuevo.addEventListener("click", ()=>{
+        const nombre = (prompt("¿Cómo se llama el servicio? (ej: Recolección de residuos)")||"").trim();
+        if(!nombre) return;
+        cargarServiciosDe(institucionId, panel, inst || { servicios }, nombre);
+      });
+    }
+    // quitar una entrada puntual
+    panel.querySelectorAll(".fila-existente .quitar").forEach(btn=>{
       btn.addEventListener("click", async ()=>{
-        const i = parseInt(btn.closest(".fecha-row").getAttribute("data-svc-i"), 10);
+        const i = parseInt(btn.closest(".fila-existente").getAttribute("data-svc-i"), 10);
         const next = servicios.slice();
         next.splice(i, 1);
         btn.disabled = true;
         const { error } = await sb.from("instituciones").update({ servicios: next }).eq("id", institucionId);
-        if(error){
-          toast("No se pudo guardar. ¿Agregaste la columna servicios? " + error.message);
-          btn.disabled = false;
-          return;
-        }
+        if(error){ toast("No se pudo guardar. ¿Agregaste la columna servicios? " + error.message); btn.disabled = false; return; }
         toast("Servicio quitado");
-        // refrescar inst en data
         if(inst) inst.servicios = next;
-        cargarServiciosDe(institucionId, panel, inst || { servicios: next });
+        cargarServiciosDe(institucionId, panel, inst || { servicios: next }, activa);
       });
     });
-    panel.querySelector("[data-add-svc]").addEventListener("click", async (e)=>{
-      const btn = e.target;
-      const seccion = panel.querySelector('[name="seccion"]').value.trim() || "Servicios";
-      const clave = panel.querySelector('[name="clave"]').value.trim();
-      const valor = panel.querySelector('[name="valor"]').value.trim();
-      const err = document.getElementById("svcErr-"+institucionId);
-      if(err) err.classList.add("hide");
-      if(!clave || !valor){ toast("Completá el barrio/ítem y el horario o dato."); return; }
-      const next = servicios.concat([{ seccion, clave, valor }]);
-      btn.disabled = true;
-      const { error } = await sb.from("instituciones").update({ servicios: next }).eq("id", institucionId);
-      btn.disabled = false;
-      if(error){
-        toast("No se pudo guardar servicios: " + error.message);
-        if(err){
-          err.textContent = "En Supabase corré: alter table instituciones add column if not exists servicios jsonb default '[]'::jsonb;";
-          err.classList.remove("hide");
+    // agregar una entrada a la sección activa — queda todo listo para cargar la siguiente al toque
+    const btnAgregar = panel.querySelector(".fila-agregar .agregar");
+    if(btnAgregar){
+      const hacerAlta = async ()=>{
+        const clave = panel.querySelector('.fila-agregar [name="clave"]').value.trim();
+        const valor = panel.querySelector('.fila-agregar [name="valor"]').value.trim();
+        const err = document.getElementById("svcErr-"+institucionId);
+        if(err) err.classList.add("hide");
+        if(!clave || !valor){ toast("Completá el barrio/ítem y el horario o dato."); return; }
+        const next = servicios.concat([{ seccion: activa, clave, valor }]);
+        btnAgregar.disabled = true;
+        const { error } = await sb.from("instituciones").update({ servicios: next }).eq("id", institucionId);
+        btnAgregar.disabled = false;
+        if(error){
+          toast("No se pudo guardar servicios: " + error.message);
+          if(err){
+            err.textContent = "En Supabase corré: alter table instituciones add column if not exists servicios jsonb default '[]'::jsonb;";
+            err.classList.remove("hide");
+          }
+          return;
         }
-        return;
-      }
-      toast("Servicio agregado ✓");
-      if(inst) inst.servicios = next;
-      cargarServiciosDe(institucionId, panel, inst || { servicios: next });
-    });
+        toast("Agregado ✓");
+        if(inst) inst.servicios = next;
+        cargarServiciosDe(institucionId, panel, inst || { servicios: next }, activa);
+      };
+      btnAgregar.addEventListener("click", hacerAlta);
+      // enter en "horario" también agrega — así se cargan varios barrios seguidos sin tocar el mouse
+      const inputValor = panel.querySelector('.fila-agregar [name="valor"]');
+      if(inputValor) inputValor.addEventListener("keydown", (e)=>{ if(e.key === "Enter"){ e.preventDefault(); hacerAlta(); } });
+    }
   }
 
   async function revisarFechasVencidas(){

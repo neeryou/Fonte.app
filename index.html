@@ -495,12 +495,21 @@
   .urg-card.oficial .inst-pill{ border-color:color-mix(in srgb,var(--barrio) 35%,var(--line)); }
   .svc-search{ width:100%; font-family:var(--sans); font-size:.8rem; color:var(--ink); background:var(--paper);
     border:1px solid var(--line-strong); border-radius:10px; padding:10px 12px; margin:8px 0 10px; }
-  .svc-item{ display:flex; justify-content:space-between; gap:10px; padding:9px 0; border-top:.5px solid var(--line); }
-  .svc-item:first-of-type{ border-top:0; }
-  .svc-item .k{ font-family:var(--sans); font-weight:700; font-size:.82rem; color:var(--ink); }
-  .svc-item .v{ font-family:var(--mono); font-size:.72rem; color:var(--ink-soft); text-align:right; white-space:nowrap; }
-  .svc-sec-title{ font-family:var(--sans); font-size:.58rem; font-weight:800; text-transform:uppercase; letter-spacing:.1em;
-    color:var(--ink-faint); margin:14px 0 4px; }
+  .svc-card{ background:var(--paper-2); border-radius:12px; margin-bottom:9px; overflow:hidden; }
+  .svc-card-head{ display:flex; align-items:center; gap:10px; padding:11px 13px; cursor:pointer; border:0; background:none; width:100%; text-align:left; font-family:var(--sans); }
+  .svc-card-head .ic{ font-size:1.1rem; flex:0 0 auto; }
+  .svc-card-head .nom{ font-weight:700; font-size:.84rem; flex:1; color:var(--ink); }
+  .svc-card-head .cant{ font-size:.66rem; color:var(--ink-faint); flex:0 0 auto; }
+  .svc-card-head .fle{ color:var(--ink-faint); font-size:.75rem; flex:0 0 auto; transition:transform .2s; }
+  .svc-card.abierta .svc-card-head .fle{ transform:rotate(180deg); }
+  .svc-card-body{ padding:0 13px 11px; display:none; }
+  .svc-card.abierta .svc-card-body{ display:block; }
+  .svc-fila{ display:flex; justify-content:space-between; gap:10px; padding:8px 0; border-top:.5px solid var(--line); }
+  .svc-fila:first-child{ border-top:0; }
+  .svc-fila .b{ font-family:var(--sans); font-size:.8rem; font-weight:600; color:var(--ink); }
+  .svc-fila .h{ font-family:var(--mono); font-size:.72rem; color:var(--ink-soft); text-align:right; white-space:nowrap; }
+  .svc-fila.oculta{ display:none; }
+  .svc-fila.match .b{ background:#FFE8A3; border-radius:3px; padding:0 3px; }
   .urg-card .x{ position:absolute; top:9px; right:9px; background:none; border:0; color:var(--ink-faint); font-size:.8rem; padding:2px 4px; }
   /* comunicado oficial (no urgente): misma tarjeta, sin rojo */
   .urg-card.oficial{ background:color-mix(in srgb,var(--barrio) 6%,var(--paper-2));
@@ -2634,6 +2643,20 @@
 
   // ================= INSTITUCIONES Y SERVICIOS VERIFICADOS =================
   const ICONS_INST = { salud:"🏥", social:"📦", municipio:"🏛️", seguridad:"🚓", educacion:"🏫", cultura:"🎭", deporte:"⚽", otro:"📍" };
+  // ícono aproximado para el nombre libre de un servicio ("Recolección de residuos", "Turnos", etc.)
+  function iconoServicio(nombre){
+    const n = (nombre||"").toLowerCase();
+    if(/residuo|basura|recolecci/.test(n)) return "🗑️";
+    if(/turno|consulta|atenci[oó]n m[eé]dica/.test(n)) return "🏥";
+    if(/agua/.test(n)) return "🚰";
+    if(/luz|el[eé]ctric/.test(n)) return "💡";
+    if(/gas/.test(n)) return "🔥";
+    if(/vacun/.test(n)) return "💉";
+    if(/escuela|clase|inscripci/.test(n)) return "🏫";
+    if(/bus|colectivo|transporte/.test(n)) return "🚌";
+    if(/tr[aá]mite|documento/.test(n)) return "📄";
+    return "🔧";
+  }
   // Sigla de dos letras a partir del nombre: se lee igual en cualquier celular
   // y queda más serio que un emoji, que cada teléfono dibuja distinto.
   function siglaDe(nombre){
@@ -2780,21 +2803,25 @@
     }catch(e){ servicios = []; }
     if(servicios.length){
       const porSec = {};
+      const ordenSec = [];
       servicios.forEach(s=>{
         const sec = (s.seccion||"Servicios").trim() || "Servicios";
-        if(!porSec[sec]) porSec[sec] = [];
+        if(!porSec[sec]){ porSec[sec] = []; ordenSec.push(sec); }
         porSec[sec].push(s);
       });
       html += '<div class="ficha-sec" id="serviciosFicha"><div class="h">Horarios y servicios</div>';
-      html += '<input class="svc-search" id="svcBuscar" type="search" placeholder="Buscar barrio o servicio…" autocomplete="off">';
+      html += '<input class="svc-search" id="svcBuscar" type="search" placeholder="Buscá tu barrio o un servicio…" autocomplete="off">';
       html += '<div id="svcLista">';
-      Object.keys(porSec).forEach(sec=>{
-        html += '<div class="svc-grupo" data-sec="'+esc(sec)+'"><div class="svc-sec-title">'+esc(sec)+'</div>';
+      ordenSec.forEach((sec, iSec)=>{
+        html += '<div class="svc-card" data-sec-i="'+iSec+'">'
+          + '<button type="button" class="svc-card-head"><span class="ic">'+iconoServicio(sec)+'</span>'
+          + '<span class="nom">'+esc(sec)+'</span><span class="cant">'+porSec[sec].length+'</span><span class="fle">▾</span></button>'
+          + '<div class="svc-card-body">';
         porSec[sec].forEach(s=>{
-          html += '<div class="svc-item" data-q="'+esc(((s.clave||"")+" "+(s.valor||"")+" "+sec).toLowerCase())+'">'
-            + '<span class="k">'+esc(s.clave||"")+'</span><span class="v">'+esc(s.valor||"")+'</span></div>';
+          html += '<div class="svc-fila" data-q="'+esc(((s.clave||"")+" "+(s.valor||"")+" "+sec).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,""))+'">'
+            + '<span class="b">'+esc(s.clave||"")+'</span><span class="h">'+esc(s.valor||"")+'</span></div>';
         });
-        html += '</div>';
+        html += '</div></div>';
       });
       html += '</div></div>';
     }
@@ -2805,17 +2832,24 @@
     if(inst.link_url) contact += '<div>🔗 <a href="'+esc(inst.link_url)+'" target="_blank" rel="noopener">Más información</a></div>';
     if(contact) html += '<div class="ficha-contact">'+contact+'</div>';
     document.getElementById("institucionBody").innerHTML = html;
+    document.querySelectorAll("#svcLista .svc-card-head").forEach(cab=>{
+      cab.addEventListener("click", ()=>{ cab.closest(".svc-card").classList.toggle("abierta"); });
+    });
     const svcBuscar = document.getElementById("svcBuscar");
     if(svcBuscar){
       svcBuscar.addEventListener("input", ()=>{
         const q = (svcBuscar.value||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim();
-        document.querySelectorAll("#svcLista .svc-item").forEach(it=>{
-          const hay = (it.getAttribute("data-q")||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"");
-          it.style.display = (!q || hay.includes(q)) ? "" : "none";
-        });
-        document.querySelectorAll("#svcLista .svc-grupo").forEach(g=>{
-          const visibles = [...g.querySelectorAll(".svc-item")].some(it=> it.style.display !== "none");
-          g.style.display = visibles ? "" : "none";
+        document.querySelectorAll("#svcLista .svc-card").forEach(card=>{
+          let algunaCoincide = false;
+          card.querySelectorAll(".svc-fila").forEach(fila=>{
+            const hay = (fila.getAttribute("data-q")||"");
+            const coincide = !q || hay.includes(q);
+            fila.classList.toggle("oculta", !coincide);
+            fila.classList.toggle("match", !!q && coincide);
+            if(coincide) algunaCoincide = true;
+          });
+          card.style.display = algunaCoincide ? "" : "none";
+          card.classList.toggle("abierta", !!q && algunaCoincide);
         });
       });
     }
