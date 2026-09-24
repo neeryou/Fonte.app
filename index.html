@@ -362,6 +362,33 @@
   /* ===== instituciones y servicios verificados ===== */
   .inst-row{ display:flex; gap:9px; overflow-x:auto; scrollbar-width:none; padding:2px 0 2px; }
   .inst-row::-webkit-scrollbar{ display:none; }
+
+  /* ===== instituciones en Ciudad: riel ocultable ===== */
+  .inst-home{ margin:6px 16px 2px; }
+  .inst-home-bar{ width:100%; display:flex; align-items:center; justify-content:space-between; gap:8px;
+    background:none; border:0; padding:4px 0 2px; cursor:pointer; color:var(--ink); }
+  .inst-home-bar .l{ font-family:var(--sans); font-size:.62rem; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-faint); }
+  .inst-home-bar .ch{ width:22px; height:22px; border:1px solid var(--line-strong); border-radius:999px;
+    display:flex; align-items:center; justify-content:center; font-size:.62rem; color:var(--ink-faint); line-height:1; }
+  .inst-home.open .inst-home-bar .ch{ transform:rotate(180deg); border-color:var(--ink); color:var(--ink); }
+  .inst-home.forzada .inst-home-bar .l{ color:var(--urgente); }
+  .inst-home-list{ display:none; gap:8px; overflow-x:auto; scrollbar-width:none; padding:6px 0 8px; -webkit-overflow-scrolling:touch; }
+  .inst-home-list::-webkit-scrollbar{ display:none; }
+  .inst-home.open .inst-home-list{ display:flex; }
+  .inst-pill{ flex:0 0 auto; display:flex; align-items:center; gap:8px; padding:7px 10px 7px 7px;
+    border:1px solid var(--line-strong); border-radius:10px; background:var(--paper); position:relative; }
+  .inst-pill .sg{ width:28px; height:28px; border-radius:3px; background:var(--region); color:#fff;
+    display:flex; align-items:center; justify-content:center; font-family:var(--mono); font-size:.58rem; font-weight:700; }
+  .inst-pill .nm{ font-family:var(--sans); font-size:.72rem; font-weight:700; color:var(--ink); white-space:nowrap; max-width:110px; overflow:hidden; text-overflow:ellipsis; }
+  .inst-pill .dot{ width:8px; height:8px; border-radius:50%; background:var(--urgente); position:absolute; top:5px; right:5px; }
+  .inst-pill.urgente{ border-color:var(--urgente); background:color-mix(in srgb,var(--urgente) 8%,var(--paper)); }
+  .inst-pill.urgente .sg{ background:var(--urgente); }
+  .inst-home-hint{ display:none; font-family:var(--sans); font-size:.62rem; color:var(--ink-faint); padding:0 0 6px; }
+  .inst-home.open .inst-home-hint{ display:block; }
+  .btn-seguir{ font-family:var(--sans); font-size:.72rem; font-weight:700; padding:8px 12px; border-radius:8px;
+    border:1px solid var(--line-strong); background:var(--paper); color:var(--ink); width:100%; margin-top:10px; }
+  .btn-seguir.on{ background:var(--ink); color:var(--paper); border-color:var(--ink); }
+
   .inst-chip{ flex:0 0 auto; display:flex; align-items:center; gap:7px; background:var(--surface);
     border:.5px solid var(--line-strong); border-radius:2px; padding:6px 11px 6px 7px; }
   .inst-chip .ic{ width:24px; height:24px; border-radius:2px; background:var(--region); color:#fff;
@@ -872,6 +899,14 @@
 
 <div class="riel-marco" id="rielMarco">
 <div id="panelCiudad">
+  <div class="inst-home" id="institucionesWrap" style="display:none">
+    <button type="button" class="inst-home-bar" id="instHomeBtn" aria-expanded="false">
+      <span class="l" id="instHomeSub">Oficial</span>
+      <span class="ch" id="instHomeCh">▾</span>
+    </button>
+    <div class="inst-home-list" id="institucionesRow"></div>
+    <div class="inst-home-hint">Tocá una · horarios y avisos · deslizá si hay más</div>
+  </div>
   <div id="urgentesWrap" style="display:none">
     <div class="urg-row" id="urgRow"></div>
     <div class="dots" id="urgDots"></div>
@@ -2728,31 +2763,58 @@
     }catch(e){ INSTITUCIONES = []; FECHAS_INST = []; }
     pintarInstituciones();
   }
+  function instSeguidas(){
+    try{ return JSON.parse(localStorage.getItem("fonte_inst_notif")||"[]"); }catch(e){ return []; }
+  }
+  function instSeguirToggle(id){
+    const s = instSeguidas().map(String);
+    const i = String(id);
+    const next = s.includes(i) ? s.filter(x=>x!==i) : s.concat(i);
+    localStorage.setItem("fonte_inst_notif", JSON.stringify(next));
+    return next.includes(i);
+  }
   function pintarInstituciones(){
-    // La fila en Inicio se sacó (ahora ese lugar es de "Avisos de vecinos"); las instituciones
-    // se siguen cargando igual porque las usan Alertas, el buscador y la ficha de cada una.
     const wrap = document.getElementById("institucionesWrap");
     if(!wrap) return;
     if(!INSTITUCIONES.length){ wrap.style.display = "none"; return; }
     wrap.style.display = "block";
+    let hayUrgente = false;
     document.getElementById("institucionesRow").innerHTML =
       INSTITUCIONES.map(i => {
         const propios = comunicadosDe(i.id);
         const vistos = comunicadosVistos();
         const sinLeer = propios.filter(c=>!vistos.has(String(c.id))).length;
-        // Urgente que sigue vigente y todavía no se descartó del todo
         const urgPendiente = propios.some(c=> c.urgente && !urgenteDescartado(c.id));
-        return '<a class="inst-chip'+(urgPendiente?" destacada":"")+'" data-inst-id="'+esc(i.id)+'">'
-          + '<span class="ic">'+siglaDe(i.nombre)+'</span><span class="nm">'+esc(i.nombre)+'</span>'
-          + (urgPendiente ? '<span class="punto-urg" title="Tiene un aviso urgente"></span>' : '')
-          + (sinLeer ? '<span class="badge">'+sinLeer+'</span>' : '') + '</a>';
-      }).join("")
-      + (FECHAS_INST.length ? '<a class="inst-more" id="verFechasBtn">📅 Próximas fechas ›</a>' : "");
-    document.querySelectorAll(".inst-chip").forEach(el=>{
+        if(urgPendiente) hayUrgente = true;
+        const hayCom = propios.length > 0 && (sinLeer > 0 || urgPendiente);
+        const nombreCorto = (i.nombre||"").replace(/^Municipalidad de\s+/i,"").replace(/^Hospital\s+/i,"Hospital ");
+        return '<button type="button" class="inst-pill'+(urgPendiente?" urgente":"")+'" data-inst-id="'+esc(i.id)+'">'
+          + '<span class="sg">'+siglaDe(i.nombre)+'</span>'
+          + '<span class="nm">'+esc(nombreCorto)+'</span>'
+          + ((hayCom || urgPendiente) ? '<span class="dot"></span>' : '')
+          + '</button>';
+      }).join("");
+    document.querySelectorAll("#institucionesRow .inst-pill").forEach(el=>{
       el.addEventListener("click", ()=> abrirInstitucion(el.getAttribute("data-inst-id")));
     });
-    const vf = document.getElementById("verFechasBtn");
-    if(vf) vf.addEventListener("click", abrirProximasFechas);
+    const btn = document.getElementById("instHomeBtn");
+    const sub = document.getElementById("instHomeSub");
+    if(hayUrgente){
+      wrap.classList.add("open","forzada");
+      if(btn) btn.setAttribute("aria-expanded","true");
+      if(sub) sub.textContent = "Oficial · urgente";
+    } else {
+      wrap.classList.remove("forzada");
+      if(sub) sub.textContent = "Oficial";
+    }
+    if(btn && !btn.dataset.bound){
+      btn.dataset.bound = "1";
+      btn.addEventListener("click", ()=>{
+        if(wrap.classList.contains("forzada")) return; // urgente: se queda abierto
+        wrap.classList.toggle("open");
+        btn.setAttribute("aria-expanded", wrap.classList.contains("open") ? "true" : "false");
+      });
+    }
   }
   function abrirInstitucion(id){
     const inst = INSTITUCIONES.find(x=>String(x.id)===String(id));
@@ -2763,6 +2825,10 @@
     let html = '<div class="ficha-head"><span class="ic">'+(ICONS_INST[inst.tipo]||"📍")+'</span>'
       + '<div><div class="nm">'+esc(inst.nombre)+'</div><div class="sub"><span class="verif-badge" style="background:var(--barrio);width:14px;height:14px"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Institución verificada</div></div></div>';
     if(inst.descripcion) html += '<div class="ficha-desc">'+esc(inst.descripcion)+'</div>';
+    const sigue = instSeguidas().map(String).includes(String(inst.id));
+    html += '<button type="button" class="btn-seguir'+(sigue?" on":"")+'" id="btnSeguirInst" data-id="'+esc(inst.id)+'">'
+      + (sigue ? "✓ Te avisamos de esta institución" : "Avisarme de esta institución")
+      + '</button>';
     if(proxima){
       const f = fmtFecha(proxima.fecha);
       html += '<div class="date-box"><div class="lbl">'+esc(proxima.titulo)+' <span class="cd">'+diasHasta(proxima.fecha)+'</span></div>'
@@ -2832,6 +2898,14 @@
     if(inst.link_url) contact += '<div>🔗 <a href="'+esc(inst.link_url)+'" target="_blank" rel="noopener">Más información</a></div>';
     if(contact) html += '<div class="ficha-contact">'+contact+'</div>';
     document.getElementById("institucionBody").innerHTML = html;
+    const btnSeg = document.getElementById("btnSeguirInst");
+    if(btnSeg){
+      btnSeg.addEventListener("click", ()=>{
+        const on = instSeguirToggle(btnSeg.getAttribute("data-id"));
+        btnSeg.classList.toggle("on", on);
+        btnSeg.textContent = on ? "✓ Te avisamos de esta institución" : "Avisarme de esta institución";
+      });
+    }
     document.querySelectorAll("#svcLista .svc-card-head").forEach(cab=>{
       cab.addEventListener("click", ()=>{ cab.closest(".svc-card").classList.toggle("abierta"); });
     });
