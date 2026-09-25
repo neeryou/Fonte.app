@@ -387,6 +387,11 @@
   .inst-home.open .inst-home-hint{ display:block; }
   .btn-seguir{ font-family:var(--sans); font-size:.72rem; font-weight:700; padding:8px 12px; border-radius:8px;
     border:1px solid var(--line-strong); background:var(--paper); color:var(--ink); width:100%; margin-top:10px; }
+
+  .sello-oficial{ margin-top:16px; padding:10px 12px; border:1px solid var(--barrio);
+    border-radius:8px; font-family:var(--sans); font-size:.72rem; font-weight:700;
+    color:var(--barrio); letter-spacing:.02em; }
+
   .btn-seguir.on{ background:var(--ink); color:var(--paper); border-color:var(--ink); }
 
   .inst-chip{ flex:0 0 auto; display:flex; align-items:center; gap:7px; background:var(--surface);
@@ -1039,7 +1044,8 @@
     <div id="comunicadoVideo" style="display:none;margin:14px 0;border-radius:10px;overflow:hidden;aspect-ratio:16/9"></div>
     <button class="act-btn ghost" id="comunicadoCompartirBtn" style="width:100%;margin-top:16px">↗ Compartir</button>
     <a class="verorig" id="comunicadoFichaLink" style="display:none;width:100%;justify-content:center;margin-top:10px">Ver ficha de la institución ↗</a>
-    <div class="foot-note" style="margin-top:14px">Contenido publicado directamente por la institución, marcado como tal — no es una nota de Fonte.</div>
+    <div class="sello-oficial" id="comunicadoSello">Texto de la institución · Fonte no lo reescribe</div>
+    <div class="foot-note" style="margin-top:10px">Este aviso sale tal cual lo cargó la institución verificada. No pasa por el resumen automático. La versión que vale es este enlace.</div>
   </div>
 </div>
 
@@ -1987,10 +1993,14 @@
     const partes = [];
     // Aclaramos arriba de todo qué es, para que nadie lo confunda con una noticia.
     if(n.__tipo === "o") partes.push("🏷️ ESPACIO DE UN COMERCIO", "");
-    else if(n.__tipo === "c") partes.push("📢 COMUNICADO OFICIAL", "");
+    else if(n.__tipo === "c") partes.push("📢 COMUNICADO OFICIAL", "Fonte no reescribe este texto.", "");
     partes.push(n.titulo || "");
     const resumen = n.resumen_corto || n.resumen_extendido || "";
-    if(resumen) partes.push("", resumen.length > 220 ? resumen.slice(0,220).trim() + "…" : resumen);
+    if(n.__tipo === "c"){
+      if(resumen) partes.push("", resumen); // texto completo, no recortado: es el original
+    } else if(resumen){
+      partes.push("", resumen.length > 220 ? resumen.slice(0,220).trim() + "…" : resumen);
+    }
     if(n.dato_extra) partes.push("", "📌 " + n.dato_extra);
     if(n.accion_etiqueta && n.accion_url) partes.push("", "📎 " + n.accion_etiqueta + " → " + n.accion_url);
     if(n.fuente_etiqueta) partes.push("", "Fuente: " + n.fuente_etiqueta);
