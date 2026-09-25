@@ -2173,6 +2173,61 @@
     c.width = W; c.height = H;
     const ctx = c.getContext("2d");
 
+    // Comunicado oficial: placa propia (copia la página, no el molde de nota)
+    if(n.__tipo === "c"){
+      const TINTA = "#16140F", PAPEL = "#FDFCF9", VERDE = "#22503A";
+      ctx.fillStyle = PAPEL; ctx.fillRect(0,0,W,H);
+      ctx.fillStyle = TINTA;
+      ctx.font = "400 72px 'Alfa Slab One',Georgia,serif";
+      ctx.fillText("Fonte", 80, 160);
+      const wm = ctx.measureText("Fonte").width;
+      ctx.fillStyle = "#8A8478";
+      ctx.font = "600 28px 'Work Sans',sans-serif";
+      ctx.fillText("fuente directa", 80 + wm + 18, 150);
+
+      const inst = (n.lugar || n.fuente_etiqueta || "Institución").trim();
+      const sigla = (typeof siglaDe === "function") ? siglaDe(inst) : inst.slice(0,2).toUpperCase();
+      ctx.fillStyle = "rgba(34,80,58,.12)";
+      ctx.beginPath(); ctx.roundRect(80, 200, W-160, 70, 35); ctx.fill();
+      ctx.fillStyle = VERDE;
+      ctx.beginPath(); ctx.arc(118, 235, 16, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = "#fff"; ctx.font = "800 22px 'Work Sans',sans-serif";
+      ctx.fillText("✓", 110, 243);
+      ctx.fillStyle = VERDE; ctx.font = "700 28px 'Work Sans',sans-serif";
+      const chip = inst + " · sello administrado por Fonte";
+      ctx.fillText(chip.length>42 ? inst : chip, 148, 244);
+
+      ctx.fillStyle = TINTA; ctx.font = "700 78px 'Fraunces',Georgia,serif";
+      const tit = envolver(ctx, n.titulo || "", W-160, 4);
+      tit.forEach((l,i)=> ctx.fillText(l, 80, 360 + i*88));
+      const yLinea = 360 + tit.length*88 + 10;
+      ctx.strokeStyle = TINTA; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(80, yLinea); ctx.lineTo(W-80, yLinea); ctx.stroke();
+
+      const cuerpo = (n.resumen_corto || "").trim();
+      ctx.fillStyle = TINTA; ctx.font = "500 36px 'Work Sans',sans-serif";
+      const lineas = envolver(ctx, cuerpo, W-160, 10);
+      lineas.forEach((l,i)=> ctx.fillText(l, 80, yLinea + 60 + i*48));
+
+      const ySello = H - 340;
+      ctx.strokeStyle = TINTA; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(80, ySello-24); ctx.lineTo(W-80, ySello-24); ctx.stroke();
+      ctx.fillStyle = VERDE; ctx.fillRect(80, ySello, 88, 88);
+      ctx.fillStyle = "#fff"; ctx.font = "700 32px 'Fraunces',Georgia,serif";
+      ctx.textAlign = "center";
+      ctx.fillText(sigla.slice(0,3), 124, ySello + 54);
+      ctx.textAlign = "left";
+      ctx.fillStyle = TINTA; ctx.font = "700 30px 'Work Sans',sans-serif";
+      ctx.fillText("Texto de la institución · no editado", 188, ySello + 38);
+      ctx.fillStyle = "#6B665C"; ctx.font = "600 26px 'Work Sans',sans-serif";
+      ctx.fillText(inst + " · sello Fonte", 188, ySello + 74);
+
+      ctx.fillStyle = "#8A8478"; ctx.font = "600 26px 'Work Sans',sans-serif";
+      const link = (typeof urlDe === "function") ? urlDe(n, "c").replace(/^https?:\/\//,"") : "fonte.city/?c=" + (n.id||"");
+      ctx.fillText(link.replace(/^https?:\/\//,""), 80, H-80);
+      return new Promise(res=> c.toBlob(res, "image/jpeg", 0.92));
+    }
+
     const urgente = !!n.urgente;
     const lista = (typeof fotosDe === "function") ? fotosDe(n) : (n.imagen_url ? [n.imagen_url] : []);
     // Probamos hasta 2 URLs: en Más noticias a veces la 1ª falla por CORS del host
