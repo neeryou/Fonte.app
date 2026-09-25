@@ -365,12 +365,12 @@
 
   /* ===== instituciones en Ciudad: riel ocultable ===== */
   .inst-home{ margin:6px 16px 2px; }
-  .inst-home-bar{ width:100%; display:flex; align-items:center; justify-content:space-between; gap:8px;
-    background:none; border:0; padding:4px 0 2px; cursor:pointer; color:var(--ink); }
+  .inst-home-bar{ width:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px;
+    background:none; border:0; padding:6px 0 2px; cursor:pointer; color:var(--ink); }
   .inst-home-bar .l{ font-family:var(--sans); font-size:.62rem; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-faint); }
-  .inst-home-bar .ch{ width:22px; height:22px; border:1px solid var(--line-strong); border-radius:999px;
-    display:flex; align-items:center; justify-content:center; font-size:.62rem; color:var(--ink-faint); line-height:1; }
-  .inst-home.open .inst-home-bar .ch{ transform:rotate(180deg); border-color:var(--ink); color:var(--ink); }
+  .inst-home-bar .ch{ width:24px; height:24px; border:1.5px solid var(--urgente); border-radius:999px;
+    display:flex; align-items:center; justify-content:center; font-size:.7rem; color:var(--urgente); line-height:1; background:color-mix(in srgb,var(--urgente) 8%,var(--paper)); }
+  .inst-home.open .inst-home-bar .ch{ transform:rotate(180deg); border-color:var(--urgente); color:#fff; background:var(--urgente); }
   .inst-home.forzada .inst-home-bar .l{ color:var(--urgente); }
   .inst-home-list{ display:none; gap:8px; overflow-x:auto; scrollbar-width:none; padding:6px 0 8px; -webkit-overflow-scrolling:touch; }
   .inst-home-list::-webkit-scrollbar{ display:none; }
@@ -505,14 +505,17 @@
   .instalar .pasos b{ color:#fff; }
 
   /* ===== avisos urgentes deslizables ===== */
-  .urg-row{ display:flex; gap:9px; overflow-x:auto; padding:12px 18px 2px; scrollbar-width:none; scroll-snap-type:x mandatory; }
+  .urg-row{ display:flex; gap:8px; overflow-x:auto; padding:10px 16px 2px; scrollbar-width:none; scroll-snap-type:x mandatory; }
   .urg-row::-webkit-scrollbar{ display:none; }
-  .urg-card{ flex:0 0 auto; width:87%; scroll-snap-align:center; background:color-mix(in srgb,var(--urgente) 6%,var(--paper-2));
-    border:1px solid color-mix(in srgb,var(--urgente) 30%,var(--line)); border-radius:13px; padding:12px 13px; position:relative; }
+  .urg-card{ flex:0 0 auto; width:calc(50% - 12px); min-width:148px; scroll-snap-align:start; background:color-mix(in srgb,var(--urgente) 6%,var(--paper-2));
+    border:1px solid color-mix(in srgb,var(--urgente) 30%,var(--line)); border-radius:11px; padding:9px 10px 10px; position:relative; }
   .urg-card .lbl{ display:inline-flex; align-items:center; gap:4px; background:var(--urgente); color:#fff;
-    font-family:var(--sans); font-size:.54rem; font-weight:800; text-transform:uppercase; letter-spacing:.05em; padding:3px 8px; border-radius:999px; }
-  .urg-card .h{ font-family:var(--serif); font-weight:700; font-size:.95rem; margin-top:8px; line-height:1.24; color:var(--ink); }
-  .urg-card .p{ font-family:var(--sans); font-size:.74rem; color:var(--ink-soft); margin-top:4px; line-height:1.4; }
+    font-family:var(--sans); font-size:.5rem; font-weight:800; text-transform:uppercase; letter-spacing:.05em; padding:2px 7px; border-radius:999px; }
+  .urg-card .urg-thumb{ width:100%; height:72px; object-fit:cover; border-radius:7px; margin-top:7px; display:block; }
+  .urg-card .h{ font-family:var(--serif); font-weight:700; font-size:.78rem; margin-top:6px; line-height:1.22; color:var(--ink);
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .urg-card .p{ font-family:var(--sans); font-size:.66rem; color:var(--ink-soft); margin-top:3px; line-height:1.3;
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
   .urg-card .f{ font-family:var(--sans); font-size:.61rem; color:var(--ink-faint); margin-top:7px; display:flex; align-items:center; gap:5px; flex-wrap:wrap; }
   .urg-card .f .verif-badge{ width:13px; height:13px; background:var(--barrio); }
   .urg-card .inst-pill{
@@ -741,6 +744,46 @@
   .act-btn.primary{ background:var(--barrio); color:#fff; }
   .act-btn.ghost{ border:1px solid var(--line-strong); color:var(--ink-soft); background:none; }
   .disclosure{ font-family:var(--sans); font-size:.66rem; color:var(--ink-faint); margin-top:16px; padding-top:12px; border-top:1px solid var(--line); }
+
+
+  /* ===== páginas oficiales (comunicado + institución) ===== */
+  .sheet2.pagina{ max-height:96vh; border-radius:16px 16px 0 0; }
+  .sheet2.pagina .sheet2-top{ border-bottom:.5px solid var(--ink); padding:12px 20px 10px; }
+  .sheet2.pagina .sheet2-body{ padding:18px 22px 40px; }
+  .com-marca{ font-family:var(--serif); font-weight:700; font-size:1.55rem; letter-spacing:-.03em; color:var(--ink); }
+  .com-marca em{ font-style:normal; font-family:var(--sans); font-size:.68rem; font-weight:600; letter-spacing:.04em;
+    color:var(--ink-faint); margin-left:8px; }
+  .com-chip{ display:inline-flex; align-items:center; gap:7px; margin:14px 0 16px; padding:7px 12px;
+    background:color-mix(in srgb,var(--barrio) 12%,var(--paper)); border-radius:999px;
+    font-family:var(--sans); font-size:.72rem; font-weight:600; color:var(--barrio); }
+  .com-tit{ font-family:var(--serif); font-weight:700; font-size:1.55rem; line-height:1.18; letter-spacing:-.03em;
+    color:var(--ink); margin:0 0 14px; padding-bottom:14px; border-bottom:.5px solid var(--ink); }
+  .com-cuerpo{ font-family:var(--sans); font-size:.95rem; line-height:1.55; color:var(--ink); margin:0 0 16px; white-space:pre-wrap; }
+  .com-foto{ display:none; width:100%; max-height:220px; object-fit:cover; border-radius:4px; margin:0 0 16px; }
+  .com-share{ width:100%; font-family:var(--sans); font-weight:700; font-size:.88rem; padding:12px;
+    border:1px solid var(--ink); background:none; color:var(--ink); border-radius:4px; margin:6px 0 10px; }
+  .com-ficha{ display:none; font-family:var(--sans); font-size:.8rem; font-weight:600; color:var(--ink-soft);
+    text-align:center; margin:0 0 16px; }
+  .com-sello{ display:flex; align-items:center; gap:12px; padding:14px 0; border-top:.5px solid var(--ink);
+    border-bottom:.5px solid var(--ink); }
+  .com-sello .sg{ width:44px; height:44px; background:var(--barrio); color:#fff; display:flex; align-items:center;
+    justify-content:center; font-family:var(--serif); font-weight:700; font-size:.85rem; flex:0 0 auto; }
+  .com-sello .tx{ font-family:var(--sans); font-size:.78rem; font-weight:600; color:var(--ink); line-height:1.35; }
+  .com-sello .tx small{ display:block; font-weight:500; color:var(--ink-faint); margin-top:2px; }
+  .com-link{ font-family:var(--mono); font-size:.68rem; color:var(--ink-faint); margin-top:12px; }
+
+  .pag-k{ font-family:var(--sans); font-size:.58rem; font-weight:800; letter-spacing:.16em; text-transform:uppercase; color:var(--ink-faint); }
+  .pag-nm{ font-family:var(--serif); font-weight:700; font-size:1.55rem; line-height:1.15; letter-spacing:-.03em; margin:4px 0 8px; }
+  .pag-verif{ display:inline-flex; align-items:center; gap:6px; font-family:var(--sans); font-size:.72rem; font-weight:600; color:var(--barrio); margin-bottom:14px; }
+  .pag-sec{ margin-top:22px; padding-top:12px; border-top:.5px solid var(--ink); }
+  .pag-sec .h{ font-family:var(--sans); font-size:.62rem; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:var(--ink); margin-bottom:12px; }
+  .aviso-card{ border:1px solid var(--line-strong); border-radius:8px; padding:12px 13px; margin-bottom:10px; background:var(--paper); }
+  .aviso-card .tag{ display:inline-block; font-family:var(--sans); font-size:.5rem; font-weight:800; letter-spacing:.06em;
+    text-transform:uppercase; background:var(--barrio); color:#fff; padding:2px 7px; border-radius:2px; margin-bottom:6px; }
+  .aviso-card.urg .tag{ background:var(--urgente); }
+  .aviso-card .t{ font-family:var(--serif); font-weight:700; font-size:.98rem; color:var(--ink); line-height:1.25; }
+  .aviso-card .p{ font-family:var(--sans); font-size:.78rem; color:var(--ink-soft); margin-top:5px; line-height:1.4; }
+  .aviso-card .m{ font-family:var(--sans); font-size:.62rem; color:var(--ink-faint); margin-top:8px; }
 
   /* ===== sheet 2: aporte / formulario (mismo lenguaje visual que .sheet) ===== */
   .sheet2{ position:fixed; left:0; right:0; bottom:0; z-index:200; max-width:640px; margin:0 auto; max-height:88vh;
@@ -1035,23 +1078,28 @@
 
 <!-- sheet: detalle de un comunicado oficial -->
 <div class="backdrop" id="backdropComunicado"></div>
-<div class="sheet2" id="sheetComunicado">
+<div class="sheet2 pagina" id="sheetComunicado">
   <div class="sheet2-top"><span class="b">Comunicado oficial</span><button class="close" id="closeComunicado">Cerrar ✕</button></div>
   <div class="sheet2-body">
-    <div class="kicker" id="comunicadoInst"><span class="verif-badge" style="background:var(--barrio)"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span></span></div>
-    <h3 class="h" id="comunicadoTitulo" style="margin-top:8px"></h3>
-    <p class="s-p" id="comunicadoTexto"></p>
-    <div id="comunicadoVideo" style="display:none;margin:14px 0;border-radius:10px;overflow:hidden;aspect-ratio:16/9"></div>
-    <button class="act-btn ghost" id="comunicadoCompartirBtn" style="width:100%;margin-top:16px">↗ Compartir</button>
-    <a class="verorig" id="comunicadoFichaLink" style="display:none;width:100%;justify-content:center;margin-top:10px">Ver ficha de la institución ↗</a>
-    <div class="sello-oficial" id="comunicadoSello">Texto de la institución · Fonte no lo reescribe</div>
-    <div class="foot-note" style="margin-top:10px">Este aviso sale tal cual lo cargó la institución verificada. No pasa por el resumen automático. La versión que vale es este enlace.</div>
+    <div class="com-marca">Fonte<em>fuente directa</em></div>
+    <div class="com-chip" id="comunicadoInst"><span class="verif-badge" style="background:var(--barrio);width:14px;height:14px"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span></span></div>
+    <h3 class="com-tit" id="comunicadoTitulo"></h3>
+    <img class="com-foto" id="comunicadoFoto" alt="">
+    <p class="com-cuerpo" id="comunicadoTexto"></p>
+    <div id="comunicadoVideo" style="display:none;margin:0 0 16px;border-radius:4px;overflow:hidden;aspect-ratio:16/9"></div>
+    <button class="com-share" id="comunicadoCompartirBtn">↗ Compartir</button>
+    <a class="com-ficha" id="comunicadoFichaLink">Ver página de la institución ↗</a>
+    <div class="com-sello">
+      <span class="sg" id="comunicadoSigla">FO</span>
+      <div class="tx">Texto de la institución · no editado<small id="comunicadoSelloSub">Sello administrado por Fonte</small></div>
+    </div>
+    <div class="com-link" id="comunicadoLink"></div>
   </div>
 </div>
 
 <!-- sheet: ficha de institución -->
 <div class="backdrop" id="backdropInstitucion"></div>
-<div class="sheet2" id="sheetInstitucion">
+<div class="sheet2 pagina" id="sheetInstitucion">
   <div class="sheet2-top"><span class="b">Institución verificada</span><button class="close" id="closeInstitucion">Cerrar ✕</button></div>
   <div class="sheet2-body" id="institucionBody"></div>
 </div>
@@ -2597,7 +2645,8 @@
         : '<span class="inst-pill">'+esc(nom)+(nHoy>1?' <span class="n">'+nHoy+'</span>':'')+'</span>';
       return '<div class="urg-card'+(esUrg?"":" oficial")+'" data-com-id="'+esc(c.id)+'">'
         + '<button class="x" data-cerrar="'+esc(c.id)+'" aria-label="Cerrar">✕</button>'
-        + '<span class="lbl">'+(esUrg ? "⚡ Urgente" : "Oficial")+'</span>'
+        + '<span class="lbl">'+(esUrg ? "⚡ Urgente · oficial" : "Oficial · sin edición")+'</span>'
+        + (c.imagen_url ? '<img class="urg-thumb" src="'+esc(c.imagen_url)+'" alt="">' : '')
         + '<div class="h">'+esc(c.titulo||"")+'</div>'
         + '<div class="p">'+esc((c.texto||"").length > 130 ? (c.texto||"").slice(0,130)+"…" : (c.texto||""))+'</div>'
         + '<div class="f"><span class="verif-badge">'+check+'</span>'+pill+' · '+tiempoDesde(c.created_at)+'</div>'
@@ -2646,9 +2695,22 @@
     comunicadoAbierto = c;
     marcarComunicadoVisto(id);
     if(typeof pintarInstituciones === "function") pintarInstituciones();
-    document.getElementById("comunicadoInst").querySelector("span:last-child").textContent = c.institucion || "";
+    const nomInst = c.institucion || "Institución";
+    const chip = document.getElementById("comunicadoInst");
+    chip.querySelector("span:last-child").textContent = nomInst + " · sello administrado por Fonte";
     document.getElementById("comunicadoTitulo").textContent = c.titulo || "";
     document.getElementById("comunicadoTexto").textContent = c.texto || "";
+    const sg = document.getElementById("comunicadoSigla");
+    if(sg) sg.textContent = (typeof siglaDe === "function") ? siglaDe(nomInst) : nomInst.slice(0,2).toUpperCase();
+    const sl = document.getElementById("comunicadoSelloSub");
+    if(sl) sl.textContent = nomInst + " · sello Fonte";
+    const lk = document.getElementById("comunicadoLink");
+    if(lk) lk.textContent = "fonte.city/?c=" + c.id;
+    const cf = document.getElementById("comunicadoFoto");
+    if(cf){
+      if(c.imagen_url){ cf.src = c.imagen_url; cf.style.display = "block"; }
+      else { cf.removeAttribute("src"); cf.style.display = "none"; }
+    }
     const cv = document.getElementById("comunicadoVideo");
     if(c.video_url){
       cv.style.display = "block";
@@ -2679,7 +2741,7 @@
       resumen_corto: comunicadoAbierto.texto || "",
       lugar: comunicadoAbierto.institucion || "",
       urgente: !!comunicadoAbierto.urgente,
-      imagen_url: null,
+      imagen_url: comunicadoAbierto.imagen_url || null,
       fuente_etiqueta: comunicadoAbierto.institucion || "",
     }, e.currentTarget);
   });
@@ -2832,10 +2894,11 @@
     const fechas = FECHAS_INST.filter(f=>String(f.institucion_id)===String(id));
     const proxima = fechas[0];
     const resto = fechas.slice(1);
-    let html = '<div class="ficha-head"><span class="ic">'+(ICONS_INST[inst.tipo]||"📍")+'</span>'
-      + '<div><div class="nm">'+esc(inst.nombre)+'</div><div class="sub"><span class="verif-badge" style="background:var(--barrio);width:14px;height:14px"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Institución verificada</div></div></div>';
-    if(inst.descripcion) html += '<div class="ficha-desc">'+esc(inst.descripcion)+'</div>';
     const sigue = instSeguidas().map(String).includes(String(inst.id));
+    let html = '<div class="pag-k">Fonte</div>'
+      + '<div class="pag-nm">'+esc(inst.nombre)+'</div>'
+      + '<div class="pag-verif"><span class="verif-badge" style="background:var(--barrio);width:14px;height:14px"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Institución verificada · sello Fonte</div>';
+    if(inst.descripcion) html += '<div class="ficha-desc">'+esc(inst.descripcion)+'</div>';
     html += '<button type="button" class="btn-seguir'+(sigue?" on":"")+'" id="btnSeguirInst" data-id="'+esc(inst.id)+'">'
       + (sigue ? "✓ Te avisamos de esta institución" : "Avisarme de esta institución")
       + '</button>';
@@ -2855,18 +2918,15 @@
     // Avisos recientes primero
     const comInst = comunicadosDe(id);
     if(comInst.length){
-      html += '<div class="ficha-sec"><div class="h">Avisos de hoy / recientes</div>' + comInst.slice(0,8).map(c=>{
-        const cuando = c.created_at ? new Date(c.created_at).toLocaleDateString("es-AR",{day:"numeric",month:"short"}) : "";
-        const prev = (c.texto||"").length > 110 ? (c.texto||"").slice(0,110)+"…" : (c.texto||"");
+      html += '<div class="pag-sec"><div class="h">1) Avisos recientes</div>' + comInst.slice(0,8).map(c=>{
+        const cuando = c.created_at ? new Date(c.created_at).toLocaleDateString("es-AR",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}) : "";
+        const prev = (c.texto||"").length > 140 ? (c.texto||"").slice(0,140)+"…" : (c.texto||"");
         const urgPend = c.urgente && !urgenteDescartado(c.id);
-        return '<div class="f-com'+(urgPend?" urg":"")+'" data-com-id="'+esc(c.id)+'">'
-          + '<span class="verif-badge">'+check+'</span>'
-          + '<div class="tx" data-abrir="'+esc(c.id)+'"><div class="t">'
-          + (urgPend ? '<span class="tag-urg">⚡ Urgente</span> ' : '')
-          + esc(c.titulo||"")+'</div>'
+        return '<div class="aviso-card'+(urgPend?" urg":"")+'" data-com-id="'+esc(c.id)+'">'
+          + '<span class="tag">'+(urgPend?"Urgente · oficial":"Oficial")+'</span>'
+          + '<div class="tx" data-abrir="'+esc(c.id)+'"><div class="t">'+esc(c.titulo||"")+'</div>'
           + (prev ? '<div class="p">'+esc(prev)+'</div>' : '')
-          + (cuando ? '<div class="m">'+cuando+'</div>' : '') + '</div>'
-          + (urgPend ? '<button class="x-urg" data-descartar="'+esc(c.id)+'" title="No mostrar más el aviso">✕</button>' : '')
+          + '<div class="m">'+(cuando||"")+' · Oficial · sin edición</div></div>'
           + '</div>';
       }).join("") + '</div>';
     }
@@ -2885,7 +2945,7 @@
         if(!porSec[sec]){ porSec[sec] = []; ordenSec.push(sec); }
         porSec[sec].push(s);
       });
-      html += '<div class="ficha-sec" id="serviciosFicha"><div class="h">Horarios y servicios</div>';
+      html += '<div class="pag-sec" id="serviciosFicha"><div class="h">2) Servicios y horarios</div>';
       html += '<input class="svc-search" id="svcBuscar" type="search" placeholder="Buscá tu barrio o un servicio…" autocomplete="off">';
       html += '<div id="svcLista">';
       ordenSec.forEach((sec, iSec)=>{
@@ -2937,7 +2997,7 @@
         });
       });
     }
-    document.querySelectorAll("#institucionBody .f-com .tx[data-abrir]").forEach(el=>{
+    document.querySelectorAll("#institucionBody .aviso-card .tx[data-abrir], #institucionBody .f-com .tx[data-abrir]").forEach(el=>{
       el.addEventListener("click", ()=>{ cerrarInstitucion(); abrirComunicado(el.getAttribute("data-abrir")); });
     });
     document.querySelectorAll("#institucionBody [data-descartar]").forEach(b=>{
