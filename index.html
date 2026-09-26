@@ -751,11 +751,12 @@
     max-width:640px; margin:0 auto; border-radius:0; transform:none; opacity:0; pointer-events:none;
     z-index:240; background:var(--paper); }
   .sheet2.pagina.show{ transform:none; opacity:1; box-shadow:none; pointer-events:auto; }
-  .sheet2.pagina .sheet2-top{ border-bottom:.5px solid var(--ink); padding:14px 22px 12px; position:sticky; top:0; background:var(--paper); z-index:2; }
+  .sheet2.pagina .sheet2-top{ border-bottom:0; padding:10px 16px 0; position:sticky; top:0; background:var(--paper); z-index:2; justify-content:flex-end; }
   .sheet2.pagina .sheet2-body{ padding:8px 22px 72px; }
   .com-marca{ font-family:var(--serif); font-weight:700; font-size:2rem; letter-spacing:-.04em; color:var(--ink); line-height:1; }
   .com-marca em{ font-style:normal; font-family:var(--sans); font-size:.68rem; font-weight:600; letter-spacing:.04em;
     color:var(--ink-faint); margin-left:8px; }
+  .com-regla{ height:0; border-top:.5px solid var(--ink); margin:14px 0 4px; }
   .com-chip{ display:inline-flex; align-items:center; gap:7px; margin:14px 0 16px; padding:7px 12px;
     background:color-mix(in srgb,var(--barrio) 12%,var(--paper)); border-radius:999px;
     font-family:var(--sans); font-size:.72rem; font-weight:600; color:var(--barrio); }
@@ -763,14 +764,14 @@
     color:var(--ink); margin:0 0 14px; padding-bottom:14px; border-bottom:.5px solid var(--ink); }
   .com-cuerpo{ font-family:var(--sans); font-size:.95rem; line-height:1.55; color:var(--ink); margin:0 0 16px; white-space:pre-wrap; }
   .com-foto{ display:none; width:100%; max-height:220px; object-fit:cover; border-radius:4px; margin:0 0 16px; }
-  .com-share{ width:100%; font-family:var(--sans); font-weight:700; font-size:.88rem; padding:12px;
-    border:1px solid var(--ink); background:none; color:var(--ink); border-radius:4px; margin:6px 0 10px; }
-  .com-ficha{ display:none; font-family:var(--sans); font-size:.8rem; font-weight:600; color:var(--ink-soft);
-    text-align:center; margin:0 0 16px; }
+  .com-share{ width:100%; font-family:var(--sans); font-weight:700; font-size:.88rem; padding:13px;
+    border:1px solid var(--ink); background:none; color:var(--ink); border-radius:6px; margin:0 0 10px; }
+  .com-ficha{ display:none; font-family:var(--sans); font-size:.82rem; font-weight:600; color:var(--ink);
+    text-decoration:underline; text-underline-offset:3px; margin:4px 0 18px; }
   .com-sello{ display:flex; align-items:center; gap:12px; padding:14px 0; border-top:.5px solid var(--ink);
     border-bottom:.5px solid var(--ink); }
-  .com-sello .sg{ width:44px; height:44px; background:var(--barrio); color:#fff; display:flex; align-items:center;
-    justify-content:center; font-family:var(--serif); font-weight:700; font-size:.85rem; flex:0 0 auto; }
+  .com-sello .sg{ width:56px; height:56px; background:var(--barrio); color:#fff; display:flex; align-items:center;
+    justify-content:center; font-family:var(--serif); font-weight:700; font-size:1.05rem; letter-spacing:.02em; flex:0 0 auto; }
   .com-sello .tx{ font-family:var(--sans); font-size:.78rem; font-weight:600; color:var(--ink); line-height:1.35; }
   .com-sello .tx small{ display:block; font-weight:500; color:var(--ink-faint); margin-top:2px; }
   .com-link{ font-family:var(--mono); font-size:.68rem; color:var(--ink-faint); margin-top:12px; }
@@ -1085,6 +1086,7 @@
   <div class="sheet2-top"><span class="b"></span><button class="close" id="closeComunicado">Cerrar ✕</button></div>
   <div class="sheet2-body">
     <div class="com-marca">Fonte<em>fuente directa</em></div>
+    <div class="com-regla"></div>
     <div class="com-chip" id="comunicadoInst"><span class="verif-badge" style="background:var(--barrio);width:14px;height:14px"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span></span></div>
     <h3 class="com-tit" id="comunicadoTitulo"></h3>
     <img class="com-foto" id="comunicadoFoto" alt="">
