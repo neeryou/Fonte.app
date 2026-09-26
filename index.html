@@ -2632,7 +2632,7 @@
         : '<span class="inst-pill">'+esc(nom)+(nHoy>1?' <span class="n">'+nHoy+'</span>':'')+'</span>';
       return '<div class="urg-card'+(esUrg?"":" oficial")+'" data-com-id="'+esc(c.id)+'">'
         + '<button class="x" data-cerrar="'+esc(c.id)+'" aria-label="Cerrar">✕</button>'
-        + '<span class="lbl">'+(esUrg ? "⚡ Urgente · oficial" : "Oficial · sin edición")+'</span>'
+        + '<span class="lbl">'+(esUrg ? "⚡ Urgente · oficial" : "Texto de la institución · no editado")+'</span>'
         + (c.imagen_url ? '<img class="urg-thumb" src="'+esc(c.imagen_url)+'" alt="">' : '')
         + '<div class="h">'+esc(c.titulo||"")+'</div>'
         + '<div class="p">'+esc((c.texto||"").length > 130 ? (c.texto||"").slice(0,130)+"…" : (c.texto||""))+'</div>'
@@ -2955,7 +2955,7 @@
           + '<span class="tag">'+(urgPend?"Urgente · oficial":"Oficial")+'</span>'
           + '<div class="tx" data-abrir="'+esc(c.id)+'"><div class="t">'+esc(c.titulo||"")+'</div>'
           + (prev ? '<div class="p">'+esc(prev)+'</div>' : '')
-          + '<div class="m">'+(cuando||"")+' · Oficial · sin edición</div></div>'
+          + '<div class="m">'+(cuando||"")+' · Texto de la institución · no editado</div></div>'
           + '</div>';
       }).join("") + '</div>';
     }
@@ -2978,24 +2978,25 @@
       html += '<input class="svc-search" id="svcBuscar" type="search" placeholder="Buscá tu barrio o un servicio…" autocomplete="off">';
       html += '<div id="svcLista">';
       ordenSec.forEach((sec, iSec)=>{
-        html += '<div class="svc-card" data-sec-i="'+iSec+'">'
-          + '<button type="button" class="svc-card-head"><span class="ic">'+iconoServicio(sec)+'</span>'
-          + '<span class="nom">'+esc(sec)+'</span><span class="cant">'+porSec[sec].length+'</span><span class="fle">▾</span></button>'
-          + '<div class="svc-card-body">';
+        html += '<div class="svc-tabla svc-card" data-sec-i="'+iSec+'">'
+          + '<div class="tit">'+esc(sec)+'</div>';
         porSec[sec].forEach(s=>{
-          html += '<div class="svc-fila" data-q="'+esc(((s.clave||"")+" "+(s.valor||"")+" "+sec).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,""))+'">'
+          html += '<div class="svc-fila svc-fila-t" data-q="'+esc(((s.clave||"")+" "+(s.valor||"")+" "+sec).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,""))+'">'
             + '<span class="b">'+esc(s.clave||"")+'</span><span class="h">'+esc(s.valor||"")+'</span></div>';
         });
-        html += '</div></div>';
+        html += '</div>';
       });
       html += '</div></div>';
     }
     let contact = "";
-    if(inst.direccion) contact += '<div>📍 <b>Dónde:</b> '+esc(inst.direccion)+'</div>';
-    if(inst.horario) contact += '<div>🕐 <b>Atención:</b> '+esc(inst.horario)+'</div>';
-    if(inst.telefono) contact += '<div>☎️ <b>Contacto:</b> '+esc(inst.telefono)+'</div>';
-    if(inst.link_url) contact += '<div>🔗 <a href="'+esc(inst.link_url)+'" target="_blank" rel="noopener">Más información</a></div>';
-    if(contact) html += '<div class="ficha-contact">'+contact+'</div>';
+    if(inst.direccion) contact += '<div class="aten-fila"><span class="k">Dirección</span><span class="d">·</span><span>'+esc(inst.direccion)+'</span></div>';
+    if(inst.telefono) contact += '<div class="aten-fila"><span class="k">Teléfono</span><span class="d">·</span><span>'+esc(inst.telefono)+'</span></div>';
+    if(inst.horario) contact += '<div class="aten-fila"><span class="k">Mesa de entradas</span><span class="d">·</span><span>'+esc(inst.horario)+'</span></div>';
+    if(inst.link_url) contact += '<div class="aten-fila"><span class="k">Más info</span><span class="d">·</span><span><a href="'+esc(inst.link_url)+'" target="_blank" rel="noopener">Sitio de la institución</a></span></div>';
+    html += '<div class="pag-sec"><div class="h">3) Atención al público</div>';
+    html += contact || '<p style="font-family:var(--sans);font-size:.78rem;color:var(--ink-faint)">Todavía no hay datos de atención. Se cargan en el panel.</p>';
+    html += '</div>';
+    html += '<div class="pag-pie">Página oficial · Fonte solo publica el texto recibido</div>';
     document.getElementById("institucionBody").innerHTML = html;
     const btnSeg = document.getElementById("btnSeguirInst");
     if(btnSeg){
