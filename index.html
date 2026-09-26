@@ -364,17 +364,31 @@
   .inst-row::-webkit-scrollbar{ display:none; }
 
   /* ===== instituciones en Ciudad: riel ocultable ===== */
-  .inst-home{ margin:6px 16px 2px; }
-  .inst-home-bar{ width:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px;
-    background:none; border:0; padding:6px 0 2px; cursor:pointer; color:var(--ink); }
-  .inst-home-bar .l{ font-family:var(--sans); font-size:.62rem; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-faint); }
-  .inst-home-bar .ch{ width:24px; height:24px; border:1.5px solid var(--urgente); border-radius:999px;
-    display:flex; align-items:center; justify-content:center; font-size:.7rem; color:var(--urgente); line-height:1; background:color-mix(in srgb,var(--urgente) 8%,var(--paper)); }
-  .inst-home.open .inst-home-bar .ch{ transform:rotate(180deg); border-color:var(--urgente); color:#fff; background:var(--urgente); }
-  .inst-home.forzada .inst-home-bar .l{ color:var(--urgente); }
-  .inst-home-list{ display:none; gap:8px; overflow-x:auto; scrollbar-width:none; padding:6px 0 8px; -webkit-overflow-scrolling:touch; }
+  .inst-home{ margin:2px 16px 8px; }
+  .inst-home-bar{ width:100%; display:flex; align-items:center; gap:10px;
+    background:none; border:0; padding:8px 0 6px; cursor:pointer; color:var(--ink); }
+  .inst-home-bar .ln{ flex:1; height:1px; background:var(--ink); opacity:.85; }
+  .inst-home-bar .ch{ flex:0 0 auto; font-size:.85rem; line-height:1; color:var(--ink); background:none; border:0; width:auto; height:auto; }
+  .inst-home.open .inst-home-bar .ch{ transform:rotate(180deg); background:none; color:var(--ink); border:0; }
+  .inst-home-bar .l{ display:none; }
+  .inst-home.open .inst-lbl{ display:block; }
+  .inst-lbl{ display:none; text-align:center; font-family:var(--sans); font-size:.58rem; font-weight:800;
+    letter-spacing:.16em; text-transform:uppercase; color:var(--ink-faint); margin:2px 0 8px; }
+  .inst-home.forzada .inst-lbl{ color:var(--urgente); display:block; }
+  .inst-home-list{ display:none; flex-direction:column; gap:0; overflow:hidden;
+    border:1px solid var(--line-strong); border-radius:16px; background:var(--paper); padding:6px 4px; }
   .inst-home-list::-webkit-scrollbar{ display:none; }
   .inst-home.open .inst-home-list{ display:flex; }
+  .inst-row{ display:flex; align-items:center; gap:12px; width:100%; padding:11px 12px;
+    border:0; background:none; text-align:left; border-bottom:.5px solid var(--line); cursor:pointer; }
+  .inst-row:last-child{ border-bottom:0; }
+  .inst-row .ic{ width:36px; height:36px; border-radius:50%; background:var(--paper-2); display:flex;
+    align-items:center; justify-content:center; font-size:1.05rem; flex:0 0 auto; }
+  .inst-row.urgente .ic{ background:color-mix(in srgb,var(--urgente) 16%,var(--paper)); }
+  .inst-row .nm{ font-family:var(--sans); font-weight:700; font-size:.88rem; color:var(--ink); }
+  .inst-row .sub{ font-family:var(--sans); font-size:.68rem; color:var(--ink-faint); margin-top:1px; }
+  .inst-row .go{ margin-left:auto; color:var(--ink-faint); font-size:.95rem; }
+  .inst-row .dot{ width:8px; height:8px; border-radius:50%; background:var(--urgente); flex:0 0 auto; }
   .inst-pill{ flex:0 0 auto; display:flex; align-items:center; gap:8px; padding:7px 10px 7px 7px;
     border:1px solid var(--line-strong); border-radius:10px; background:var(--paper); position:relative; }
   .inst-pill .sg{ width:28px; height:28px; border-radius:3px; background:var(--region); color:#fff;
@@ -953,11 +967,13 @@
 <div id="panelCiudad">
   <div class="inst-home" id="institucionesWrap" style="display:none">
     <button type="button" class="inst-home-bar" id="instHomeBtn" aria-expanded="false">
-      <span class="l" id="instHomeSub">Oficial</span>
-      <span class="ch" id="instHomeCh">▾</span>
+      <span class="ln"></span>
+      <span class="ch" id="instHomeCh">⌄</span>
+      <span class="ln"></span>
     </button>
+    <div class="inst-lbl" id="instHomeSub">Oficial</div>
     <div class="inst-home-list" id="institucionesRow"></div>
-    <div class="inst-home-hint">Tocá una · horarios y avisos · deslizá si hay más</div>
+    <div class="inst-home-hint" style="display:none"></div>
   </div>
   <div id="urgentesWrap" style="display:none">
     <div class="urg-row" id="urgRow"></div>
@@ -2945,13 +2961,15 @@
         if(urgPendiente) hayUrgente = true;
         const hayCom = propios.length > 0 && (sinLeer > 0 || urgPendiente);
         const nombreCorto = (i.nombre||"").replace(/^Municipalidad de\s+/i,"").replace(/^Hospital\s+/i,"Hospital ");
-        return '<button type="button" class="inst-pill'+(urgPendiente?" urgente":"")+'" data-inst-id="'+esc(i.id)+'">'
-          + '<span class="sg">'+siglaDe(i.nombre)+'</span>'
-          + '<span class="nm">'+esc(nombreCorto)+'</span>'
+        const sub = ({salud:"Turnos y servicios",municipio:"Información y trámites",seguridad:"Denuncias y seguridad",social:"Programas y asistencia",educacion:"Escuelas y novedades",cultura:"Agenda y cultura",deporte:"Clubes y deportes",otro:"Organismo local"})[i.tipo] || "Institución local";
+        const ico = (typeof ICONS_INST!=="undefined" && ICONS_INST[i.tipo]) ? ICONS_INST[i.tipo] : "📍";
+        return '<button type="button" class="inst-row'+(urgPendiente?" urgente":"")+'" data-inst-id="'+esc(i.id)+'">'
+          + '<span class="ic">'+ico+'</span>'
+          + '<span><span class="nm">'+esc(nombreCorto)+'</span><div class="sub">'+sub+'</div></span>'
           + ((hayCom || urgPendiente) ? '<span class="dot"></span>' : '')
-          + '</button>';
+          + '<span class="go">›</span></button>';
       }).join("");
-    document.querySelectorAll("#institucionesRow .inst-pill").forEach(el=>{
+    document.querySelectorAll("#institucionesRow .inst-row, #institucionesRow .inst-pill").forEach(el=>{
       el.addEventListener("click", ()=> abrirInstitucion(el.getAttribute("data-inst-id")));
     });
     const btn = document.getElementById("instHomeBtn");
