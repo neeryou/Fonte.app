@@ -2056,22 +2056,104 @@
 
   function textoCompartir(n, tipo){
     const partes = [];
-    // Aclaramos arriba de todo qué es, para que nadie lo confunda con una noticia.
     if(n.__tipo === "o") partes.push("🏷️ ESPACIO DE UN COMERCIO", "");
     else if(n.__tipo === "c") partes.push("📢 COMUNICADO OFICIAL", "Fonte no reescribe este texto.", "");
     partes.push(n.titulo || "");
     const resumen = n.resumen_corto || n.resumen_extendido || "";
     if(n.__tipo === "c"){
+      if(resumen) partes.push("", resumen);
+    } else if(resumen){
+      partes.push("", resumen.length > 220 ? resumen.slice(0,220).trim() + "…" : resumen);
+    }
+    if(n.dato_extra) partes.push("", "📌 " + n.dato_extra);
+    if(n.accion_etiqueta && n.accion_url) partes.push("", "📎 " + n.accion_etiqueta + " → " + n.accion_url);
+    if(n.fuente_etiqueta) partes.push("", "Fuente: " + n.fuente_etiqueta);
+    partes.push("", "👉 Leelo completo en Fonte: " + urlDe(n, tipo));
+    return partes.join("\n");
+  }
+
+  let _fuentes = null;
+  function fuentesListas(){
+    if(_fuentes) return _fuentes;
+    _fuentes = Promise.all([
+      document.fonts.load("700 72px Fraunces"),
+      document.fonts.load("600 32px Work Sans"),
+      document.fonts.load("400 48px Alfa Slab One")
+    ]).catch(()=>null);
+    return _fuentes;
+  }
+  const _imgCache = {};
+  function esHostPropio(src){
+    try{
+      const h = new URL(src, location.href).hostname;
+      return /fonte\.city$|supabase|vercel\.app$/i.test(h);
+    }catch(e){ return false; }
+  }
+  function urlProxyCors(src){
+    return "https://wsrv.nl/?url=" + encodeURIComponent(src) + "&w=1200";
+  }
+  function probarCanvas(img){
+    try{
+      const c = document.createElement("canvas");
+      c.width = 8; c.height = 8;
+      c.getContext("2d").drawImage(img,0,0,8,8);
+      c.getContext("2d").getImageData(0,0,1,1);
+      return true;
+    }catch(e){ return false; }
+  }
+  function cargarImagenUna(url, msTope){
+    return new Promise((fin)=>{
+      const tope = setTimeout(()=>fin(null), msTope || 7000);
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = ()=>{ clearTimeout(tope); fin(probarCanvas(img) ? img : null); };
+      img.onerror = ()=>{ clearTimeout(tope); fin(null); };
+      img.src = url;
+    });
+  }
+  async function cargarImagen(src, msTope){
+    if(!src || typeof src !== "string") return null;
+    src = src.trim();
+    if(!src) return null;
+    if(_imgCache[src]) return _imgCache[src];
+    let img = await cargarImagenUna(src, msTope || 7000);
+    if(!img && /^https?:\/\//i.test(src) && !esHostPropio(src) && src.indexOf("wsrv.nl") === -1){
+      img = await cargarImagenUna(urlProxyCors(src), msTope || 8000);
+    }
+    if(img) _imgCache[src] = img;
+    return img;
+  }
+  function envolver(ctx, texto, maxAncho, maxLineas){
+    const palabras = String(texto||"").split(/\s+/);
+    const lineas = []; let linea = "";
+    for(const p of palabras){
+      const prueba = linea ? linea + " " + p : p;
+      if(ctx.measureText(prueba).width > maxAncho && linea){ lineas.push(linea); linea = p; }
+      else linea = prueba;
+      if(lineas.length === maxLineas) break;
+    }
+    if(linea && lineas.length < maxLineas) lineas.push(linea);
+    if(lineas.length === maxLineas){
+      let ult = lineas[maxLineas-1];
+      while(ctx.measureText(ult + "…").width > maxAncho && ult.length > 4) ult = ult.slice(0,-1);
+      lineas[maxLineas-1] = ult.trim() + "…";
+    }
+    return lineas;
+  }
+  async function generarPlaca(n){
+    await fuentesListas();
+    const W = 1080, H = 1920;
+    const c = document.createElement("canvas");
+    c.width = W; c.height = H;
+    const ctx = c.getContext("2d");
+
+    if(n.__tipo === "c"){
       const TINTA = "#1A1814", PAPEL = "#F4F0E6", VERDE = "#1F4A36", VERDE2 = "#2A5C44";
       ctx.fillStyle = PAPEL; ctx.fillRect(0,0,W,H);
-
       const inst = (n.lugar || n.fuente_etiqueta || "Institución").trim();
       const sigla = ((typeof siglaDe === "function") ? siglaDe(inst) : inst.slice(0,2).toUpperCase()).slice(0,3);
-
-      // Banner de la institución (ellos hablan; Fonte solo porta)
-      const banW = Math.min(W-160, ctx.measureText ? 0 : 0);
-      ctx.font = "700 34px 'Work Sans',sans-serif";
-      const instW = Math.min(W-280, ctx.measureText(inst).width + 140);
+      ctx.font = "600 32px 'Work Sans',sans-serif";
+      const instW = Math.min(W-200, Math.max(420, ctx.measureText(inst).width + 160));
       const banX = (W - instW) / 2;
       ctx.fillStyle = VERDE;
       ctx.beginPath(); ctx.roundRect(banX, 150, instW, 92, 20); ctx.fill();
@@ -2082,35 +2164,27 @@
       ctx.textAlign = "center";
       ctx.fillText(sigla, banX + 46, 204);
       ctx.textAlign = "left";
-      ctx.fillStyle = "#F4F0E6";
       ctx.font = "600 32px 'Work Sans',sans-serif";
       const nom = inst.length > 28 ? inst.slice(0,27)+"…" : inst;
       ctx.fillText(nom, banX + 88, 208);
-
-      // adorno
       ctx.strokeStyle = VERDE2; ctx.lineWidth = 2;
       ctx.beginPath(); ctx.moveTo(W/2-90, 300); ctx.lineTo(W/2-12, 300); ctx.stroke();
       ctx.beginPath(); ctx.moveTo(W/2+12, 300); ctx.lineTo(W/2+90, 300); ctx.stroke();
       ctx.fillStyle = VERDE2; ctx.font = "20px serif"; ctx.textAlign = "center";
       ctx.fillText("✦", W/2, 306);
-
       ctx.fillStyle = VERDE;
       ctx.font = "700 72px 'Fraunces',Georgia,serif";
       const tit = envolver(ctx, n.titulo || "", W-200, 4);
       let y = 410;
       tit.forEach((l)=>{ ctx.fillText(l, W/2, y); y += 84; });
-
       ctx.strokeStyle = VERDE2; ctx.lineWidth = 2;
       ctx.beginPath(); ctx.moveTo(120, y+10); ctx.lineTo(W-120, y+10); ctx.stroke();
-
       const cuerpo = (n.resumen_corto || "").trim();
       ctx.fillStyle = TINTA;
       ctx.font = "500 36px 'Work Sans',sans-serif";
       ctx.textAlign = "left";
       const lineas = envolver(ctx, cuerpo, W-200, 11);
       lineas.forEach((l,i)=> ctx.fillText(l, 120, y + 80 + i*50));
-
-      // monograma grande, no marca Fonte
       ctx.textAlign = "center";
       ctx.fillStyle = VERDE;
       ctx.font = "700 140px 'Fraunces',Georgia,serif";
@@ -2119,23 +2193,19 @@
       ctx.beginPath(); ctx.moveTo(W/2-70, H-300); ctx.lineTo(W/2-14, H-300); ctx.stroke();
       ctx.beginPath(); ctx.moveTo(W/2+14, H-300); ctx.lineTo(W/2+70, H-300); ctx.stroke();
       ctx.font = "20px serif"; ctx.fillText("✦", W/2, H-294);
-
       ctx.fillStyle = TINTA;
       ctx.font = "600 28px 'Work Sans',sans-serif";
       ctx.fillText("Texto de la institución · no editado", W/2, H - 230);
-
-      const link = (typeof urlDe === "function") ? urlDe(n, "c").replace(/^https?:\/\//,"") : "fonte.city/?c=" + (n.id||"");
+      const link = urlDe(n, "c").replace(/^https?:\/\//,"");
       ctx.fillStyle = VERDE2;
       ctx.font = "500 26px 'Work Sans',sans-serif";
-      ctx.fillText(link.replace(/^https?:\/\//,""), W/2, H - 170);
+      ctx.fillText(link, W/2, H - 170);
       ctx.textAlign = "left";
       return new Promise(res=> c.toBlob(res, "image/jpeg", 0.92));
     }
 
     const urgente = !!n.urgente;
     const lista = (typeof fotosDe === "function") ? fotosDe(n) : (n.imagen_url ? [n.imagen_url] : []);
-    // Probamos hasta 2 URLs: en Más noticias a veces la 1ª falla por CORS del host
-    // de origen y la 2ª (o un reintento) sí entra.
     let img = null;
     if(!urgente){
       for(const u of lista.slice(0, 2)){
@@ -2147,50 +2217,24 @@
     const TINTA = "#16140F", PAPEL = "#FDFCF9", CORAL = "#FF4B3E", ROJO = "#B23A2E";
     const DORADO = "#8A6A22", VERDE = "#22503A";
     const lugar = (n.lugar || "").toUpperCase();
-
-    // Cinta que dice qué es: un anuncio nunca puede parecer una noticia.
     const TIPOS = {
       o: { txt:"ESPACIO DE UN COMERCIO", color:DORADO },
       c: { txt:"COMUNICADO OFICIAL",     color:VERDE  },
     };
     const cinta = TIPOS[n.__tipo] || null;
 
-    // ¿Qué diseño le toca a esta placa? Solo 3 formatos:
-    //  urgente  → roja
-    //  sin foto → marco (tipográfica, titular grande con borde)
-    //  con foto → foto de fondo a sangre completa con el titular encima
-    function diseñoDePlaca(){
-      // 1. Si en la consola elegiste un estilo a mano, manda ese (incluso sobre urgente)
-      if(n.estilo_placa && n.estilo_placa !== "auto"){
-        if(n.estilo_placa === "editorial") return img ? "foto" : "tipografica"; // formato viejo, ya no existe
-        if(n.estilo_placa === "foto" && !img) return "tipografica";   // pidió foto pero no hay
-        return n.estilo_placa;
-      }
-      // 2. Automático
-      if(urgente) return "urgente";
-      return img ? "foto" : "tipografica";
-    }
-    const diseño = diseñoDePlaca();
-
-    if(diseño === "urgente"){
-      // ---- placa urgente ----
+    ctx.fillStyle = PAPEL; ctx.fillRect(0,0,W,H);
+    if(urgente){
       ctx.fillStyle = ROJO; ctx.fillRect(0,0,W,H);
-      ctx.fillStyle = "#fff";
-      ctx.beginPath(); ctx.roundRect(80, 150, 340, 76, 38); ctx.fill();
-      ctx.fillStyle = ROJO; ctx.font = "800 34px 'Work Sans',sans-serif";
-      ctx.fillText("⚡ URGENTE", 118, 200);
-      ctx.fillStyle = "#fff"; ctx.font = "700 86px 'Fraunces',Georgia,serif";
-      envolver(ctx, n.titulo, W-160, 6).forEach((l,i)=> ctx.fillText(l, 80, 360 + i*104));
-      if(n.dato_extra){
-        ctx.font = "500 42px 'Work Sans',sans-serif"; ctx.fillStyle = "rgba(255,255,255,.92)";
-        envolver(ctx, n.dato_extra, W-160, 4).forEach((l,i)=> ctx.fillText(l, 80, 1180 + i*58));
-      }
-    } else if(diseño === "foto" && img){
-      // ---- foto a sangre completa: para cuando la imagen es la noticia ----
-      const escala = Math.max(W/img.width, H/img.height);
-      const iw = img.width*escala, ih = img.height*escala;
+      ctx.fillStyle = "#fff"; ctx.font = "800 28px 'Work Sans',sans-serif";
+      ctx.fillText("URGENTE", 80, 140);
+      ctx.font = "700 78px 'Fraunces',Georgia,serif";
+      const ls = envolver(ctx, n.titulo || "", W-160, 6);
+      ls.forEach((l,i)=> ctx.fillText(l, 80, 280 + i*90));
+    } else if(img){
+      const r = Math.max(W/img.width, H/img.height);
+      const iw = img.width*r, ih = img.height*r;
       ctx.drawImage(img, (W-iw)/2, (H-ih)/2, iw, ih);
-      // velo de abajo hacia arriba para que el titular se lea sobre cualquier foto
       const velo = ctx.createLinearGradient(0, H*0.30, 0, H);
       velo.addColorStop(0, "rgba(10,9,7,0)");
       velo.addColorStop(0.45, "rgba(10,9,7,.62)");
@@ -2209,7 +2253,6 @@
       const yInicio = H - 330 - alturaTexto;
       ls.forEach((l,i)=> ctx.fillText(l, 80, yInicio + i*100));
     } else {
-      // ---- placa tipográfica (sin foto) ----
       ctx.fillStyle = PAPEL; ctx.fillRect(0,0,W,H);
       ctx.strokeStyle = TINTA; ctx.lineWidth = 8;
       ctx.strokeRect(80, 130, W-160, H-420);
@@ -2220,48 +2263,18 @@
       ctx.fillStyle = TINTA; ctx.font = "700 88px 'Fraunces',Georgia,serif";
       const ls = envolver(ctx, n.titulo, W-280, 7);
       ls.forEach((l,i)=> ctx.fillText(l, 140, 380 + i*106));
-      const yLinea = 380 + ls.length*106 + 20;
-      ctx.fillStyle = CORAL; ctx.beginPath(); ctx.roundRect(140, yLinea, 120, 10, 5); ctx.fill();
-      const bajada = n.resumen_corto || "";
-      if(bajada){
-        ctx.fillStyle = "#4A4438"; ctx.font = "500 44px 'Fraunces',Georgia,serif";
-        envolver(ctx, bajada, W-280, 5).forEach((l,i)=> ctx.fillText(l, 140, yLinea + 90 + i*62));
-      }
     }
-
-    // ---- cinta de tipo: solo si no es una nota ----
     if(cinta){
-      const yC = H - 330;
       ctx.fillStyle = cinta.color;
-      ctx.fillRect(0, yC, W, 74);
-      ctx.fillStyle = "#fff";
-      ctx.font = "800 34px 'Work Sans',sans-serif";
+      ctx.fillRect(0, H-110, W, 110);
+      ctx.fillStyle = "#fff"; ctx.font = "800 28px 'Work Sans',sans-serif";
       ctx.textAlign = "center";
-      ctx.fillText(cinta.txt, W/2, yC + 48);
+      ctx.fillText(cinta.txt, W/2, H-55);
       ctx.textAlign = "left";
     }
-
-    // ---- pie común: marca + "Leelo completo en Fonte" ----
-    // el pie va en claro tanto en "urgente" (fondo rojo) como en "foto" (el velo
-    // oscuro del degradé llega hasta abajo) — solo "tipografica" tiene fondo papel.
-    const claro = (diseño === "urgente" || diseño === "foto");
-    ctx.fillStyle = claro ? "rgba(255,255,255,.35)" : TINTA;
-    ctx.fillRect(80, H-260, W-160, claro ? 2 : 5);
-    ctx.fillStyle = claro ? "#fff" : TINTA;
-    ctx.font = "400 76px 'Alfa Slab One',Georgia,serif";
-    ctx.fillText("Fonte", 80, H-150);
-    const anchoMarca = ctx.measureText("Fonte").width;
-    ctx.fillStyle = CORAL;
-    ctx.beginPath(); ctx.arc(80 + anchoMarca + 22, H-198, 11, 0, Math.PI*2); ctx.fill();
-    ctx.textAlign = "right";
-    ctx.fillStyle = claro ? "rgba(255,255,255,.8)" : "#57503F";
-    ctx.font = "700 34px 'Work Sans',sans-serif";
-    ctx.fillText("Leelo completo en Fonte", W-80, H-186);
-    ctx.font = "600 30px 'Work Sans',sans-serif";
-    ctx.fillStyle = claro ? "rgba(255,255,255,.65)" : "#9A9384";
-    ctx.fillText(URL_FONTE.replace(/^https?:\/\//,"").replace(/\/$/,""), W-80, H-138);
-    ctx.textAlign = "left";
-
+    ctx.fillStyle = "#fff";
+    ctx.font = "600 22px 'Work Sans',sans-serif";
+    ctx.fillText((urlDe(n, n.__tipo||"n")||"").replace(/^https?:\/\//,""), 80, H-138);
     return new Promise(res=> c.toBlob(res, "image/jpeg", 0.9));
   }
 
