@@ -375,20 +375,15 @@
   .inst-lbl{ display:none; text-align:center; font-family:var(--sans); font-size:.58rem; font-weight:800;
     letter-spacing:.16em; text-transform:uppercase; color:var(--ink-faint); margin:2px 0 8px; }
   .inst-home.forzada .inst-lbl{ color:var(--urgente); display:block; }
-  .inst-home-list{ display:none; flex-direction:column; gap:0; overflow:hidden;
-    border:1px solid var(--line-strong); border-radius:16px; background:var(--paper); padding:6px 4px; }
-  .inst-home-list::-webkit-scrollbar{ display:none; }
-  .inst-home.open .inst-home-list{ display:flex; }
-  .inst-row{ display:flex; align-items:center; gap:12px; width:100%; padding:11px 12px;
-    border:0; background:none; text-align:left; border-bottom:.5px solid var(--line); cursor:pointer; }
-  .inst-row:last-child{ border-bottom:0; }
-  .inst-row .ic{ width:36px; height:36px; border-radius:50%; background:var(--paper-2); display:flex;
-    align-items:center; justify-content:center; font-size:1.05rem; flex:0 0 auto; }
-  .inst-row.urgente .ic{ background:color-mix(in srgb,var(--urgente) 16%,var(--paper)); }
-  .inst-row .nm{ font-family:var(--sans); font-weight:700; font-size:.88rem; color:var(--ink); }
-  .inst-row .sub{ font-family:var(--sans); font-size:.68rem; color:var(--ink-faint); margin-top:1px; }
-  .inst-row .go{ margin-left:auto; color:var(--ink-faint); font-size:.95rem; }
-  .inst-row .dot{ width:8px; height:8px; border-radius:50%; background:var(--urgente); flex:0 0 auto; }
+  .inst-home-list{ display:none; grid-template-columns:repeat(3,1fr); gap:14px 8px;
+    border:1px solid var(--line-strong); border-radius:18px; background:var(--paper); padding:16px 12px 14px; }
+  .inst-home.open .inst-home-list{ display:grid; }
+  .inst-cell{ display:flex; flex-direction:column; align-items:center; gap:6px; border:0; background:none; cursor:pointer; padding:4px 2px; }
+  .inst-cell .ic{ width:46px; height:46px; border-radius:50%; background:var(--paper-2); display:flex;
+    align-items:center; justify-content:center; font-size:1.2rem; position:relative; }
+  .inst-cell.urgente .ic{ background:color-mix(in srgb,var(--urgente) 16%,var(--paper)); }
+  .inst-cell .nm{ font-family:var(--sans); font-weight:650; font-size:.68rem; color:var(--ink); text-align:center; line-height:1.2; }
+  .inst-cell .dot{ position:absolute; top:2px; right:2px; width:8px; height:8px; border-radius:50%; background:var(--urgente); }
   .inst-pill{ flex:0 0 auto; display:flex; align-items:center; gap:8px; padding:7px 10px 7px 7px;
     border:1px solid var(--line-strong); border-radius:10px; background:var(--paper); position:relative; }
   .inst-pill .sg{ width:28px; height:28px; border-radius:3px; background:var(--region); color:#fff;
@@ -2067,186 +2062,73 @@
     partes.push(n.titulo || "");
     const resumen = n.resumen_corto || n.resumen_extendido || "";
     if(n.__tipo === "c"){
-      if(resumen) partes.push("", resumen); // texto completo, no recortado: es el original
-    } else if(resumen){
-      partes.push("", resumen.length > 220 ? resumen.slice(0,220).trim() + "…" : resumen);
-    }
-    if(n.dato_extra) partes.push("", "📌 " + n.dato_extra);
-    if(n.accion_etiqueta && n.accion_url) partes.push("", "📎 " + n.accion_etiqueta + " → " + n.accion_url);
-    if(n.fuente_etiqueta) partes.push("", "Fuente: " + n.fuente_etiqueta);
-    partes.push("", "👉 Leelo completo en Fonte: " + urlDe(n, tipo));
-    return partes.join("\n");
-  }
-
-  // Dibuja la placa 1080x1920. Si no hay foto usa el diseño tipográfico.
-  // Las fuentes se cargan una sola vez y quedan listas para todas las placas.
-  let _fuentes = null;
-  function fuentesListas(){
-    if(_fuentes) return _fuentes;
-    _fuentes = (async ()=>{
-      try{
-        if(document.fonts && document.fonts.load){
-          await Promise.all([
-            document.fonts.load("400 76px 'Alfa Slab One'"),
-            document.fonts.load("700 88px 'Fraunces'"),
-            document.fonts.load("500 44px 'Fraunces'"),
-            document.fonts.load("800 34px 'Work Sans'"),
-            document.fonts.load("700 34px 'Work Sans'"),
-          ]);
-        }
-      }catch(e){}
-    })();
-    return _fuentes;
-  }
-  // Empezamos a cargarlas apenas abre la app, así compartir sale al toque.
-  setTimeout(fuentesListas, 1500);
-
-  const _imgCache = {};
-  // ¿La URL es usable en un <canvas> al compartir?
-  // En la app la foto se VE igual (CSS/img no piden CORS). Al compartir sí hace falta.
-  // En "Más noticias" muchas fotos son de portales externos sin CORS → fallan.
-  // Estrategia: 1) directo  2) proxy wsrv.nl (solo si el host no es el nuestro)
-  function esHostPropio(url){
-    try{
-      const h = new URL(url, location.href).hostname;
-      return /supabase\.co$/i.test(h) || /fonte\.city$/i.test(h) || h === location.hostname;
-    }catch(e){ return false; }
-  }
-  function urlProxyCors(url){
-    // wsrv.nl re-sirve la imagen con cabeceras CORS (uso solo como respaldo)
-    const limpia = String(url||"").replace(/^https?:\/\//i, "");
-    return "https://wsrv.nl/?url=" + encodeURIComponent(limpia) + "&output=jpg&q=85&w=1200";
-  }
-  function probarCanvas(img){
-    try{
-      const t = document.createElement("canvas");
-      t.width = 2; t.height = 2;
-      t.getContext("2d").drawImage(img, 0, 0, 2, 2);
-      t.toDataURL();
-      return true;
-    }catch(e){ return false; }
-  }
-  function cargarImagenUna(url, msTope){
-    return new Promise((res)=>{
-      if(!url) return res(null);
-      let listo = false;
-      const fin = (v)=>{ if(listo) return; listo = true; res(v); };
-      const tope = setTimeout(()=> fin(null), msTope || 7000);
-      (async ()=>{
-        try{
-          const r = await fetch(url, { mode:"cors", credentials:"omit" });
-          if(!r.ok) throw new Error("http");
-          const blob = await r.blob();
-          if(!blob || blob.size < 80) throw new Error("vacio");
-          const obj = URL.createObjectURL(blob);
-          const img = new Image();
-          img.onload = ()=>{
-            clearTimeout(tope);
-            const ok = probarCanvas(img);
-            setTimeout(()=>{ try{ URL.revokeObjectURL(obj); }catch(e){} }, 20000);
-            fin(ok ? img : null);
-          };
-          img.onerror = ()=>{ clearTimeout(tope); try{ URL.revokeObjectURL(obj); }catch(e){} fin(null); };
-          img.src = obj;
-        }catch(e){
-          const img = new Image();
-          img.crossOrigin = "anonymous";
-          img.onload = ()=>{ clearTimeout(tope); fin(probarCanvas(img) ? img : null); };
-          img.onerror = ()=>{ clearTimeout(tope); fin(null); };
-          img.src = url;
-        }
-      })();
-    });
-  }
-  async function cargarImagen(src, msTope){
-    if(!src || typeof src !== "string") return null;
-    src = src.trim();
-    if(!src) return null;
-    if(_imgCache[src]) return _imgCache[src];
-    let img = await cargarImagenUna(src, msTope || 7000);
-    // Respaldo para fotos de portales externos (típico de Más noticias)
-    if(!img && /^https?:\/\//i.test(src) && !esHostPropio(src) && src.indexOf("wsrv.nl") === -1){
-      img = await cargarImagenUna(urlProxyCors(src), msTope || 8000);
-    }
-    if(img) _imgCache[src] = img;
-    return img;
-  }
-  function envolver(ctx, texto, maxAncho, maxLineas){
-    const palabras = String(texto||"").split(/\s+/);
-    const lineas = []; let linea = "";
-    for(const p of palabras){
-      const prueba = linea ? linea + " " + p : p;
-      if(ctx.measureText(prueba).width > maxAncho && linea){ lineas.push(linea); linea = p; }
-      else linea = prueba;
-      if(lineas.length === maxLineas) break;
-    }
-    if(linea && lineas.length < maxLineas) lineas.push(linea);
-    if(lineas.length === maxLineas){
-      let ult = lineas[maxLineas-1];
-      while(ctx.measureText(ult + "…").width > maxAncho && ult.length > 4) ult = ult.slice(0,-1);
-      lineas[maxLineas-1] = ult.trim() + "…";
-    }
-    return lineas;
-  }
-  async function generarPlaca(n){
-    await fuentesListas();
-    const W = 1080, H = 1920;
-    const c = document.createElement("canvas");
-    c.width = W; c.height = H;
-    const ctx = c.getContext("2d");
-
-    // Comunicado oficial: placa propia (copia la página, no el molde de nota)
-    if(n.__tipo === "c"){
-      const TINTA = "#16140F", PAPEL = "#FDFCF9", VERDE = "#22503A";
+      const TINTA = "#1A1814", PAPEL = "#F4F0E6", VERDE = "#1F4A36", VERDE2 = "#2A5C44";
       ctx.fillStyle = PAPEL; ctx.fillRect(0,0,W,H);
-      ctx.fillStyle = TINTA;
-      ctx.font = "400 72px 'Alfa Slab One',Georgia,serif";
-      ctx.fillText("Fonte", 80, 160);
-      const wm = ctx.measureText("Fonte").width;
-      ctx.fillStyle = "#8A8478";
-      ctx.font = "600 28px 'Work Sans',sans-serif";
-      ctx.fillText("fuente directa", 80 + wm + 18, 150);
 
       const inst = (n.lugar || n.fuente_etiqueta || "Institución").trim();
-      const sigla = (typeof siglaDe === "function") ? siglaDe(inst) : inst.slice(0,2).toUpperCase();
-      ctx.fillStyle = "rgba(34,80,58,.12)";
-      ctx.beginPath(); ctx.roundRect(80, 200, W-160, 70, 35); ctx.fill();
-      ctx.fillStyle = VERDE;
-      ctx.beginPath(); ctx.arc(118, 235, 16, 0, Math.PI*2); ctx.fill();
-      ctx.fillStyle = "#fff"; ctx.font = "800 22px 'Work Sans',sans-serif";
-      ctx.fillText("✓", 110, 243);
-      ctx.fillStyle = VERDE; ctx.font = "700 28px 'Work Sans',sans-serif";
-      const chip = inst + " · sello administrado por Fonte";
-      ctx.fillText(chip.length>42 ? inst : chip, 148, 244);
+      const sigla = ((typeof siglaDe === "function") ? siglaDe(inst) : inst.slice(0,2).toUpperCase()).slice(0,3);
 
-      ctx.fillStyle = TINTA; ctx.font = "700 78px 'Fraunces',Georgia,serif";
-      const tit = envolver(ctx, n.titulo || "", W-160, 4);
-      tit.forEach((l,i)=> ctx.fillText(l, 80, 360 + i*88));
-      const yLinea = 360 + tit.length*88 + 10;
-      ctx.strokeStyle = TINTA; ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.moveTo(80, yLinea); ctx.lineTo(W-80, yLinea); ctx.stroke();
+      // Banner de la institución (ellos hablan; Fonte solo porta)
+      const banW = Math.min(W-160, ctx.measureText ? 0 : 0);
+      ctx.font = "700 34px 'Work Sans',sans-serif";
+      const instW = Math.min(W-280, ctx.measureText(inst).width + 140);
+      const banX = (W - instW) / 2;
+      ctx.fillStyle = VERDE;
+      ctx.beginPath(); ctx.roundRect(banX, 150, instW, 92, 20); ctx.fill();
+      ctx.beginPath(); ctx.arc(banX + 46, 196, 28, 0, Math.PI*2); ctx.fillStyle = "#163828"; ctx.fill();
+      ctx.strokeStyle = "#F4F0E6"; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(banX + 46, 196, 26, 0, Math.PI*2); ctx.stroke();
+      ctx.fillStyle = "#F4F0E6"; ctx.font = "700 22px 'Fraunces',Georgia,serif";
+      ctx.textAlign = "center";
+      ctx.fillText(sigla, banX + 46, 204);
+      ctx.textAlign = "left";
+      ctx.fillStyle = "#F4F0E6";
+      ctx.font = "600 32px 'Work Sans',sans-serif";
+      const nom = inst.length > 28 ? inst.slice(0,27)+"…" : inst;
+      ctx.fillText(nom, banX + 88, 208);
+
+      // adorno
+      ctx.strokeStyle = VERDE2; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(W/2-90, 300); ctx.lineTo(W/2-12, 300); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(W/2+12, 300); ctx.lineTo(W/2+90, 300); ctx.stroke();
+      ctx.fillStyle = VERDE2; ctx.font = "20px serif"; ctx.textAlign = "center";
+      ctx.fillText("✦", W/2, 306);
+
+      ctx.fillStyle = VERDE;
+      ctx.font = "700 72px 'Fraunces',Georgia,serif";
+      const tit = envolver(ctx, n.titulo || "", W-200, 4);
+      let y = 410;
+      tit.forEach((l)=>{ ctx.fillText(l, W/2, y); y += 84; });
+
+      ctx.strokeStyle = VERDE2; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(120, y+10); ctx.lineTo(W-120, y+10); ctx.stroke();
 
       const cuerpo = (n.resumen_corto || "").trim();
-      ctx.fillStyle = TINTA; ctx.font = "500 36px 'Work Sans',sans-serif";
-      const lineas = envolver(ctx, cuerpo, W-160, 10);
-      lineas.forEach((l,i)=> ctx.fillText(l, 80, yLinea + 60 + i*48));
-
-      const ySello = H - 340;
-      ctx.strokeStyle = TINTA; ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.moveTo(80, ySello-24); ctx.lineTo(W-80, ySello-24); ctx.stroke();
-      ctx.fillStyle = VERDE; ctx.fillRect(80, ySello, 88, 88);
-      ctx.fillStyle = "#fff"; ctx.font = "700 32px 'Fraunces',Georgia,serif";
-      ctx.textAlign = "center";
-      ctx.fillText(sigla.slice(0,3), 124, ySello + 54);
+      ctx.fillStyle = TINTA;
+      ctx.font = "500 36px 'Work Sans',sans-serif";
       ctx.textAlign = "left";
-      ctx.fillStyle = TINTA; ctx.font = "700 30px 'Work Sans',sans-serif";
-      ctx.fillText("Texto de la institución · no editado", 188, ySello + 38);
-      ctx.fillStyle = "#6B665C"; ctx.font = "600 26px 'Work Sans',sans-serif";
-      ctx.fillText(inst + " · sello Fonte", 188, ySello + 74);
+      const lineas = envolver(ctx, cuerpo, W-200, 11);
+      lineas.forEach((l,i)=> ctx.fillText(l, 120, y + 80 + i*50));
 
-      ctx.fillStyle = "#8A8478"; ctx.font = "600 26px 'Work Sans',sans-serif";
+      // monograma grande, no marca Fonte
+      ctx.textAlign = "center";
+      ctx.fillStyle = VERDE;
+      ctx.font = "700 140px 'Fraunces',Georgia,serif";
+      ctx.fillText(sigla, W/2, H - 340);
+      ctx.strokeStyle = VERDE2; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(W/2-70, H-300); ctx.lineTo(W/2-14, H-300); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(W/2+14, H-300); ctx.lineTo(W/2+70, H-300); ctx.stroke();
+      ctx.font = "20px serif"; ctx.fillText("✦", W/2, H-294);
+
+      ctx.fillStyle = TINTA;
+      ctx.font = "600 28px 'Work Sans',sans-serif";
+      ctx.fillText("Texto de la institución · no editado", W/2, H - 230);
+
       const link = (typeof urlDe === "function") ? urlDe(n, "c").replace(/^https?:\/\//,"") : "fonte.city/?c=" + (n.id||"");
-      ctx.fillText(link.replace(/^https?:\/\//,""), 80, H-80);
+      ctx.fillStyle = VERDE2;
+      ctx.font = "500 26px 'Work Sans',sans-serif";
+      ctx.fillText(link.replace(/^https?:\/\//,""), W/2, H - 170);
+      ctx.textAlign = "left";
       return new Promise(res=> c.toBlob(res, "image/jpeg", 0.92));
     }
 
@@ -2961,15 +2843,13 @@
         if(urgPendiente) hayUrgente = true;
         const hayCom = propios.length > 0 && (sinLeer > 0 || urgPendiente);
         const nombreCorto = (i.nombre||"").replace(/^Municipalidad de\s+/i,"").replace(/^Hospital\s+/i,"Hospital ");
-        const sub = ({salud:"Turnos y servicios",municipio:"Información y trámites",seguridad:"Denuncias y seguridad",social:"Programas y asistencia",educacion:"Escuelas y novedades",cultura:"Agenda y cultura",deporte:"Clubes y deportes",otro:"Organismo local"})[i.tipo] || "Institución local";
         const ico = (typeof ICONS_INST!=="undefined" && ICONS_INST[i.tipo]) ? ICONS_INST[i.tipo] : "📍";
-        return '<button type="button" class="inst-row'+(urgPendiente?" urgente":"")+'" data-inst-id="'+esc(i.id)+'">'
-          + '<span class="ic">'+ico+'</span>'
-          + '<span><span class="nm">'+esc(nombreCorto)+'</span><div class="sub">'+sub+'</div></span>'
-          + ((hayCom || urgPendiente) ? '<span class="dot"></span>' : '')
-          + '<span class="go">›</span></button>';
+        const corto = nombreCorto.length>16 ? nombreCorto.slice(0,15)+"…" : nombreCorto;
+        return '<button type="button" class="inst-cell'+(urgPendiente?" urgente":"")+'" data-inst-id="'+esc(i.id)+'">'
+          + '<span class="ic">'+ico+((hayCom || urgPendiente) ? '<span class="dot"></span>' : '')+'</span>'
+          + '<span class="nm">'+esc(corto)+'</span></button>';
       }).join("");
-    document.querySelectorAll("#institucionesRow .inst-row, #institucionesRow .inst-pill").forEach(el=>{
+    document.querySelectorAll("#institucionesRow .inst-cell, #institucionesRow .inst-row, #institucionesRow .inst-pill").forEach(el=>{
       el.addEventListener("click", ()=> abrirInstitucion(el.getAttribute("data-inst-id")));
     });
     const btn = document.getElementById("instHomeBtn");
