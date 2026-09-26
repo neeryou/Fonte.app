@@ -747,16 +747,19 @@
 
 
   /* ===== páginas oficiales (comunicado + institución) ===== */
-  .sheet2.pagina{ max-height:96vh; border-radius:16px 16px 0 0; }
-  .sheet2.pagina .sheet2-top{ border-bottom:.5px solid var(--ink); padding:12px 20px 10px; }
-  .sheet2.pagina .sheet2-body{ padding:18px 22px 40px; }
-  .com-marca{ font-family:var(--serif); font-weight:700; font-size:1.55rem; letter-spacing:-.03em; color:var(--ink); }
+  .sheet2.pagina{ top:0; left:0; right:0; bottom:0; max-height:none; height:100%; height:100dvh; width:100%;
+    max-width:640px; margin:0 auto; border-radius:0; transform:none; opacity:0; pointer-events:none;
+    z-index:240; background:var(--paper); }
+  .sheet2.pagina.show{ transform:none; opacity:1; box-shadow:none; pointer-events:auto; }
+  .sheet2.pagina .sheet2-top{ border-bottom:.5px solid var(--ink); padding:14px 22px 12px; position:sticky; top:0; background:var(--paper); z-index:2; }
+  .sheet2.pagina .sheet2-body{ padding:8px 22px 72px; }
+  .com-marca{ font-family:var(--serif); font-weight:700; font-size:2rem; letter-spacing:-.04em; color:var(--ink); line-height:1; }
   .com-marca em{ font-style:normal; font-family:var(--sans); font-size:.68rem; font-weight:600; letter-spacing:.04em;
     color:var(--ink-faint); margin-left:8px; }
   .com-chip{ display:inline-flex; align-items:center; gap:7px; margin:14px 0 16px; padding:7px 12px;
     background:color-mix(in srgb,var(--barrio) 12%,var(--paper)); border-radius:999px;
     font-family:var(--sans); font-size:.72rem; font-weight:600; color:var(--barrio); }
-  .com-tit{ font-family:var(--serif); font-weight:700; font-size:1.55rem; line-height:1.18; letter-spacing:-.03em;
+  .com-tit{ font-family:var(--serif); font-weight:700; font-size:2rem; line-height:1.12; letter-spacing:-.04em;
     color:var(--ink); margin:0 0 14px; padding-bottom:14px; border-bottom:.5px solid var(--ink); }
   .com-cuerpo{ font-family:var(--sans); font-size:.95rem; line-height:1.55; color:var(--ink); margin:0 0 16px; white-space:pre-wrap; }
   .com-foto{ display:none; width:100%; max-height:220px; object-fit:cover; border-radius:4px; margin:0 0 16px; }
@@ -1079,7 +1082,7 @@
 <!-- sheet: detalle de un comunicado oficial -->
 <div class="backdrop" id="backdropComunicado"></div>
 <div class="sheet2 pagina" id="sheetComunicado">
-  <div class="sheet2-top"><span class="b">Comunicado oficial</span><button class="close" id="closeComunicado">Cerrar ✕</button></div>
+  <div class="sheet2-top"><span class="b"></span><button class="close" id="closeComunicado">Cerrar ✕</button></div>
   <div class="sheet2-body">
     <div class="com-marca">Fonte<em>fuente directa</em></div>
     <div class="com-chip" id="comunicadoInst"><span class="verif-badge" style="background:var(--barrio);width:14px;height:14px"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span></span></div>
@@ -1088,6 +1091,7 @@
     <p class="com-cuerpo" id="comunicadoTexto"></p>
     <div id="comunicadoVideo" style="display:none;margin:0 0 16px;border-radius:4px;overflow:hidden;aspect-ratio:16/9"></div>
     <button class="com-share" id="comunicadoCompartirBtn">↗ Compartir</button>
+    <button class="com-share" id="comunicadoGuardarBtn" style="margin-top:0;border-color:var(--line-strong);color:var(--ink-soft)">↓ Guardar imagen</button>
     <a class="com-ficha" id="comunicadoFichaLink">Ver página de la institución ↗</a>
     <div class="com-sello">
       <span class="sg" id="comunicadoSigla">FO</span>
@@ -1100,7 +1104,7 @@
 <!-- sheet: ficha de institución -->
 <div class="backdrop" id="backdropInstitucion"></div>
 <div class="sheet2 pagina" id="sheetInstitucion">
-  <div class="sheet2-top"><span class="b">Institución verificada</span><button class="close" id="closeInstitucion">Cerrar ✕</button></div>
+  <div class="sheet2-top"><span class="b"></span><button class="close" id="closeInstitucion">Cerrar ✕</button></div>
   <div class="sheet2-body" id="institucionBody"></div>
 </div>
 
@@ -2788,20 +2792,44 @@
     document.getElementById("backdropComunicado").classList.remove("show");
     document.getElementById("sheetComunicado").classList.remove("show");
   }
+  function piezaDelComunicado(c){
+    return {
+      id: c.id, __tipo: "c",
+      titulo: c.titulo,
+      resumen_corto: c.texto || "",
+      lugar: c.institucion || "",
+      urgente: !!c.urgente,
+      imagen_url: c.imagen_url || null,
+      fuente_etiqueta: c.institucion || "",
+    };
+  }
   document.getElementById("comunicadoCompartirBtn").addEventListener("click", async (e)=>{
     if(!comunicadoAbierto) return;
-    await compartirPieza({
-      id: comunicadoAbierto.id, __tipo: "c",
-      titulo: comunicadoAbierto.titulo,
-      resumen_corto: comunicadoAbierto.texto || "",
-      lugar: comunicadoAbierto.institucion || "",
-      urgente: !!comunicadoAbierto.urgente,
-      imagen_url: comunicadoAbierto.imagen_url || null,
-      fuente_etiqueta: comunicadoAbierto.institucion || "",
-    }, e.currentTarget);
+    await compartirPieza(piezaDelComunicado(comunicadoAbierto), e.currentTarget);
+  });
+  document.getElementById("comunicadoGuardarBtn").addEventListener("click", async (e)=>{
+    if(!comunicadoAbierto) return;
+    const btn = e.currentTarget;
+    const orig = btn.textContent;
+    btn.textContent = "Preparando…";
+    try{
+      const blob = await generarPlaca(piezaDelComunicado(comunicadoAbierto));
+      if(!blob) throw new Error("sin placa");
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "fonte-oficial.jpg";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(()=> URL.revokeObjectURL(url), 4000);
+      btn.textContent = "Guardada ✓";
+    }catch(err){
+      btn.textContent = "No se pudo guardar";
+    }
+    setTimeout(()=> btn.textContent = orig, 1600);
   });
   document.getElementById("closeComunicado").addEventListener("click", cerrarComunicado);
-  document.getElementById("backdropComunicado").addEventListener("click", cerrarComunicado);
 
   // ================= INSTITUCIONES Y SERVICIOS VERIFICADOS =================
   const ICONS_INST = { salud:"🏥", social:"📦", municipio:"🏛️", seguridad:"🚓", educacion:"🏫", cultura:"🎭", deporte:"⚽", otro:"📍" };
