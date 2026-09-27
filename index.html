@@ -375,28 +375,23 @@
   .inst-lbl{ display:none; text-align:center; font-family:var(--sans); font-size:.58rem; font-weight:800;
     letter-spacing:.16em; text-transform:uppercase; color:var(--ink-faint); margin:2px 0 8px; }
   .inst-home.forzada .inst-lbl{ color:var(--urgente); display:block; }
-  .inst-home-list{ display:none; grid-template-columns:repeat(3,1fr); gap:2px 0;
-    border:1px solid var(--line-strong); border-radius:11px; background:var(--paper); padding:5px 2px 4px; }
-  .inst-home.open .inst-home-list{ display:grid; }
-  .inst-home-list.n-1{ grid-template-columns:1fr; }
-  .inst-home-list.n-2{ grid-template-columns:1fr 1fr; }
-  .inst-home-list.n-3{ grid-template-columns:repeat(3,1fr); }
-  .inst-home-list.n-4{ grid-template-columns:1fr 1fr; gap:10px 16px; padding:10px 18px 8px; }
-  .inst-home-list.n-5{ grid-template-columns:repeat(6,1fr); }
-  .inst-home-list.n-5 .inst-cell:nth-child(-n+3){ grid-column:span 2; }
-  .inst-home-list.n-5 .inst-cell:nth-child(4){ grid-column:2 / span 2; }
-  .inst-home-list.n-5 .inst-cell:nth-child(5){ grid-column:4 / span 2; }
-  .inst-home-list.n-6{ grid-template-columns:repeat(3,1fr); }
-  .inst-cell{ display:flex; flex-direction:column; align-items:center; gap:2px; border:0; background:none; cursor:pointer; padding:1px 0; }
-  .inst-cell .ic{ width:42px; height:42px; border-radius:50%; background:var(--paper-2); display:flex;
-    align-items:center; justify-content:center; position:relative; color:var(--ink); }
-  [data-tema="oscuro"] .inst-cell .ic{ background:var(--paper-3); color:var(--ink); }
-  .inst-cell .ic svg{ width:21px; height:21px; display:block; }
-  .inst-cell.urgente .ic{ background:color-mix(in srgb,var(--urgente) 16%,var(--paper)); }
-  .inst-cell .nm{ font-family:var(--sans); font-weight:650; font-size:.55rem; color:var(--ink); text-align:center; line-height:1.15; }
-  .inst-cell .dot{ position:absolute; top:2px; right:2px; width:8px; height:8px; border-radius:50%; background:var(--urgente); }
+  .inst-home-list{ display:none; flex-wrap:nowrap; gap:8px; overflow-x:auto; -webkit-overflow-scrolling:touch;
+    scrollbar-width:none; padding:2px 2px 10px; border:0; background:none; }
+  .inst-home-list::-webkit-scrollbar{ display:none; }
+  .inst-home.open .inst-home-list{ display:flex; }
+  .inst-cell{ display:none; }
   .inst-pill{ flex:0 0 auto; display:flex; align-items:center; gap:8px; padding:7px 10px 7px 7px;
     border:1px solid var(--line-strong); border-radius:10px; background:var(--paper); position:relative; }
+  .inst-home-list .inst-pill{
+    gap:7px; padding:6px 12px 6px 8px; border:.5px solid var(--ink);
+    border-radius:2px; background:var(--paper); box-shadow:none;
+  }
+  .inst-home-list .inst-pill .ic{ width:18px; height:18px; display:flex; align-items:center; justify-content:center; color:var(--ink); }
+  .inst-home-list .inst-pill .ic svg{ width:16px; height:16px; display:block; }
+  .inst-home-list .inst-pill .nm{ font-family:var(--sans); font-size:.68rem; font-weight:650;
+    letter-spacing:.02em; color:var(--ink); white-space:nowrap; max-width:none; }
+  .inst-home-list .inst-pill .dot{ width:6px; height:6px; top:5px; right:5px; }
+  .inst-home-list .inst-pill.urgente{ border-color:var(--urgente); background:color-mix(in srgb,var(--urgente) 8%,var(--paper)); }
   .inst-pill .sg{ width:28px; height:28px; border-radius:3px; background:var(--region); color:#fff;
     display:flex; align-items:center; justify-content:center; font-family:var(--mono); font-size:.58rem; font-weight:700; }
   .inst-pill .nm{ font-family:var(--sans); font-size:.72rem; font-weight:700; color:var(--ink); white-space:nowrap; max-width:110px; overflow:hidden; text-overflow:ellipsis; }
@@ -2884,9 +2879,11 @@
         const hayCom = propios.length > 0 && (sinLeer > 0 || urgPendiente);
         const nombreCorto = (i.nombre||"").replace(/^Municipalidad de\s+/i,"").replace(/^Hospital\s+/i,"Hospital ");
         const corto = nombreCorto.length>16 ? nombreCorto.slice(0,15)+"…" : nombreCorto;
-        return '<button type="button" class="inst-cell'+(urgPendiente?" urgente":"")+'" data-inst-id="'+esc(i.id)+'">'
-          + '<span class="ic">'+iconoLineaDe(i)+((hayCom || urgPendiente) ? '<span class="dot"></span>' : '')+'</span>'
-          + '<span class="nm">'+esc(corto)+'</span></button>';
+        return '<button type="button" class="inst-pill'+(urgPendiente?" urgente":"")+'" data-inst-id="'+esc(i.id)+'">'
+          + '<span class="ic">'+iconoLineaDe(i)+'</span>'
+          + '<span class="nm">'+esc(corto)+'</span>'
+          + ((hayCom || urgPendiente) ? '<span class="dot"></span>' : '')
+          + '</button>';
       }).join("");
     const nInst = INSTITUCIONES.length;
     const row = document.getElementById("institucionesRow");
