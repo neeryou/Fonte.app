@@ -381,12 +381,7 @@
   .inst-home-list.n-1{ grid-template-columns:1fr; }
   .inst-home-list.n-2{ grid-template-columns:1fr 1fr; }
   .inst-home-list.n-3{ grid-template-columns:repeat(3,1fr); }
-  .inst-home-list.n-4{ grid-template-columns:repeat(3,1fr); grid-template-rows:auto auto auto;
-    grid-template-areas:". a ." "b . c" ". d ."; gap:0; width:100%; }
-  .inst-home-list.n-4 .inst-cell:nth-child(1){ grid-area:a; }
-  .inst-home-list.n-4 .inst-cell:nth-child(2){ grid-area:b; }
-  .inst-home-list.n-4 .inst-cell:nth-child(3){ grid-area:c; }
-  .inst-home-list.n-4 .inst-cell:nth-child(4){ grid-area:d; }
+  .inst-home-list.n-4{ grid-template-columns:1fr 1fr; gap:10px 16px; padding:10px 18px 8px; }
   .inst-home-list.n-5{ grid-template-columns:repeat(6,1fr); }
   .inst-home-list.n-5 .inst-cell:nth-child(-n+3){ grid-column:span 2; }
   .inst-home-list.n-5 .inst-cell:nth-child(4){ grid-column:2 / span 2; }
