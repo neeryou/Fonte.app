@@ -387,10 +387,13 @@
   .inst-pill{ flex:0 0 auto; display:flex; align-items:center; gap:8px; padding:7px 10px 7px 7px;
     border:1px solid var(--line-strong); border-radius:10px; background:var(--paper); position:relative; }
   .inst-home-list .inst-pill{
-    gap:7px; padding:6px 12px 6px 8px; border:.5px solid var(--ink);
-    border-radius:2px; background:var(--paper); box-shadow:none;
+    gap:7px; padding:6px 12px 6px 8px;
+    border:.5px solid var(--inst, var(--ink));
+    border-radius:3px;
+    background:color-mix(in srgb, var(--inst, var(--barrio)) 12%, var(--paper));
+    box-shadow:none;
   }
-  .inst-home-list .inst-pill .ic{ width:18px; height:18px; display:flex; align-items:center; justify-content:center; color:var(--ink); }
+  .inst-home-list .inst-pill .ic{ width:18px; height:18px; display:flex; align-items:center; justify-content:center; color:var(--inst, var(--ink)); }
   .inst-home-list .inst-pill .ic svg{ width:16px; height:16px; display:block; }
   .inst-home-list .inst-pill .nm{ font-family:var(--sans); font-size:.68rem; font-weight:650;
     letter-spacing:.02em; color:var(--ink); white-space:nowrap; max-width:none; }
@@ -565,12 +568,13 @@
   .svc-fila .h{ font-family:var(--mono); font-size:.72rem; color:var(--ink-soft); text-align:right; white-space:nowrap; }
   .svc-fila.oculta{ display:none; }
   .svc-fila.match .b{ background:#FFE8A3; border-radius:3px; padding:0 3px; }
-  .urg-card .x{ position:absolute; top:9px; right:9px; background:none; border:0; color:var(--ink-faint); padding:2px 4px; display:flex; }
+  .urg-card .x{ position:absolute; bottom:8px; right:8px; background:color-mix(in srgb,var(--paper) 80%,transparent);
+    border:0; color:var(--ink-soft); padding:4px; display:flex; border-radius:4px; }
   .urg-card .x svg{ display:block; }
   /* comunicado oficial (no urgente): misma tarjeta, sin rojo */
-  .urg-card.oficial{ background:color-mix(in srgb,var(--inst,var(--barrio)) 8%,var(--paper-2));
-    border-color:color-mix(in srgb,var(--barrio) 28%,var(--line)); }
-  .urg-card.oficial .lbl{ background:var(--barrio); }
+  .urg-card.oficial{ background:color-mix(in srgb,var(--inst,var(--barrio)) 16%,var(--paper));
+    border-color:color-mix(in srgb,var(--inst,var(--barrio)) 45%,var(--line)); }
+  .urg-card.oficial .lbl{ background:var(--inst,var(--barrio)); }
   .dots{ display:flex; justify-content:center; gap:4px; padding:9px 0 0; }
   .dots i{ width:5px; height:5px; border-radius:50%; background:var(--line-strong); transition:.2s; }
   .dots i.on{ background:var(--ink-soft); width:15px; border-radius:999px; }
@@ -2160,10 +2164,13 @@
     const ctx = c.getContext("2d");
 
     if(n.__tipo === "c"){
-      const TINTA = "#1A1814", PAPEL = "#F4F0E6", VERDE = "#1F4A36", VERDE2 = "#2A5C44";
+      const TINTA = "#1A1814", PAPEL = "#F4F0E6";
+      const instObj = (INSTITUCIONES||[]).find(x=>String(x.id)===String(n.institucion_id||""));
+      const VERDE = colorDeInst(n.institucion_id, n.lugar || n.fuente_etiqueta);
+      const VERDE2 = oscurecerHex(VERDE, 0.72);
       ctx.fillStyle = PAPEL; ctx.fillRect(0,0,W,H);
-      const inst = (n.lugar || n.fuente_etiqueta || "Institución").trim();
-      const sigla = ((typeof siglaDe === "function") ? siglaDe(inst) : inst.slice(0,2).toUpperCase()).slice(0,3);
+      const inst = (n.lugar || n.fuente_etiqueta || (instObj&&instObj.nombre) || "Institución").trim();
+      const sigla = selloDeInst(n.institucion_id, inst);
       ctx.font = "600 32px 'Work Sans',sans-serif";
       const instW = Math.min(W-200, Math.max(420, ctx.measureText(inst).width + 160));
       const banX = (W - instW) / 2;
@@ -2612,10 +2619,26 @@
   function colorDeInst(id, nombre){
     const i = (INSTITUCIONES||[]).find(x=>String(x.id)===String(id));
     if(i && i.color) return i.color;
-    const TIPO = {salud:"#3E8557", municipio:"#22503A", seguridad:"#1B3A5C", educacion:"#63528C",
+    const nom = ((i && i.nombre) || nombre || "").toLowerCase();
+    if(/bombero/.test(nom)) return "#9B2C2C";
+    if(/polic|comis/.test(nom)) return "#1B3A5C";
+    const TIPO = {salud:"#2F6B45", municipio:"#5C5A54", seguridad:"#1B3A5C", educacion:"#63528C",
       cultura:"#9C7038", deporte:"#8A4A2A", social:"#3E6B8A", otro:"#5A5346"};
     if(i && TIPO[i.tipo]) return TIPO[i.tipo];
-    return "#22503A";
+    return "#5C5A54";
+  }
+  function selloDeInst(id, nombre){
+    const i = (INSTITUCIONES||[]).find(x=>String(x.id)===String(id));
+    if(i && i.sello) return String(i.sello).slice(0,4).toUpperCase();
+    return (typeof siglaDe === "function" ? siglaDe((i&&i.nombre)||nombre||"") : String(nombre||"IN").slice(0,2)).slice(0,4);
+  }
+  function oscurecerHex(hex, f){
+    const h = (hex||"#22503A").replace("#","");
+    if(h.length < 6) return hex;
+    const n = parseInt(h.slice(0,6), 16);
+    let r = (n>>16)&255, g = (n>>8)&255, b = n&255;
+    r = Math.max(0, Math.round(r*f)); g = Math.max(0, Math.round(g*f)); b = Math.max(0, Math.round(b*f));
+    return "#" + [r,g,b].map(x=>x.toString(16).padStart(2,"0")).join("");
   }
   function urgentesVigentes(){
     // se mantiene por compatibilidad con otras partes que la llamen
@@ -2907,7 +2930,7 @@
         const hayCom = propios.length > 0 && (sinLeer > 0 || urgPendiente);
         const nombreCorto = (i.nombre||"").replace(/^Municipalidad de\s+/i,"").replace(/^Hospital\s+/i,"Hospital ");
         const corto = nombreCorto.length>16 ? nombreCorto.slice(0,15)+"…" : nombreCorto;
-        return '<button type="button" class="inst-pill'+(urgPendiente?" urgente":"")+'" data-inst-id="'+esc(i.id)+'">'
+        return '<button type="button" class="inst-pill'+(urgPendiente?" urgente":"")+'" data-inst-id="'+esc(i.id)+'" style="--inst:'+colorDeInst(i.id, i.nombre)+'">'
           + '<span class="ic">'+iconoLineaDe(i)+'</span>'
           + '<span class="nm">'+esc(corto)+'</span>'
           + ((hayCom || urgPendiente) ? '<span class="dot"></span>' : '')

@@ -694,7 +694,9 @@
         <div class="field-label">Link externo (opcional)</div>
         <input class="inp" id="inLink" placeholder="https://...">
         <div class="field-label">Color de la institución</div>
-        <input class="inp" type="color" id="inColor" value="#22503A" style="height:42px;padding:4px">
+        <input class="inp" type="color" id="inColor" value="#5C5A54" style="height:42px;padding:4px">
+        <div class="field-label">Sello (2 a 4 letras en la placa)</div>
+        <input class="inp" id="inSello" maxlength="4" placeholder="Ej: MQ, HU, P1" style="text-transform:uppercase;letter-spacing:.12em">
         <div class="field-label">Foto / logo (opcional)</div>
         <input class="inp" type="file" id="inFoto" accept="image/*" style="padding:9px">
         <img class="foto-preview" id="inFotoPreview">
@@ -1708,7 +1710,7 @@
   function resetFormInstitucion(){
     instEditandoId = null;
     inFotoUrl = null;
-    ["inNombre","inDesc","inDireccion","inHorario","inTelefono","inLink"].forEach(id=>{
+    ["inNombre","inDesc","inDireccion","inHorario","inTelefono","inLink","inSello"].forEach(id=>{
       const el = document.getElementById(id); if(el) el.value = "";
     });
     const tipo = document.getElementById("inTipo"); if(tipo) tipo.value = "municipio";
@@ -1733,7 +1735,8 @@
     document.getElementById("inTelefono").value = i.telefono || "";
     document.getElementById("inLink").value = i.link_url || "";
     const col = document.getElementById("inColor");
-    if(col) col.value = i.color || "#22503A";
+    if(col) col.value = i.color || "#5C5A54";
+    const se = document.getElementById("inSello"); if(se) se.value = i.sello || "";
     inFotoUrl = i.foto_url || null;
     const prev = document.getElementById("inFotoPreview");
     if(inFotoUrl){ prev.src = inFotoUrl; prev.style.display = "block"; }
@@ -1774,7 +1777,8 @@
       horario: document.getElementById("inHorario").value.trim() || null,
       telefono: document.getElementById("inTelefono").value.trim() || null,
       link_url: document.getElementById("inLink").value.trim() || null,
-      color: document.getElementById("inColor").value || "#22503A",
+      color: document.getElementById("inColor").value || "#5C5A54",
+      sello: (document.getElementById("inSello").value || "").trim().toUpperCase() || null,
       activa: true,
     };
     if(inFotoUrl) registro.foto_url = inFotoUrl;
@@ -1782,16 +1786,18 @@
     if(instEditandoId){
       const r = await sb.from("instituciones").update(registro).eq("id", instEditandoId);
       error = r.error;
-      if(error && /color/i.test(error.message||"")){
-        delete registro.color;
+      if(error && /(color|sello)/i.test(error.message||"")){
+        if(/color/i.test(error.message||"")) delete registro.color;
+        if(/sello/i.test(error.message||"")) delete registro.sello;
         const r2 = await sb.from("instituciones").update(registro).eq("id", instEditandoId);
         error = r2.error;
       }
     } else {
       const r = await sb.from("instituciones").insert(registro);
       error = r.error;
-      if(error && /color/i.test(error.message||"")){
-        delete registro.color;
+      if(error && /(color|sello)/i.test(error.message||"")){
+        if(/color/i.test(error.message||"")) delete registro.color;
+        if(/sello/i.test(error.message||"")) delete registro.sello;
         const r2 = await sb.from("instituciones").insert(registro);
         error = r2.error;
       }
