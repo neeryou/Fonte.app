@@ -637,6 +637,7 @@
         <div class="field-label" style="margin-top:14px">Foto (opcional)</div>
         <input class="inp" type="file" id="coFoto" accept="image/*" style="padding:9px">
         <img class="foto-preview" id="coFotoPreview">
+        <p id="coFotoEstado" style="font-family:var(--sans);font-size:.68rem;color:var(--ink-faint);margin:4px 0 0"></p>
         <div class="field-label" style="margin-top:14px">Video (opcional — enlace de YouTube, Facebook, TikTok o Instagram)</div>
         <input class="inp" id="coVideo" placeholder="https://www.facebook.com/...">
         <label style="display:flex;gap:10px;align-items:flex-start;margin-top:14px;padding:12px;background:color-mix(in srgb,#B23A2E 6%,var(--paper));border:1px solid color-mix(in srgb,#B23A2E 25%,var(--line));border-radius:10px;cursor:pointer">
@@ -688,6 +689,8 @@
         <input class="inp" id="inTelefono" placeholder="(03731) 42-0000">
         <div class="field-label">Link externo (opcional)</div>
         <input class="inp" id="inLink" placeholder="https://...">
+        <div class="field-label">Color de la institución</div>
+        <input class="inp" type="color" id="inColor" value="#22503A" style="height:42px;padding:4px">
         <div class="field-label">Foto / logo (opcional)</div>
         <input class="inp" type="file" id="inFoto" accept="image/*" style="padding:9px">
         <img class="foto-preview" id="inFotoPreview">
@@ -1705,6 +1708,7 @@
       telefono: document.getElementById("inTelefono").value.trim() || null,
       link_url: document.getElementById("inLink").value.trim() || null,
       foto_url: inFotoUrl,
+      color: document.getElementById("inColor").value || "#22503A",
       activa: true,
     };
     const { error } = await sb.from("instituciones").insert(registro);
@@ -3185,19 +3189,32 @@
   document.getElementById("coFoto").addEventListener("change", async (e)=>{
     const file = e.target.files[0];
     coFotoUrl = null;
-    if(!file) return;
     const prev = document.getElementById("coFotoPreview");
+    const st = document.getElementById("coFotoEstado");
+    if(!file){
+      if(prev) prev.style.display = "none";
+      if(st) st.textContent = "";
+      return;
+    }
     prev.src = URL.createObjectURL(file);
     prev.style.display = "block";
+    if(st) st.textContent = "Subiendo foto…";
     try{
       const chico = await comprimirImagen(file);
       const nombre = "com-" + Date.now() + "." + ((chico.name||file.name).split(".").pop() || "jpg");
       const { error } = await sb.storage.from("notas-fotos").upload(nombre, chico);
-      if(!error){
-        const { data } = sb.storage.from("notas-fotos").getPublicUrl(nombre);
-        coFotoUrl = data.publicUrl;
+      if(error){
+        if(st) st.textContent = "No se pudo subir: " + error.message;
+        toast("La foto no se subió. El comunicado saldría sin imagen.");
+        return;
       }
-    }catch(err){ /* si falla, se publica igual sin foto */ }
+      const { data } = sb.storage.from("notas-fotos").getPublicUrl(nombre);
+      coFotoUrl = data.publicUrl;
+      if(st) st.textContent = "Foto lista ✓";
+    }catch(err){
+      if(st) st.textContent = "Error al preparar la foto";
+      toast("La foto no se pudo cargar");
+    }
   });
 
   // ================= FOTO A PANTALLA COMPLETA =================

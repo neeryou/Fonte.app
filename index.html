@@ -376,9 +376,13 @@
     letter-spacing:.16em; text-transform:uppercase; color:var(--ink-faint); margin:2px 0 8px; }
   .inst-home.forzada .inst-lbl{ color:var(--urgente); display:block; }
   .inst-home-list{ display:none; flex-wrap:nowrap; gap:8px; overflow-x:auto; -webkit-overflow-scrolling:touch;
-    scrollbar-width:none; padding:2px 2px 10px; border:0; background:none; }
+    scrollbar-width:none; padding:2px 2px 10px; border:0; background:none;
+    overscroll-behavior-x: contain; touch-action: pan-x; }
   .inst-home-list::-webkit-scrollbar{ display:none; }
   .inst-home.open .inst-home-list{ display:flex; }
+  .inst-home #urgentesWrap{ display:none !important; }
+  .inst-home.open #urgentesWrap[style*="block"]{ display:block !important; }
+  .inst-home.open #urgentesWrap .urg-row{ padding:6px 0 2px; }
   .inst-cell{ display:none; }
   .inst-pill{ flex:0 0 auto; display:flex; align-items:center; gap:8px; padding:7px 10px 7px 7px;
     border:1px solid var(--line-strong); border-radius:10px; background:var(--paper); position:relative; }
@@ -542,7 +546,8 @@
     min-width:16px; height:16px; padding:0 5px; border-radius:999px; background:var(--terracota); color:#fff;
     font-size:.52rem; font-weight:800; display:inline-flex; align-items:center; justify-content:center;
   }
-  .urg-card.oficial .inst-pill{ border-color:color-mix(in srgb,var(--barrio) 35%,var(--line)); }
+  .urg-card.oficial .inst-pill{ border-color:color-mix(in srgb,var(--inst,var(--barrio)) 40%,var(--line)); }
+  .urg-card.oficial .lbl{ background:var(--inst,var(--barrio)); }
   .svc-search{ width:100%; font-family:var(--sans); font-size:.8rem; color:var(--ink); background:var(--paper);
     border:1px solid var(--line-strong); border-radius:10px; padding:10px 12px; margin:8px 0 10px; }
   .svc-card{ background:var(--paper-2); border-radius:12px; margin-bottom:9px; overflow:hidden; }
@@ -560,9 +565,10 @@
   .svc-fila .h{ font-family:var(--mono); font-size:.72rem; color:var(--ink-soft); text-align:right; white-space:nowrap; }
   .svc-fila.oculta{ display:none; }
   .svc-fila.match .b{ background:#FFE8A3; border-radius:3px; padding:0 3px; }
-  .urg-card .x{ position:absolute; top:9px; right:9px; background:none; border:0; color:var(--ink-faint); font-size:.8rem; padding:2px 4px; }
+  .urg-card .x{ position:absolute; top:9px; right:9px; background:none; border:0; color:var(--ink-faint); padding:2px 4px; display:flex; }
+  .urg-card .x svg{ display:block; }
   /* comunicado oficial (no urgente): misma tarjeta, sin rojo */
-  .urg-card.oficial{ background:color-mix(in srgb,var(--barrio) 6%,var(--paper-2));
+  .urg-card.oficial{ background:color-mix(in srgb,var(--inst,var(--barrio)) 8%,var(--paper-2));
     border-color:color-mix(in srgb,var(--barrio) 28%,var(--line)); }
   .urg-card.oficial .lbl{ background:var(--barrio); }
   .dots{ display:flex; justify-content:center; gap:4px; padding:9px 0 0; }
@@ -974,11 +980,11 @@
     </button>
     <div class="inst-lbl" id="instHomeSub">Oficial</div>
     <div class="inst-home-list" id="institucionesRow"></div>
+    <div id="urgentesWrap" style="display:none">
+      <div class="urg-row" id="urgRow"></div>
+      <div class="dots" id="urgDots"></div>
+    </div>
     <div class="inst-home-hint" style="display:none"></div>
-  </div>
-  <div id="urgentesWrap" style="display:none">
-    <div class="urg-row" id="urgRow"></div>
-    <div class="dots" id="urgDots"></div>
   </div>
 
   <div class="wrap"><div class="urgent-band" id="urgentBand"><div class="band-head">⚡ Cerca tuyo ahora</div><div class="band-list"></div></div></div>
@@ -2191,6 +2197,26 @@
       ctx.textAlign = "left";
       const lineas = envolver(ctx, cuerpo, W-200, 11);
       lineas.forEach((l,i)=> ctx.fillText(l, 120, y + 80 + i*50));
+      const fotoOf = n.imagen_url || ((n.fotos||[])[0]) || "";
+      if(fotoOf){
+        const im = await cargarImagen(fotoOf, 7000);
+        if(im){
+          const cajaY = y + 80 + lineas.length*50 + 24;
+          const cajaH = Math.min(360, H - 520 - cajaY);
+          if(cajaH > 140){
+            const cajaW = W - 240;
+            const cajaX = 120;
+            ctx.save();
+            ctx.beginPath(); ctx.roundRect(cajaX, cajaY, cajaW, cajaH, 8); ctx.clip();
+            const s = Math.max(cajaW/im.width, cajaH/im.height);
+            const dw = im.width*s, dh = im.height*s;
+            ctx.drawImage(im, cajaX+(cajaW-dw)/2, cajaY+(cajaH-dh)/2, dw, dh);
+            ctx.restore();
+            ctx.strokeStyle = VERDE2; ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.roundRect(cajaX, cajaY, cajaW, cajaH, 8); ctx.stroke();
+          }
+        }
+      }
       ctx.textAlign = "center";
       ctx.fillStyle = VERDE;
       ctx.font = "700 140px 'Fraunces',Georgia,serif";
@@ -2574,18 +2600,22 @@
     }catch(e){ COMUNICADOS = []; }
     renderComunicadosEn();
   }
-  const HORAS_RECIENTE = 48;
-  // Urgentes y comunicados normales recientes: se muestran en portada mientras estén vigentes.
-  // Si el usuario los cierra (✕) o pasan las 48 hs, desaparecen.
+  const HORAS_RECIENTE = 24;
+  // En inicio: solo las últimas 24 h. Después viven en la ficha de la institución.
   function comunicadosVigentes(){
     const ahora = Date.now();
-    let cerrados = [];
-    try{ cerrados = JSON.parse(localStorage.getItem("fonte_urg_cerrados") || "[]"); }catch(e){}
     return (COMUNICADOS||[]).filter(c=>{
-      if(cerrados.includes(String(c.id))) return false;
       if(!c.created_at) return true;
       return (ahora - new Date(c.created_at).getTime()) < HORAS_RECIENTE*3600000;
     });
+  }
+  function colorDeInst(id, nombre){
+    const i = (INSTITUCIONES||[]).find(x=>String(x.id)===String(id));
+    if(i && i.color) return i.color;
+    const TIPO = {salud:"#3E8557", municipio:"#22503A", seguridad:"#1B3A5C", educacion:"#63528C",
+      cultura:"#9C7038", deporte:"#8A4A2A", social:"#3E6B8A", otro:"#5A5346"};
+    if(i && TIPO[i.tipo]) return TIPO[i.tipo];
+    return "#22503A";
   }
   function urgentesVigentes(){
     // se mantiene por compatibilidad con otras partes que la llamen
@@ -2621,8 +2651,9 @@
       const pill = c.institucion_id
         ? '<button type="button" class="inst-pill" data-ir-inst="'+esc(c.institucion_id)+'">'+esc(nom)+(nHoy>1?' <span class="n">'+nHoy+'</span>':'')+'</button>'
         : '<span class="inst-pill">'+esc(nom)+(nHoy>1?' <span class="n">'+nHoy+'</span>':'')+'</span>';
-      return '<div class="urg-card'+(esUrg?"":" oficial")+'" data-com-id="'+esc(c.id)+'">'
-        + '<button class="x" data-cerrar="'+esc(c.id)+'" aria-label="Cerrar">✕</button>'
+      const col = colorDeInst(c.institucion_id, nom);
+      return '<div class="urg-card'+(esUrg?"":" oficial")+'" data-com-id="'+esc(c.id)+'" style="--inst:'+col+'">'
+        + '<button class="x" data-cerrar="'+esc(c.id)+'" aria-label="Ocultar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button>'
         + '<span class="lbl">'+(esUrg ? "⚡ Urgente · oficial" : "Texto de la institución · no editado")+'</span>'
         + (c.imagen_url ? '<img class="urg-thumb" src="'+esc(c.imagen_url)+'" alt="">' : '')
         + '<div class="h">'+esc(c.titulo||"")+'</div>'
@@ -2650,14 +2681,10 @@
     row.querySelectorAll("[data-cerrar]").forEach(b=>{
       b.addEventListener("click", (e)=>{
         e.stopPropagation();
-        const id = b.getAttribute("data-cerrar");
-        try{
-          const c = JSON.parse(localStorage.getItem("fonte_urg_cerrados") || "[]");
-          c.push(String(id));
-          localStorage.setItem("fonte_urg_cerrados", JSON.stringify(c.slice(-50)));
-        }catch(e2){}
-        renderComunicadosEn();
-        if(typeof pintarInstituciones === "function") pintarInstituciones();
+        const box = document.getElementById("institucionesWrap");
+        const btn = document.getElementById("instHomeBtn");
+        if(box){ box.classList.remove("open","forzada"); }
+        if(btn) btn.setAttribute("aria-expanded","false");
       });
     });
     row.onscroll = ()=>{
@@ -2866,7 +2893,8 @@
   function pintarInstituciones(){
     const wrap = document.getElementById("institucionesWrap");
     if(!wrap) return;
-    if(!INSTITUCIONES.length){ wrap.style.display = "none"; return; }
+    const hayAvisos = (typeof comunicadosVigentes === "function") && comunicadosVigentes().length;
+    if(!INSTITUCIONES.length && !hayAvisos){ wrap.style.display = "none"; return; }
     wrap.style.display = "block";
     let hayUrgente = false;
     document.getElementById("institucionesRow").innerHTML =
@@ -2893,10 +2921,13 @@
     });
     const btn = document.getElementById("instHomeBtn");
     const sub = document.getElementById("instHomeSub");
-    if(hayUrgente){
-      wrap.classList.add("open","forzada");
+    const hayNuevo = hayAvisos;
+    if(hayUrgente || hayNuevo){
+      wrap.classList.add("open");
+      if(hayUrgente) wrap.classList.add("forzada");
+      else wrap.classList.remove("forzada");
       if(btn) btn.setAttribute("aria-expanded","true");
-      if(sub) sub.textContent = "Oficial · urgente";
+      if(sub) sub.textContent = hayUrgente ? "Oficial · urgente" : "Oficial";
     } else {
       wrap.classList.remove("forzada");
       if(sub) sub.textContent = "Oficial";
@@ -2904,8 +2935,8 @@
     if(btn && !btn.dataset.bound){
       btn.dataset.bound = "1";
       btn.addEventListener("click", ()=>{
-        if(wrap.classList.contains("forzada")) return; // urgente: se queda abierto
         wrap.classList.toggle("open");
+        wrap.classList.remove("forzada");
         btn.setAttribute("aria-expanded", wrap.classList.contains("open") ? "true" : "false");
       });
     }
@@ -3918,7 +3949,7 @@
     }
 
     function empieza(e){
-      if(e.target.closest(".urg-row, .inst-row, .ofertas-bar, .gal-row, .waves-in, .cats-in, .fav-in, .sheet, .sheet2, .lightbox, .backdrop")){
+      if(e.target.closest(".urg-row, .inst-row, .inst-home, .inst-home-list, #institucionesRow, #institucionesWrap, .ofertas-bar, .gal-row, .waves-in, .cats-in, .fav-in, .sheet, .sheet2, .lightbox, .backdrop")){
         siguiendo = false; return;
       }
       // Si quedó un gesto a medias, no arrancar otro encima
