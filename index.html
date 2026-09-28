@@ -2724,12 +2724,17 @@
     marcarComunicadoVisto(id);
     if(typeof pintarInstituciones === "function") pintarInstituciones();
     const nomInst = c.institucion || "Institución";
+    const col = colorDeInst(c.institucion_id, nomInst);
+    const sello = selloDeInst(c.institucion_id, nomInst);
     const chip = document.getElementById("comunicadoInst");
     chip.querySelector("span:last-child").textContent = nomInst + " · sello administrado por Fonte";
+    chip.style.color = col;
+    const badge = chip.querySelector(".verif-badge");
+    if(badge) badge.style.background = col;
     document.getElementById("comunicadoTitulo").textContent = c.titulo || "";
     document.getElementById("comunicadoTexto").textContent = c.texto || "";
     const sg = document.getElementById("comunicadoSigla");
-    if(sg) sg.textContent = (typeof siglaDe === "function") ? siglaDe(nomInst) : nomInst.slice(0,2).toUpperCase();
+    if(sg){ sg.textContent = sello; sg.style.background = col; }
     const sl = document.getElementById("comunicadoSelloSub");
     if(sl) sl.textContent = nomInst + " · sello Fonte";
     const lk = document.getElementById("comunicadoLink");
