@@ -695,6 +695,7 @@
         <input class="inp" type="file" id="inFoto" accept="image/*" style="padding:9px">
         <img class="foto-preview" id="inFotoPreview">
         <button class="btn-gen" id="inPublicarBtn">Guardar institución</button>
+        <button type="button" class="disc" id="inCancelarBtn" style="width:100%;margin-top:8px;padding:10px;display:none">Cancelar edición</button>
         <div class="err-msg hide" id="inErr"></div>
       </div>
 
@@ -890,6 +891,8 @@
   });
 
   let inFotoUrl = null;
+  let instEditandoId = null;
+  let INST_ADMIN = [];
   document.getElementById("inFoto").addEventListener("change", async (e)=>{
     const file = e.target.files[0];
     inFotoUrl = null;
@@ -1398,6 +1401,7 @@
   const ICONS_INST = { salud:"🏥", social:"📦", municipio:"🏛️", seguridad:"🚓", educacion:"🏫", cultura:"🎭", deporte:"⚽", otro:"📍" };
   async function cargarInstitucionesAdmin(){
     const { data, error } = await sb.from("instituciones").select("*").eq("activa", true).order("created_at", { ascending:false });
+    INST_ADMIN = data || [];
     revisarFechasVencidas();
     const sel = document.getElementById("coInstitucionSel");
     sel.innerHTML = '<option value="">— Elegir institución —</option>' +
@@ -1447,6 +1451,13 @@
       + '<div class="fechas-panel hide" id="fechasPanel-'+escA(i.id)+'"></div>'
       + '</div>';
     }).join("");
+    cont.querySelectorAll(".inst-block .edit").forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        const id = btn.closest(".inst-block").getAttribute("data-id");
+        const inst = (INST_ADMIN||[]).find(x=>String(x.id)===String(id));
+        if(inst) abrirEdicionInstitucion(inst);
+      });
+    });
     cont.querySelectorAll(".inst-block .del").forEach(btn=>{
       btn.addEventListener("click", async ()=>{
         const id = btn.closest(".inst-block").getAttribute("data-id");
@@ -1687,6 +1698,55 @@
     });
   }
 
+  function resetFormInstitucion(){
+    instEditandoId = null;
+    inFotoUrl = null;
+    ["inNombre","inDesc","inDireccion","inHorario","inTelefono","inLink"].forEach(id=>{
+      const el = document.getElementById(id); if(el) el.value = "";
+    });
+    const tipo = document.getElementById("inTipo"); if(tipo) tipo.value = "municipio";
+    const col = document.getElementById("inColor"); if(col) col.value = "#22503A";
+    const foto = document.getElementById("inFoto"); if(foto) foto.value = "";
+    const prev = document.getElementById("inFotoPreview");
+    if(prev){ prev.src = ""; prev.style.display = "none"; }
+    const btn = document.getElementById("inPublicarBtn");
+    if(btn) btn.textContent = "Guardar institución";
+    const tog = document.querySelector('[data-form="formInstitucion"] span');
+    if(tog) tog.textContent = "+ Nueva institución";
+    const cancel = document.getElementById("inCancelarBtn");
+    if(cancel) cancel.style.display = "none";
+  }
+  function abrirEdicionInstitucion(i){
+    instEditandoId = i.id;
+    document.getElementById("inNombre").value = i.nombre || "";
+    document.getElementById("inTipo").value = i.tipo || "otro";
+    document.getElementById("inDesc").value = i.descripcion || "";
+    document.getElementById("inDireccion").value = i.direccion || "";
+    document.getElementById("inHorario").value = i.horario || "";
+    document.getElementById("inTelefono").value = i.telefono || "";
+    document.getElementById("inLink").value = i.link_url || "";
+    const col = document.getElementById("inColor");
+    if(col) col.value = i.color || "#22503A";
+    inFotoUrl = i.foto_url || null;
+    const prev = document.getElementById("inFotoPreview");
+    if(inFotoUrl){ prev.src = inFotoUrl; prev.style.display = "block"; }
+    else { prev.src = ""; prev.style.display = "none"; }
+    document.getElementById("inFoto").value = "";
+    document.getElementById("inPublicarBtn").textContent = "Guardar cambios";
+    const form = document.getElementById("formInstitucion");
+    form.classList.remove("hide");
+    document.querySelector('[data-form="formInstitucion"]').classList.add("abierto");
+    const tog = document.querySelector('[data-form="formInstitucion"] span');
+    if(tog) tog.textContent = "Editando institución";
+    const cancel = document.getElementById("inCancelarBtn");
+    if(cancel) cancel.style.display = "block";
+    form.scrollIntoView({ behavior:"smooth", block:"start" });
+  }
+  document.getElementById("inCancelarBtn").addEventListener("click", ()=>{
+    resetFormInstitucion();
+    document.getElementById("formInstitucion").classList.add("hide");
+    document.querySelector('[data-form="formInstitucion"]').classList.remove("abierto");
+  });
   document.getElementById("inPublicarBtn").addEventListener("click", async ()=>{
     const errEl = document.getElementById("inErr");
     errEl.classList.add("hide");
@@ -1707,26 +1767,35 @@
       horario: document.getElementById("inHorario").value.trim() || null,
       telefono: document.getElementById("inTelefono").value.trim() || null,
       link_url: document.getElementById("inLink").value.trim() || null,
-      foto_url: inFotoUrl,
       color: document.getElementById("inColor").value || "#22503A",
       activa: true,
     };
-    const { error } = await sb.from("instituciones").insert(registro);
-    btn.textContent = "Guardar institución";
+    if(inFotoUrl) registro.foto_url = inFotoUrl;
+    let error;
+    if(instEditandoId){
+      const r = await sb.from("instituciones").update(registro).eq("id", instEditandoId);
+      error = r.error;
+      if(error && /color/i.test(error.message||"")){
+        delete registro.color;
+        const r2 = await sb.from("instituciones").update(registro).eq("id", instEditandoId);
+        error = r2.error;
+      }
+    } else {
+      const r = await sb.from("instituciones").insert(registro);
+      error = r.error;
+      if(error && /color/i.test(error.message||"")){
+        delete registro.color;
+        const r2 = await sb.from("instituciones").insert(registro);
+        error = r2.error;
+      }
+    }
     btn.disabled = false;
+    btn.textContent = instEditandoId ? "Guardar cambios" : "Guardar institución";
     if(error){ toast("No se pudo guardar: " + error.message); return; }
-    toast("Institución guardada ✓");
+    toast(instEditandoId ? "Institución actualizada ✓" : "Institución guardada ✓");
+    resetFormInstitucion();
     document.getElementById("formInstitucion").classList.add("hide");
     document.querySelector('[data-form="formInstitucion"]').classList.remove("abierto");
-    document.getElementById("inNombre").value = "";
-    document.getElementById("inDesc").value = "";
-    document.getElementById("inDireccion").value = "";
-    document.getElementById("inHorario").value = "";
-    document.getElementById("inTelefono").value = "";
-    document.getElementById("inLink").value = "";
-    document.getElementById("inFoto").value = "";
-    document.getElementById("inFotoPreview").style.display = "none";
-    inFotoUrl = null;
     cargarInstitucionesAdmin();
   });
 
@@ -3241,6 +3310,10 @@
     btn.addEventListener("click", ()=>{
       const f = document.getElementById(btn.getAttribute("data-form"));
       if(!f) return;
+      const opening = f.classList.contains("hide");
+      if(opening && btn.getAttribute("data-form")==="formInstitucion"){
+        resetFormInstitucion();
+      }
       f.classList.toggle("hide");
       btn.classList.toggle("abierto", !f.classList.contains("hide"));
     });
