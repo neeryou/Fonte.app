@@ -1805,6 +1805,17 @@
     btn.disabled = false;
     btn.textContent = instEditandoId ? "Guardar cambios" : "Guardar institución";
     if(error){ toast("No se pudo guardar: " + error.message); return; }
+    try{
+      const meta = JSON.parse(localStorage.getItem("fonte_inst_meta")||"{}");
+      const kid = instEditandoId || (registro && registro.nombre);
+      if(instEditandoId){
+        meta[instEditandoId] = {
+          color: document.getElementById("inColor").value || "#5C5A54",
+          sello: (document.getElementById("inSello").value || "").trim().toUpperCase() || null
+        };
+        localStorage.setItem("fonte_inst_meta", JSON.stringify(meta));
+      }
+    }catch(eMeta){}
     toast(instEditandoId ? "Institución actualizada ✓" : "Institución guardada ✓");
     resetFormInstitucion();
     document.getElementById("formInstitucion").classList.add("hide");

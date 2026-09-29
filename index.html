@@ -2616,8 +2616,24 @@
       return (ahora - new Date(c.created_at).getTime()) < HORAS_RECIENTE*3600000;
     });
   }
+  function metaInstLocal(){
+    try{ return JSON.parse(localStorage.getItem("fonte_inst_meta")||"{}"); }catch(e){ return {}; }
+  }
+  function instPorIdONombre(id, nombre){
+    const list = INSTITUCIONES||[];
+    if(id){
+      const a = list.find(x=>String(x.id)===String(id));
+      if(a) return a;
+    }
+    const nm = (nombre||"").trim().toLowerCase();
+    if(nm) return list.find(x=>(x.nombre||"").trim().toLowerCase()===nm) || null;
+    return null;
+  }
   function colorDeInst(id, nombre){
-    const i = (INSTITUCIONES||[]).find(x=>String(x.id)===String(id));
+    const local = metaInstLocal();
+    if(id && local[id] && local[id].color) return local[id].color;
+    const i = instPorIdONombre(id, nombre);
+    if(i && local[i.id] && local[i.id].color) return local[i.id].color;
     if(i && i.color) return i.color;
     const nom = ((i && i.nombre) || nombre || "").toLowerCase();
     if(/bombero/.test(nom)) return "#9B2C2C";
@@ -2628,7 +2644,10 @@
     return "#5C5A54";
   }
   function selloDeInst(id, nombre){
-    const i = (INSTITUCIONES||[]).find(x=>String(x.id)===String(id));
+    const local = metaInstLocal();
+    if(id && local[id] && local[id].sello) return String(local[id].sello).slice(0,4).toUpperCase();
+    const i = instPorIdONombre(id, nombre);
+    if(i && local[i.id] && local[i.id].sello) return String(local[i.id].sello).slice(0,4).toUpperCase();
     if(i && i.sello) return String(i.sello).slice(0,4).toUpperCase();
     return (typeof siglaDe === "function" ? siglaDe((i&&i.nombre)||nombre||"") : String(nombre||"IN").slice(0,2)).slice(0,4);
   }
@@ -2772,6 +2791,7 @@
       titulo: c.titulo,
       resumen_corto: c.texto || "",
       lugar: c.institucion || "",
+      institucion_id: c.institucion_id || null,
       urgente: !!c.urgente,
       imagen_url: c.imagen_url || null,
       fuente_etiqueta: c.institucion || "",
