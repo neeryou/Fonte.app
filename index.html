@@ -407,8 +407,8 @@
   .inst-pill.urgente .sg{ background:var(--urgente); }
   .inst-home-hint{ display:none; font-family:var(--sans); font-size:.62rem; color:var(--ink-faint); padding:0 0 6px; }
   .inst-home.open .inst-home-hint{ display:block; }
-  .btn-seguir{ font-family:var(--sans); font-size:.72rem; font-weight:700; padding:8px 12px; border-radius:8px;
-    border:1px solid var(--line-strong); background:var(--paper); color:var(--ink); width:100%; margin-top:10px; }
+  .btn-seguir{ font-family:var(--sans); font-size:.74rem; font-weight:700; padding:11px 14px; border-radius:8px;
+    border:1px solid var(--ink); background:var(--paper); color:var(--ink); width:100%; margin:10px 0 14px; }
 
   .sello-oficial{ margin-top:16px; padding:10px 12px; border:1px solid var(--barrio);
     border-radius:8px; font-family:var(--sans); font-size:.72rem; font-weight:700;
@@ -552,8 +552,8 @@
   .urg-card.oficial .inst-pill{ border-color:color-mix(in srgb,var(--inst,var(--barrio)) 40%,var(--line)); }
   .urg-card.oficial .lbl{ background:var(--inst,var(--barrio)); }
   .svc-search{ width:100%; font-family:var(--sans); font-size:.8rem; color:var(--ink); background:var(--paper);
-    border:1px solid var(--line-strong); border-radius:10px; padding:10px 12px; margin:8px 0 10px; }
-  .svc-card{ background:var(--paper-2); border-radius:12px; margin-bottom:9px; overflow:hidden; }
+    border:1px solid var(--line-strong); border-radius:10px; padding:11px 13px; margin:0 0 12px; }
+  .svc-card{ background:transparent; border-radius:0; margin-bottom:0; overflow:hidden; border-bottom:.5px solid var(--line); }
   .svc-card-head{ display:flex; align-items:center; gap:10px; padding:11px 13px; cursor:pointer; border:0; background:none; width:100%; text-align:left; font-family:var(--sans); }
   .svc-card-head .ic{ font-size:1.1rem; flex:0 0 auto; }
   .svc-card-head .nom{ font-weight:700; font-size:.84rem; flex:1; color:var(--ink); }
@@ -711,7 +711,7 @@
     font-family:var(--mono); font-size:1.05rem; font-weight:600; letter-spacing:.02em; }
   .ficha-head .nm{ font-family:var(--serif); font-weight:700; font-size:1.15rem; color:var(--ink); }
   .ficha-head .sub{ display:flex; align-items:center; gap:5px; font-family:var(--sans); font-size:.68rem; color:var(--ink-faint); margin-top:2px; }
-  .date-box{ margin-top:16px; background:color-mix(in srgb,var(--terracota) 8%,var(--paper-2)); border:1.5px solid color-mix(in srgb,var(--terracota) 35%,var(--line)); border-radius:14px; padding:14px 16px; }
+  .date-box{ margin:4px 0 6px; background:var(--paper); border:1px solid var(--line-strong); border-radius:10px; padding:11px 13px; }
   .date-box .lbl{ font-family:var(--sans); font-size:.62rem; font-weight:800; text-transform:uppercase; letter-spacing:.06em; color:var(--terracota); display:flex; align-items:center; justify-content:space-between; }
   .date-box .cd{ background:var(--terracota); color:#fff; font-size:.6rem; font-weight:800; padding:2px 8px; border-radius:999px; }
   .date-box .fecha{ font-family:var(--serif); font-weight:700; font-size:1.15rem; color:var(--ink); margin-top:5px; }
@@ -801,12 +801,17 @@
   .com-sello .tx small{ display:block; font-weight:500; color:var(--ink-faint); margin-top:2px; }
   .com-link{ font-family:var(--mono); font-size:.68rem; color:var(--ink-faint); margin-top:12px; }
 
-  .pag-k{ font-family:var(--sans); font-size:.58rem; font-weight:800; letter-spacing:.16em; text-transform:uppercase; color:var(--ink-faint); }
-  .pag-nm{ font-family:var(--serif); font-weight:700; font-size:1.55rem; line-height:1.15; letter-spacing:-.03em; margin:4px 0 8px; }
-  .pag-verif{ display:inline-flex; align-items:center; gap:6px; font-family:var(--sans); font-size:.72rem; font-weight:600; color:var(--barrio); margin-bottom:14px; }
-  .pag-sec{ margin-top:22px; padding-top:12px; border-top:.5px solid var(--ink); }
-  .pag-sec .h{ font-family:var(--sans); font-size:.62rem; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:var(--ink); margin-bottom:12px; }
-  .aviso-card{ border:1px solid var(--line-strong); border-radius:8px; padding:12px 13px; margin-bottom:10px; background:var(--paper); }
+  .pag-k{ font-family:var(--sans); font-size:.58rem; font-weight:800; letter-spacing:.22em; text-transform:uppercase; color:var(--ink-faint); }
+  .pag-nm{ font-family:var(--serif); font-weight:700; font-size:2.05rem; line-height:1.05; letter-spacing:-.04em; margin:2px 0 8px; }
+  .pag-verif{ display:inline-flex; align-items:center; gap:6px; font-family:var(--sans); font-size:.62rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-soft); margin-bottom:10px; }
+  .pag-sec{ margin-top:20px; padding-top:14px; border-top:.5px solid var(--ink); }
+  .pag-sec .h{ font-family:var(--sans); font-size:.62rem; font-weight:800; letter-spacing:.16em; text-transform:uppercase; color:var(--ink); margin-bottom:12px; }
+  .aviso-card{ border:1px solid var(--line-strong); border-radius:10px; padding:12px 13px; margin-bottom:8px; background:var(--paper); }
+  .aten-fila{ display:grid; grid-template-columns:88px 12px 1fr; align-items:baseline; gap:0; padding:8px 0; border-bottom:.5px solid var(--line); font-family:var(--sans); font-size:.82rem; }
+  .aten-fila .k{ font-weight:600; color:var(--ink); }
+  .aten-fila .d{ color:var(--ink-faint); text-align:center; }
+  .aten-fila a{ color:var(--ink); }
+  .pag-pie{ font-family:var(--sans); font-size:.68rem; color:var(--ink-faint); margin-top:18px; }
   .aviso-card .tag{ display:inline-block; font-family:var(--sans); font-size:.5rem; font-weight:800; letter-spacing:.06em;
     text-transform:uppercase; background:var(--barrio); color:#fff; padding:2px 7px; border-radius:2px; margin-bottom:6px; }
   .aviso-card.urg .tag{ background:var(--urgente); }
@@ -3000,7 +3005,7 @@
     const sigue = instSeguidas().map(String).includes(String(inst.id));
     let html = '<div class="pag-k">Fonte</div>'
       + '<div class="pag-nm">'+esc(inst.nombre)+'</div>'
-      + '<div class="pag-verif"><span class="verif-badge" style="background:var(--barrio);width:14px;height:14px"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Institución verificada · sello Fonte</div>';
+      + '<div class="pag-verif"><span class="verif-badge" style="background:'+colorDeInst(inst.id, inst.nombre)+';width:14px;height:14px"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Institución verificada</div>';
     if(inst.descripcion) html += '<div class="ficha-desc">'+esc(inst.descripcion)+'</div>';
     html += '<button type="button" class="btn-seguir'+(sigue?" on":"")+'" id="btnSeguirInst" data-id="'+esc(inst.id)+'">'
       + (sigue ? "✓ Te avisamos de esta institución" : "Avisarme de esta institución")
@@ -3021,7 +3026,7 @@
     // Avisos recientes primero
     const comInst = comunicadosDe(id);
     if(comInst.length){
-      html += '<div class="pag-sec"><div class="h">1) Avisos recientes</div>' + comInst.slice(0,8).map(c=>{
+      html += '<div class="pag-sec"><div class="h">1 · Avisos recientes</div>' + comInst.slice(0,8).map(c=>{
         const cuando = c.created_at ? new Date(c.created_at).toLocaleDateString("es-AR",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}) : "";
         const prev = (c.texto||"").length > 140 ? (c.texto||"").slice(0,140)+"…" : (c.texto||"");
         const urgPend = c.urgente && !urgenteDescartado(c.id);
@@ -3048,7 +3053,7 @@
         if(!porSec[sec]){ porSec[sec] = []; ordenSec.push(sec); }
         porSec[sec].push(s);
       });
-      html += '<div class="pag-sec" id="serviciosFicha"><div class="h">2) Servicios y horarios</div>';
+      html += '<div class="pag-sec" id="serviciosFicha"><div class="h">2 · Servicios</div>';
       html += '<input class="svc-search" id="svcBuscar" type="search" placeholder="Buscá tu barrio o un servicio…" autocomplete="off">';
       html += '<div id="svcLista">';
       ordenSec.forEach((sec, iSec)=>{
@@ -3067,9 +3072,9 @@
     let contact = "";
     if(inst.direccion) contact += '<div class="aten-fila"><span class="k">Dirección</span><span class="d">·</span><span>'+esc(inst.direccion)+'</span></div>';
     if(inst.telefono) contact += '<div class="aten-fila"><span class="k">Teléfono</span><span class="d">·</span><span>'+esc(inst.telefono)+'</span></div>';
-    if(inst.horario) contact += '<div class="aten-fila"><span class="k">Mesa de entradas</span><span class="d">·</span><span>'+esc(inst.horario)+'</span></div>';
+    if(inst.horario) contact += '<div class="aten-fila"><span class="k">Horario</span><span class="d">·</span><span>'+esc(inst.horario)+'</span></div>';
     if(inst.link_url) contact += '<div class="aten-fila"><span class="k">Más info</span><span class="d">·</span><span><a href="'+esc(inst.link_url)+'" target="_blank" rel="noopener">Sitio de la institución</a></span></div>';
-    html += '<div class="pag-sec"><div class="h">3) Atención al público</div>';
+    html += '<div class="pag-sec"><div class="h">3 · Atención</div>';
     html += contact || '<p style="font-family:var(--sans);font-size:.78rem;color:var(--ink-faint)">Todavía no hay datos de atención. Se cargan en el panel.</p>';
     html += '</div>';
     html += '<div class="pag-pie">Página oficial · Fonte solo publica el texto recibido</div>';
