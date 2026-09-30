@@ -1374,15 +1374,27 @@
     const nombreInst = (document.getElementById("coInstitucion").value.trim()
       || (opt && opt.getAttribute("data-nombre"))
       || "").trim() || "Institución local";
+    const instRow = (INST_ADMIN||[]).find(x=>String(x.id)===String(idInst)) || {};
+    let meta = {};
+    try{ meta = JSON.parse(localStorage.getItem("fonte_inst_meta")||"{}"); }catch(eM){}
+    const colSnap = (idInst && meta[idInst] && meta[idInst].color) || instRow.color || null;
+    const selloSnap = (idInst && meta[idInst] && meta[idInst].sello) || instRow.sello || null;
     const registro = {
       institucion: nombreInst,
       institucion_id: idInst,
+      color: colSnap,
+      sello: selloSnap,
       urgente: document.getElementById("coUrgente").checked,
       video_url: document.getElementById("coVideo").value.trim() || null,
       imagen_url: coFotoUrl,
       titulo, texto,
     };
-    const { error } = await sb.from("comunicados").insert(registro);
+    let { error } = await sb.from("comunicados").insert(registro);
+    if(error && /(color|sello)/i.test(error.message||"")){
+      delete registro.color; delete registro.sello;
+      const r2 = await sb.from("comunicados").insert(registro);
+      error = r2.error;
+    }
     btn.textContent = "Publicar comunicado";
     btn.disabled = false;
     if(error){ toast("No se pudo publicar: " + error.message); return; }

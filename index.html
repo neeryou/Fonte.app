@@ -380,9 +380,9 @@
     overscroll-behavior-x: contain; touch-action: pan-x; }
   .inst-home-list::-webkit-scrollbar{ display:none; }
   .inst-home.open .inst-home-list{ display:flex; }
-  .inst-home #urgentesWrap{ display:none !important; }
-  .inst-home.open #urgentesWrap[style*="block"]{ display:block !important; }
-  .inst-home.open #urgentesWrap .urg-row{ padding:6px 0 2px; }
+  .inst-home.has-avisos #urgentesWrap[style*="block"]{ display:block !important; }
+  .inst-home.has-avisos #urgentesWrap .urg-row{ padding:6px 0 2px; }
+  .inst-home:not(.open) .inst-home-list{ display:none; }
   .inst-cell{ display:none; }
   .inst-pill{ flex:0 0 auto; display:flex; align-items:center; gap:8px; padding:7px 10px 7px 7px;
     border:1px solid var(--line-strong); border-radius:10px; background:var(--paper); position:relative; }
@@ -2166,11 +2166,11 @@
     if(n.__tipo === "c"){
       const TINTA = "#1A1814", PAPEL = "#F4F0E6";
       const instObj = (INSTITUCIONES||[]).find(x=>String(x.id)===String(n.institucion_id||""));
-      const VERDE = colorDeInst(n.institucion_id, n.lugar || n.fuente_etiqueta);
+      const VERDE = n.color || colorDeInst(n.institucion_id, n.lugar || n.fuente_etiqueta);
       const VERDE2 = oscurecerHex(VERDE, 0.72);
       ctx.fillStyle = PAPEL; ctx.fillRect(0,0,W,H);
       const inst = (n.lugar || n.fuente_etiqueta || (instObj&&instObj.nombre) || "Institución").trim();
-      const sigla = selloDeInst(n.institucion_id, inst);
+      const sigla = n.sello || selloDeInst(n.institucion_id, inst);
       ctx.font = "600 32px 'Work Sans',sans-serif";
       const instW = Math.min(W-200, Math.max(420, ctx.measureText(inst).width + 160));
       const banX = (W - instW) / 2;
@@ -2611,7 +2611,10 @@
   // En inicio: solo las últimas 24 h. Después viven en la ficha de la institución.
   function comunicadosVigentes(){
     const ahora = Date.now();
+    let ocultos = [];
+    try{ ocultos = JSON.parse(localStorage.getItem("fonte_urg_cerrados") || "[]"); }catch(e){}
     return (COMUNICADOS||[]).filter(c=>{
+      if(ocultos.includes(String(c.id))) return false;
       if(!c.created_at) return true;
       return (ahora - new Date(c.created_at).getTime()) < HORAS_RECIENTE*3600000;
     });
@@ -2693,7 +2696,7 @@
       const pill = c.institucion_id
         ? '<button type="button" class="inst-pill" data-ir-inst="'+esc(c.institucion_id)+'">'+esc(nom)+(nHoy>1?' <span class="n">'+nHoy+'</span>':'')+'</button>'
         : '<span class="inst-pill">'+esc(nom)+(nHoy>1?' <span class="n">'+nHoy+'</span>':'')+'</span>';
-      const col = colorDeInst(c.institucion_id, nom);
+      const col = c.color || colorDeInst(c.institucion_id, nom);
       return '<div class="urg-card'+(esUrg?"":" oficial")+'" data-com-id="'+esc(c.id)+'" style="--inst:'+col+'">'
         + '<button class="x" data-cerrar="'+esc(c.id)+'" aria-label="Ocultar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button>'
         + '<span class="lbl">'+(esUrg ? "⚡ Urgente · oficial" : "Texto de la institución · no editado")+'</span>'
@@ -2723,10 +2726,14 @@
     row.querySelectorAll("[data-cerrar]").forEach(b=>{
       b.addEventListener("click", (e)=>{
         e.stopPropagation();
-        const box = document.getElementById("institucionesWrap");
-        const btn = document.getElementById("instHomeBtn");
-        if(box){ box.classList.remove("open","forzada"); }
-        if(btn) btn.setAttribute("aria-expanded","false");
+        const id = b.getAttribute("data-cerrar");
+        try{
+          const arr = JSON.parse(localStorage.getItem("fonte_urg_cerrados") || "[]");
+          arr.push(String(id));
+          localStorage.setItem("fonte_urg_cerrados", JSON.stringify(arr.slice(-80)));
+        }catch(e2){}
+        renderComunicadosEn();
+        if(typeof pintarInstituciones === "function") pintarInstituciones();
       });
     });
     row.onscroll = ()=>{
@@ -2743,8 +2750,8 @@
     marcarComunicadoVisto(id);
     if(typeof pintarInstituciones === "function") pintarInstituciones();
     const nomInst = c.institucion || "Institución";
-    const col = colorDeInst(c.institucion_id, nomInst);
-    const sello = selloDeInst(c.institucion_id, nomInst);
+    const col = c.color || colorDeInst(c.institucion_id, nomInst);
+    const sello = c.sello || selloDeInst(c.institucion_id, nomInst);
     const chip = document.getElementById("comunicadoInst");
     chip.querySelector("span:last-child").textContent = nomInst + " · sello administrado por Fonte";
     chip.style.color = col;
@@ -2792,6 +2799,8 @@
       resumen_corto: c.texto || "",
       lugar: c.institucion || "",
       institucion_id: c.institucion_id || null,
+      color: c.color || colorDeInst(c.institucion_id, c.institucion),
+      sello: c.sello || selloDeInst(c.institucion_id, c.institucion),
       urgente: !!c.urgente,
       imagen_url: c.imagen_url || null,
       fuente_etiqueta: c.institucion || "",
@@ -2969,17 +2978,10 @@
     });
     const btn = document.getElementById("instHomeBtn");
     const sub = document.getElementById("instHomeSub");
-    const hayNuevo = hayAvisos;
-    if(hayUrgente || hayNuevo){
-      wrap.classList.add("open");
-      if(hayUrgente) wrap.classList.add("forzada");
-      else wrap.classList.remove("forzada");
-      if(btn) btn.setAttribute("aria-expanded","true");
-      if(sub) sub.textContent = hayUrgente ? "Oficial · urgente" : "Oficial";
-    } else {
-      wrap.classList.remove("forzada");
-      if(sub) sub.textContent = "Oficial";
-    }
+    wrap.classList.toggle("has-avisos", !!hayAvisos);
+    wrap.classList.remove("forzada");
+    if(hayUrgente && sub) sub.textContent = "Oficial · urgente";
+    else if(sub) sub.textContent = "Oficial";
     if(btn && !btn.dataset.bound){
       btn.dataset.bound = "1";
       btn.addEventListener("click", ()=>{
@@ -3050,13 +3052,15 @@
       html += '<input class="svc-search" id="svcBuscar" type="search" placeholder="Buscá tu barrio o un servicio…" autocomplete="off">';
       html += '<div id="svcLista">';
       ordenSec.forEach((sec, iSec)=>{
-        html += '<div class="svc-tabla svc-card" data-sec-i="'+iSec+'">'
-          + '<div class="tit">'+esc(sec)+'</div>';
+        const n = porSec[sec].length;
+        html += '<div class="svc-tabla svc-card'+(iSec===0?" abierta":"")+'" data-sec-i="'+iSec+'">'
+          + '<button type="button" class="svc-card-head"><span class="nom">'+esc(sec)+'</span><span class="cant">'+n+(n===1?" barrio":" barrios")+'</span><span class="fle">⌄</span></button>'
+          + '<div class="svc-card-body">';
         porSec[sec].forEach(s=>{
           html += '<div class="svc-fila svc-fila-t" data-q="'+esc(((s.clave||"")+" "+(s.valor||"")+" "+sec).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,""))+'">'
             + '<span class="b">'+esc(s.clave||"")+'</span><span class="h">'+esc(s.valor||"")+'</span></div>';
         });
-        html += '</div>';
+        html += '</div></div>';
       });
       html += '</div></div>';
     }
