@@ -924,27 +924,43 @@
       box.classList.add("hide");
     }
   }
+  async function subirLogoInst(file){
+    const chico = await comprimirImagen(file);
+    const nombre = "institucion-logo/" + Date.now() + ".jpg";
+    const buckets = ["notas-fotos", "instituciones-fotos", "aportes-fotos"];
+    let lastErr = "";
+    for(const bucket of buckets){
+      const { error } = await sb.storage.from(bucket).upload(nombre, chico, { upsert:true, contentType:"image/jpeg" });
+      if(!error){
+        const { data } = sb.storage.from(bucket).getPublicUrl(nombre);
+        return data && data.publicUrl;
+      }
+      lastErr = (error && error.message) || String(error);
+    }
+    throw new Error(lastErr || "sin bucket de fotos");
+  }
   document.getElementById("inFoto").addEventListener("change", async (e)=>{
     const file = e.target.files[0];
     if(!file) return;
     const anterior = inFotoUrl;
     mostrarLogoInst(URL.createObjectURL(file));
+    toast("Subiendo logo…");
     try{
-      const chico = await comprimirImagen(file);
-      const nombre = Date.now() + "." + ((chico.name||file.name).split(".").pop() || "jpg");
-      const { error } = await sb.storage.from("instituciones-fotos").upload(nombre, chico);
-      if(!error){
-        const { data } = sb.storage.from("instituciones-fotos").getPublicUrl(nombre);
-        inFotoUrl = data.publicUrl;
-        mostrarLogoInst(inFotoUrl);
+      const url = await subirLogoInst(file);
+      if(!url) throw new Error("sin url");
+      inFotoUrl = url;
+      mostrarLogoInst(url);
+      if(instEditandoId){
+        const { error } = await sb.from("instituciones").update({ foto_url: url }).eq("id", instEditandoId);
+        if(error) toast("Logo subido. Tocá Guardar cambios.");
+        else toast("Logo guardado ✓");
       } else {
-        inFotoUrl = anterior;
-        mostrarLogoInst(anterior);
-        toast("No se pudo subir el logo");
+        toast("Logo listo. Tocá Guardar institución.");
       }
     }catch(err){
       inFotoUrl = anterior;
       mostrarLogoInst(anterior);
+      toast("No se pudo subir el logo: " + ((err && err.message) || "error"));
     }
   });
   document.getElementById("inQuitarLogo").addEventListener("click", ()=>{
