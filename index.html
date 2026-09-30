@@ -366,14 +366,15 @@
   /* ===== instituciones en Ciudad: riel ocultable ===== */
   .inst-home{ margin:2px 16px 8px; }
   .inst-home-bar{ width:100%; display:flex; align-items:center; gap:10px;
-    background:none; border:0; padding:8px 0 6px; cursor:pointer; color:var(--ink); }
-  .inst-home-bar .ln{ flex:1; height:1px; background:var(--ink); opacity:.85; }
-  .inst-home-bar .ch{ flex:0 0 auto; font-size:.85rem; line-height:1; color:var(--ink); background:none; border:0; width:auto; height:auto; }
-  .inst-home.open .inst-home-bar .ch{ transform:rotate(180deg); background:none; color:var(--ink); border:0; }
+    background:none; border:0; padding:10px 0 8px; cursor:pointer; color:var(--ink); }
+  .inst-home-bar .ln{ flex:1; height:.5px; background:var(--ink); opacity:.55; }
+  .inst-home-bar .mid{ flex:0 0 auto; display:flex; align-items:center; gap:6px;
+    font-family:var(--sans); font-size:.58rem; font-weight:800; letter-spacing:.18em;
+    text-transform:uppercase; color:var(--ink); }
+  .inst-home-bar .ch{ font-size:.7rem; line-height:1; color:var(--ink); }
+  .inst-home.open .inst-home-bar .ch{ transform:rotate(180deg); display:inline-block; }
   .inst-home-bar .l{ display:none; }
-  .inst-home.open .inst-lbl{ display:block; }
-  .inst-lbl{ display:none; text-align:center; font-family:var(--sans); font-size:.58rem; font-weight:800;
-    letter-spacing:.16em; text-transform:uppercase; color:var(--ink-faint); margin:2px 0 8px; }
+  .inst-lbl{ display:none; }
   .inst-home.forzada .inst-lbl{ color:var(--urgente); display:block; }
   .inst-home-list{ display:none; flex-wrap:nowrap; gap:8px; overflow-x:auto; -webkit-overflow-scrolling:touch;
     scrollbar-width:none; padding:2px 2px 10px; border:0; background:none;
@@ -714,6 +715,10 @@
   .date-box{ margin:4px 0 6px; background:var(--paper); border:1px solid var(--line-strong); border-radius:10px; padding:11px 13px; }
   .date-box .lbl{ font-family:var(--sans); font-size:.62rem; font-weight:800; text-transform:uppercase; letter-spacing:.06em; color:var(--terracota); display:flex; align-items:center; justify-content:space-between; }
   .date-box .cd{ background:var(--terracota); color:#fff; font-size:.6rem; font-weight:800; padding:2px 8px; border-radius:999px; }
+  .date-box.hoy{ background:color-mix(in srgb,var(--urgente) 10%,var(--paper)); border-color:color-mix(in srgb,var(--urgente) 45%,var(--line)); }
+  .date-box.hoy .lbl{ color:var(--urgente); }
+  .date-box.hoy .cd{ background:var(--urgente); }
+  .date-box.man{ background:color-mix(in srgb,var(--terracota) 10%,var(--paper)); border-color:color-mix(in srgb,var(--terracota) 40%,var(--line)); }
   .date-box .fecha{ font-family:var(--serif); font-weight:700; font-size:1.15rem; color:var(--ink); margin-top:5px; }
   .date-box .lugar{ font-family:var(--sans); font-size:.78rem; color:var(--ink-soft); margin-top:4px; }
   .ficha-sec{ margin-top:18px; }
@@ -802,7 +807,10 @@
   .com-link{ font-family:var(--mono); font-size:.68rem; color:var(--ink-faint); margin-top:12px; }
 
   .pag-k{ font-family:var(--sans); font-size:.58rem; font-weight:800; letter-spacing:.22em; text-transform:uppercase; color:var(--ink-faint); }
-  .pag-nm{ font-family:var(--serif); font-weight:700; font-size:2.05rem; line-height:1.05; letter-spacing:-.04em; margin:2px 0 8px; }
+  .pag-head{ display:flex; align-items:flex-start; gap:12px; margin:2px 0 8px; }
+  .pag-logo{ width:52px; height:52px; object-fit:cover; border-radius:8px; flex:0 0 auto; background:var(--paper-2); }
+  .pag-logo.txt{ display:flex; align-items:center; justify-content:center; color:#fff; font-family:var(--serif); font-weight:700; font-size:.92rem; letter-spacing:.04em; }
+  .pag-nm{ font-family:var(--serif); font-weight:700; font-size:2.05rem; line-height:1.05; letter-spacing:-.04em; margin:0 0 6px; }
   .pag-verif{ display:inline-flex; align-items:center; gap:6px; font-family:var(--sans); font-size:.62rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-soft); margin-bottom:10px; }
   .pag-sec{ margin-top:20px; padding-top:14px; border-top:.5px solid var(--ink); }
   .pag-sec .h{ font-family:var(--sans); font-size:.62rem; font-weight:800; letter-spacing:.16em; text-transform:uppercase; color:var(--ink); margin-bottom:12px; }
@@ -984,7 +992,7 @@
   <div class="inst-home" id="institucionesWrap" style="display:none">
     <button type="button" class="inst-home-bar" id="instHomeBtn" aria-expanded="false">
       <span class="ln"></span>
-      <span class="ch" id="instHomeCh">⌄</span>
+      <span class="mid">Oficial <span class="ch" id="instHomeCh">⌄</span></span>
       <span class="ln"></span>
     </button>
     <div class="inst-lbl" id="instHomeSub">Oficial</div>
@@ -2184,9 +2192,23 @@
       ctx.beginPath(); ctx.arc(banX + 46, 196, 28, 0, Math.PI*2); ctx.fillStyle = "#163828"; ctx.fill();
       ctx.strokeStyle = "#F4F0E6"; ctx.lineWidth = 3;
       ctx.beginPath(); ctx.arc(banX + 46, 196, 26, 0, Math.PI*2); ctx.stroke();
-      ctx.fillStyle = "#F4F0E6"; ctx.font = "700 22px 'Fraunces',Georgia,serif";
-      ctx.textAlign = "center";
-      ctx.fillText(sigla, banX + 46, 204);
+      const logoUrl = (instObj && instObj.foto_url) || "";
+      if(logoUrl){
+        const lim = await cargarImagen(logoUrl, 4000);
+        if(lim){
+          ctx.save();
+          ctx.beginPath(); ctx.arc(banX + 46, 196, 26, 0, Math.PI*2); ctx.clip();
+          ctx.drawImage(lim, banX + 20, 170, 52, 52);
+          ctx.restore();
+        } else {
+          ctx.fillStyle = "#F4F0E6"; ctx.font = "700 22px 'Fraunces',Georgia,serif";
+          ctx.textAlign = "center"; ctx.fillText(sigla, banX + 46, 204);
+        }
+      } else {
+        ctx.fillStyle = "#F4F0E6"; ctx.font = "700 22px 'Fraunces',Georgia,serif";
+        ctx.textAlign = "center";
+        ctx.fillText(sigla, banX + 46, 204);
+      }
       ctx.textAlign = "left";
       ctx.font = "600 32px 'Work Sans',sans-serif";
       const nom = inst.length > 28 ? inst.slice(0,27)+"…" : inst;
@@ -3003,16 +3025,24 @@
     const proxima = fechas[0];
     const resto = fechas.slice(1);
     const sigue = instSeguidas().map(String).includes(String(inst.id));
+    const colInst = colorDeInst(inst.id, inst.nombre);
+    const selloInst = selloDeInst(inst.id, inst.nombre);
     let html = '<div class="pag-k">Fonte</div>'
-      + '<div class="pag-nm">'+esc(inst.nombre)+'</div>'
-      + '<div class="pag-verif"><span class="verif-badge" style="background:'+colorDeInst(inst.id, inst.nombre)+';width:14px;height:14px"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Institución verificada</div>';
+      + '<div class="pag-head">'
+      + (inst.foto_url
+          ? '<img class="pag-logo" src="'+esc(inst.foto_url)+'" alt="">'
+          : '<span class="pag-logo txt" style="background:'+colInst+'">'+esc(selloInst)+'</span>')
+      + '<div><div class="pag-nm">'+esc(inst.nombre)+'</div>'
+      + '<div class="pag-verif"><span class="verif-badge" style="background:'+colInst+';width:14px;height:14px"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Institución verificada</div></div></div>';
     if(inst.descripcion) html += '<div class="ficha-desc">'+esc(inst.descripcion)+'</div>';
     html += '<button type="button" class="btn-seguir'+(sigue?" on":"")+'" id="btnSeguirInst" data-id="'+esc(inst.id)+'">'
       + (sigue ? "✓ Te avisamos de esta institución" : "Avisarme de esta institución")
       + '</button>';
     if(proxima){
       const f = fmtFecha(proxima.fecha);
-      html += '<div class="date-box"><div class="lbl">'+esc(proxima.titulo)+' <span class="cd">'+diasHasta(proxima.fecha)+'</span></div>'
+      const when = diasHasta(proxima.fecha);
+      const cls = when==="HOY" ? " hoy" : (when==="MAÑANA" ? " man" : "");
+      html += '<div class="date-box'+cls+'"><div class="lbl">'+esc(proxima.titulo)+(when?' <span class="cd">'+when+'</span>':'')+'</div>'
         + '<div class="fecha">'+f.full+'</div>'
         + (proxima.lugar || proxima.horario ? '<div class="lugar">📍 '+esc(proxima.lugar||"")+(proxima.horario?" · "+esc(proxima.horario):"")+'</div>' : '')
         + '</div>';
@@ -3109,7 +3139,7 @@
       });
     }
     document.querySelectorAll("#institucionBody .aviso-card .tx[data-abrir], #institucionBody .f-com .tx[data-abrir]").forEach(el=>{
-      el.addEventListener("click", ()=>{ cerrarInstitucion(); abrirComunicado(el.getAttribute("data-abrir")); });
+      el.addEventListener("click", ()=>{ abrirComunicado(el.getAttribute("data-abrir")); });
     });
     document.querySelectorAll("#institucionBody [data-descartar]").forEach(b=>{
       b.addEventListener("click", (e)=>{
@@ -3913,23 +3943,34 @@
       { sheet:"sheetForm",         cerrar:()=>cerrarForm() },
       { sheet:"lightbox",          cerrar:()=>cerrarFoto() },
     ];
-    function algoAbierto(){
+    // Arriba visualmente: comunicado encima de institución
+    const ORDEN = ["lightbox","sheetForm","sheetBuscar","sheetTemas","sheetMios","sheetVecinos","sheetFechas","sheetComunicado","sheetInstitucion","sheetNota","sheetOferta"];
+    function topPanel(){
+      for(const id of ORDEN){
+        const item = PANELES.find(p=>p.sheet===id);
+        const el = item && document.getElementById(id);
+        if(el && el.classList.contains("show")) return item;
+      }
       for(let i = PANELES.length - 1; i >= 0; i--){
         const el = document.getElementById(PANELES[i].sheet);
         if(el && el.classList.contains("show")) return PANELES[i];
       }
       return null;
     }
-    // Cada vez que se abre un panel, agregamos un paso al historial
-    let pasos = 0;
+    let cerrandoPorAtras = false;
+    const vistos = {};
     const obs = new MutationObserver(()=>{
-      const abierto = !!algoAbierto();
-      if(abierto && pasos === 0){
-        pasos = 1;
-        try{ history.pushState({ fonte:true }, ""); }catch(e){}
-      } else if(!abierto && pasos > 0){
-        pasos = 0;
-      }
+      PANELES.forEach(p=>{
+        const el = document.getElementById(p.sheet);
+        const on = !!(el && el.classList.contains("show"));
+        if(on && !vistos[p.sheet]){
+          vistos[p.sheet] = true;
+          if(!cerrandoPorAtras){
+            try{ history.pushState({ fonte:p.sheet }, ""); }catch(e){}
+          }
+        }
+        if(!on) vistos[p.sheet] = false;
+      });
     });
     PANELES.forEach(p=>{
       const el = document.getElementById(p.sheet);
@@ -3937,23 +3978,18 @@
     });
 
     window.addEventListener("popstate", ()=>{
-      const p = algoAbierto();
+      const p = topPanel();
       if(p){
+        cerrandoPorAtras = true;
         p.cerrar();
-        pasos = 0;
-        // volvemos a dejar un paso por si abre otra cosa
-        try{ history.pushState({ fonte:true }, ""); }catch(e){}
-        pasos = 1;
-        setTimeout(()=>{ if(!algoAbierto()){ pasos = 0; } }, 60);
+        setTimeout(()=>{ cerrandoPorAtras = false; }, 80);
         return;
       }
-      // Si no hay panel abierto pero está en "Más noticias", vuelve a Ciudad
-      if(document.getElementById("panelMas").style.display === "block"){
+      if(document.getElementById("panelMas") && document.getElementById("panelMas").style.display === "block"){
         irAPestanaPrincipal("ciudad");
         try{ history.pushState({ fonte:true }, ""); }catch(e){}
       }
     });
-    // paso base, para que el primer "atrás" no saque de la app
     try{ history.replaceState({ fonte:true }, ""); }catch(e){}
   })();
 
