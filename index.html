@@ -721,6 +721,8 @@
   .date-box.man{ background:color-mix(in srgb,var(--terracota) 10%,var(--paper)); border-color:color-mix(in srgb,var(--terracota) 40%,var(--line)); }
   .date-box .fecha{ font-family:var(--serif); font-weight:700; font-size:1.15rem; color:var(--ink); margin-top:5px; }
   .date-box .lugar{ font-family:var(--sans); font-size:.78rem; color:var(--ink-soft); margin-top:4px; }
+  .date-share{ margin-top:10px; width:100%; font-family:var(--sans); font-size:.78rem; font-weight:700;
+    padding:9px; border:1px solid var(--ink); background:none; color:var(--ink); border-radius:8px; }
   .ficha-sec{ margin-top:18px; }
   .ficha-sec .h{ font-family:var(--sans); font-size:.68rem; font-weight:800; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-faint); margin-bottom:8px; }
   .f-svc{ display:flex; align-items:center; gap:10px; padding:9px 0; border-top:1px solid var(--line); }
@@ -780,6 +782,8 @@
   .sheet2.pagina{ top:0; left:0; right:0; bottom:0; max-height:none; height:100%; height:100dvh; width:100%;
     max-width:640px; margin:0 auto; border-radius:0; transform:none; opacity:0; pointer-events:none;
     z-index:240; background:var(--paper); }
+  #backdropComunicado{ z-index:246; }
+  #sheetComunicado{ z-index:250; }
   .sheet2.pagina.show{ transform:none; opacity:1; box-shadow:none; pointer-events:auto; }
   .sheet2.pagina .sheet2-top{ border-bottom:0; padding:10px 16px 0; position:sticky; top:0; background:var(--paper); z-index:2; justify-content:flex-end; }
   .sheet2.pagina .sheet2-body{ padding:8px 22px 72px; }
@@ -1137,7 +1141,7 @@
     <a class="com-ficha" id="comunicadoFichaLink">Ver página de la institución ↗</a>
     <div class="com-sello">
       <span class="sg" id="comunicadoSigla">FO</span>
-      <div class="tx">Texto de la institución · no editado<small id="comunicadoSelloSub">Sello administrado por Fonte</small></div>
+      <div class="tx" id="comunicadoSelloNom">Municipalidad<small id="comunicadoSelloSub">Comunicado oficial</small></div>
     </div>
     <div class="com-link" id="comunicadoLink"></div>
   </div>
@@ -2261,7 +2265,7 @@
       ctx.font = "20px serif"; ctx.fillText("✦", W/2, H-294);
       ctx.fillStyle = TINTA;
       ctx.font = "600 28px 'Work Sans',sans-serif";
-      ctx.fillText("Texto de la institución · no editado", W/2, H - 230);
+      ctx.fillText("Comunicado oficial", W/2, H - 230);
       const link = urlDe(n, "c").replace(/^https?:\/\//,"");
       ctx.fillStyle = VERDE2;
       ctx.font = "500 26px 'Work Sans',sans-serif";
@@ -2726,7 +2730,7 @@
       const col = c.color || colorDeInst(c.institucion_id, nom);
       return '<div class="urg-card'+(esUrg?"":" oficial")+'" data-com-id="'+esc(c.id)+'" style="--inst:'+col+'">'
         + '<button class="x" data-cerrar="'+esc(c.id)+'" aria-label="Ocultar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button>'
-        + '<span class="lbl">'+(esUrg ? "⚡ Urgente · oficial" : "Texto de la institución · no editado")+'</span>'
+        + '<span class="lbl">'+(esUrg ? "Urgente" : "Oficial")+'</span>'
         + (c.imagen_url ? '<img class="urg-thumb" src="'+esc(c.imagen_url)+'" alt="">' : '')
         + '<div class="h">'+esc(c.titulo||"")+'</div>'
         + '<div class="p">'+esc((c.texto||"").length > 130 ? (c.texto||"").slice(0,130)+"…" : (c.texto||""))+'</div>'
@@ -2780,16 +2784,25 @@
     const col = c.color || colorDeInst(c.institucion_id, nomInst);
     const sello = c.sello || selloDeInst(c.institucion_id, nomInst);
     const chip = document.getElementById("comunicadoInst");
-    chip.querySelector("span:last-child").textContent = nomInst + " · sello administrado por Fonte";
+    chip.querySelector("span:last-child").textContent = nomInst;
     chip.style.color = col;
     const badge = chip.querySelector(".verif-badge");
     if(badge) badge.style.background = col;
     document.getElementById("comunicadoTitulo").textContent = c.titulo || "";
     document.getElementById("comunicadoTexto").textContent = c.texto || "";
     const sg = document.getElementById("comunicadoSigla");
-    if(sg){ sg.textContent = sello; sg.style.background = col; }
+    if(sg){ sg.textContent = sello; sg.style.background = col; sg.style.backgroundImage = "none"; }
     const sl = document.getElementById("comunicadoSelloSub");
-    if(sl) sl.textContent = nomInst + " · sello Fonte";
+    const sn = document.getElementById("comunicadoSelloNom");
+    if(sn){ sn.innerHTML = esc(nomInst)+'<small id="comunicadoSelloSub">Comunicado oficial</small>'; }
+    if(sl) sl.textContent = "Comunicado oficial";
+    const instObj = (INSTITUCIONES||[]).find(x=>String(x.id)===String(c.institucion_id));
+    if(sg && instObj && instObj.foto_url){
+      sg.style.backgroundImage = "url('"+instObj.foto_url+"')";
+      sg.style.backgroundSize = "cover";
+      sg.style.backgroundPosition = "center";
+      sg.textContent = "";
+    }
     const lk = document.getElementById("comunicadoLink");
     if(lk) lk.textContent = "fonte.city/?c=" + c.id;
     const cf = document.getElementById("comunicadoFoto");
@@ -3045,6 +3058,7 @@
       html += '<div class="date-box'+cls+'"><div class="lbl">'+esc(proxima.titulo)+(when?' <span class="cd">'+when+'</span>':'')+'</div>'
         + '<div class="fecha">'+f.full+'</div>'
         + (proxima.lugar || proxima.horario ? '<div class="lugar">📍 '+esc(proxima.lugar||"")+(proxima.horario?" · "+esc(proxima.horario):"")+'</div>' : '')
+        + '<button type="button" class="date-share" data-fecha-id="'+esc(proxima.id)+'">↗ Compartir</button>'
         + '</div>';
     }
     if(resto.length){
@@ -3064,7 +3078,7 @@
           + '<span class="tag">'+(urgPend?"Urgente · oficial":"Oficial")+'</span>'
           + '<div class="tx" data-abrir="'+esc(c.id)+'"><div class="t">'+esc(c.titulo||"")+'</div>'
           + (prev ? '<div class="p">'+esc(prev)+'</div>' : '')
-          + '<div class="m">'+(cuando||"")+' · Texto de la institución · no editado</div></div>'
+          + '<div class="m">'+(cuando||"")+'</div></div>'
           + '</div>';
       }).join("") + '</div>';
     }
@@ -3147,6 +3161,27 @@
         descartarUrgente(b.getAttribute("data-descartar"));
         abrirInstitucion(id);                 // se redibuja sin el aviso
         if(typeof pintarInstituciones === "function") pintarInstituciones();
+      });
+    });
+    document.querySelectorAll("#institucionBody .date-share").forEach(btn=>{
+      btn.addEventListener("click", async (e)=>{
+        e.stopPropagation();
+        const fid = btn.getAttribute("data-fecha-id");
+        const f = (FECHAS_INST||[]).find(x=>String(x.id)===String(fid));
+        if(!f) return;
+        const when = diasHasta(f.fecha) || "";
+        const fm = fmtFecha(f.fecha);
+        const pieza = {
+          id: "fecha-"+f.id, __tipo: "c",
+          titulo: f.titulo || "Fecha",
+          resumen_corto: [when, fm && fm.full, f.lugar, f.horario].filter(Boolean).join(" · "),
+          lugar: inst.nombre,
+          institucion_id: inst.id,
+          color: colorDeInst(inst.id, inst.nombre),
+          sello: selloDeInst(inst.id, inst.nombre),
+          fuente_etiqueta: inst.nombre,
+        };
+        await compartirPieza(pieza, btn);
       });
     });
     document.getElementById("backdropInstitucion").classList.add("show");
