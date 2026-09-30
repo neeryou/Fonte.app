@@ -782,8 +782,10 @@
   .sheet2.pagina{ top:0; left:0; right:0; bottom:0; max-height:none; height:100%; height:100dvh; width:100%;
     max-width:640px; margin:0 auto; border-radius:0; transform:none; opacity:0; pointer-events:none;
     z-index:240; background:var(--paper); }
-  #backdropComunicado{ z-index:246; }
-  #sheetComunicado{ z-index:250; }
+  #backdropInstitucion{ z-index:240 !important; }
+  #sheetInstitucion.sheet2.pagina{ z-index:241 !important; }
+  #backdropComunicado{ z-index:270 !important; }
+  #sheetComunicado.sheet2.pagina{ z-index:280 !important; }
   .sheet2.pagina.show{ transform:none; opacity:1; box-shadow:none; pointer-events:auto; }
   .sheet2.pagina .sheet2-top{ border-bottom:0; padding:10px 16px 0; position:sticky; top:0; background:var(--paper); z-index:2; justify-content:flex-end; }
   .sheet2.pagina .sheet2-body{ padding:8px 22px 72px; }
@@ -2824,8 +2826,12 @@
       fichaLink.style.display = "none";
       fichaLink.onclick = null;
     }
-    document.getElementById("backdropComunicado").classList.add("show");
-    document.getElementById("sheetComunicado").classList.add("show");
+    const bd = document.getElementById("backdropComunicado");
+    const sh = document.getElementById("sheetComunicado");
+    bd.style.zIndex = "270";
+    sh.style.zIndex = "280";
+    bd.classList.add("show");
+    sh.classList.add("show");
   }
   function cerrarComunicado(){
     document.getElementById("comunicadoVideo").innerHTML = "";
@@ -3058,7 +3064,7 @@
       html += '<div class="date-box'+cls+'"><div class="lbl">'+esc(proxima.titulo)+(when?' <span class="cd">'+when+'</span>':'')+'</div>'
         + '<div class="fecha">'+f.full+'</div>'
         + (proxima.lugar || proxima.horario ? '<div class="lugar">📍 '+esc(proxima.lugar||"")+(proxima.horario?" · "+esc(proxima.horario):"")+'</div>' : '')
-        + '<button type="button" class="date-share" data-fecha-id="'+esc(proxima.id)+'">↗ Compartir</button>'
+        + '<button type="button" class="date-share" data-ftit="'+esc(proxima.titulo||"")+'" data-ffecha="'+(proxima.fecha||"")+'" data-flug="'+esc(proxima.lugar||"")+'" data-fhor="'+esc(proxima.horario||"")+'">↗ Compartir</button>'
         + '</div>';
     }
     if(resto.length){
@@ -3152,8 +3158,14 @@
         });
       });
     }
-    document.querySelectorAll("#institucionBody .aviso-card .tx[data-abrir], #institucionBody .f-com .tx[data-abrir]").forEach(el=>{
-      el.addEventListener("click", ()=>{ abrirComunicado(el.getAttribute("data-abrir")); });
+    document.querySelectorAll("#institucionBody .aviso-card").forEach(el=>{
+      el.style.cursor = "pointer";
+      el.addEventListener("click", (e)=>{
+        e.preventDefault();
+        e.stopPropagation();
+        const cid = el.getAttribute("data-com-id") || (el.querySelector("[data-abrir]") && el.querySelector("[data-abrir]").getAttribute("data-abrir"));
+        if(cid) abrirComunicado(cid);
+      });
     });
     document.querySelectorAll("#institucionBody [data-descartar]").forEach(b=>{
       b.addEventListener("click", (e)=>{
@@ -3163,25 +3175,38 @@
         if(typeof pintarInstituciones === "function") pintarInstituciones();
       });
     });
+    async function compartirFechaDesde(el){
+      const titulo = el.getAttribute("data-ftit") || "Fecha";
+      const fecha = el.getAttribute("data-ffecha") || "";
+      const lugar = el.getAttribute("data-flug") || "";
+      const horario = el.getAttribute("data-fhor") || "";
+      const when = fecha ? (diasHasta(fecha) || "") : "";
+      const fm = fecha ? fmtFecha(fecha) : null;
+      const pieza = {
+        id: "fecha-"+(fecha||titulo), __tipo: "c",
+        titulo,
+        resumen_corto: [when, fm && fm.full, lugar, horario].filter(Boolean).join(" · "),
+        lugar: inst.nombre,
+        institucion_id: inst.id,
+        color: colorDeInst(inst.id, inst.nombre),
+        sello: selloDeInst(inst.id, inst.nombre),
+        fuente_etiqueta: inst.nombre,
+      };
+      await compartirPieza(pieza, el.classList.contains("date-share") ? el : el.querySelector(".date-share"));
+    }
     document.querySelectorAll("#institucionBody .date-share").forEach(btn=>{
       btn.addEventListener("click", async (e)=>{
+        e.preventDefault();
         e.stopPropagation();
-        const fid = btn.getAttribute("data-fecha-id");
-        const f = (FECHAS_INST||[]).find(x=>String(x.id)===String(fid));
-        if(!f) return;
-        const when = diasHasta(f.fecha) || "";
-        const fm = fmtFecha(f.fecha);
-        const pieza = {
-          id: "fecha-"+f.id, __tipo: "c",
-          titulo: f.titulo || "Fecha",
-          resumen_corto: [when, fm && fm.full, f.lugar, f.horario].filter(Boolean).join(" · "),
-          lugar: inst.nombre,
-          institucion_id: inst.id,
-          color: colorDeInst(inst.id, inst.nombre),
-          sello: selloDeInst(inst.id, inst.nombre),
-          fuente_etiqueta: inst.nombre,
-        };
-        await compartirPieza(pieza, btn);
+        await compartirFechaDesde(btn);
+      });
+    });
+    document.querySelectorAll("#institucionBody .date-box").forEach(box=>{
+      box.style.cursor = "pointer";
+      box.addEventListener("click", async (e)=>{
+        if(e.target.closest(".date-share")) return;
+        const b = box.querySelector(".date-share");
+        if(b) await compartirFechaDesde(b);
       });
     });
     document.getElementById("backdropInstitucion").classList.add("show");
