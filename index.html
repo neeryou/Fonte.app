@@ -372,6 +372,9 @@
     font-family:var(--sans); font-size:.58rem; font-weight:800; letter-spacing:.18em;
     text-transform:uppercase; color:var(--ink); }
   .inst-home-bar .ch{ font-size:.7rem; line-height:1; color:var(--ink); }
+  .inst-home-bar .pip{ display:none; width:7px; height:7px; border-radius:50%; background:var(--terracota); }
+  .inst-home-bar .pip.on{ display:inline-block; }
+  .inst-home-bar .pip.hoy{ background:var(--urgente); }
   .inst-home.open .inst-home-bar .ch{ transform:rotate(180deg); display:inline-block; }
   .inst-home-bar .l{ display:none; }
   .inst-lbl{ display:none; }
@@ -998,7 +1001,7 @@
   <div class="inst-home" id="institucionesWrap" style="display:none">
     <button type="button" class="inst-home-bar" id="instHomeBtn" aria-expanded="false">
       <span class="ln"></span>
-      <span class="mid">Oficial <span class="ch" id="instHomeCh">⌄</span></span>
+      <span class="mid">Oficial <span class="pip" id="instFechaPip"></span><span class="ch" id="instHomeCh">⌄</span></span>
       <span class="ln"></span>
     </button>
     <div class="inst-lbl" id="instHomeSub">Oficial</div>
@@ -2216,7 +2219,8 @@
         ctx.fillText(sigla, banX + 46, 204);
       }
       ctx.textAlign = "left";
-      ctx.font = "600 32px 'Work Sans',sans-serif";
+      ctx.fillStyle = tintaSobre(VERDE);
+      ctx.font = "700 32px 'Work Sans',sans-serif";
       const nom = inst.length > 28 ? inst.slice(0,27)+"…" : inst;
       ctx.fillText(nom, banX + 88, 208);
       ctx.strokeStyle = VERDE2; ctx.lineWidth = 2;
@@ -2695,6 +2699,14 @@
     r = Math.max(0, Math.round(r*f)); g = Math.max(0, Math.round(g*f)); b = Math.max(0, Math.round(b*f));
     return "#" + [r,g,b].map(x=>x.toString(16).padStart(2,"0")).join("");
   }
+  function tintaSobre(hex){
+    const h = (hex||"#22503A").replace("#","");
+    if(h.length < 6) return "#F4F0E6";
+    const n = parseInt(h.slice(0,6), 16);
+    const r = (n>>16)&255, g = (n>>8)&255, b = n&255;
+    const lum = (0.2126*r + 0.7152*g + 0.0722*b) / 255;
+    return lum > 0.62 ? "#1A1814" : "#F4F0E6";
+  }
   function urgentesVigentes(){
     // se mantiene por compatibilidad con otras partes que la llamen
     return comunicadosVigentes().filter(c => !!c.urgente);
@@ -3026,6 +3038,13 @@
     const sub = document.getElementById("instHomeSub");
     wrap.classList.toggle("has-avisos", !!hayAvisos);
     wrap.classList.remove("forzada");
+    const pip = document.getElementById("instFechaPip");
+    if(pip){
+      const hayHoy = (FECHAS_INST||[]).some(f=>diasHasta(f.fecha)==="HOY");
+      const hayFecha = (FECHAS_INST||[]).length > 0;
+      pip.classList.toggle("on", !!hayFecha);
+      pip.classList.toggle("hoy", !!hayHoy);
+    }
     if(hayUrgente && sub) sub.textContent = "Oficial · urgente";
     else if(sub) sub.textContent = "Oficial";
     if(btn && !btn.dataset.bound){
@@ -4413,8 +4432,13 @@
         const meta = nSvc
           ? '<div class="m" style="color:var(--barrio);font-weight:600">🕐 Horarios y servicios · '+nSvc+(nSvc===1?' dato':' datos')+'</div>'
           : (i.direccion ? '<div class="m">'+esc(i.direccion)+'</div>' : '');
+        const col = colorDeInst(i.id, i.nombre);
+        const sel = selloDeInst(i.id, i.nombre);
+        const logo = i.foto_url
+          ? '<span class="im" style="background-image:url(\''+esc(i.foto_url)+'\');background-size:cover;background-position:center"></span>'
+          : '<span class="im" style="display:flex;align-items:center;justify-content:center;background:'+col+';color:#fff;font-family:var(--serif);font-weight:700;font-size:.72rem;letter-spacing:.04em">'+esc(sel)+'</span>';
         return '<div class="ap-card" data-inst-id="'+esc(i.id)+'">'
-          + '<span class="im" style="display:flex;align-items:center;justify-content:center;font-size:1.3rem">'+(ICONS_INST[i.tipo]||"📍")+'</span>'
+          + logo
           + '<div class="tx"><div class="cat2">Institución verificada</div><div class="h">'+esc(i.nombre)+'</div>'
           + meta + '</div></div>';
       }).join("");
