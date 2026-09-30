@@ -926,18 +926,16 @@
   }
   async function subirLogoInst(file){
     const chico = await comprimirImagen(file);
-    const nombre = "institucion-logo/" + Date.now() + ".jpg";
-    const buckets = ["notas-fotos", "instituciones-fotos", "aportes-fotos"];
-    let lastErr = "";
-    for(const bucket of buckets){
-      const { error } = await sb.storage.from(bucket).upload(nombre, chico, { upsert:true, contentType:"image/jpeg" });
-      if(!error){
-        const { data } = sb.storage.from(bucket).getPublicUrl(nombre);
-        return data && data.publicUrl;
-      }
-      lastErr = (error && error.message) || String(error);
+    const nombre = Date.now() + "-logo.jpg";
+    const { error } = await sb.storage.from("notas-fotos").upload(nombre, chico);
+    if(error){
+      const msg = error.message || String(error);
+      if(/fetch|network|Failed/i.test(msg)) throw new Error("sin conexión con el servidor de fotos");
+      throw new Error(msg);
     }
-    throw new Error(lastErr || "sin bucket de fotos");
+    const { data } = sb.storage.from("notas-fotos").getPublicUrl(nombre);
+    if(!data || !data.publicUrl) throw new Error("sin url pública");
+    return data.publicUrl;
   }
   document.getElementById("inFoto").addEventListener("change", async (e)=>{
     const file = e.target.files[0];
