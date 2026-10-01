@@ -206,7 +206,8 @@
 
   /* ===== cierre en mosaico ===== */
   .mosaic-label{ font-family:var(--sans); font-size:.68rem; font-weight:700; text-transform:uppercase; letter-spacing:.1em; color:var(--ink-faint); padding:22px 0 10px; }
-  .mosaic-grid{ display:flex; gap:10px; overflow-x:auto; scrollbar-width:none; margin-bottom:12px; padding-bottom:2px; }
+  .mosaic-grid{ display:flex; gap:10px; overflow-x:auto; scrollbar-width:none; margin-bottom:12px; padding-bottom:2px;
+    overscroll-behavior-x:contain; touch-action:pan-x; }
   .mosaic-grid::-webkit-scrollbar{ display:none; }
   .mosaic-card{ flex:0 0 auto; width:148px; background:var(--surface); border:1px solid var(--line); border-radius:14px; overflow:hidden; box-shadow:0 2px 10px rgba(80,60,40,.08); }
   .mosaic-card .ph-img{ aspect-ratio:1/1; border-radius:0; }
@@ -718,7 +719,8 @@
   .date-box{ margin:4px 0 6px; background:var(--paper); border:1px solid var(--line-strong); border-radius:10px; padding:11px 13px; }
   .date-box .lbl{ font-family:var(--sans); font-size:.62rem; font-weight:800; text-transform:uppercase; letter-spacing:.06em; color:var(--terracota); display:flex; align-items:center; justify-content:space-between; }
   .date-box .cd{ background:var(--terracota); color:#fff; font-size:.6rem; font-weight:800; padding:2px 8px; border-radius:999px; }
-  .date-box.hoy{ background:color-mix(in srgb,var(--urgente) 10%,var(--paper)); border-color:color-mix(in srgb,var(--urgente) 45%,var(--line)); }
+  .date-box.hoy{ background:color-mix(in srgb,var(--urgente) 8%,var(--paper)); border-color:color-mix(in srgb,var(--urgente) 35%,var(--line)); border-left:3px solid var(--urgente); }
+  .date-box .fecha{ font-size:1.35rem; }
   .date-box.hoy .lbl{ color:var(--urgente); }
   .date-box.hoy .cd{ background:var(--urgente); }
   .date-box.man{ background:color-mix(in srgb,var(--terracota) 10%,var(--paper)); border-color:color-mix(in srgb,var(--terracota) 40%,var(--line)); }
@@ -1646,7 +1648,7 @@
     const seed = semillaRotativa();
     let contadorDatos = 0; // para que el "dato destacado" salga salteado, no en cada nota que tenga cifras
     // con volumen suficiente, reservamos 2 notas para un cierre en mosaico ("también pasó hoy")
-    const paraMosaico = ordenadas.length >= 8 ? ordenadas.slice(-Math.min(8, Math.floor(ordenadas.length/3))) : [];
+    const paraMosaico = ordenadas.length >= 6 ? ordenadas.slice(-4) : (ordenadas.length >= 4 ? ordenadas.slice(-4) : []);
     const idsMosaico = new Set(paraMosaico.map(n=>String(n.id)));
     for(const o of conOndas){
       const notas = ordenadas.filter(n => n.onda === o.id && !idsMosaico.has(String(n.id))).sort((a,b)=>{
@@ -1688,21 +1690,22 @@
         const esReciente = (Date.now() - new Date(n.created_at).getTime()) < 15*60000;
         const tiempo = (esReciente ? '<span class="pulse-dot"></span>' : '') + tiempoDesde(n.created_at);
         // cada 4 ítems, uno "respira" con foto para romper el ritmo apilado
-        const destacada = (i % 4 === 3);
+        const destacada = (i % 8 === 7);
         const est = n.resumen_estructurado;
         let especial = "";
-        if(est && est.cita && est.cita.texto){
+        const puedeEspecial = (typeof window.__fonteEsp === "undefined") || (i - window.__fonteEsp >= 5);
+        if(puedeEspecial && est && est.cita && est.cita.texto && (i % 6 === 2)){
           especial = '<a class="article li" data-id="'+esc(n.id)+'" style="--ac:'+color+'">'
             + '<h4 class="h">'+esc(n.titulo)+'</h4>'
             + '<blockquote class="li-quote">“'+esc(est.cita.texto)+'”<span class="li-quote-who">— '+esc(est.cita.quien||"")+'</span></blockquote>'
             + '<div class="meta-row">'+catTag+fav+'<span class="src">'+lugar+'</span><span class="src">'+tiempo+'</span></div></a>';
-        } else if(est && est.datos && est.datos[0] && est.datos[0].numero && (contadorDatos++ % 3 === 0)){
+        } else if(puedeEspecial && est && est.datos && est.datos[0] && est.datos[0].numero && (contadorDatos++ % 4 === 0)){
           const d = est.datos[0];
           especial = '<a class="article li li-databig" data-id="'+esc(n.id)+'" style="--ac:'+color+'">'
             + '<div class="databig-num">'+esc(d.numero)+'</div><div class="databig-lbl">'+esc(d.etiqueta||"")+'</div>'
             + '<h4 class="h" style="margin-top:6px">'+esc(n.titulo)+'</h4>'
             + '<div class="meta-row" style="justify-content:center">'+catTag+fav+'<span class="src">'+lugar+'</span></div></a>';
-        } else if(destacada){
+        } else if(puedeEspecial && destacada){
           especial = '<a class="article li feat" data-id="'+esc(n.id)+'" style="--ac:'+color+'">'
             + '<div class="ph-img" style="'+bgDe(n)+'"></div>'
             + '<h4 class="h">'+esc(n.titulo)+'</h4>'
@@ -1711,7 +1714,7 @@
         }
 
         if(especial){
-          // si había un ítem esperando pareja, lo saco solo antes de meter el especial
+          window.__fonteEsp = i;
           if(pendientePar){ html += tplLiSingle(pendientePar); pendientePar = null; }
           html += especial;
         } else {
@@ -3118,7 +3121,7 @@
       const f = fmtFecha(proxima.fecha);
       const when = diasHasta(proxima.fecha);
       const cls = when==="HOY" ? " hoy" : (when==="MAÑANA" ? " man" : "");
-      html += '<div class="date-box'+cls+'"><div class="lbl">'+esc(proxima.titulo)+(when?' <span class="cd">'+when+'</span>':'')+'</div>'
+      html += '<div class="date-box'+cls+'" style="border-left:3px solid '+colInst+'"><div class="lbl">'+esc(proxima.titulo)+(when?' <span class="cd">'+when+'</span>':'')+'</div>'
         + '<div class="fecha">'+f.full+'</div>'
         + (proxima.lugar || proxima.horario ? '<div class="lugar">📍 '+esc(proxima.lugar||"")+(proxima.horario?" · "+esc(proxima.horario):"")+'</div>' : '')
         + '<button type="button" class="date-share" data-ftit="'+esc(proxima.titulo||"")+'" data-ffecha="'+(proxima.fecha||"")+'" data-flug="'+esc(proxima.lugar||"")+'" data-fhor="'+esc(proxima.horario||"")+'">↗ Compartir</button>'
@@ -4159,7 +4162,7 @@
     }
 
     function empieza(e){
-      if(e.target.closest(".urg-row, .inst-row, .inst-home, .inst-home-list, #institucionesRow, #institucionesWrap, .ofertas-bar, .gal-row, .waves-in, .cats-in, .fav-in, .sheet, .sheet2, .lightbox, .backdrop")){
+      if(e.target.closest(".urg-row, .inst-row, .inst-home, .inst-home-list, #institucionesRow, #institucionesWrap, .ofertas-bar, .gal-row, .mosaic-grid, .mosaic-card, .waves-in, .cats-in, .fav-in, .sheet, .sheet2, .lightbox, .backdrop")){
         siguiendo = false; return;
       }
       // Si quedó un gesto a medias, no arrancar otro encima
