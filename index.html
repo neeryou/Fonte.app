@@ -794,15 +794,17 @@
   .sheet2.pagina.show{ transform:none; opacity:1; box-shadow:none; pointer-events:auto; }
   .sheet2.pagina .sheet2-top{ border-bottom:0; padding:10px 16px 0; position:sticky; top:0; background:var(--paper); z-index:2; justify-content:flex-end; }
   .sheet2.pagina .sheet2-body{ padding:8px 22px 72px; }
-  .com-marca{ font-family:var(--serif); font-weight:700; font-size:2rem; letter-spacing:-.04em; color:var(--ink); line-height:1; }
-  .com-marca em{ font-style:normal; font-family:var(--sans); font-size:.68rem; font-weight:600; letter-spacing:.04em;
-    color:var(--ink-faint); margin-left:8px; }
-  .com-regla{ height:0; border-top:.5px solid var(--ink); margin:14px 0 4px; }
-  .com-chip{ display:inline-flex; align-items:center; gap:7px; margin:14px 0 16px; padding:7px 12px;
-    background:color-mix(in srgb,var(--barrio) 12%,var(--paper)); border-radius:999px;
-    font-family:var(--sans); font-size:.72rem; font-weight:600; color:var(--barrio); }
-  .com-tit{ font-family:var(--serif); font-weight:700; font-size:2rem; line-height:1.12; letter-spacing:-.04em;
-    color:var(--ink); margin:0 0 14px; padding-bottom:14px; border-bottom:.5px solid var(--ink); }
+  .com-marca{ font-family:var(--sans); font-weight:700; font-size:.62rem; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-faint); line-height:1; }
+  .com-marca em{ display:none; }
+  .com-regla{ height:0; border-top:.5px solid var(--line-strong); margin:12px 0 0; }
+  .com-chip{ display:inline-flex; align-items:center; gap:7px; margin:16px 0 18px; margin-left:auto; padding:7px 12px;
+    background:color-mix(in srgb,var(--inst,var(--barrio)) 10%,var(--paper)); border:1px solid color-mix(in srgb,var(--inst,var(--barrio)) 35%,var(--line));
+    border-radius:999px; font-family:var(--sans); font-size:.72rem; font-weight:600; color:var(--inst,var(--barrio)); }
+  .com-head{ display:flex; justify-content:flex-end; }
+  .com-tit{ font-family:var(--serif); font-weight:700; font-size:2.15rem; line-height:1.08; letter-spacing:-.04em;
+    color:var(--inst,var(--ink)); margin:0 0 16px; padding-bottom:0; border-bottom:0; }
+  .com-acts{ display:flex; gap:10px; margin:4px 0 18px; }
+  .com-acts .com-share{ flex:1; margin:0; }
   .com-cuerpo{ font-family:var(--sans); font-size:.95rem; line-height:1.55; color:var(--ink); margin:0 0 16px; white-space:pre-wrap; }
   .com-foto{ display:none; width:100%; max-height:220px; object-fit:cover; border-radius:4px; margin:0 0 16px; }
   .com-share{ width:100%; font-family:var(--sans); font-weight:700; font-size:.88rem; padding:13px;
@@ -811,10 +813,10 @@
     text-decoration:underline; text-underline-offset:3px; margin:4px 0 18px; }
   .com-sello{ display:flex; align-items:center; gap:12px; padding:14px 0; border-top:.5px solid var(--ink);
     border-bottom:.5px solid var(--ink); }
-  .com-sello .sg{ width:56px; height:56px; background:var(--barrio); color:#fff; display:flex; align-items:center;
-    justify-content:center; font-family:var(--serif); font-weight:700; font-size:1.05rem; letter-spacing:.02em; flex:0 0 auto; }
-  .com-sello .tx{ font-family:var(--sans); font-size:.78rem; font-weight:600; color:var(--ink); line-height:1.35; }
-  .com-sello .tx small{ display:block; font-weight:500; color:var(--ink-faint); margin-top:2px; }
+  .com-sello .sg{ width:64px; height:64px; background:var(--inst,var(--barrio)); color:#fff; display:flex; align-items:center;
+    justify-content:center; font-family:var(--serif); font-weight:700; font-size:1.15rem; letter-spacing:.02em; flex:0 0 auto; border-radius:2px; }
+  .com-sello .tx{ font-family:var(--serif); font-size:1.15rem; font-weight:700; color:var(--ink); line-height:1.2; }
+  .com-sello .tx small{ display:block; font-family:var(--sans); font-weight:700; letter-spacing:.08em; text-transform:uppercase; font-size:.62rem; color:var(--ink-faint); margin-top:4px; }
   .com-link{ font-family:var(--mono); font-size:.68rem; color:var(--ink-faint); margin-top:12px; }
 
   .pag-k{ font-family:var(--sans); font-size:.58rem; font-weight:800; letter-spacing:.22em; text-transform:uppercase; color:var(--ink-faint); }
@@ -1136,15 +1138,17 @@
 <div class="sheet2 pagina" id="sheetComunicado">
   <div class="sheet2-top"><span class="b"></span><button class="close" id="closeComunicado">Cerrar ✕</button></div>
   <div class="sheet2-body">
-    <div class="com-marca">Fonte<em>fuente directa</em></div>
+    <div class="com-marca">Fonte directa</div>
     <div class="com-regla"></div>
-    <div class="com-chip" id="comunicadoInst"><span class="verif-badge" style="background:var(--barrio);width:14px;height:14px"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span></span></div>
+    <div class="com-head"><div class="com-chip" id="comunicadoInst"><span class="verif-badge" style="background:var(--inst,var(--barrio));width:14px;height:14px"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span></span></div></div>
     <h3 class="com-tit" id="comunicadoTitulo"></h3>
     <img class="com-foto" id="comunicadoFoto" alt="">
     <p class="com-cuerpo" id="comunicadoTexto"></p>
     <div id="comunicadoVideo" style="display:none;margin:0 0 16px;border-radius:4px;overflow:hidden;aspect-ratio:16/9"></div>
-    <button class="com-share" id="comunicadoCompartirBtn">↗ Compartir</button>
-    <button class="com-share" id="comunicadoGuardarBtn" style="margin-top:0;border-color:var(--line-strong);color:var(--ink-soft)">↓ Guardar imagen</button>
+    <div class="com-acts">
+      <button class="com-share" id="comunicadoCompartirBtn">↗ Compartir</button>
+      <button class="com-share" id="comunicadoGuardarBtn" style="border-color:var(--line-strong);color:var(--ink-soft)">↓ Guardar imagen</button>
+    </div>
     <a class="com-ficha" id="comunicadoFichaLink">Ver página de la institución ↗</a>
     <div class="com-sello">
       <span class="sg" id="comunicadoSigla">FO</span>
@@ -2845,7 +2849,9 @@
     document.getElementById("comunicadoTitulo").textContent = c.titulo || "";
     document.getElementById("comunicadoTexto").textContent = c.texto || "";
     const sg = document.getElementById("comunicadoSigla");
-    if(sg){ sg.textContent = sello; sg.style.background = col; sg.style.backgroundImage = "none"; }
+    const shCol = document.getElementById("sheetComunicado");
+    if(shCol) shCol.style.setProperty("--inst", col);
+    if(sg){ sg.textContent = sello; sg.style.background = col; sg.style.backgroundImage = "none"; sg.style.color = "#fff"; }
     const sl = document.getElementById("comunicadoSelloSub");
     const sn = document.getElementById("comunicadoSelloNom");
     if(sn){ sn.innerHTML = esc(nomInst)+'<small id="comunicadoSelloSub">Comunicado oficial</small>'; }

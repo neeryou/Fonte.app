@@ -265,6 +265,13 @@
   .kpi3 .n, .kpi .n, .arch-item .m, .fecha-row .m, .visor .meta{ font-variant-numeric:tabular-nums; }
   .field-label, .sec-lbl, .lbl{ letter-spacing:.16em; }
   .arch-item, .admin-item, .inst-block, .fecha-row, .task{ border-top-width:.5px; }
+
+  .arch-item{ position:relative; }
+  .arch-del, .btn-trash{ flex:0 0 auto; width:32px; height:32px; border:1px solid var(--line); background:var(--paper);
+    color:#B23A2E; border-radius:8px; display:inline-flex; align-items:center; justify-content:center; padding:0; }
+  .arch-del svg, .btn-trash svg{ width:15px; height:15px; display:block; }
+  .arch-item .arch-del{ margin-left:6px; }
+
   .arch-item, .aporte-review, .card, .task{ border-radius:3px; }
   .rep-tabs, .rep-tab, .inp, textarea, .btn-gen, .form-toggle{ border-radius:3px; }
   .rnv .pip, .bdg, .tab-badge{ border-radius:2px; }
@@ -440,7 +447,8 @@
       <input class="inp" id="archBuscar" placeholder="Buscar por título, comercio, institución…" style="margin-bottom:10px">
       <div class="filtros" id="archFiltros">
         <button class="f on" data-f="todo">Todo</button>
-        <button class="f" data-f="nota">Notas</button>
+        <button class="f" data-f="reportero">Notas reportero</button>
+        <button class="f" data-f="mas">Más noticias</button>
         <button class="f" data-f="comunicado">Comunicados</button>
         <button class="f" data-f="oferta">Ofertas</button>
         <button class="f" data-f="aporte">Avisos de vecinos</button>
@@ -1308,7 +1316,7 @@
     cont.innerHTML = data.map(o=>
       '<div class="admin-item" data-id="'+escA(o.id)+'">'
       + '<div><div class="h">'+escA(o.negocio||"")+'</div><div class="sub2">'+escA(o.titulo||"")+'</div></div>'
-      + '<button class="del">Quitar</button></div>'
+      + '<button class="del btn-trash" aria-label="Borrar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M9 7V5h6v2M8 7l1 13h6l1-13"/></svg></button></div>'
     ).join("");
     cont.querySelectorAll(".admin-item").forEach(el=>{
       el.style.cursor = "pointer";
@@ -1381,7 +1389,7 @@
     cont.innerHTML = data.map(c=>
       '<div class="admin-item" data-id="'+escA(c.id)+'">'
       + '<div><div class="h">'+escA(c.titulo||"")+(c.urgente?' <span style="font-size:.6rem;font-weight:800;color:#B23A2E">URGENTE</span>':'')+'</div><div class="sub2">'+escA(c.institucion||"")+'</div></div>'
-      + '<button class="del">Quitar</button></div>'
+      + '<button class="del btn-trash" aria-label="Borrar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M9 7V5h6v2M8 7l1 13h6l1-13"/></svg></button></div>'
     ).join("");
     cont.querySelectorAll(".admin-item").forEach(el=>{
       el.style.cursor = "pointer";
@@ -1607,7 +1615,7 @@
         + entradas.map(s=>
             '<div class="fila-existente" data-svc-i="'+servicios.indexOf(s)+'">'
             + '<div><div class="t">'+escA(s.clave||"")+'</div><div class="v">'+escA(s.valor||"")+'</div></div>'
-            + '<button type="button" class="quitar">Quitar</button></div>'
+            + '<button type="button" class="quitar btn-trash" aria-label="Borrar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M9 7V5h6v2M8 7l1 13h6l1-13"/></svg></button></div>'
           ).join("")
         + '<div class="fila-agregar">'
         + '<input name="clave" placeholder="Barrio / ítem">'
@@ -2426,11 +2434,39 @@
     return '<div class="arch-item" data-tipo="'+tipo+'" data-id="'+escA(o.id)+'">'
       + '<span class="mini" '+estilo+'>'+mini+'</span>'
       + '<div class="tx"><div class="t">'+escA(titulo)+'</div>'
-      + '<div class="m"><span class="bdg '+tipo+'">'+NOM[tipo]+'</span>'+escA(meta)+'</div></div></div>';
+      + '<div class="m"><span class="bdg '+tipo+'">'+NOM[tipo]+'</span>'+escA(meta)+'</div></div>'
+      + '<button type="button" class="arch-del" aria-label="Borrar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M9 7V5h6v2M8 7l1 13h6l1-13"/></svg></button></div>';
+  }
+  function esNotaReportero(n){
+    const lugar = String(n.lugar||"").toLowerCase();
+    const onda = String(n.onda||"").toLowerCase();
+    if(lugar.includes("quitilipi")) return true;
+    return ["tu_barrio","tu_ciudad","barrio","ciudad","local"].includes(onda);
+  }
+  async function borrarDeArchivo(tipo, id){
+    if(tipo === "nota") return sb.from("noticias").delete().eq("id", id);
+    if(tipo === "oferta") return sb.from("ofertas").delete().eq("id", id);
+    if(tipo === "comunicado") return sb.from("comunicados").delete().eq("id", id);
+    return sb.from("aportes").update({ estado:"descartado" }).eq("id", id);
   }
   function enganchArchivo(cont, lista){
+    cont.querySelectorAll(".arch-del").forEach(btn=>{
+      btn.addEventListener("click", async (e)=>{
+        e.stopPropagation();
+        const el = btn.closest(".arch-item");
+        const id = el.getAttribute("data-id"), tipo = el.getAttribute("data-tipo");
+        const nombre = { nota:"esta nota", oferta:"esta oferta", comunicado:"este comunicado", aporte:"este aviso" }[tipo] || "esto";
+        if(!confirm("¿Borrar "+nombre+"?")) return;
+        btn.disabled = true;
+        const { error } = await borrarDeArchivo(tipo, id);
+        if(error){ toast("No se pudo borrar"); btn.disabled = false; return; }
+        toast("Borrado");
+        cargarArchivo();
+      });
+    });
     cont.querySelectorAll(".arch-item").forEach(el=>{
-      el.addEventListener("click", ()=>{
+      el.addEventListener("click", (e)=>{
+        if(e.target.closest(".arch-del")) return;
         const id = el.getAttribute("data-id"), tipo = el.getAttribute("data-tipo");
         const it = lista.find(x=>String(x.o.id)===String(id) && x.tipo===tipo);
         if(!it) return;
@@ -2465,7 +2501,9 @@
     const cont = document.getElementById("archLista");
     const q = (document.getElementById("archBuscar").value||"").toLowerCase().trim();
     const lista = ARCHIVO.filter(it=>{
-      if(filtroArch !== "todo" && it.tipo !== filtroArch) return false;
+      if(filtroArch === "reportero"){ if(it.tipo !== "nota" || !esNotaReportero(it.o)) return false; }
+      else if(filtroArch === "mas"){ if(it.tipo !== "nota" || esNotaReportero(it.o)) return false; }
+      else if(filtroArch !== "todo" && it.tipo !== filtroArch) return false;
       if(!q) return true;
       const txt = [it.o.titulo, it.o.negocio, it.o.institucion, it.o.descripcion, it.o.lugar].join(" ").toLowerCase();
       return txt.includes(q);
