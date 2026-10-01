@@ -535,7 +535,7 @@
   .urg-row::-webkit-scrollbar{ display:none; }
   .urg-card{ flex:0 0 auto; width:calc(50% - 12px); min-width:148px; scroll-snap-align:start; background:color-mix(in srgb,var(--urgente) 6%,var(--paper-2));
     border:1px solid color-mix(in srgb,var(--urgente) 30%,var(--line)); border-radius:11px; padding:9px 10px 10px; position:relative; }
-  .urg-card .lbl{ display:inline-flex; align-items:center; gap:4px; background:var(--urgente); color:#fff;
+  .urg-card .lbl{ display:inline-block; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; gap:4px; background:var(--urgente); color:#fff;
     font-family:var(--sans); font-size:.5rem; font-weight:800; text-transform:uppercase; letter-spacing:.05em; padding:2px 7px; border-radius:999px; }
   .urg-card .urg-thumb{ width:100%; height:72px; object-fit:cover; border-radius:7px; margin-top:7px; display:block; }
   .urg-card .h{ font-family:var(--serif); font-weight:700; font-size:.78rem; margin-top:6px; line-height:1.22; color:var(--ink);
@@ -2770,19 +2770,16 @@
     }
     row.innerHTML = lista.map(c=>{
       const esUrg = !!c.urgente;
-      const nHoy = countHoyInst(c);
       const nom = c.institucion || "Institución";
-      const pill = c.institucion_id
-        ? '<button type="button" class="inst-pill" data-ir-inst="'+esc(c.institucion_id)+'">'+esc(nom)+(nHoy>1?' <span class="n">'+nHoy+'</span>':'')+'</button>'
-        : '<span class="inst-pill">'+esc(nom)+(nHoy>1?' <span class="n">'+nHoy+'</span>':'')+'</span>';
       const col = c.color || colorDeInst(c.institucion_id, nom);
+      const marca = (c.__tipo==="fecha" ? "Hoy · " : (esUrg ? "Urgente · " : "")) + nom;
       return '<div class="urg-card'+(esUrg?"":" oficial")+'" data-com-id="'+esc(c.id)+'" style="--inst:'+col+'">'
         + '<button class="x" data-cerrar="'+esc(c.id)+'" aria-label="Ocultar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button>'
-        + '<span class="lbl">'+(c.__tipo==="fecha" ? "Hoy" : (esUrg ? "Urgente" : "Oficial"))+'</span>'
+        + '<span class="lbl">'+esc(marca)+'</span>'
         + (c.imagen_url ? '<img class="urg-thumb" src="'+esc(c.imagen_url)+'" alt="">' : '')
         + '<div class="h">'+esc(c.titulo||"")+'</div>'
         + '<div class="p">'+esc((c.texto||"").length > 130 ? (c.texto||"").slice(0,130)+"…" : (c.texto||""))+'</div>'
-        + '<div class="f"><span class="verif-badge">'+check+'</span>'+pill+' · '+tiempoDesde(c.created_at)+'</div>'
+        + '<div class="f"><span class="verif-badge">'+check+'</span><span>'+tiempoDesde(c.created_at)+'</span></div>'
         + '</div>';
     }).join("");
     dots.innerHTML = lista.length > 1
