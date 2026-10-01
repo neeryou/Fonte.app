@@ -724,7 +724,7 @@
   .date-box.hoy .lbl{ color:var(--urgente); }
   .date-box.hoy .cd{ background:var(--urgente); }
   .date-box.man{ background:color-mix(in srgb,var(--terracota) 10%,var(--paper)); border-color:color-mix(in srgb,var(--terracota) 40%,var(--line)); }
-  .date-box .fecha{ font-family:var(--serif); font-weight:700; font-size:1.15rem; color:var(--ink); margin-top:5px; }
+  .date-box .fecha{ font-family:var(--serif); font-weight:700; font-size:1.35rem; color:var(--ink); margin-top:6px; line-height:1.15; }
   .date-box .lugar{ font-family:var(--sans); font-size:.78rem; color:var(--ink-soft); margin-top:4px; }
   .date-share{ margin-top:10px; width:100%; font-family:var(--sans); font-size:.78rem; font-weight:700;
     padding:9px; border:1px solid var(--ink); background:none; color:var(--ink); border-radius:8px; }
@@ -3127,9 +3127,12 @@
       const f = fmtFecha(proxima.fecha);
       const when = diasHasta(proxima.fecha);
       const cls = when==="HOY" ? " hoy" : (when==="MAÑANA" ? " man" : "");
-      html += '<div class="date-box'+cls+'" style="border-left:3px solid '+colInst+'"><div class="lbl">'+esc(proxima.titulo)+(when?' <span class="cd">'+when+'</span>':'')+'</div>'
-        + '<div class="fecha">'+f.full+'</div>'
-        + (proxima.lugar || proxima.horario ? '<div class="lugar">📍 '+esc(proxima.lugar||"")+(proxima.horario?" · "+esc(proxima.horario):"")+'</div>' : '')
+      html += '<div class="date-box'+cls+'" style="--inst:'+colInst+';border-left:3px solid '+colInst+'">'
+        + '<div class="lbl">'+(when?'<span class="cd">'+when+'</span>':'')+'</div>'
+        + '<div class="fecha">'+esc(proxima.titulo||"Fecha")+'</div>'
+        + '<div class="lugar">'+f.full+'</div>'
+        + (proxima.lugar ? '<div class="lugar">'+esc(proxima.lugar)+'</div>' : '')
+        + (proxima.horario ? '<div class="lugar">'+esc(proxima.horario)+'</div>' : '')
         + '<button type="button" class="date-share" data-ftit="'+esc(proxima.titulo||"")+'" data-ffecha="'+(proxima.fecha||"")+'" data-flug="'+esc(proxima.lugar||"")+'" data-fhor="'+esc(proxima.horario||"")+'">↗ Compartir</button>'
         + '</div>';
     }
@@ -3142,7 +3145,7 @@
     // Avisos recientes primero
     const comInst = comunicadosDe(id);
     if(comInst.length){
-      html += '<div class="pag-sec"><div class="h">1 · Avisos recientes</div>' + comInst.slice(0,8).map(c=>{
+      html += '<div class="pag-sec" style="--inst:'+colInst+'"><div class="h">1 · Avisos recientes</div>' + comInst.slice(0,8).map(c=>{
         const cuando = c.created_at ? new Date(c.created_at).toLocaleDateString("es-AR",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}) : "";
         const prev = (c.texto||"").length > 140 ? (c.texto||"").slice(0,140)+"…" : (c.texto||"");
         const urgPend = c.urgente && !urgenteDescartado(c.id);
