@@ -820,6 +820,12 @@
   .com-link{ font-family:var(--mono); font-size:.68rem; color:var(--ink-faint); margin-top:12px; }
 
   .pag-k{ font-family:var(--sans); font-size:.58rem; font-weight:800; letter-spacing:.22em; text-transform:uppercase; color:var(--ink-faint); }
+
+  .inst-fachada{ display:flex; flex-direction:column; align-items:flex-start; gap:8px; margin:4px 0 14px; padding-bottom:14px; border-bottom:.5px solid var(--line-strong); }
+  .inst-fachada .pag-logo{ width:64px; height:64px; border-radius:4px; }
+  .inst-fachada .pag-nm{ font-size:1.85rem; margin:0; }
+  .inst-fachada .pag-verif{ color:var(--inst,var(--barrio)); }
+  .aviso-card .tag{ background:var(--inst,var(--barrio)); color:#fff; }
   .pag-head{ display:flex; align-items:flex-start; gap:12px; margin:2px 0 8px; }
   .pag-logo{ width:52px; height:52px; object-fit:cover; border-radius:8px; flex:0 0 auto; background:var(--paper-2); }
   .pag-logo.txt{ display:flex; align-items:center; justify-content:center; color:#fff; font-family:var(--serif); font-weight:700; font-size:.92rem; letter-spacing:.04em; }
@@ -3112,13 +3118,13 @@
     const sigue = instSeguidas().map(String).includes(String(inst.id));
     const colInst = colorDeInst(inst.id, inst.nombre);
     const selloInst = selloDeInst(inst.id, inst.nombre);
-    let html = '<div class="pag-k">Fonte</div>'
-      + '<div class="pag-head">'
+    let html = '<div class="inst-fachada" style="--inst:'+colInst+'">'
       + (inst.foto_url
           ? '<img class="pag-logo" src="'+esc(inst.foto_url)+'" alt="">'
           : '<span class="pag-logo txt" style="background:'+colInst+'">'+esc(selloInst)+'</span>')
-      + '<div><div class="pag-nm">'+esc(inst.nombre)+'</div>'
-      + '<div class="pag-verif"><span class="verif-badge" style="background:'+colInst+';width:14px;height:14px"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Institución verificada</div></div></div>';
+      + '<div class="pag-nm">'+esc(inst.nombre)+'</div>'
+      + '<div class="pag-verif"><span class="verif-badge" style="background:'+colInst+';width:14px;height:14px"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Institución verificada</div>'
+      + '</div>';
     if(inst.descripcion) html += '<div class="ficha-desc">'+esc(inst.descripcion)+'</div>';
     html += '<button type="button" class="btn-seguir'+(sigue?" on":"")+'" id="btnSeguirInst" data-id="'+esc(inst.id)+'">'
       + (sigue ? "✓ Te avisamos de esta institución" : "Avisarme de esta institución")
@@ -3149,8 +3155,8 @@
         const cuando = c.created_at ? new Date(c.created_at).toLocaleDateString("es-AR",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}) : "";
         const prev = (c.texto||"").length > 140 ? (c.texto||"").slice(0,140)+"…" : (c.texto||"");
         const urgPend = c.urgente && !urgenteDescartado(c.id);
-        return '<div class="aviso-card'+(urgPend?" urg":"")+'" data-com-id="'+esc(c.id)+'">'
-          + '<span class="tag">'+(urgPend?"Urgente · oficial":"Oficial")+'</span>'
+        return '<div class="aviso-card'+(urgPend?" urg":"")+'" data-com-id="'+esc(c.id)+'" style="--inst:'+colInst+'">'
+          + '<span class="tag">'+(urgPend?"Urgente":esc(inst.nombre))+'</span>'
           + '<div class="tx" data-abrir="'+esc(c.id)+'"><div class="t">'+esc(c.titulo||"")+'</div>'
           + (prev ? '<div class="p">'+esc(prev)+'</div>' : '')
           + '<div class="m">'+(cuando||"")+'</div></div>'
