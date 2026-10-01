@@ -2711,14 +2711,48 @@
     // se mantiene por compatibilidad con otras partes que la llamen
     return comunicadosVigentes().filter(c => !!c.urgente);
   }
+  function fechasVistas(){
+    try{ return new Set(JSON.parse(localStorage.getItem("fonte_fechas_vistas")||"[]").map(String)); }catch(e){ return new Set(); }
+  }
+  function marcarFechasInst(id){
+    try{
+      const v = JSON.parse(localStorage.getItem("fonte_fechas_vistas")||"[]");
+      (FECHAS_INST||[]).filter(f=>String(f.institucion_id)===String(id)).forEach(f=>{
+        if(f.id && !v.includes(String(f.id))) v.push(String(f.id));
+      });
+      localStorage.setItem("fonte_fechas_vistas", JSON.stringify(v.slice(-80)));
+    }catch(e){}
+  }
+  function fechasHoyPortada(){
+    let ocultos = [];
+    try{ ocultos = JSON.parse(localStorage.getItem("fonte_urg_cerrados")||"[]"); }catch(e){}
+    return (FECHAS_INST||[]).filter(f=>{
+      if(diasHasta(f.fecha) !== "HOY") return false;
+      return !ocultos.includes("fecha-"+String(f.id));
+    }).map(f=>{
+      const inst = (INSTITUCIONES||[]).find(x=>String(x.id)===String(f.institucion_id));
+      return {
+        id: "fecha-"+f.id,
+        __tipo: "fecha",
+        institucion_id: f.institucion_id,
+        institucion: (inst && inst.nombre) || "",
+        titulo: f.titulo || "Fecha",
+        texto: [f.lugar, f.horario].filter(Boolean).join(" · "),
+        urgente: false,
+        created_at: f.fecha,
+        color: colorDeInst(f.institucion_id, inst && inst.nombre),
+        _fecha: f
+      };
+    });
+  }
   function renderComunicadosEn(){
     const wrap = document.getElementById("urgentesWrap");
     const row = document.getElementById("urgRow");
     const dots = document.getElementById("urgDots");
-    // urgentes primero, después oficiales normales
-    const lista = comunicadosVigentes().slice().sort((a,b)=>{
-      const ua = a.urgente ? 1 : 0, ub = b.urgente ? 1 : 0;
-      if(ua !== ub) return ub - ua;
+    const lista = comunicadosVigentes().concat(fechasHoyPortada()).slice().sort((a,b)=>{
+      const ta = a.__tipo==="fecha" ? 2 : (a.urgente ? 3 : 1);
+      const tb = b.__tipo==="fecha" ? 2 : (b.urgente ? 3 : 1);
+      if(ta !== tb) return tb - ta;
       return new Date(b.created_at||0) - new Date(a.created_at||0);
     });
     if(!lista.length){ wrap.style.display = "none"; row.innerHTML = ""; dots.innerHTML = ""; return; }
@@ -2744,7 +2778,7 @@
       const col = c.color || colorDeInst(c.institucion_id, nom);
       return '<div class="urg-card'+(esUrg?"":" oficial")+'" data-com-id="'+esc(c.id)+'" style="--inst:'+col+'">'
         + '<button class="x" data-cerrar="'+esc(c.id)+'" aria-label="Ocultar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button>'
-        + '<span class="lbl">'+(esUrg ? "Urgente" : "Oficial")+'</span>'
+        + '<span class="lbl">'+(c.__tipo==="fecha" ? "Hoy" : (esUrg ? "Urgente" : "Oficial"))+'</span>'
         + (c.imagen_url ? '<img class="urg-thumb" src="'+esc(c.imagen_url)+'" alt="">' : '')
         + '<div class="h">'+esc(c.titulo||"")+'</div>'
         + '<div class="p">'+esc((c.texto||"").length > 130 ? (c.texto||"").slice(0,130)+"…" : (c.texto||""))+'</div>'
@@ -2758,7 +2792,13 @@
       el.addEventListener("click", (e)=>{
         if(e.target.hasAttribute("data-cerrar") || e.target.closest("[data-cerrar]")) return;
         if(e.target.closest("[data-ir-inst]")) return;
-        abrirComunicado(el.getAttribute("data-com-id"));
+        const id = el.getAttribute("data-com-id") || "";
+        if(id.indexOf("fecha-")===0){
+          const item = lista.find(x=>String(x.id)===id);
+          if(item && item.institucion_id) abrirInstitucion(item.institucion_id);
+          return;
+        }
+        abrirComunicado(id);
       });
     });
     row.querySelectorAll("[data-ir-inst]").forEach(b=>{
@@ -3008,7 +3048,8 @@
   function pintarInstituciones(){
     const wrap = document.getElementById("institucionesWrap");
     if(!wrap) return;
-    const hayAvisos = (typeof comunicadosVigentes === "function") && comunicadosVigentes().length;
+    const hayAvisos = ((typeof comunicadosVigentes === "function") && comunicadosVigentes().length)
+      || ((typeof fechasHoyPortada === "function") && fechasHoyPortada().length);
     if(!INSTITUCIONES.length && !hayAvisos){ wrap.style.display = "none"; return; }
     wrap.style.display = "block";
     let hayUrgente = false;
@@ -3019,13 +3060,16 @@
         const sinLeer = propios.filter(c=>!vistos.has(String(c.id))).length;
         const urgPendiente = propios.some(c=> c.urgente && !urgenteDescartado(c.id));
         if(urgPendiente) hayUrgente = true;
+        const vistasF = fechasVistas();
+        const fechasInst = (FECHAS_INST||[]).filter(f=>String(f.institucion_id)===String(i.id));
+        const fechaPend = fechasInst.some(f=>!vistasF.has(String(f.id)));
         const hayCom = propios.length > 0 && (sinLeer > 0 || urgPendiente);
         const nombreCorto = (i.nombre||"").replace(/^Municipalidad de\s+/i,"").replace(/^Hospital\s+/i,"Hospital ");
         const corto = nombreCorto.length>16 ? nombreCorto.slice(0,15)+"…" : nombreCorto;
         return '<button type="button" class="inst-pill'+(urgPendiente?" urgente":"")+'" data-inst-id="'+esc(i.id)+'" style="--inst:'+colorDeInst(i.id, i.nombre)+'">'
           + '<span class="ic">'+iconoLineaDe(i)+'</span>'
           + '<span class="nm">'+esc(corto)+'</span>'
-          + ((hayCom || urgPendiente) ? '<span class="dot"></span>' : '')
+          + ((hayCom || urgPendiente || fechaPend) ? '<span class="dot"></span>' : '')
           + '</button>';
       }).join("");
     const nInst = INSTITUCIONES.length;
@@ -3039,12 +3083,7 @@
     wrap.classList.toggle("has-avisos", !!hayAvisos);
     wrap.classList.remove("forzada");
     const pip = document.getElementById("instFechaPip");
-    if(pip){
-      const hayHoy = (FECHAS_INST||[]).some(f=>diasHasta(f.fecha)==="HOY");
-      const hayFecha = (FECHAS_INST||[]).length > 0;
-      pip.classList.toggle("on", !!hayFecha);
-      pip.classList.toggle("hoy", !!hayHoy);
-    }
+    if(pip){ pip.classList.remove("on","hoy"); }
     if(hayUrgente && sub) sub.textContent = "Oficial · urgente";
     else if(sub) sub.textContent = "Oficial";
     if(btn && !btn.dataset.bound){
@@ -3059,6 +3098,8 @@
   function abrirInstitucion(id){
     const inst = INSTITUCIONES.find(x=>String(x.id)===String(id));
     if(!inst) return;
+    marcarFechasInst(id);
+    if(typeof pintarInstituciones === "function") pintarInstituciones();
     const fechas = FECHAS_INST.filter(f=>String(f.institucion_id)===String(id));
     const proxima = fechas[0];
     const resto = fechas.slice(1);
