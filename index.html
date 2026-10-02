@@ -2250,10 +2250,23 @@
       ctx.beginPath(); ctx.moveTo(120, y+10); ctx.lineTo(W-120, y+10); ctx.stroke();
       const cuerpo = (n.resumen_corto || "").trim();
       ctx.fillStyle = TINTA;
-      ctx.font = "500 36px 'Work Sans',sans-serif";
+      ctx.font = "500 34px 'Work Sans',sans-serif";
       ctx.textAlign = "left";
-      const lineas = envolver(ctx, cuerpo, W-200, 11);
-      lineas.forEach((l,i)=> ctx.fillText(l, 120, y + 80 + i*50));
+      function puntosDe(txt){
+        return txt
+          .replace(/\s*Fecha:\s*/gi, "\n")
+          .replace(/\s*Horario:\s*/gi, "\n")
+          .replace(/\s*Lugar:\s*/gi, "\n")
+          .split(/\n+/)
+          .flatMap(p=> p.split(/\s*[·•]\s*/))
+          .map(p=>p.trim())
+          .filter(Boolean);
+      }
+      const lineas = [];
+      puntosDe(cuerpo).forEach(p=>{
+        envolver(ctx, p, W-220, 3).forEach(l=> lineas.push(l));
+      });
+      lineas.slice(0, 14).forEach((l,i)=> ctx.fillText(l, 120, y + 78 + i*46));
       const fotoOf = n.imagen_url || ((n.fotos||[])[0]) || "";
       if(fotoOf){
         const im = await cargarImagen(fotoOf, 7000);
