@@ -207,7 +207,7 @@
   /* ===== cierre en mosaico ===== */
   .mosaic-label{ font-family:var(--sans); font-size:.68rem; font-weight:700; text-transform:uppercase; letter-spacing:.1em; color:var(--ink-faint); padding:22px 0 10px; }
   .mosaic-grid{ display:flex; gap:10px; overflow-x:auto; scrollbar-width:none; margin-bottom:12px; padding-bottom:2px;
-    overscroll-behavior-x:contain; touch-action:pan-x; }
+    overscroll-behavior-x:contain; touch-action:pan-x pan-y; }
   .mosaic-grid::-webkit-scrollbar{ display:none; }
   .mosaic-card{ flex:0 0 auto; width:148px; background:var(--surface); border:1px solid var(--line); border-radius:14px; overflow:hidden; box-shadow:0 2px 10px rgba(80,60,40,.08); }
   .mosaic-card .ph-img{ aspect-ratio:1/1; border-radius:0; }
@@ -1706,11 +1706,17 @@
         const esReciente = (Date.now() - new Date(n.created_at).getTime()) < 15*60000;
         const tiempo = (esReciente ? '<span class="pulse-dot"></span>' : '') + tiempoDesde(n.created_at);
         // cada 4 ítems, uno "respira" con foto para romper el ritmo apilado
-        const destacada = (i % 8 === 7);
+        const destacada = (i % 6 === 4);
         const est = n.resumen_estructurado;
         let especial = "";
-        const puedeEspecial = (typeof window.__fonteEsp === "undefined") || (i - window.__fonteEsp >= 5);
-        if(puedeEspecial && est && est.cita && est.cita.texto && (i % 6 === 2)){
+        const puedeEspecial = (typeof window.__fonteEsp === "undefined") || (i - window.__fonteEsp >= 4);
+        if(puedeEspecial && destacada){
+          especial = '<a class="article li feat" data-id="'+esc(n.id)+'" style="--ac:'+color+'">'
+            + '<div class="ph-img" style="'+bgDe(n)+'"></div>'
+            + '<h4 class="h">'+esc(n.titulo)+'</h4>'
+            + (n.resumen_corto?'<p class="dek" style="font-size:.82rem;margin-top:4px">'+esc(n.resumen_corto)+'</p>':'')
+            + '<div class="meta-row">'+catTag+fav+'<span class="src">'+lugar+'</span><span class="src">'+tiempo+'</span></div></a>';
+        } else if(puedeEspecial && est && est.cita && est.cita.texto && (i % 6 === 2)){
           especial = '<a class="article li" data-id="'+esc(n.id)+'" style="--ac:'+color+'">'
             + '<h4 class="h">'+esc(n.titulo)+'</h4>'
             + '<blockquote class="li-quote">“'+esc(est.cita.texto)+'”<span class="li-quote-who">— '+esc(est.cita.quien||"")+'</span></blockquote>'
@@ -1721,12 +1727,6 @@
             + '<div class="databig-num">'+esc(d.numero)+'</div><div class="databig-lbl">'+esc(d.etiqueta||"")+'</div>'
             + '<h4 class="h" style="margin-top:6px">'+esc(n.titulo)+'</h4>'
             + '<div class="meta-row" style="justify-content:center">'+catTag+fav+'<span class="src">'+lugar+'</span><span class="src">'+tiempo+'</span></div></a>';
-        } else if(puedeEspecial && destacada){
-          especial = '<a class="article li feat" data-id="'+esc(n.id)+'" style="--ac:'+color+'">'
-            + '<div class="ph-img" style="'+bgDe(n)+'"></div>'
-            + '<h4 class="h">'+esc(n.titulo)+'</h4>'
-            + (n.resumen_corto?'<p class="dek" style="font-size:.82rem;margin-top:4px">'+esc(n.resumen_corto)+'</p>':'')
-            + '<div class="meta-row">'+catTag+fav+'<span class="src">'+lugar+'</span><span class="src">'+tiempo+'</span></div></a>';
         }
 
         if(especial){
