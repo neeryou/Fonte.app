@@ -460,6 +460,16 @@
     <h2 class="rep-h">Publicar</h2>
     <p class="rep-sub">Lo que sale hoy en Fonte.</p>
 
+    <div id="modoPrueba" style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 14px;padding:10px 12px;border:1px solid var(--line-strong);border-radius:10px;background:var(--paper)">
+      <div>
+        <div style="font-family:var(--sans);font-size:.78rem;font-weight:800">Modo prueba</div>
+        <div style="font-family:var(--sans);font-size:.68rem;color:var(--ink-faint)">Lo que publiques acá no sale en Fonte. Solo en tu vista.</div>
+      </div>
+      <input type="checkbox" id="chkPrueba" style="width:18px;height:18px">
+    </div>
+    <a id="verPrueba" href="index.html?prueba=1" target="_blank" class="hide" style="display:none;margin:-6px 0 14px;font-family:var(--sans);font-size:.74rem;font-weight:700;color:var(--region)">Ver en el inicio →</a>
+
+
     <div class="tipos" id="tiposPub">
       <button class="tipo on" data-tipo="nota" data-sig="NO"><span class="e">📰</span><span class="t">Nota</span><span class="s">Una noticia de la ciudad o la zona</span></button>
       <button class="tipo" data-tipo="comunicado" data-sig="CO"><span class="e">📢</span><span class="t">Comunicado</span><span class="s">Aviso de una institución</span></button>
@@ -1109,6 +1119,33 @@
     document.getElementById("btnVistaPrevia").classList.add("hide");
   });
 
+
+  function pruebaOn(){ return !!document.getElementById("chkPrueba") && document.getElementById("chkPrueba").checked; }
+  function leerPrueba(){ try{ return JSON.parse(localStorage.getItem("fonte_prueba")||"{}"); }catch(e){ return {}; } }
+  function guardarMuestra(tipo, item){
+    const b = leerPrueba();
+    b[tipo] = b[tipo] || [];
+    b[tipo].unshift(item);
+    localStorage.setItem("fonte_prueba", JSON.stringify(b));
+    const ver = document.getElementById("verPrueba");
+    if(ver) ver.style.display = "block";
+    toast("Guardado en la prueba. No salió en Fonte.");
+  }
+  const chkP = document.getElementById("chkPrueba");
+  if(chkP){
+    chkP.checked = localStorage.getItem("fonte_prueba_on") === "1";
+    if(chkP.checked){ const ver = document.getElementById("verPrueba"); if(ver) ver.style.display = "block"; }
+    chkP.addEventListener("change", ()=>{
+      localStorage.setItem("fonte_prueba_on", chkP.checked ? "1" : "0");
+      const ver = document.getElementById("verPrueba");
+      if(!chkP.checked){
+        localStorage.removeItem("fonte_prueba");
+        if(ver) ver.style.display = "none";
+        toast("Prueba vaciada.");
+      } else if(ver) ver.style.display = "block";
+    });
+  }
+
   document.getElementById("pubBtn").addEventListener("click", async ()=>{
     const btn = document.getElementById("pubBtn");
     btn.textContent = "Publicando...";
@@ -1138,6 +1175,15 @@
       publicada: true,
       creada_por: sesion.user.id,
     };
+    if(pruebaOn()){
+      registro.id = "prueba-" + Date.now();
+      registro.created_at = new Date().toISOString();
+      guardarMuestra("notas", registro);
+      btn.textContent = "Publicar en Fonte";
+      btn.disabled = false;
+      toast("Nota en la prueba ✓");
+      return;
+    }
     const { error } = await sb.from("noticias").insert(registro);
     btn.textContent = "Publicar en Fonte";
     btn.disabled = false;
@@ -1360,6 +1406,14 @@
       imagen_url: ofFotoUrl,
       activa: true,
     };
+    if(pruebaOn()){
+      registro.id = "prueba-of-" + Date.now();
+      registro.created_at = new Date().toISOString();
+      guardarMuestra("ofertas", registro);
+      btn.textContent = "Publicar oferta";
+      btn.disabled = false;
+      return;
+    }
     const { error } = await sb.from("ofertas").insert(registro);
     btn.textContent = "Publicar oferta";
     btn.disabled = false;
@@ -1447,6 +1501,14 @@
       imagen_url: coFotoUrl,
       titulo, texto,
     };
+    if(pruebaOn()){
+      registro.id = "prueba-co-" + Date.now();
+      registro.created_at = new Date().toISOString();
+      guardarMuestra("comunicados", registro);
+      btn.textContent = "Publicar comunicado";
+      btn.disabled = false;
+      return;
+    }
     let { error } = await sb.from("comunicados").insert(registro);
     if(error && /(color|sello)/i.test(error.message||"")){
       delete registro.color; delete registro.sello;
@@ -1769,6 +1831,13 @@
         lugar: (panel.querySelector('[name="puntos"]').value||"").split(/\n+/).map(s=>s.trim()).filter(Boolean).join("\n") || null,
         horario: panel.querySelector('[name="horario"]').value.trim() || null,
       };
+      if(pruebaOn()){
+        registro.id = "prueba-fe-" + Date.now();
+        registro.activa = true;
+        guardarMuestra("fechas", registro);
+        btn.disabled = false;
+        return;
+      }
       const { error } = await sb.from("institucion_fechas").insert(registro);
       btn.disabled = false;
       if(error){ toast("No se pudo agregar: " + error.message); return; }

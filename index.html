@@ -1491,6 +1491,26 @@
     return id;
   }
 
+
+  function bolsaPrueba(){
+    if(!/[?&]prueba=1/.test(location.search)) return null;
+    try{ return JSON.parse(localStorage.getItem("fonte_prueba")||"{}"); }catch(e){ return {}; }
+  }
+  function mezclarPrueba(){
+    const b = bolsaPrueba();
+    if(!b) return;
+    (b.notas||[]).forEach(n=>{ if(!NOTICIAS.some(x=>String(x.id)===String(n.id))) NOTICIAS.unshift(n); });
+    (b.comunicados||[]).forEach(c=>{ if(!COMUNICADOS.some(x=>String(x.id)===String(c.id))) COMUNICADOS.unshift(c); });
+    (b.ofertas||[]).forEach(o=>{ if(!OFERTAS.some(x=>String(x.id)===String(o.id))) OFERTAS.unshift(o); });
+    (b.fechas||[]).forEach(f=>{ if(!FECHAS_INST.some(x=>String(x.id)===String(f.id))) FECHAS_INST.unshift(f); });
+    if(!document.getElementById("avisoPrueba")){
+      const a = document.createElement("div");
+      a.id = "avisoPrueba";
+      a.textContent = "Vista de prueba. Esto no está en la aplicación real.";
+      a.style.cssText = "position:sticky;top:0;z-index:50;background:#8A6A22;color:#fff;text-align:center;font-family:var(--sans);font-size:.72rem;font-weight:700;padding:6px 10px";
+      document.body.prepend(a);
+    }
+  }
   let NOTICIAS = [];
   let catActiva = "todo";
   let favoritos = [];
@@ -1529,6 +1549,7 @@
       });
       if(!res.ok){ throw new Error("HTTP " + res.status); }
       NOTICIAS = await res.json();
+      mezclarPrueba();
       render();
     renderCiudad();
     if(typeof intentarEnlace === "function") intentarEnlace();
@@ -2587,6 +2608,7 @@
       const res = await fetch(url, { headers: { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + SUPABASE_KEY } });
       OFERTAS = res.ok ? await res.json() : [];
     }catch(e){ OFERTAS = []; }
+    mezclarPrueba();
     const bar = document.getElementById("ofertasBar");
     if(!OFERTAS.length){ bar.style.display = "none"; return; }
     bar.style.display = "block";
@@ -2675,6 +2697,7 @@
       const res = await fetch(url, { headers: { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + SUPABASE_KEY } });
       COMUNICADOS = res.ok ? await res.json() : [];
     }catch(e){ COMUNICADOS = []; }
+    mezclarPrueba();
     renderComunicadosEn();
   }
   const HORAS_RECIENTE = 24;
@@ -3065,6 +3088,7 @@
       INSTITUCIONES = rI.ok ? await rI.json() : [];
       FECHAS_INST = rF.ok ? await rF.json() : [];
     }catch(e){ INSTITUCIONES = []; FECHAS_INST = []; }
+    mezclarPrueba();
     pintarInstituciones();
   }
   function instSeguidas(){
