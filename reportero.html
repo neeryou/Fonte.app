@@ -1740,13 +1740,13 @@
     panel.innerHTML =
       (vencidas ? '<div style="background:color-mix(in srgb,#B23A2E 10%,var(--paper));border:1px solid color-mix(in srgb,#B23A2E 30%,var(--line));border-radius:8px;padding:9px 11px;margin-bottom:10px;font-family:var(--sans);font-size:.72rem;color:#B23A2E;font-weight:600">⚠️ '+vencidas+(vencidas===1?' fecha ya pasó':' fechas ya pasaron')+'. Actualizala o quitala para que la ficha no quede vacía.</div>' : '')
       + (fechas.length ? fechas.map(f=>
-        '<div class="fecha-row" data-fecha-id="'+escA(f.id)+'"'+(f.fecha < hoyStr ? ' style="opacity:.55"' : '')+'><div><div class="t">'+escA(f.titulo)+(f.fecha < hoyStr ? ' <span style="font-size:.6rem;color:#B23A2E;font-weight:800">VENCIDA</span>' : '')+'</div><div class="m">'+escA(f.fecha)+(f.lugar?" · "+escA(f.lugar):"")+'</div></div><button class="del" style="padding:4px 8px">✕</button></div>'
+        '<div class="fecha-row" data-fecha-id="'+escA(f.id)+'"'+(f.fecha < hoyStr ? ' style="opacity:.55"' : '')+'><div><div class="t">'+escA(f.titulo)+(f.fecha < hoyStr ? ' <span style="font-size:.6rem;color:#B23A2E;font-weight:800">VENCIDA</span>' : '')+'</div><div class="m">'+escA(f.fecha)+((f.lugar||"").includes("\n")?" · "+(f.lugar.split(/\n+/).filter(Boolean).length)+" puntos":(f.lugar?" · "+escA(f.lugar):""))+'</div></div><button class="del" style="padding:4px 8px">✕</button></div>'
       ).join("") : '<p style="font-family:var(--sans);font-size:.72rem;color:var(--ink-faint);margin:0 0 8px">Sin fechas cargadas.</p>')
       + '<div class="fecha-add">'
       + '<input name="titulo" placeholder="Ej: Entrega de mercadería">'
       + '<input name="fecha" type="date">'
-      + '<input name="lugar" placeholder="Lugar (opcional)">'
-      + '<input name="horario" placeholder="Horario (opcional)">'
+      + '<input name="horario" placeholder="Desde las 8.30">'
+      + '<textarea name="puntos" placeholder="Un punto por línea&#10;8.30 · Escuela Nº 771, Colonia General Paz&#10;9.30 · Merendero, Pampa Grande" style="flex:1 1 100%;min-height:96px;font-family:var(--sans);font-size:.78rem;border:1px solid var(--line-strong);border-radius:7px;padding:8px;background:var(--paper);color:var(--ink)"></textarea>'
       + '<button class="btn-mini" style="width:100%;background:var(--barrio);color:#fff;border-color:var(--barrio)" data-add="'+escA(institucionId)+'">+ Agregar fecha</button>'
       + '</div>';
     panel.querySelectorAll(".fecha-row .del").forEach(btn=>{
@@ -1766,7 +1766,7 @@
       btn.disabled = true;
       const registro = {
         institucion_id: institucionId, titulo, fecha,
-        lugar: panel.querySelector('[name="lugar"]').value.trim() || null,
+        lugar: (panel.querySelector('[name="puntos"]').value||"").split(/\n+/).map(s=>s.trim()).filter(Boolean).join("\n") || null,
         horario: panel.querySelector('[name="horario"]').value.trim() || null,
       };
       const { error } = await sb.from("institucion_fechas").insert(registro);

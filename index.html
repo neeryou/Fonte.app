@@ -726,6 +726,10 @@
   .date-box.man{ background:color-mix(in srgb,var(--terracota) 10%,var(--paper)); border-color:color-mix(in srgb,var(--terracota) 40%,var(--line)); }
   .date-box .fecha{ font-family:var(--serif); font-weight:700; font-size:1.35rem; color:var(--ink); margin-top:6px; line-height:1.15; }
   .date-box .lugar{ font-family:var(--sans); font-size:.78rem; color:var(--ink-soft); margin-top:4px; }
+
+  .pto{ font-family:var(--sans); font-size:.8rem; color:var(--ink); padding:8px 0; border-top:1px solid var(--line); }
+  .pto.oculta{ display:none; }
+
   .date-share{ margin-top:10px; width:100%; font-family:var(--sans); font-size:.78rem; font-weight:700;
     padding:9px; border:1px solid var(--ink); background:none; color:var(--ink); border-radius:8px; }
   .ficha-sec{ margin-top:18px; }
@@ -2764,7 +2768,7 @@
         institucion_id: f.institucion_id,
         institucion: (inst && inst.nombre) || "",
         titulo: f.titulo || "Fecha",
-        texto: [f.lugar, f.horario].filter(Boolean).join(" · "),
+        texto: (String(f.lugar||"").includes("\n") ? (String(f.lugar).split(/\n+/).filter(Boolean).length + " puntos") : [f.lugar, f.horario].filter(Boolean).join(" · ")),
         urgente: false,
         created_at: f.fecha,
         color: colorDeInst(f.institucion_id, inst && inst.nombre),
@@ -3147,13 +3151,18 @@
       const f = fmtFecha(proxima.fecha);
       const when = diasHasta(proxima.fecha);
       const cls = when==="HOY" ? " hoy" : (when==="MAÑANA" ? " man" : "");
+      const puntos = String(proxima.lugar||"").split(/\n+/).map(s=>s.trim()).filter(Boolean);
+      const varios = puntos.length > 1;
       html += '<div class="date-box'+cls+'" style="--inst:'+colInst+';border-left:3px solid '+colInst+'">'
         + '<div class="lbl">'+(when?'<span class="cd">'+when+'</span>':'')+'</div>'
         + '<div class="fecha">'+esc(proxima.titulo||"Fecha")+'</div>'
         + '<div class="lugar">'+f.full+'</div>'
-        + (proxima.lugar ? '<div class="lugar">'+esc(proxima.lugar)+'</div>' : '')
         + (proxima.horario ? '<div class="lugar">'+esc(proxima.horario)+'</div>' : '')
-        + '<button type="button" class="date-share" data-ftit="'+esc(proxima.titulo||"")+'" data-ffecha="'+(proxima.fecha||"")+'" data-flug="'+esc(proxima.lugar||"")+'" data-fhor="'+esc(proxima.horario||"")+'">↗ Compartir</button>'
+        + (varios
+            ? '<input class="pto-buscar" placeholder="Buscá tu barrio" style="width:100%;margin-top:10px;font-family:var(--sans);font-size:.8rem;border:1px solid var(--line-strong);border-radius:8px;padding:8px 10px;background:var(--paper);color:var(--ink)">'
+              + '<div class="pto-lista">'+puntos.map(pt=>'<div class="pto" data-q="'+esc(pt.toLowerCase())+'">'+esc(pt)+'</div>').join("")+'</div>'
+            : (proxima.lugar ? '<div class="lugar">'+esc(proxima.lugar)+'</div>' : ''))
+        + '<button type="button" class="date-share" data-ftit="'+esc(proxima.titulo||"")+'" data-ffecha="'+(proxima.fecha||"")+'" data-flug="'+esc(varios?puntos.join(" · "):proxima.lugar||"")+'" data-fhor="'+esc(proxima.horario||"")+'">↗ Compartir</button>'
         + '</div>';
     }
     if(resto.length){
@@ -3288,6 +3297,15 @@
         e.preventDefault();
         e.stopPropagation();
         await compartirFechaDesde(btn);
+      });
+    });
+    document.querySelectorAll("#institucionBody .pto-buscar").forEach(inp=>{
+      inp.addEventListener("input", ()=>{
+        const q = (inp.value||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim();
+        inp.parentElement.querySelectorAll(".pto").forEach(el=>{
+          const hay = (el.getAttribute("data-q")||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+          el.classList.toggle("oculta", !!q && !hay.includes(q));
+        });
       });
     });
     document.querySelectorAll("#institucionBody .date-box").forEach(box=>{
