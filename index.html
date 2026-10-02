@@ -1665,6 +1665,7 @@
     // con volumen suficiente, reservamos 2 notas para un cierre en mosaico ("también pasó hoy")
     const paraMosaico = ordenadas.length >= 6 ? ordenadas.slice(-4) : (ordenadas.length >= 4 ? ordenadas.slice(-4) : []);
     const idsMosaico = new Set(paraMosaico.map(n=>String(n.id)));
+    let parHecho = false; // el formato de dos columnas entra una sola vez en todo el inicio
     for(const o of conOndas){
       const notas = ordenadas.filter(n => n.onda === o.id && !idsMosaico.has(String(n.id))).sort((a,b)=>{
         const fa = favoritos.includes(a.categoria) ? 1 : 0;
@@ -1734,8 +1735,9 @@
           html += especial;
         } else {
           const item = { id:n.id, titulo:n.titulo, catTag, fav, lugar, tiempo, color, mini: miniFoto(n, 56) };
-          if(pendientePar){ html += tplLiPair(pendientePar, item); pendientePar = null; }
-          else { pendientePar = item; }
+          if(!parHecho && pendientePar){ html += tplLiPair(pendientePar, item); pendientePar = null; parHecho = true; }
+          else if(!parHecho){ pendientePar = item; }
+          else { html += tplLiSingle(item); }
         }
       });
       if(pendientePar){ html += tplLiSingle(pendientePar); }
