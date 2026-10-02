@@ -831,8 +831,9 @@
   .pag-logo.txt{ display:flex; align-items:center; justify-content:center; color:#fff; font-family:var(--serif); font-weight:700; font-size:.92rem; letter-spacing:.04em; }
   .pag-nm{ font-family:var(--serif); font-weight:700; font-size:2.05rem; line-height:1.05; letter-spacing:-.04em; margin:0 0 6px; }
   .pag-verif{ display:inline-flex; align-items:center; gap:6px; font-family:var(--sans); font-size:.62rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-soft); margin-bottom:10px; }
-  .pag-sec{ margin-top:20px; padding-top:14px; border-top:.5px solid var(--ink); }
-  .pag-sec .h{ font-family:var(--sans); font-size:.62rem; font-weight:800; letter-spacing:.16em; text-transform:uppercase; color:var(--ink); margin-bottom:12px; }
+  .pag-sec{ margin-top:18px; padding:12px 12px 4px; border:1px solid color-mix(in srgb,var(--inst,var(--line-strong)) 35%,var(--line));
+    border-left:3px solid var(--inst,var(--ink)); border-radius:10px; background:color-mix(in srgb,var(--inst,var(--paper-2)) 8%,var(--paper)); }
+  .pag-sec .h{ font-family:var(--sans); font-size:.62rem; font-weight:800; letter-spacing:.16em; text-transform:uppercase; color:var(--inst,var(--ink)); margin-bottom:12px; }
   .aviso-card{ border:1px solid var(--line-strong); border-radius:10px; padding:12px 13px; margin-bottom:8px; background:var(--paper); }
   .aten-fila{ display:grid; grid-template-columns:88px 12px 1fr; align-items:baseline; gap:0; padding:8px 0; border-bottom:.5px solid var(--line); font-family:var(--sans); font-size:.82rem; }
   .aten-fila .k{ font-weight:600; color:var(--ink); }
@@ -1544,9 +1545,9 @@
   function tplLiPair(a,b){
     return '<div class="li li-pair" style="--ac:'+a.color+'">'
       + '<div class="li-pair-grid">'
-      + '<a class="article li-pair-item" data-id="'+esc(a.id)+'"><h4 class="h">'+esc(a.titulo)+'</h4><div class="meta-row">'+a.catTag+a.fav+'<span class="src">'+a.lugar+'</span></div></a>'
+      + '<a class="article li-pair-item" data-id="'+esc(a.id)+'"><h4 class="h">'+esc(a.titulo)+'</h4><div class="meta-row">'+a.catTag+a.fav+'<span class="src">'+a.lugar+'</span><span class="src">'+a.tiempo+'</span></div></a>'
       + '<div class="li-pair-divider"></div>'
-      + '<a class="article li-pair-item" data-id="'+esc(b.id)+'"><h4 class="h">'+esc(b.titulo)+'</h4><div class="meta-row">'+b.catTag+b.fav+'<span class="src">'+b.lugar+'</span></div></a>'
+      + '<a class="article li-pair-item" data-id="'+esc(b.id)+'"><h4 class="h">'+esc(b.titulo)+'</h4><div class="meta-row">'+b.catTag+b.fav+'<span class="src">'+b.lugar+'</span><span class="src">'+b.tiempo+'</span></div></a>'
       + '</div></div>';
   }
 
@@ -1556,7 +1557,7 @@
       const lugar = n.lugar ? esc(n.lugar) : nombreDe(n.onda);
       return '<a class="article mosaic-card" data-id="'+esc(n.id)+'">'
         + '<div class="ph-img" style="'+bgDe(n)+'"></div>'
-        + '<div class="txt"><span class="kicker"><span class="dot" style="background:'+colorDe(n.onda)+'"></span>'+lugar+'</span><h4 class="h">'+esc(n.titulo)+'</h4></div></a>';
+        + '<div class="txt"><span class="kicker"><span class="dot" style="background:'+colorDe(n.onda)+'"></span>'+lugar+'</span><h4 class="h">'+esc(n.titulo)+'</h4><span class="src">'+tiempoDesde(n.created_at)+'</span></div></a>';
     }).join("") + '</div>';
   }
 
@@ -1714,7 +1715,7 @@
           especial = '<a class="article li li-databig" data-id="'+esc(n.id)+'" style="--ac:'+color+'">'
             + '<div class="databig-num">'+esc(d.numero)+'</div><div class="databig-lbl">'+esc(d.etiqueta||"")+'</div>'
             + '<h4 class="h" style="margin-top:6px">'+esc(n.titulo)+'</h4>'
-            + '<div class="meta-row" style="justify-content:center">'+catTag+fav+'<span class="src">'+lugar+'</span></div></a>';
+            + '<div class="meta-row" style="justify-content:center">'+catTag+fav+'<span class="src">'+lugar+'</span><span class="src">'+tiempo+'</span></div></a>';
         } else if(puedeEspecial && destacada){
           especial = '<a class="article li feat" data-id="'+esc(n.id)+'" style="--ac:'+color+'">'
             + '<div class="ph-img" style="'+bgDe(n)+'"></div>'
@@ -1877,7 +1878,7 @@
     document.getElementById("s-kicker").style.setProperty("--w", colorDe(n.onda));
     document.getElementById("s-place").textContent = nombreDe(n.onda) + (n.lugar ? " · " + n.lugar : "");
     document.getElementById("s-title").textContent = n.titulo || "";
-    document.getElementById("s-src").textContent = n.fuente_etiqueta || "";
+    document.getElementById("s-src").textContent = [n.fuente_etiqueta, tiempoDesde(n.created_at)].filter(Boolean).join(" · ");
     document.getElementById("s-urg").innerHTML = n.urgente ? '<span class="why urg">⚡ Urgente</span>' : '';
     const heroEl = document.getElementById("s-hero");
     const videoEl = document.getElementById("s-video");
@@ -3191,7 +3192,7 @@
         if(!porSec[sec]){ porSec[sec] = []; ordenSec.push(sec); }
         porSec[sec].push(s);
       });
-      html += '<div class="pag-sec" id="serviciosFicha"><div class="h">2 · Servicios</div>';
+      html += '<div class="pag-sec" id="serviciosFicha" style="--inst:'+colInst+'"><div class="h">2 · Servicios</div>';
       html += '<input class="svc-search" id="svcBuscar" type="search" placeholder="Buscá tu barrio o un servicio…" autocomplete="off">';
       html += '<div id="svcLista">';
       ordenSec.forEach((sec, iSec)=>{
@@ -3212,7 +3213,7 @@
     if(inst.telefono) contact += '<div class="aten-fila"><span class="k">Teléfono</span><span class="d">·</span><span>'+esc(inst.telefono)+'</span></div>';
     if(inst.horario) contact += '<div class="aten-fila"><span class="k">Horario</span><span class="d">·</span><span>'+esc(inst.horario)+'</span></div>';
     if(inst.link_url) contact += '<div class="aten-fila"><span class="k">Más info</span><span class="d">·</span><span><a href="'+esc(inst.link_url)+'" target="_blank" rel="noopener">Sitio de la institución</a></span></div>';
-    html += '<div class="pag-sec"><div class="h">3 · Atención</div>';
+    html += '<div class="pag-sec" style="--inst:'+colInst+'"><div class="h">3 · Atención</div>';
     html += contact || '<p style="font-family:var(--sans);font-size:.78rem;color:var(--ink-faint)">Todavía no hay datos de atención. Se cargan en el panel.</p>';
     html += '</div>';
     html += '<div class="pag-pie">Página oficial · Fonte solo publica el texto recibido</div>';
