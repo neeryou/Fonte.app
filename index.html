@@ -62,7 +62,9 @@
   html{ scroll-behavior:smooth; }
   body{ margin:0; color:var(--ink); background-color:var(--paper);
     transition:background-color .25s,color .25s;
-    font-family:var(--serif); line-height:1.42; -webkit-font-smoothing:antialiased; }
+    font-family:var(--serif); line-height:1.42; -webkit-font-smoothing:antialiased;
+    overflow-wrap:break-word; }
+  img, video{ max-width:100%; }
   .wrap{ max-width:var(--wrap); margin:0 auto; padding:0 18px; }
   a,button{ cursor:pointer; }
   .h{ font-family:var(--serif); font-weight:700; margin:0; letter-spacing:-.008em; color:var(--ink); }
@@ -300,7 +302,7 @@
   .riel-marco{ touch-action:pan-y; }
   .riel-marco #panelCiudad, .riel-marco #panelMas{ width:100%; }
   .backdrop.show{ opacity:1; pointer-events:auto; }
-  .sheet{ position:fixed; left:0; right:0; bottom:0; z-index:180; max-width:640px; margin:0 auto; height:90vh;
+  .sheet{ position:fixed; left:0; right:0; bottom:0; z-index:180; max-width:min(640px, 100%); margin:0 auto; height:90vh;
     background:var(--paper); border-radius:20px 20px 0 0; box-shadow:none; visibility:hidden;
     transform:translateY(100%); transition:transform .34s cubic-bezier(.22,.61,.36,1), visibility .34s; display:flex; flex-direction:column; overflow:hidden; }
   .sheet.show{ box-shadow:0 -14px 44px rgba(30,28,22,.28); visibility:visible; }
@@ -310,8 +312,11 @@
   .sheet-top{ display:flex; justify-content:space-between; align-items:center; padding:6px 18px 10px; border-bottom:1px solid var(--line); }
   .sheet-top .b{ font-family:var(--serif); font-weight:700; font-size:1.1rem; }
   .close{ font-family:var(--sans); font-size:.8rem; font-weight:600; color:var(--ink-soft); background:none; border:0; }
-  .sheet-body{ flex:1; overflow-y:auto; overflow-x:hidden; padding:18px; }
+  .sheet-body{ flex:1; min-width:0; max-width:100%; overflow-y:auto; overflow-x:hidden; padding:18px; }
+  .sheet-body .h, #s-title, .s-p, .s-lede{
+    max-width:100%; overflow-wrap:break-word; word-wrap:break-word; }
   .sheet-body .h{ font-size:clamp(1.5rem,6vw,2rem); line-height:1.1; margin:8px 0 12px; }
+  #s-video, #s-hero, #s-video iframe, #s-video video, #s-hero img{ max-width:100%; }
   .s-src{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; padding-bottom:14px; border-bottom:1px solid var(--line); margin-bottom:16px; }
   .s-hero{ margin-bottom:16px; border-radius:6px; }
   .s-p{ font-size:1.06rem; line-height:1.62; margin:0 0 14px; }
@@ -617,7 +622,17 @@
 
   /* ===== tarjeta de aporte dentro del sheet ===== */
   .ap-card{ background:var(--surface); border:1px solid var(--line); border-radius:12px; box-shadow:0 1px 5px rgba(80,60,40,.07);
-    display:flex; gap:11px; padding:11px; margin-bottom:10px; }
+    padding:11px; margin-bottom:10px; }
+  /* flex row is only for aporte/institución rows (.im + .tx). News cards (.article)
+     must stack: a flex row stretched the color placeholder into a tall bar and
+     pushed the title off the phone width. */
+  .ap-card:not(.article){ display:flex; gap:11px; }
+  .article.ap-card{ display:block; min-width:0; max-width:100%; }
+  .article.ap-card .ph-img{ width:100%; max-width:100%; height:auto; flex:none; }
+  .article.ap-card .h, .article.ap-card .dek, .article.ap-card .ap-meta, .article.ap-card .ctag{
+    max-width:100%; overflow-wrap:break-word; }
+  .apertura, .ap-row{ max-width:100%; }
+  .apertura > *, .ap-row > *{ min-width:0; }
   .ap-card .im{ width:58px; height:58px; border-radius:10px; flex:0 0 auto; background:var(--paper-2);
     display:flex; align-items:center; justify-content:center; font-size:1.35rem; background-size:cover; background-position:center; }
   .ap-card .tx{ flex:1; min-width:0; }
@@ -4734,5 +4749,4 @@
     buscarTimer = setTimeout(()=> buscar(v), 180);
   });
 </script>
-</body>
-</html>
+</body></html>
