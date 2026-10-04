@@ -213,6 +213,31 @@
   .mosaic-card .ph-img{ aspect-ratio:1/1; border-radius:0; }
   .mosaic-card .txt{ padding:9px 10px 11px; }
   .mosaic-card .h{ font-size:.84rem; line-height:1.16; margin-top:4px; }
+
+  .pp-cerca{ margin:0 0 14px; padding-bottom:4px; border-bottom:1px solid var(--line); }
+  .pp-cerca .rail-item{ padding:8px 0; }
+  .apertura{ display:grid; grid-template-columns:1.28fr .9fr; gap:10px; align-items:stretch; }
+  .ap-stack{ display:flex; flex-direction:column; gap:10px; min-width:0; }
+  .ap-card{ display:block; min-width:0; }
+  .ap-card .ph-img{ border-radius:12px; background:#ece7df; }
+  .ap-lead .ph-img{ aspect-ratio:4/5; }
+  .ap-side .ph-img{ aspect-ratio:16/10; }
+  .ap-mid .ph-img{ aspect-ratio:16/10; }
+  .ap-lead .h{ font-size:1.12rem; line-height:1.15; margin-top:8px; }
+  .ap-side .h{ font-size:.8rem; line-height:1.16; margin-top:6px; }
+  .ap-mid .h{ font-size:.92rem; line-height:1.16; margin-top:7px; }
+  .ap-card .ctag{ margin-top:8px; display:inline-flex; }
+  .ap-meta{ display:flex; gap:8px; margin-top:5px; flex-wrap:wrap; }
+  .ap-row{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px; }
+  .feat-home{ display:block; margin:18px 0 4px; }
+  .feat-home .ph-img{ aspect-ratio:16/9; border-radius:14px; }
+  .feat-home .h{ font-size:1.28rem; line-height:1.15; margin-top:10px; }
+  .feat-home .dek{ color:var(--ink-soft); font-size:.9rem; margin:6px 0 0; }
+  .feat-home .ctag{ margin-top:10px; display:inline-flex; }
+  @media (max-width:380px){
+    .apertura{ grid-template-columns:1.12fr .88fr; gap:8px; }
+    .ap-lead .h{ font-size:1rem; }
+  }
   @media (prefers-reduced-motion:reduce){ .pulse-dot{ animation:none; } }
 
   /* banda urgente */
@@ -1506,7 +1531,7 @@
     if(!document.getElementById("avisoPrueba")){
       const a = document.createElement("div");
       a.id = "avisoPrueba";
-      a.textContent = "Vista de prueba. Esto no está en la aplicación real.";
+      a.textContent = "Vista de prueba. Esto no está publicado.";
       a.style.cssText = "position:sticky;top:0;z-index:50;background:#8A6A22;color:#fff;text-align:center;font-family:var(--sans);font-size:.72rem;font-weight:700;padding:6px 10px";
       document.body.prepend(a);
     }
@@ -1586,6 +1611,47 @@
     }).join("") + '</div>';
   }
 
+  function metaAp(n){
+    const lugar = n.lugar ? esc(n.lugar) : nombreDe(n.onda);
+    const color = CAT_COLOR[n.categoria] || colorDe(n.onda);
+    const cat = n.categoria
+      ? '<span class="ctag" style="--ac:'+color+'">'+(CAT_NOMBRE[n.categoria]||n.categoria)+'</span>'
+      : '<span class="kicker"><span class="dot"></span>'+lugar+'</span>';
+    return { cat, fuente: n.fuente_etiqueta ? esc(n.fuente_etiqueta) : lugar, tiempo: tiempoDesde(n.created_at) };
+  }
+  function tplApCard(n, cls){
+    const m = metaAp(n);
+    return '<a class="article ap-card '+cls+'" data-id="'+esc(n.id)+'">'
+      + '<div class="ph-img" style="'+bgDe(n)+'"></div>'
+      + m.cat
+      + '<h3 class="h">'+esc(n.titulo)+'</h3>'
+      + '<div class="ap-meta"><span class="src">'+m.fuente+'</span><span class="src">'+m.tiempo+'</span></div></a>';
+  }
+  function tplApertura(items){
+    if(!items.length) return "";
+    const [a,b,c,d,e] = items;
+    let html = '<div class="apertura">'+tplApCard(a, "ap-lead")+'<div class="ap-stack">';
+    if(b) html += tplApCard(b, "ap-side");
+    if(c) html += tplApCard(c, "ap-side");
+    html += '</div></div>';
+    if(d || e){
+      html += '<div class="ap-row">';
+      if(d) html += tplApCard(d, "ap-mid");
+      if(e) html += tplApCard(e, "ap-mid");
+      html += '</div>';
+    }
+    return html;
+  }
+  function tplFeatHome(n){
+    const m = metaAp(n);
+    return '<a class="article feat-home" data-id="'+esc(n.id)+'">'
+      + '<div class="ph-img" style="'+bgDe(n)+'"></div>'
+      + m.cat
+      + '<h2 class="h">'+esc(n.titulo)+'</h2>'
+      + (n.resumen_corto?'<p class="dek">'+esc(n.resumen_corto)+'</p>':'')
+      + '<div class="ap-meta"><span class="src">'+m.fuente+'</span><span class="src">'+m.tiempo+'</span></div></a>';
+  }
+
   function renderCiudad(){
     const cont = document.getElementById("feedCiudad");
     const locales = NOTICIAS.filter(n => ONDAS_LOCALES.has(n.onda));
@@ -1631,14 +1697,23 @@
     const subLead = ordenadas[1];
     const recientes = [...ordenadas].sort((a,b)=> new Date(b.created_at)-new Date(a.created_at)).slice(0,5);
 
-    html += '<section class="pp" id="pp">';
-    html += '<div class="section-eyebrow"><span class="t">Primera plana</span><span class="src">'+ordenadas.length+' '+(ordenadas.length===1?'noticia':'noticias')+'</span></div>';
-    html += '<div class="pp-grid'+(conCercaTuyo?'':' sin-cerca')+'">';
+    // Mismo ritmo en Ciudad y en Más noticias. El riel de Cerca tuyo solo va en Más noticias.
+    const reservados = new Set();
+    const apertura = ordenadas.slice(0, Math.min(5, ordenadas.length));
+    apertura.forEach(n => reservados.add(String(n.id)));
+    const despues = ordenadas.filter(n => !reservados.has(String(n.id)));
+    const paraTira = despues.slice(0, Math.min(4, despues.length));
+    paraTira.forEach(n => reservados.add(String(n.id)));
+    const queda = ordenadas.filter(n => !reservados.has(String(n.id)));
+    const destacada = queda[0];
+    if(destacada) reservados.add(String(destacada.id));
 
+    html += '<section class="pp" id="pp">';
+    html += '<div class="section-eyebrow"><span class="t">'+(conCercaTuyo?'Primera plana':'Ahora en Quitilipi')+'</span><span class="src">'+ordenadas.length+' '+(ordenadas.length===1?'noticia':'noticias')+'</span></div>';
     if(conCercaTuyo){
-      const cercanas = ordenadas.slice(0, 6);
-      html += '<aside class="pp-left"><div class="rail-title">Cerca tuyo</div>';
-      cercanas.slice(2,6).forEach(n=>{
+      const delRail = ordenadas.slice(0, 4);
+      html += '<aside class="pp-cerca"><div class="rail-title">Cerca tuyo</div>';
+      delRail.forEach(n=>{
         const lugar = n.lugar ? esc(n.lugar) : nombreDe(n.onda);
         const mini = miniFoto(n, 44);
         html += '<a class="article rail-item'+(mini?' foto':'')+'" data-id="'+esc(n.id)+'" style="--w:'+colorDe(n.onda)+'">'
@@ -1648,45 +1723,18 @@
       });
       html += '</aside>';
     }
-
-    html += '<div class="pp-center">';
-    const leadLugar = lead.lugar ? esc(lead.lugar) : nombreDe(lead.onda);
-    html += '<a class="article lead" data-id="'+esc(lead.id)+'" style="--w:'+colorDe(lead.onda)+'">'
-      + '<div class="ph-img" style="'+bgDe(lead)+'"></div>'
-      + '<span class="kicker"><span class="dot"></span>'+leadLugar+'</span>'
-      + '<h2 class="h">'+esc(lead.titulo)+'</h2>'
-      + (lead.resumen_corto?'<p class="dek">'+esc(lead.resumen_corto)+'</p>':'')
-      + '<div class="byl">'+(lead.fuente_etiqueta?'<span class="fuente-tag">'+esc(lead.fuente_etiqueta)+'</span>':'')+'<span class="src">'+tiempoDesde(lead.created_at)+'</span></div></a>';
-    if(subLead){
-      const subLugar = subLead.lugar ? esc(subLead.lugar) : nombreDe(subLead.onda);
-      html += '<a class="article pp-sub" data-id="'+esc(subLead.id)+'" style="--w:'+colorDe(subLead.onda)+'">'
-        + '<div class="ph-img sq" style="'+bgDe(subLead)+'"></div>'
-        + '<div><span class="kicker"><span class="dot"></span>'+subLugar+'</span>'
-        + '<h3 class="h">'+esc(subLead.titulo)+'</h3>'
-        + (subLead.resumen_corto?'<p class="dek">'+esc(subLead.resumen_corto)+'</p>':'') + '</div></a>';
+    html += tplApertura(apertura);
+    if(paraTira.length >= 2){
+      html += '<div class="mosaic-label">También pasó hoy</div>' + tplMosaicRow(paraTira);
     }
-    html += '</div>';
+    if(destacada) html += tplFeatHome(destacada);
+    html += '</section>';
 
-    html += '<aside class="pp-right recientes"><div class="rail-title">Últimas</div>';
-    recientes.forEach(n=>{
-      const mini = miniFoto(n, 44);
-      html += '<a class="article rail-item'+(mini?' foto':'')+'" data-id="'+esc(n.id)+'">'
-        + mini
-        + '<div><span class="tt">'+tiempoDesde(n.created_at)+'</span>'
-        + '<h3 class="h">'+esc(n.titulo)+'</h3></div></a>';
-    });
-    html += '</aside>';
-
-    html += '</div></section>';
-
-    // ===== ONDAS densas debajo =====
+    // ===== cada onda arranca de nuevo =====
     const leidos = getLeidos();
     const seed = semillaRotativa();
-    let contadorDatos = 0; // para que el "dato destacado" salga salteado, no en cada nota que tenga cifras
-    // con volumen suficiente, reservamos 2 notas para un cierre en mosaico ("también pasó hoy")
-    const paraMosaico = ordenadas.length >= 6 ? ordenadas.slice(-4) : (ordenadas.length >= 4 ? ordenadas.slice(-4) : []);
-    const idsMosaico = new Set(paraMosaico.map(n=>String(n.id)));
-    let parHecho = false; // el formato de dos columnas entra una sola vez en todo el inicio
+    let contadorDatos = 0;
+    const idsMosaico = reservados;
     for(const o of conOndas){
       const notas = ordenadas.filter(n => n.onda === o.id && !idsMosaico.has(String(n.id))).sort((a,b)=>{
         const fa = favoritos.includes(a.categoria) ? 1 : 0;
@@ -1711,9 +1759,10 @@
         + '<h3 class="h">'+esc(zLead.titulo)+'</h3>'
         + (zLead.resumen_corto?'<p class="dek">'+esc(zLead.resumen_corto)+'</p>':'')
         + '<div class="byl">'+zFav+zCatTag+(zLead.fuente_etiqueta?'<span class="fuente-tag">'+esc(zLead.fuente_etiqueta)+'</span>':'')+'<span class="src">'+tiempoDesde(zLead.created_at)+'</span></div></a>';
-      // con suficiente volumen en la zona, una mini-tira deslizable justo después del lead —
-      // la misma técnica del cierre, pero como parte normal de la interfaz, no solo al final
-      const miniN = notas.length >= 7 ? Math.min(3, notas.length - 5) : 0;
+      // cada onda vuelve a empezar: lead, tira corta si hay volumen, lista con par cada cuatro
+      window.__fonteSlot = 0;
+      window.__fonteEsp = undefined;
+      const miniN = notas.length >= 6 ? Math.min(3, notas.length - 4) : 0;
       const miniMosaico = miniN > 0 ? notas.slice(1, 1+miniN) : [];
       const restoZona = notas.slice(1 + miniMosaico.length);
       if(miniMosaico.length){ html += tplMosaicRow(miniMosaico); }
@@ -1756,18 +1805,15 @@
           html += especial;
         } else {
           const item = { id:n.id, titulo:n.titulo, catTag, fav, lugar, tiempo, color, mini: miniFoto(n, 56) };
-          if(!parHecho && pendientePar){ html += tplLiPair(pendientePar, item); pendientePar = null; parHecho = true; }
-          else if(!parHecho){ pendientePar = item; }
+          const slot = (typeof window.__fonteSlot === "number" ? window.__fonteSlot : 0);
+          window.__fonteSlot = slot + 1;
+          if(slot % 4 === 0){ pendientePar = item; }
+          else if(slot % 4 === 1 && pendientePar){ html += tplLiPair(pendientePar, item); pendientePar = null; }
           else { html += tplLiSingle(item); }
         }
       });
       if(pendientePar){ html += tplLiSingle(pendientePar); }
       html += '</div></div></section>';
-    }
-
-    // ===== cierre en mosaico (deslizable al costado) =====
-    if(paraMosaico.length >= 2){
-      html += '<div class="mosaic-label">También pasó hoy</div>' + tplMosaicRow(paraMosaico);
     }
 
     return html;
