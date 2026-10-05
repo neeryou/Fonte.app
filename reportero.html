@@ -1165,12 +1165,9 @@
   document.getElementById("leerImgBtn").addEventListener("click", ()=> generarNota({ conImagen:true }));
 
   document.getElementById("discBtn").addEventListener("click", ()=>{
-    // Solo cierra la vista previa local; si era un borrador de la base, no lo borra
+    // Solo limpia el formulario local; si era un borrador de la base, no lo borra
     // (para eso está "Descartar borrador").
-    borradorEditandoId = null;
-    setModoBorradorUI(false);
-    document.getElementById("previewCard").classList.add("hide");
-    document.getElementById("btnVistaPrevia").classList.add("hide");
+    limpiarFormularioNota();
   });
 
 
@@ -1208,21 +1205,38 @@
     document.getElementById("btnVistaPrevia").classList.add("hide");
     document.getElementById("rawInput").value = "";
     document.getElementById("fotoPropia").value = "";
-    document.getElementById("fotoPreview").style.display = "none";
-    document.getElementById("fotoPreview").innerHTML = "";
     fotosPropias = [];
+    fotoPropiaUrl = null;
+    imagenDetectada = null;
+    videoDetectado = null;
+    document.getElementById("fotoPreview").innerHTML = "";
+    document.getElementById("fotoPreview").style.display = "none";
+    const leerBtn = document.getElementById("leerImgBtn");
+    const leerAyuda = document.getElementById("leerImgAyuda");
+    if(leerBtn) leerBtn.classList.add("hide");
+    if(leerAyuda) leerAyuda.classList.add("hide");
     document.getElementById("videoUrl").value = "";
     document.getElementById("srcLink").value = "";
+    document.getElementById("pvTitulo").value = "";
+    document.getElementById("pvCorto").value = "";
+    document.getElementById("pvExtendido").value = "";
+    document.getElementById("pvCategoria").value = "otros";
+    document.getElementById("pvOnda").value = "ciudad";
+    document.getElementById("pvLugar").value = "";
+    document.getElementById("pvUrgente").checked = false;
     document.getElementById("pvDato").value = "";
+    document.getElementById("pvMedia").textContent = "";
     document.getElementById("accionUrl").value = "";
     document.getElementById("accionCustom").value = "";
     accionSel = "";
     document.querySelectorAll("#accionChips .srcchip").forEach((x,i)=>x.classList.toggle("on", i===0));
     document.getElementById("accionCustom").classList.add("hide");
     document.getElementById("accionUrl").classList.add("hide");
-    fotoPropiaUrl = null;
-    imagenDetectada = null;
-    videoDetectado = null;
+    placaSel = "auto";
+    document.querySelectorAll("#placaChips .srcchip").forEach((x,i)=>x.classList.toggle("on", i===0));
+    aplicarFuenteEnChips("Facebook vecinal");
+    const genErr = document.getElementById("genErr");
+    if(genErr){ genErr.textContent = ""; genErr.classList.add("hide"); }
     borradorEstructurado = null;
     borradorTerminos = null;
     extendidoOriginal = "";
