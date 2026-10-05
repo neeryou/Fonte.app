@@ -952,7 +952,7 @@
     }
   }
   document.getElementById("fotoPropia").addEventListener("change", async (e)=>{
-    const files = e.target.files;
+    const files = Array.from(e.target.files || []);
     e.target.value = "";
     await subirFotosSeleccionadas(files);
   });
