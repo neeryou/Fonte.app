@@ -323,10 +323,41 @@
   /* ===== variantes de nota dentro de zlist (cita / dato destacado) ===== */
   .li-quote{ font-family:var(--serif); font-style:italic; font-size:.98rem; line-height:1.32; color:var(--ink); margin:6px 0 4px; padding-left:14px; border-left:2px solid var(--ac,var(--ink-faint)); }
   .li-quote-who{ display:block; font-family:var(--sans); font-style:normal; font-size:.64rem; color:var(--ink-faint); margin-top:5px; }
-  .li-databig{ text-align:center; background:var(--paper-2); border-radius:10px; padding:14px 12px !important; margin-left:0; }
+  .li-databig{
+    text-align:left;
+    background:transparent;
+    border-radius:0;
+    padding:14px 0 12px !important;
+    margin-left:0;
+    border-top:1px solid var(--ink);
+    border-bottom:1px solid var(--ink);
+  }
   .li-databig::before{ display:none; }
-  .databig-num{ font-family:var(--serif); font-weight:700; font-size:1.7rem; color:var(--urgente); line-height:1; }
-  .databig-lbl{ font-family:var(--sans); font-size:.62rem; color:var(--ink-faint); text-transform:uppercase; letter-spacing:.05em; margin-top:3px; }
+  .databig-lbl{
+    font-family:var(--sans);
+    font-size:.62rem;
+    font-weight:700;
+    color:var(--ink-soft);
+    text-transform:uppercase;
+    letter-spacing:.08em;
+    margin:0 0 6px;
+  }
+  .databig-num{
+    font-family:var(--serif);
+    font-weight:700;
+    font-size:2.1rem;
+    color:var(--ink);
+    line-height:1;
+    margin:0 0 8px;
+  }
+  .li-databig .h{ margin-top:0; }
+  .databig-meta{
+    font-family:var(--sans);
+    font-size:.62rem;
+    color:var(--ink-faint);
+    margin-top:6px;
+    letter-spacing:.02em;
+  }
 
   /* ===== panel de nota escaneable ===== */
   .s-lede::first-letter{ font-family:var(--slab); font-weight:400; font-size:3.1rem; float:left;
@@ -405,15 +436,15 @@
   .inst-pill{ flex:0 0 auto; display:flex; align-items:center; gap:8px; padding:7px 10px 7px 7px;
     border:1px solid var(--line-strong); border-radius:10px; background:var(--paper); position:relative; }
   .inst-home-list .inst-pill{
-    gap:7px; padding:6px 12px 6px 8px;
-    border:.5px solid var(--inst, var(--ink));
+    gap:7px; padding:8px 14px 8px 10px;
+    border:.5px solid color-mix(in srgb, var(--inst, var(--ink)) 65%, var(--line));
     border-radius:3px;
-    background:color-mix(in srgb, var(--inst, var(--barrio)) 12%, var(--paper));
+    background:color-mix(in srgb, var(--inst, var(--barrio)) 7%, var(--paper));
     box-shadow:none;
   }
-  .inst-home-list .inst-pill .ic{ width:18px; height:18px; display:flex; align-items:center; justify-content:center; color:var(--inst, var(--ink)); }
-  .inst-home-list .inst-pill .ic svg{ width:16px; height:16px; display:block; }
-  .inst-home-list .inst-pill .nm{ font-family:var(--sans); font-size:.68rem; font-weight:650;
+  .inst-home-list .inst-pill .ic{ width:20px; height:20px; display:flex; align-items:center; justify-content:center; color:var(--inst, var(--ink)); }
+  .inst-home-list .inst-pill .ic svg{ width:18px; height:18px; display:block; }
+  .inst-home-list .inst-pill .nm{ font-family:var(--sans); font-size:.74rem; font-weight:650;
     letter-spacing:.02em; color:var(--ink); white-space:nowrap; max-width:none; }
   .inst-home-list .inst-pill .dot{ width:6px; height:6px; top:5px; right:5px; }
   .inst-home-list .inst-pill.urgente{ border-color:var(--urgente); background:color-mix(in srgb,var(--urgente) 8%,var(--paper)); }
@@ -1513,27 +1544,9 @@
     if(!id){ id = (crypto.randomUUID ? crypto.randomUUID() : (Date.now()+"-"+Math.random())); localStorage.setItem("fonte_dispositivo_id", id); }
     return id;
   }
+  try{ localStorage.removeItem("fonte_prueba"); localStorage.removeItem("fonte_prueba_on"); }catch(e){}
 
 
-  function bolsaPrueba(){
-    if(!/[?&]prueba=1/.test(location.search)) return null;
-    try{ return JSON.parse(localStorage.getItem("fonte_prueba")||"{}"); }catch(e){ return {}; }
-  }
-  function mezclarPrueba(){
-    const b = bolsaPrueba();
-    if(!b) return;
-    (b.notas||[]).forEach(n=>{ if(!NOTICIAS.some(x=>String(x.id)===String(n.id))) NOTICIAS.unshift(n); });
-    (b.comunicados||[]).forEach(c=>{ if(!COMUNICADOS.some(x=>String(x.id)===String(c.id))) COMUNICADOS.unshift(c); });
-    (b.ofertas||[]).forEach(o=>{ if(!OFERTAS.some(x=>String(x.id)===String(o.id))) OFERTAS.unshift(o); });
-    (b.fechas||[]).forEach(f=>{ if(!FECHAS_INST.some(x=>String(x.id)===String(f.id))) FECHAS_INST.unshift(f); });
-    if(!document.getElementById("avisoPrueba")){
-      const a = document.createElement("div");
-      a.id = "avisoPrueba";
-      a.textContent = "Vista de prueba. Esto no está publicado.";
-      a.style.cssText = "position:sticky;top:0;z-index:50;background:#8A6A22;color:#fff;text-align:center;font-family:var(--sans);font-size:.72rem;font-weight:700;padding:6px 10px";
-      document.body.prepend(a);
-    }
-  }
   let NOTICIAS = [];
   let catActiva = "todo";
   let favoritos = [];
@@ -1572,7 +1585,6 @@
       });
       if(!res.ok){ throw new Error("HTTP " + res.status); }
       NOTICIAS = await res.json();
-      mezclarPrueba();
       render();
     renderCiudad();
     if(typeof intentarEnlace === "function") intentarEnlace();
@@ -1759,10 +1771,14 @@
             + '<div class="meta-row">'+catTag+fav+'<span class="src">'+lugar+'</span><span class="src">'+tiempo+'</span></div></a>';
         } else if(est && est.datos && est.datos[0] && est.datos[0].numero && (contadorDatos++ % 3 === 0)){
           const d = est.datos[0];
+          const catPlain = n.categoria ? esc(CAT_NOMBRE[n.categoria]||n.categoria) : '';
+          const metaPlain = [catPlain, lugar].filter(Boolean).join(' · ');
           especial = '<a class="article li li-databig" data-id="'+esc(n.id)+'" style="--ac:'+color+'">'
-            + '<div class="databig-num">'+esc(d.numero)+'</div><div class="databig-lbl">'+esc(d.etiqueta||"")+'</div>'
-            + '<h4 class="h" style="margin-top:6px">'+esc(n.titulo)+'</h4>'
-            + '<div class="meta-row" style="justify-content:center">'+catTag+fav+'<span class="src">'+lugar+'</span></div></a>';
+            + '<div class="databig-lbl">'+esc(d.etiqueta||"")+'</div>'
+            + '<div class="databig-num">'+esc(d.numero)+'</div>'
+            + '<h4 class="h">'+esc(n.titulo)+'</h4>'
+            + (metaPlain ? '<div class="databig-meta">'+metaPlain+'</div>' : '')
+            + '</a>';
         } else if(destacada){
           especial = '<a class="article li feat" data-id="'+esc(n.id)+'" style="--ac:'+color+'">'
             + '<div class="ph-img" style="'+bgDe(n)+'"></div>'
@@ -2628,7 +2644,6 @@
       const res = await fetch(url, { headers: { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + SUPABASE_KEY } });
       OFERTAS = res.ok ? await res.json() : [];
     }catch(e){ OFERTAS = []; }
-    mezclarPrueba();
     const bar = document.getElementById("ofertasBar");
     if(!OFERTAS.length){ bar.style.display = "none"; return; }
     bar.style.display = "block";
@@ -2717,7 +2732,6 @@
       const res = await fetch(url, { headers: { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + SUPABASE_KEY } });
       COMUNICADOS = res.ok ? await res.json() : [];
     }catch(e){ COMUNICADOS = []; }
-    mezclarPrueba();
     renderComunicadosEn();
   }
   const HORAS_RECIENTE = 24;
@@ -3108,7 +3122,6 @@
       INSTITUCIONES = rI.ok ? await rI.json() : [];
       FECHAS_INST = rF.ok ? await rF.json() : [];
     }catch(e){ INSTITUCIONES = []; FECHAS_INST = []; }
-    mezclarPrueba();
     pintarInstituciones();
   }
   function instSeguidas(){
@@ -4102,7 +4115,7 @@
   }
   async function traerNotaPorId(id){
     try{
-      const url = SUPABASE_URL + "/rest/v1/noticias?select=*&id=eq." + encodeURIComponent(id) + "&limit=1";
+      const url = SUPABASE_URL + "/rest/v1/noticias?select=*&id=eq." + encodeURIComponent(id) + "&publicada=eq.true&limit=1";
       const res = await fetch(url, { headers: { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + SUPABASE_KEY } });
       if(!res.ok) return null;
       const arr = await res.json();

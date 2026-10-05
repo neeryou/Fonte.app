@@ -460,15 +460,6 @@
     <h2 class="rep-h">Publicar</h2>
     <p class="rep-sub">Lo que sale hoy en Fonte.</p>
 
-    <div id="modoPrueba" style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 14px;padding:10px 12px;border:1px solid var(--line-strong);border-radius:10px;background:var(--paper)">
-      <div>
-        <div style="font-family:var(--sans);font-size:.78rem;font-weight:800">Modo prueba</div>
-        <div style="font-family:var(--sans);font-size:.68rem;color:var(--ink-faint)">Lo que publiques acá no sale en Fonte. Solo en tu vista.</div>
-      </div>
-      <input type="checkbox" id="chkPrueba" style="width:18px;height:18px">
-    </div>
-    <a id="verPrueba" href="index.html?prueba=1" target="_blank" class="hide" style="display:none;margin:-6px 0 14px;font-family:var(--sans);font-size:.74rem;font-weight:700;color:var(--region)">Ver en el inicio →</a>
-
 
     <div class="tipos" id="tiposPub">
       <button class="tipo on" data-tipo="nota" data-sig="NO"><span class="e">📰</span><span class="t">Nota</span><span class="s">Una noticia de la ciudad o la zona</span></button>
@@ -594,11 +585,18 @@
           <label for="pvUrgente" style="font-family:var(--sans);font-size:.8rem">Urgente</label>
         </div>
       </div>
-      <div class="pv-actions">
+      <div class="pv-actions" style="flex-wrap:wrap">
         <button class="disc" id="discBtn">Descartar</button>
         <button class="pub hide" id="pubBtn">Publicar en Fonte</button>
+        <button class="disc" id="guardarBorradorBtn" style="flex:1 1 100%;border:1px solid var(--line-strong);background:var(--paper);color:var(--ink)">Guardar como borrador</button>
+        <button class="disc hide" id="guardarBorradorEditBtn" style="flex:1 1 45%;border:1px solid var(--line-strong);background:var(--paper);color:var(--ink)">Guardar borrador</button>
+        <button class="disc hide" id="descartarBorradorBtn" style="flex:1 1 45%;border:1px solid #B23A2E;color:#B23A2E;background:var(--paper)">Descartar borrador</button>
       </div>
     </div>
+
+    <h2 class="rep-h" style="font-size:1.1rem;margin-top:26px">Borradores <span id="borradoresCount" style="font-family:var(--sans);font-size:.72rem;font-weight:700;color:var(--ink-faint);margin-left:6px"></span></h2>
+    <p class="rep-sub" style="margin-top:-6px">Notas armadas que todavía no salieron en Fonte — las del bot y las tuyas.</p>
+    <div id="borradoresList"><p style="font-family:var(--sans);font-size:.78rem;color:var(--ink-faint)">Cargando…</p></div>
 
     <h2 class="rep-h" style="font-size:1.1rem;margin-top:26px">Publicado hoy</h2>
     <div id="todayList"><p style="font-family:var(--sans);font-size:.78rem;color:var(--ink-faint)">Nada todavía.</p></div>
@@ -816,6 +814,7 @@
   const FUNCION_GENERAR = SUPABASE_URL + "/functions/v1/fonte-generar-nota";
 
   const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  try{ localStorage.removeItem("fonte_prueba"); localStorage.removeItem("fonte_prueba_on"); }catch(e){}
 
   const loginView = document.getElementById("loginView");
   const consoleView = document.getElementById("consoleView");
@@ -824,6 +823,7 @@
   let imagenDetectada = null;
   let videoDetectado = null;
   let fotoPropiaUrl = null;
+  let borradorEditandoId = null;
   // resumen_estructurado / terminos: el mismo "extra" que ya traen las notas de Más noticias
   // (lede, datos destacados, subtítulos, cita). No hay campo en el formulario para tocarlo a
   // mano — viaja tal cual lo devuelva Gemini, ya validado, desde el borrador hasta publicar.
@@ -861,7 +861,7 @@
     if(v === "viewArchivo"){ cargarArchivo(); }
     if(v === "viewMetricas"){ cargarMetricas(); }
     if(v === "viewAportes"){ cargarAportesPendientes(); cargarAvisosPublicados(); }
-    if(v === "viewCargar"){ cargarPublicadoHoy(); cargarOfertasAdmin(); cargarComunicadosAdmin(); }
+    if(v === "viewCargar"){ cargarBorradores(); cargarPublicadoHoy(); cargarOfertasAdmin(); cargarComunicadosAdmin(); }
     if(v === "viewInstituciones"){ cargarInstitucionesAdmin(); }
     window.scrollTo({ top:0, behavior:"instant" });
   }
@@ -1061,6 +1061,8 @@
     btn.innerHTML = '<span class="spinner"></span> ' + (conImagen ? "Fonte está leyendo la imagen..." : "Fonte está leyendo y resumiendo...");
     btn.disabled = true;
     document.getElementById("previewCard").classList.add("hide");
+    borradorEditandoId = null;
+    setModoBorradorUI(false);
 
     try{
       const res = await fetch(FUNCION_GENERAR, {
@@ -1100,6 +1102,7 @@
       if(imagenDetectada) avisos.push("📷 foto encontrada");
       if(videoDetectado) avisos.push("🎬 video encontrado");
       document.getElementById("pvMedia").textContent = avisos.join(" · ");
+      setModoBorradorUI(false);
       document.getElementById("previewCard").classList.remove("hide");
       document.getElementById("btnVistaPrevia").classList.remove("hide");
       document.getElementById("previewCard").scrollIntoView({ behavior: "smooth", block: "center" });
@@ -1115,41 +1118,19 @@
   document.getElementById("leerImgBtn").addEventListener("click", ()=> generarNota({ conImagen:true }));
 
   document.getElementById("discBtn").addEventListener("click", ()=>{
+    // Solo cierra la vista previa local; si era un borrador de la base, no lo borra
+    // (para eso está "Descartar borrador").
+    borradorEditandoId = null;
+    setModoBorradorUI(false);
     document.getElementById("previewCard").classList.add("hide");
     document.getElementById("btnVistaPrevia").classList.add("hide");
   });
 
 
-  function pruebaOn(){ return !!document.getElementById("chkPrueba") && document.getElementById("chkPrueba").checked; }
-  function leerPrueba(){ try{ return JSON.parse(localStorage.getItem("fonte_prueba")||"{}"); }catch(e){ return {}; } }
-  function guardarMuestra(tipo, item){
-    const b = leerPrueba();
-    b[tipo] = b[tipo] || [];
-    b[tipo].unshift(item);
-    localStorage.setItem("fonte_prueba", JSON.stringify(b));
-    const ver = document.getElementById("verPrueba");
-    if(ver) ver.style.display = "block";
-    toast("Guardado en la prueba. No salió en Fonte.");
-  }
-  const chkP = document.getElementById("chkPrueba");
-  if(chkP){
-    chkP.checked = localStorage.getItem("fonte_prueba_on") === "1";
-    if(chkP.checked){ const ver = document.getElementById("verPrueba"); if(ver) ver.style.display = "block"; }
-    chkP.addEventListener("change", ()=>{
-      localStorage.setItem("fonte_prueba_on", chkP.checked ? "1" : "0");
-      const ver = document.getElementById("verPrueba");
-      if(!chkP.checked){
-        localStorage.removeItem("fonte_prueba");
-        if(ver) ver.style.display = "none";
-        toast("Prueba vaciada.");
-      } else if(ver) ver.style.display = "block";
-    });
-  }
-
-  document.getElementById("pubBtn").addEventListener("click", async ()=>{
-    const btn = document.getElementById("pubBtn");
-    btn.textContent = "Publicando...";
-    btn.disabled = true;
+  function armarRegistroNota(opts){
+    opts = opts || {};
+    const publicada = !!opts.publicada;
+    const fuenteTxt = (fuenteElegida || "").toString().trim();
     const registro = {
       titulo: document.getElementById("pvTitulo").value.trim(),
       resumen_corto: document.getElementById("pvCorto").value.trim(),
@@ -1166,32 +1147,16 @@
       onda: document.getElementById("pvOnda").value,
       lugar: document.getElementById("pvLugar").value.trim(),
       urgente: document.getElementById("pvUrgente").checked,
-      fuente_etiqueta: "vía " + fuenteElegida,
+      fuente_etiqueta: /^vía\s+/i.test(fuenteTxt) ? fuenteTxt : ("vía " + fuenteTxt),
       url_original: document.getElementById("srcLink").value.trim() || null,
-      origen: "reportero",
-      imagen_url: fotoPropiaUrl || imagenDetectada,
+      imagen_url: fotoPropiaUrl || imagenDetectada || null,
       fotos: fotosPropias.length ? fotosPropias : null,
       video_url: (document.getElementById("videoUrl").value.trim() || videoDetectado || null),
-      publicada: true,
-      creada_por: sesion.user.id,
+      publicada: publicada,
     };
-    if(pruebaOn()){
-      registro.id = "prueba-" + Date.now();
-      registro.created_at = new Date().toISOString();
-      guardarMuestra("notas", registro);
-      btn.textContent = "Publicar en Fonte";
-      btn.disabled = false;
-      toast("Nota en la prueba ✓");
-      return;
-    }
-    const { error } = await sb.from("noticias").insert(registro);
-    btn.textContent = "Publicar en Fonte";
-    btn.disabled = false;
-    if(error){
-      toast("No se pudo publicar: " + error.message);
-      return;
-    }
-    toast("Publicado en Fonte ✓");
+    return registro;
+  }
+  function limpiarFormularioNota(){
     document.getElementById("previewCard").classList.add("hide");
     document.getElementById("btnVistaPrevia").classList.add("hide");
     document.getElementById("rawInput").value = "";
@@ -1209,6 +1174,230 @@
     document.getElementById("accionCustom").classList.add("hide");
     document.getElementById("accionUrl").classList.add("hide");
     fotoPropiaUrl = null;
+    imagenDetectada = null;
+    videoDetectado = null;
+    borradorEstructurado = null;
+    borradorTerminos = null;
+    extendidoOriginal = "";
+    borradorEditandoId = null;
+    setModoBorradorUI(false);
+  }
+  function setModoBorradorUI(editando){
+    const pub = document.getElementById("pubBtn");
+    const barra = document.getElementById("btnPublicarBarra");
+    const guardarNuevo = document.getElementById("guardarBorradorBtn");
+    const guardarEdit = document.getElementById("guardarBorradorEditBtn");
+    const descartar = document.getElementById("descartarBorradorBtn");
+    if(pub) pub.textContent = editando ? "Publicar borrador" : "Publicar en Fonte";
+    if(barra) barra.textContent = editando ? "Publicar borrador" : "Publicar en Fonte";
+    if(guardarNuevo) guardarNuevo.classList.toggle("hide", !!editando);
+    if(guardarEdit) guardarEdit.classList.toggle("hide", !editando);
+    if(descartar) descartar.classList.toggle("hide", !editando);
+  }
+  function mostrarFotosEnPreview(lista){
+    const prev = document.getElementById("fotoPreview");
+    if(!prev) return;
+    if(!lista || !lista.length){
+      prev.style.display = "none";
+      prev.innerHTML = "";
+      return;
+    }
+    prev.style.display = "flex";
+    prev.style.flexWrap = "wrap";
+    prev.style.gap = "6px";
+    prev.style.aspectRatio = "auto";
+    prev.innerHTML = lista.map((u,i)=>
+      '<img data-i="'+i+'" src="'+escA(u)+'" alt="" style="width:64px;height:64px;border-radius:8px;object-fit:cover;border:2px solid '+(i===0?'var(--barrio)':'var(--line)')+';cursor:pointer" title="'+(i===0?'Portada':'Tocar para usar de portada')+'">'
+    ).join("")
+      + '<div class="estado-fotos" style="font-family:var(--sans);font-size:.68rem;color:var(--ink-faint);width:100%;margin-top:4px">'
+      + (lista.length===1 ? "1 foto — es la portada" : lista.length + " fotos — tocá una para elegir la portada")
+      + '</div>';
+    prev.querySelectorAll("img[data-i]").forEach(img=>{
+      img.addEventListener("click", ()=>{
+        const i = parseInt(img.getAttribute("data-i"),10);
+        if(isNaN(i) || i < 0 || i >= fotosPropias.length) return;
+        const elegida = fotosPropias.splice(i,1)[0];
+        fotosPropias.unshift(elegida);
+        fotoPropiaUrl = fotosPropias[0] || null;
+        imagenDetectada = fotoPropiaUrl;
+        mostrarFotosEnPreview(fotosPropias);
+      });
+    });
+  }
+  function aplicarFuenteEnChips(etiqueta){
+    let raw = (etiqueta || "").toString().trim();
+    if(/^vía\s+/i.test(raw)) raw = raw.replace(/^vía\s+/i, "").trim();
+    fuenteElegida = raw || "Facebook vecinal";
+    const chips = Array.from(document.querySelectorAll("#srcChips .srcchip"));
+    let match = chips.find(c => c.getAttribute("data-src") === fuenteElegida);
+    chips.forEach(c=>c.classList.remove("on"));
+    const custom = document.getElementById("srcCustom");
+    if(match){
+      match.classList.add("on");
+      if(custom){ custom.classList.remove("src-custom-show"); custom.style.display = "none"; custom.value = ""; }
+    } else {
+      const otra = chips.find(c => c.getAttribute("data-src") === "__otra");
+      if(otra) otra.classList.add("on");
+      if(custom){ custom.classList.add("src-custom-show"); custom.style.display = "block"; custom.value = fuenteElegida; }
+    }
+  }
+  function aplicarAccionEnChips(etiq, url){
+    accionSel = "";
+    document.querySelectorAll("#accionChips .srcchip").forEach(x=>x.classList.remove("on"));
+    const chips = Array.from(document.querySelectorAll("#accionChips .srcchip"));
+    const e = (etiq || "").trim();
+    const match = e ? chips.find(c => c.getAttribute("data-accion") === e) : null;
+    if(!e){
+      if(chips[0]) chips[0].classList.add("on");
+      document.getElementById("accionCustom").classList.add("hide");
+      document.getElementById("accionUrl").classList.add("hide");
+      document.getElementById("accionCustom").value = "";
+      document.getElementById("accionUrl").value = "";
+      return;
+    }
+    if(match){
+      match.classList.add("on");
+      accionSel = e;
+      document.getElementById("accionCustom").classList.add("hide");
+      document.getElementById("accionUrl").classList.remove("hide");
+      document.getElementById("accionUrl").value = url || "";
+    } else {
+      const otra = chips.find(c => c.getAttribute("data-accion") === "__otra");
+      if(otra) otra.classList.add("on");
+      accionSel = "__otra";
+      document.getElementById("accionCustom").classList.remove("hide");
+      document.getElementById("accionUrl").classList.remove("hide");
+      document.getElementById("accionCustom").value = e;
+      document.getElementById("accionUrl").value = url || "";
+    }
+  }
+  function aplicarPlacaEnChips(estilo){
+    placaSel = estilo || "auto";
+    document.querySelectorAll("#placaChips .srcchip").forEach(b=>{
+      b.classList.toggle("on", b.getAttribute("data-placa") === placaSel);
+    });
+  }
+  async function abrirBorradorEnPreview(n){
+    if(!n) return;
+    borradorEditandoId = n.id;
+    document.getElementById("pvTitulo").value = n.titulo || "";
+    document.getElementById("pvCorto").value = n.resumen_corto || "";
+    document.getElementById("pvExtendido").value = n.resumen_extendido || "";
+    document.getElementById("pvCategoria").value = n.categoria || "otros";
+    document.getElementById("pvOnda").value = n.onda || "ciudad";
+    document.getElementById("pvLugar").value = n.lugar || "Quitilipi";
+    document.getElementById("pvUrgente").checked = !!n.urgente;
+    document.getElementById("pvDato").value = n.dato_extra || "";
+    document.getElementById("srcLink").value = n.url_original || "";
+    document.getElementById("videoUrl").value = n.video_url || "";
+    videoDetectado = n.video_url || null;
+    aplicarFuenteEnChips(n.fuente_etiqueta);
+    aplicarAccionEnChips(n.accion_etiqueta, n.accion_url);
+    aplicarPlacaEnChips(n.estilo_placa || "auto");
+    borradorEstructurado = null;
+    if(n.resumen_estructurado && typeof n.resumen_estructurado === "object"
+      && typeof n.resumen_estructurado.lede === "string"){
+      borradorEstructurado = n.resumen_estructurado;
+    } else if(typeof n.resumen_estructurado === "string"){
+      try{
+        const parsed = JSON.parse(n.resumen_estructurado);
+        if(parsed && typeof parsed.lede === "string") borradorEstructurado = parsed;
+      }catch(e){}
+    }
+    borradorTerminos = Array.isArray(n.terminos) ? n.terminos : null;
+    if(!borradorTerminos && typeof n.terminos === "string"){
+      try{ const p = JSON.parse(n.terminos); if(Array.isArray(p)) borradorTerminos = p; }catch(e){}
+    }
+    extendidoOriginal = document.getElementById("pvExtendido").value;
+    const fotos = (typeof fotosDeNota === "function") ? fotosDeNota(n) : [];
+    fotosPropias = fotos.slice();
+    fotoPropiaUrl = fotosPropias[0] || null;
+    imagenDetectada = n.imagen_url || fotoPropiaUrl || null;
+    if(!fotosPropias.length && imagenDetectada){
+      fotosPropias = [imagenDetectada];
+      fotoPropiaUrl = imagenDetectada;
+    }
+    mostrarFotosEnPreview(fotosPropias);
+    const avisos = [];
+    if(n.origen) avisos.push("origen: " + n.origen);
+    if(fotosPropias.length) avisos.push("📷 " + fotosPropias.length + (fotosPropias.length===1?" foto":" fotos"));
+    if(n.video_url) avisos.push("🎬 video");
+    document.getElementById("pvMedia").textContent = avisos.join(" · ") || "Borrador";
+    setModoBorradorUI(true);
+    document.getElementById("previewCard").classList.remove("hide");
+    document.getElementById("btnVistaPrevia").classList.remove("hide");
+    irATipo("nota");
+    document.getElementById("previewCard").scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+  async function cargarBorradores(){
+    const cont = document.getElementById("borradoresList");
+    const cnt = document.getElementById("borradoresCount");
+    if(!cont) return;
+    const { data, error } = await sb.from("noticias")
+      .select("*")
+      .eq("publicada", false)
+      .order("created_at", { ascending: false })
+      .limit(50);
+    if(error){
+      cont.innerHTML = '<p style="font-family:var(--sans);font-size:.78rem;color:var(--ink-faint)">No se pudieron cargar los borradores.</p>';
+      if(cnt) cnt.textContent = "";
+      return;
+    }
+    if(!data || !data.length){
+      cont.innerHTML = '<p style="font-family:var(--sans);font-size:.78rem;color:var(--ink-faint)">No hay borradores.</p>';
+      if(cnt) cnt.textContent = "";
+      return;
+    }
+    if(cnt) cnt.textContent = "(" + data.length + ")";
+    const NOMBRE_ONDA = { barrio:"Barrio", ciudad:"Ciudad", region:"Región", pais:"Argentina", mundo:"Mundo" };
+    const NOMBRE_CAT = { local:"Local", economia:"Economía", cripto:"Cripto", geopolitica:"Geopolítica", tecnologia:"Tecnología", desastres:"Desastres", deportes:"Deportes", espectaculos:"Espectáculos", politica:"Política", religion:"Religión", policiales:"Policiales", obras:"Obras", educacion:"Educación", otros:"Otros" };
+    cont.innerHTML = data.map(n =>
+      '<div class="today-item" data-id="'+escA(n.id)+'" style="cursor:pointer">'
+      + '<span class="st">'+(NOMBRE_ONDA[n.onda]||n.onda||"Nota")+(n.categoria?(" · "+(NOMBRE_CAT[n.categoria]||n.categoria)):"")+'</span>'
+      + '<span class="h">'+escA(n.titulo||"(sin título)")+'</span>'
+      + '<span style="display:block;font-family:var(--sans);font-size:.66rem;color:var(--ink-faint);margin-top:3px">'
+      + (n.created_at ? tiempoRel(n.created_at) : "")
+      + (n.origen ? (" · " + escA(n.origen)) : "")
+      + '</span>'
+      + '<span style="font-family:var(--sans);font-size:.66rem;color:var(--region);font-weight:700;white-space:nowrap">Revisar ›</span>'
+      + '</div>'
+    ).join("");
+    cont.querySelectorAll(".today-item").forEach(el=>{
+      el.addEventListener("click", ()=>{
+        const n = data.find(x=>String(x.id)===String(el.getAttribute("data-id")));
+        if(n) abrirBorradorEnPreview(n);
+      });
+    });
+  }
+
+  document.getElementById("pubBtn").addEventListener("click", async ()=>{
+    const btn = document.getElementById("pubBtn");
+    const labelPub = borradorEditandoId ? "Publicar borrador" : "Publicar en Fonte";
+    btn.textContent = "Publicando...";
+    btn.disabled = true;
+    const registro = armarRegistroNota({ publicada: true });
+    let error = null;
+    if(borradorEditandoId){
+      // No tocamos creada_por: si el bot (u otro reportero) ya lo cargó, se respeta;
+      // si venía null, queda null. La publicación la marca publicada=true.
+      const id = borradorEditandoId;
+      const r = await sb.from("noticias").update(registro).eq("id", id);
+      error = r.error;
+    } else {
+      registro.origen = "reportero";
+      registro.creada_por = sesion.user.id;
+      const r = await sb.from("noticias").insert(registro);
+      error = r.error;
+    }
+    btn.textContent = labelPub;
+    btn.disabled = false;
+    if(error){
+      toast("No se pudo publicar: " + error.message);
+      return;
+    }
+    toast(borradorEditandoId ? "Borrador publicado en Fonte ✓" : "Publicado en Fonte ✓");
+    limpiarFormularioNota();
+    cargarBorradores();
     cargarPublicadoHoy();
   });
 
@@ -1217,6 +1406,7 @@
     const { data, error } = await sb.from("noticias")
       .select("*")
       .eq("creada_por", sesion.user.id)
+      .eq("publicada", true)
       .gte("created_at", inicioHoy.toISOString())
       .order("created_at", { ascending: false });
     const cont = document.getElementById("todayList");
@@ -1406,14 +1596,6 @@
       imagen_url: ofFotoUrl,
       activa: true,
     };
-    if(pruebaOn()){
-      registro.id = "prueba-of-" + Date.now();
-      registro.created_at = new Date().toISOString();
-      guardarMuestra("ofertas", registro);
-      btn.textContent = "Publicar oferta";
-      btn.disabled = false;
-      return;
-    }
     const { error } = await sb.from("ofertas").insert(registro);
     btn.textContent = "Publicar oferta";
     btn.disabled = false;
@@ -1501,14 +1683,6 @@
       imagen_url: coFotoUrl,
       titulo, texto,
     };
-    if(pruebaOn()){
-      registro.id = "prueba-co-" + Date.now();
-      registro.created_at = new Date().toISOString();
-      guardarMuestra("comunicados", registro);
-      btn.textContent = "Publicar comunicado";
-      btn.disabled = false;
-      return;
-    }
     let { error } = await sb.from("comunicados").insert(registro);
     if(error && /(color|sello)/i.test(error.message||"")){
       delete registro.color; delete registro.sello;
@@ -1831,13 +2005,6 @@
         lugar: (panel.querySelector('[name="puntos"]').value||"").split(/\n+/).map(s=>s.trim()).filter(Boolean).join("\n") || null,
         horario: panel.querySelector('[name="horario"]').value.trim() || null,
       };
-      if(pruebaOn()){
-        registro.id = "prueba-fe-" + Date.now();
-        registro.activa = true;
-        guardarMuestra("fechas", registro);
-        btn.disabled = false;
-        return;
-      }
       const { error } = await sb.from("institucion_fechas").insert(registro);
       btn.disabled = false;
       if(error){ toast("No se pudo agregar: " + error.message); return; }
@@ -2404,7 +2571,7 @@
       sb.from("aportes").select("id,created_at").eq("estado","pendiente").order("created_at",{ascending:true}),
       sb.from("institucion_fechas").select("id,titulo,fecha,institucion_id").eq("activa",true).lt("fecha", hoyIso),
       sb.from("comunicados").select("id,titulo,created_at").eq("urgente",true).order("created_at",{ascending:false}).limit(5),
-      sb.from("noticias").select("*").eq("creada_por", sesion.user.id).gte("created_at", inicioHoy.toISOString()).order("created_at",{ascending:false}),
+      sb.from("noticias").select("*").eq("creada_por", sesion.user.id).eq("publicada",true).gte("created_at", inicioHoy.toISOString()).order("created_at",{ascending:false}),
       sb.from("visitas").select("dispositivo_id").eq("fecha", hoyIso),
     ]);
 
@@ -2553,7 +2720,7 @@
     // Archivo también sirve para encontrar y compartir lo que aparece en "Más noticias"
     // aunque lo haya cargado otra persona.
     const [n, o, c, a] = await Promise.all([
-      sb.from("noticias").select("*").order("created_at",{ascending:false}).limit(200),
+      sb.from("noticias").select("*").eq("publicada",true).order("created_at",{ascending:false}).limit(200),
       sb.from("ofertas").select("*").eq("activa",true).order("created_at",{ascending:false}),
       sb.from("comunicados").select("*").order("created_at",{ascending:false}).limit(40),
       sb.from("aportes").select("*").in("estado",["revisado","resuelto"]).order("created_at",{ascending:false}).limit(40),
@@ -3206,6 +3373,50 @@
     const real = document.getElementById("pubBtn");
     if(real) real.click();
     else toast("Generá la nota con Fonte antes de publicar.");
+  });
+  document.getElementById("guardarBorradorBtn").addEventListener("click", async ()=>{
+    if(borradorEditandoId) return;
+    const titulo = document.getElementById("pvTitulo").value.trim();
+    if(!titulo){ toast("Generá la nota antes de guardarla como borrador."); return; }
+    const btn = document.getElementById("guardarBorradorBtn");
+    btn.disabled = true; btn.textContent = "Guardando…";
+    const registro = armarRegistroNota({ publicada: false });
+    registro.origen = "reportero";
+    registro.creada_por = sesion.user.id;
+    const { error } = await sb.from("noticias").insert(registro);
+    btn.disabled = false; btn.textContent = "Guardar como borrador";
+    if(error){ toast("No se pudo guardar: " + error.message); return; }
+    toast("Guardado como borrador ✓");
+    limpiarFormularioNota();
+    cargarBorradores();
+    cargarPublicadoHoy();
+  });
+  document.getElementById("guardarBorradorEditBtn").addEventListener("click", async ()=>{
+    if(!borradorEditandoId) return;
+    const btn = document.getElementById("guardarBorradorEditBtn");
+    btn.disabled = true; btn.textContent = "Guardando…";
+    const registro = armarRegistroNota({ publicada: false });
+    const { error } = await sb.from("noticias").update(registro).eq("id", borradorEditandoId);
+    btn.disabled = false; btn.textContent = "Guardar borrador";
+    if(error){ toast("No se pudo guardar: " + error.message); return; }
+    toast("Borrador actualizado ✓");
+    limpiarFormularioNota();
+    cargarBorradores();
+    cargarPublicadoHoy();
+  });
+  document.getElementById("descartarBorradorBtn").addEventListener("click", async ()=>{
+    if(!borradorEditandoId) return;
+    if(!confirm("¿Descartar este borrador? Se borra de la base y no se puede deshacer.")) return;
+    const btn = document.getElementById("descartarBorradorBtn");
+    btn.disabled = true;
+    const id = borradorEditandoId;
+    const { error } = await sb.from("noticias").delete().eq("id", id);
+    btn.disabled = false;
+    if(error){ toast("No se pudo descartar: " + error.message); return; }
+    toast("Borrador descartado");
+    limpiarFormularioNota();
+    cargarBorradores();
+    cargarPublicadoHoy();
   });
 
   // ================= EDITAR UN APORTE =================
