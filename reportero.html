@@ -284,10 +284,12 @@
 
   /* ===== foto propia en el form de nota ===== */
   .foto-preview{ width:100%; aspect-ratio:16/9; object-fit:cover; border-radius:8px; margin-top:8px; display:none; background:var(--paper-3); }
+  #previewCard{ scroll-margin-top:12px; }
   #fotoPreview.foto-preview{
     aspect-ratio:auto; object-fit:unset; flex-wrap:wrap; gap:8px; align-items:flex-start;
-    padding:8px; min-height:0;
+    padding:8px; min-height:0; margin-top:0;
   }
+  #fotoPreview.foto-preview:empty{ display:none !important; padding:0; margin:0; }
   #fotoPreview .fp-thumb{ position:relative; flex:0 0 auto; width:72px; }
   #fotoPreview .fp-thumb img{
     width:72px; height:72px; border-radius:8px; object-fit:cover; display:block; cursor:pointer;
@@ -503,11 +505,14 @@
         <button class="srcchip" data-src="__otra">Otra</button>
       </div>
       <input class="inp src-custom" id="srcCustom" placeholder="Escribí la fuente">
-      <input class="inp" id="srcLink" placeholder="Link de la fuente (opcional) — pegá acá el posteo o la nota original" style="margin-top:8px">
+      <div style="display:flex;gap:8px;align-items:stretch;margin-top:8px">
+        <input class="inp" id="srcLink" placeholder="Link de la fuente (opcional) — pegá acá el posteo o la nota original" style="margin:0;flex:1;min-width:0">
+        <a class="srcchip hide" id="btnAbrirSrcLink" href="#" target="_blank" rel="noopener noreferrer" style="flex:0 0 auto;align-self:center;text-decoration:none;white-space:nowrap">Ver fuente ↗</a>
+      </div>
 
       <div class="field-label" style="margin-top:14px">Foto propia (opcional — si no subís nada, se usa la que Fonte encuentre del link)</div>
       <input class="inp" type="file" id="fotoPropia" accept="image/*" multiple style="padding:9px">
-      <div class="foto-preview" id="fotoPreview"></div>
+      <div id="fotoEstado" style="font-family:var(--sans);font-size:.68rem;color:var(--ink-faint);margin-top:6px;line-height:1.35"></div>
 
       <div class="field-label" style="margin-top:14px">Video (opcional — pegá el enlace de YouTube, Facebook, TikTok o Instagram)</div>
       <input class="inp" id="videoUrl" placeholder="https://www.facebook.com/...">
@@ -527,7 +532,13 @@
     </div>
 
     <div class="card hide" id="previewCard">
-      <div class="preview-head"><span class="badge">Vista previa</span><span id="pvMedia" style="font-family:var(--sans);font-size:.7rem;color:var(--ink-soft)"></span></div>
+      <div class="preview-head"><span class="badge">Editar nota</span><span id="pvMedia" style="font-family:var(--sans);font-size:.7rem;color:var(--ink-soft)"></span></div>
+      <div class="pv-field" id="bloqueFotosNota" style="margin-bottom:14px">
+        <div class="field-label">Fotos</div>
+        <div class="foto-preview" id="fotoPreview"></div>
+        <button type="button" class="srcchip" id="btnAgregarFoto" style="margin-top:8px">＋ Agregar foto</button>
+        <div style="font-family:var(--sans);font-size:.66rem;color:var(--ink-faint);margin-top:6px;line-height:1.35">Tocá una foto para elegir la portada · ✕ para quitarla.</div>
+      </div>
       <div class="pv-field" style="margin-bottom:12px">
         <div class="field-label">Título<span class="auto">auto</span></div>
         <input class="inp" id="pvTitulo">
@@ -766,7 +777,7 @@
 </div>
 
 <div class="barra-accion" id="barraAccion">
-  <button class="b-prev hide" id="btnVistaPrevia">👁 Vista previa</button>
+  <button class="b-prev hide" id="btnVistaPrevia">👁 Ver en Fonte</button>
   <button class="btn-gen" id="btnPublicarBarra" style="flex:1;margin:0">Publicar en Fonte</button>
 </div>
 
@@ -875,7 +886,7 @@
     if(v !== "viewCargar" && typeof enPrevia !== "undefined" && enPrevia){
       enPrevia = false;
       document.getElementById("viewPrevia").classList.remove("on");
-      document.getElementById("btnVistaPrevia").textContent = "👁 Vista previa";
+      document.getElementById("btnVistaPrevia").textContent = "👁 Ver en Fonte";
     }
     if(v === "viewHoy"){ cargarHoy(); }
     if(v === "viewArchivo"){ cargarArchivo(); }
@@ -901,30 +912,19 @@
 
   let fotosPropias = [];
   const MAX_FOTOS_NOTA = 6;
-  document.getElementById("fotoPropia").addEventListener("change", async (e)=>{
+  function setFotoEstado(msg){
+    const est = document.getElementById("fotoEstado");
+    if(est) est.textContent = msg || "";
+  }
+  async function subirFotosSeleccionadas(fileList){
     const cupo = Math.max(0, MAX_FOTOS_NOTA - fotosPropias.length);
-    const files = Array.from(e.target.files || []).slice(0, cupo);
-    e.target.value = "";
+    const files = Array.from(fileList || []).slice(0, cupo);
     if(!files.length){
       if(cupo <= 0) toast("Ya tenés " + MAX_FOTOS_NOTA + " fotos (máximo)");
       return;
     }
     if(fotosPropias.length) mostrarFotosEnPreview(fotosPropias);
-    const prev = document.getElementById("fotoPreview");
-    if(prev){
-      prev.style.display = "flex";
-      prev.style.flexWrap = "wrap";
-      prev.style.gap = "8px";
-      prev.style.aspectRatio = "auto";
-      let est = prev.querySelector(".estado-fotos");
-      if(!est){
-        est = document.createElement("div");
-        est.className = "estado-fotos";
-        est.style.cssText = "font-family:var(--sans);font-size:.68rem;color:var(--ink-faint);width:100%;margin-top:4px";
-        prev.appendChild(est);
-      }
-      est.textContent = "Subiendo " + files.length + (files.length===1 ? " foto…" : " fotos…");
-    }
+    setFotoEstado("Subiendo " + files.length + (files.length===1 ? " foto…" : " fotos…"));
     const antes = fotosPropias.length;
     for(let i = 0; i < files.length; i++){
       try{
@@ -942,18 +942,27 @@
     document.getElementById("leerImgBtn").classList.toggle("hide", !fotoPropiaUrl);
     document.getElementById("leerImgAyuda").classList.toggle("hide", !fotoPropiaUrl);
     mostrarFotosEnPreview(fotosPropias);
-    const prev2 = document.getElementById("fotoPreview");
-    const est2 = prev2 && prev2.querySelector(".estado-fotos");
     const agregadas = fotosPropias.length - antes;
-    if(est2){
-      if(agregadas > 0){
-        est2.textContent = "✓ " + fotosPropias.length + (fotosPropias.length===1 ? " foto lista" : " fotos listas")
-          + (agregadas < files.length ? " (algunas no se pudieron subir)" : "");
-      } else {
-        est2.textContent = "No se pudieron subir las fotos.";
-      }
+    if(agregadas > 0){
+      setFotoEstado("✓ " + fotosPropias.length + (fotosPropias.length===1 ? " foto lista" : " fotos listas")
+        + (agregadas < files.length ? " (algunas no se pudieron subir)" : "")
+        + " — las editás abajo en la nota");
+    } else {
+      setFotoEstado("No se pudieron subir las fotos.");
     }
+  }
+  document.getElementById("fotoPropia").addEventListener("change", async (e)=>{
+    const files = e.target.files;
+    e.target.value = "";
+    await subirFotosSeleccionadas(files);
   });
+  const btnAgregarFoto = document.getElementById("btnAgregarFoto");
+  if(btnAgregarFoto){
+    btnAgregarFoto.addEventListener("click", ()=>{
+      const inp = document.getElementById("fotoPropia");
+      if(inp) inp.click();
+    });
+  }
 
   let ofFotoUrl = null;
   document.getElementById("ofFoto").addEventListener("change", async (e)=>{
@@ -1090,6 +1099,37 @@
   });
   document.getElementById("srcCustom").addEventListener("input", (e)=>{ fuenteElegida = e.target.value.trim() || "Otra fuente"; });
 
+  function urlFuenteSegura(raw){
+    const u = (raw || "").trim();
+    if(!u) return "";
+    if(/^https?:\/\//i.test(u)) return u;
+    if(/^\/\//.test(u)) return "https:" + u;
+    // no abrir cosas raras (javascript:, data:, etc.)
+    if(/^[a-z][a-z0-9+.-]*:/i.test(u)) return "";
+    return "https://" + u;
+  }
+  function actualizarBtnAbrirSrcLink(){
+    const inp = document.getElementById("srcLink");
+    const btn = document.getElementById("btnAbrirSrcLink");
+    if(!inp || !btn) return;
+    const href = urlFuenteSegura(inp.value);
+    if(href){
+      btn.href = href;
+      btn.classList.remove("hide");
+    } else {
+      btn.href = "#";
+      btn.classList.add("hide");
+    }
+  }
+  document.getElementById("srcLink").addEventListener("input", actualizarBtnAbrirSrcLink);
+  document.getElementById("srcLink").addEventListener("change", actualizarBtnAbrirSrcLink);
+  document.getElementById("btnAbrirSrcLink").addEventListener("click", (e)=>{
+    const href = urlFuenteSegura(document.getElementById("srcLink").value);
+    if(!href){ e.preventDefault(); return; }
+    e.currentTarget.href = href;
+  });
+  actualizarBtnAbrirSrcLink();
+
   // generar con Fonte
   // Un solo generador para los dos botones: con texto, con imagen, o con ambos.
   async function generarNota({ conImagen }){
@@ -1152,7 +1192,11 @@
       setModoBorradorUI(false);
       document.getElementById("previewCard").classList.remove("hide");
       document.getElementById("btnVistaPrevia").classList.remove("hide");
-      document.getElementById("previewCard").scrollIntoView({ behavior: "smooth", block: "center" });
+      if(typeof fotosPropias !== "undefined" && fotosPropias.length) mostrarFotosEnPreview(fotosPropias);
+      if(typeof actualizarBtnAbrirSrcLink === "function") actualizarBtnAbrirSrcLink();
+      requestAnimationFrame(()=>{
+        document.getElementById("previewCard").scrollIntoView({ behavior: "smooth", block: "start" });
+      });
     }catch(e){
       errEl.textContent = "Error de conexión, probá de nuevo.";
       errEl.classList.remove("hide");
@@ -1211,12 +1255,14 @@
     videoDetectado = null;
     document.getElementById("fotoPreview").innerHTML = "";
     document.getElementById("fotoPreview").style.display = "none";
+    if(typeof setFotoEstado === "function") setFotoEstado("");
     const leerBtn = document.getElementById("leerImgBtn");
     const leerAyuda = document.getElementById("leerImgAyuda");
     if(leerBtn) leerBtn.classList.add("hide");
     if(leerAyuda) leerAyuda.classList.add("hide");
     document.getElementById("videoUrl").value = "";
     document.getElementById("srcLink").value = "";
+    if(typeof actualizarBtnAbrirSrcLink === "function") actualizarBtnAbrirSrcLink();
     document.getElementById("pvTitulo").value = "";
     document.getElementById("pvCorto").value = "";
     document.getElementById("pvExtendido").value = "";
@@ -1412,8 +1458,18 @@
     setModoBorradorUI(true);
     document.getElementById("previewCard").classList.remove("hide");
     document.getElementById("btnVistaPrevia").classList.remove("hide");
-    irATipo("nota");
-    document.getElementById("previewCard").scrollIntoView({ behavior: "smooth", block: "center" });
+    if(typeof actualizarBtnAbrirSrcLink === "function") actualizarBtnAbrirSrcLink();
+    irATipo("nota", { preserveScroll: true });
+    // Salir de Ver en Fonte si estaba abierta
+    if(typeof enPrevia !== "undefined" && enPrevia){
+      enPrevia = false;
+      document.getElementById("viewCargar").classList.add("on");
+      document.getElementById("viewPrevia").classList.remove("on");
+      document.getElementById("btnVistaPrevia").textContent = "👁 Ver en Fonte";
+    }
+    requestAnimationFrame(()=>{
+      document.getElementById("previewCard").scrollIntoView({ behavior: "smooth", block: "start" });
+    });
   }
   async function cargarBorradores(){
     const cont = document.getElementById("borradoresList");
@@ -3388,7 +3444,8 @@
     if(pIn) pIn.classList.add("hide");
   })();
 
-  function irATipo(t){
+  function irATipo(t, opts){
+    opts = opts || {};
     tipoPub = t;
     document.querySelectorAll("#tiposPub .tipo").forEach(b=> b.classList.toggle("on", b.getAttribute("data-tipo") === t));
     ["nota","comunicado","oferta"].forEach(x=>{
@@ -3399,7 +3456,7 @@
     if(pIn) pIn.classList.add("hide");
     const enPublicar = document.getElementById("viewCargar").classList.contains("on");
     document.getElementById("barraAccion").classList.toggle("show", enPublicar && t === "nota");
-    window.scrollTo({ top:0, behavior:"instant" });
+    if(!opts.preserveScroll) window.scrollTo({ top:0, behavior:"instant" });
   }
   document.querySelectorAll("#tiposPub .tipo").forEach(b=>{
     b.addEventListener("click", ()=> irATipo(b.getAttribute("data-tipo")));
@@ -3451,7 +3508,7 @@
     enPrevia = !enPrevia;
     document.getElementById("viewCargar").classList.toggle("on", !enPrevia);
     document.getElementById("viewPrevia").classList.toggle("on", enPrevia);
-    document.getElementById("btnVistaPrevia").textContent = enPrevia ? "✎ Editar" : "👁 Vista previa";
+    document.getElementById("btnVistaPrevia").textContent = enPrevia ? "✎ Seguir editando" : "👁 Ver en Fonte";
     if(enPrevia) pintarPrevia();
     window.scrollTo({ top:0, behavior:"instant" });
   });
