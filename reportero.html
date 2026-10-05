@@ -284,6 +284,26 @@
 
   /* ===== foto propia en el form de nota ===== */
   .foto-preview{ width:100%; aspect-ratio:16/9; object-fit:cover; border-radius:8px; margin-top:8px; display:none; background:var(--paper-3); }
+  #fotoPreview.foto-preview{
+    aspect-ratio:auto; object-fit:unset; flex-wrap:wrap; gap:8px; align-items:flex-start;
+    padding:8px; min-height:0;
+  }
+  #fotoPreview .fp-thumb{ position:relative; flex:0 0 auto; width:72px; }
+  #fotoPreview .fp-thumb img{
+    width:72px; height:72px; border-radius:8px; object-fit:cover; display:block; cursor:pointer;
+    border:2px solid var(--line); background:var(--paper-3);
+  }
+  #fotoPreview .fp-thumb.is-portada img{ border-color:var(--barrio); }
+  #fotoPreview .fp-badge{
+    position:absolute; left:4px; bottom:4px; font-family:var(--sans); font-size:.55rem; font-weight:800;
+    text-transform:uppercase; letter-spacing:.04em; color:#fff; background:var(--barrio);
+    padding:2px 6px; border-radius:999px; pointer-events:none;
+  }
+  #fotoPreview .fp-quitar{
+    position:absolute; top:-6px; right:-6px; width:22px; height:22px; border-radius:50%;
+    background:#A8382C; color:#fff; border:0; font-size:.7rem; line-height:1; font-weight:700;
+    display:flex; align-items:center; justify-content:center; padding:0;
+  }
   .logo-box{ display:flex; gap:12px; align-items:flex-start; margin:8px 0 10px; padding:10px; border:1px solid var(--line-strong); border-radius:10px; background:var(--paper); }
   .logo-box.hide{ display:none; }
   .logo-box img{ width:64px; height:64px; object-fit:cover; border-radius:8px; background:var(--paper-3); flex:0 0 auto; }
@@ -487,7 +507,7 @@
 
       <div class="field-label" style="margin-top:14px">Foto propia (opcional — si no subís nada, se usa la que Fonte encuentre del link)</div>
       <input class="inp" type="file" id="fotoPropia" accept="image/*" multiple style="padding:9px">
-      <img class="foto-preview" id="fotoPreview">
+      <div class="foto-preview" id="fotoPreview"></div>
 
       <div class="field-label" style="margin-top:14px">Video (opcional — pegá el enlace de YouTube, Facebook, TikTok o Instagram)</div>
       <input class="inp" id="videoUrl" placeholder="https://www.facebook.com/...">
@@ -880,14 +900,32 @@
   document.getElementById("btnPublicarAhora").addEventListener("click", ()=> irAVista("viewCargar"));
 
   let fotosPropias = [];
+  const MAX_FOTOS_NOTA = 6;
   document.getElementById("fotoPropia").addEventListener("change", async (e)=>{
-    const files = Array.from(e.target.files || []).slice(0, 6);
-    fotosPropias = []; fotoPropiaUrl = null;
+    const cupo = Math.max(0, MAX_FOTOS_NOTA - fotosPropias.length);
+    const files = Array.from(e.target.files || []).slice(0, cupo);
+    e.target.value = "";
+    if(!files.length){
+      if(cupo <= 0) toast("Ya tenés " + MAX_FOTOS_NOTA + " fotos (máximo)");
+      return;
+    }
+    if(fotosPropias.length) mostrarFotosEnPreview(fotosPropias);
     const prev = document.getElementById("fotoPreview");
-    if(!files.length){ prev.style.display = "none"; prev.innerHTML = ""; return; }
-    prev.style.display = "flex";
-    prev.innerHTML = files.map(f=>'<img src="'+URL.createObjectURL(f)+'" style="width:56px;height:56px;border-radius:8px;object-fit:cover;border:1px solid var(--line)">').join("")
-      + '<div class="estado-fotos" style="font-family:var(--sans);font-size:.68rem;color:var(--ink-faint);width:100%;margin-top:4px">Subiendo…</div>';
+    if(prev){
+      prev.style.display = "flex";
+      prev.style.flexWrap = "wrap";
+      prev.style.gap = "8px";
+      prev.style.aspectRatio = "auto";
+      let est = prev.querySelector(".estado-fotos");
+      if(!est){
+        est = document.createElement("div");
+        est.className = "estado-fotos";
+        est.style.cssText = "font-family:var(--sans);font-size:.68rem;color:var(--ink-faint);width:100%;margin-top:4px";
+        prev.appendChild(est);
+      }
+      est.textContent = "Subiendo " + files.length + (files.length===1 ? " foto…" : " fotos…");
+    }
+    const antes = fotosPropias.length;
     for(let i = 0; i < files.length; i++){
       try{
         const chico = await comprimirImagen(files[i]);
@@ -900,12 +938,21 @@
       }catch(err){ /* si falla una, seguimos con las demás */ }
     }
     fotoPropiaUrl = fotosPropias[0] || null;
+    if(fotoPropiaUrl) imagenDetectada = fotoPropiaUrl;
     document.getElementById("leerImgBtn").classList.toggle("hide", !fotoPropiaUrl);
     document.getElementById("leerImgAyuda").classList.toggle("hide", !fotoPropiaUrl);
-    const est = prev.querySelector(".estado-fotos");
-    if(est) est.textContent = fotosPropias.length
-      ? "✓ " + fotosPropias.length + (fotosPropias.length===1 ? " foto lista" : " fotos listas")
-      : "No se pudieron subir las fotos.";
+    mostrarFotosEnPreview(fotosPropias);
+    const prev2 = document.getElementById("fotoPreview");
+    const est2 = prev2 && prev2.querySelector(".estado-fotos");
+    const agregadas = fotosPropias.length - antes;
+    if(est2){
+      if(agregadas > 0){
+        est2.textContent = "✓ " + fotosPropias.length + (fotosPropias.length===1 ? " foto lista" : " fotos listas")
+          + (agregadas < files.length ? " (algunas no se pudieron subir)" : "");
+      } else {
+        est2.textContent = "No se pudieron subir las fotos.";
+      }
+    }
   });
 
   let ofFotoUrl = null;
@@ -1200,26 +1247,51 @@
     if(!lista || !lista.length){
       prev.style.display = "none";
       prev.innerHTML = "";
+      fotoPropiaUrl = null;
+      document.getElementById("leerImgBtn").classList.add("hide");
+      document.getElementById("leerImgAyuda").classList.add("hide");
       return;
     }
     prev.style.display = "flex";
     prev.style.flexWrap = "wrap";
-    prev.style.gap = "6px";
+    prev.style.gap = "8px";
     prev.style.aspectRatio = "auto";
     prev.innerHTML = lista.map((u,i)=>
-      '<img data-i="'+i+'" src="'+escA(u)+'" alt="" style="width:64px;height:64px;border-radius:8px;object-fit:cover;border:2px solid '+(i===0?'var(--barrio)':'var(--line)')+';cursor:pointer" title="'+(i===0?'Portada':'Tocar para usar de portada')+'">'
+      '<div class="fp-thumb'+(i===0?' is-portada':'')+'">'
+      + '<img data-i="'+i+'" src="'+escA(u)+'" alt="" title="'+(i===0?'Portada':'Tocar para usar de portada')+'">'
+      + (i===0 ? '<span class="fp-badge">Portada</span>' : '')
+      + '<button type="button" class="fp-quitar" data-del="'+i+'" title="Quitar" aria-label="Quitar">✕</button>'
+      + '</div>'
     ).join("")
       + '<div class="estado-fotos" style="font-family:var(--sans);font-size:.68rem;color:var(--ink-faint);width:100%;margin-top:4px">'
-      + (lista.length===1 ? "1 foto — es la portada" : lista.length + " fotos — tocá una para elegir la portada")
+      + (lista.length===1
+          ? "1 foto — es la portada. Tocá ✕ para quitarla."
+          : lista.length + " fotos — tocá una para elegir la portada · ✕ para quitar")
+      + (lista.length >= MAX_FOTOS_NOTA ? " · máximo " + MAX_FOTOS_NOTA : "")
       + '</div>';
     prev.querySelectorAll("img[data-i]").forEach(img=>{
       img.addEventListener("click", ()=>{
         const i = parseInt(img.getAttribute("data-i"),10);
         if(isNaN(i) || i < 0 || i >= fotosPropias.length) return;
+        if(i === 0) return;
         const elegida = fotosPropias.splice(i,1)[0];
         fotosPropias.unshift(elegida);
         fotoPropiaUrl = fotosPropias[0] || null;
         imagenDetectada = fotoPropiaUrl;
+        mostrarFotosEnPreview(fotosPropias);
+      });
+    });
+    prev.querySelectorAll("[data-del]").forEach(btn=>{
+      btn.addEventListener("click", (e)=>{
+        e.preventDefault();
+        e.stopPropagation();
+        const i = parseInt(btn.getAttribute("data-del"),10);
+        if(isNaN(i) || i < 0 || i >= fotosPropias.length) return;
+        fotosPropias.splice(i,1);
+        fotoPropiaUrl = fotosPropias[0] || null;
+        imagenDetectada = fotoPropiaUrl;
+        document.getElementById("leerImgBtn").classList.toggle("hide", !fotoPropiaUrl);
+        document.getElementById("leerImgAyuda").classList.toggle("hide", !fotoPropiaUrl);
         mostrarFotosEnPreview(fotosPropias);
       });
     });
