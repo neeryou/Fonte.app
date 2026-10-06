@@ -657,6 +657,32 @@
   .avh-row.of .tt{ white-space:normal; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
   .avh-rows.of-rows + .avh-more-row{ padding-top:8px; }
   .avh-lista .avh-row.of{ padding:9px 0 9px 10px; }
+  /* cabecera Oficial: "OFICIAL ⌄ ——— Ver los N ›" (el despliegue sigue en OFICIAL ⌄) */
+  .of-head{ display:flex; align-items:center; gap:10px; }
+  .of-head .inst-home-bar{ width:auto; flex:1; min-width:0; padding:12px 0 10px; }
+  .of-head .avh-more{ color:var(--region); padding:8px 0; flex:0 0 auto; }
+  /* puntitos bajo las pastillas: siguen el desliz; se ocultan si entran todas */
+  .inst-home .inst-home-list{ padding-bottom:6px; }
+  .pill-dots{ display:none; justify-content:center; gap:4px; padding:2px 0 10px; }
+  .pill-dots.on{ display:flex; }
+  .inst-home:not(.open) .pill-dots{ display:none; }
+  .pill-dots i{ width:5px; height:5px; border-radius:50%; background:var(--line-strong); transition:width .2s, background .2s; }
+  .pill-dots i.on{ width:15px; border-radius:999px; background:var(--ink-soft); }
+  /* punto de "sin leer" en el color de la institución; rojo solo si tiene un urgente */
+  .inst-home-list .inst-pill .dot{ background:var(--inst, var(--region)); box-shadow:0 0 0 1.5px var(--paper); }
+  [data-tema="oscuro"] .inst-home-list .inst-pill .dot{ background:color-mix(in srgb,var(--inst,var(--region)) 55%,var(--ink)); }
+  .inst-home-list .inst-pill.urgente .dot{ background:var(--urgente); }
+  [data-tema="oscuro"] .inst-home-list .inst-pill .ic{ color:color-mix(in srgb,var(--inst,var(--region)) 55%,var(--ink)); }
+  /* aire entre destacado y filas, y antes del filete final */
+  .avh-feat.of{ margin-bottom:8px; }
+  #urgRow .avh-rows.of-rows{ padding-bottom:12px; }
+  .avh-row.of .src b.hoy{ font-weight:800; color:var(--ink); }
+  /* urgentes: tinte rojo muy suave, se mantienen la franja de la institución y la palabra URGENTE */
+  .avh-feat.of.urg, .avh-row.of.urg{ background:color-mix(in srgb,var(--urgente) 5.5%,var(--paper)); }
+  [data-tema="oscuro"] .avh-feat.of.urg, [data-tema="oscuro"] .avh-row.of.urg{ background:color-mix(in srgb,var(--urgente) 9%,var(--paper)); }
+  .avh-feat.of.urg{ padding:8px 8px 10px 10px; }
+  .avh-feat.of.urg .eye{ top:2px; right:0; }
+  .avh-row.of.urg{ padding-right:8px; }
   #urgentesWrap .avh{ padding-top:2px; }
   #avisosWrap.avh{ padding-bottom:4px; }
   .inst-home:not(.has-avisos) + #avisosWrap .avh-label{ padding-top:2px; }
@@ -1117,13 +1143,16 @@
 <div class="riel-marco" id="rielMarco">
 <div id="panelCiudad">
   <div class="inst-home" id="institucionesWrap" style="display:none">
-    <button type="button" class="inst-home-bar" id="instHomeBtn" aria-expanded="false">
-      <span class="ln"></span>
-      <span class="mid">Oficial <span class="pip" id="instFechaPip"></span><span class="ch" id="instHomeCh">⌄</span></span>
-      <span class="ln"></span>
-    </button>
+    <div class="of-head">
+      <button type="button" class="inst-home-bar" id="instHomeBtn" aria-expanded="false">
+        <span class="mid">Oficial <span class="pip" id="instFechaPip"></span><span class="ch" id="instHomeCh">⌄</span></span>
+        <span class="ln"></span>
+      </button>
+      <button type="button" class="avh-more" id="oficialVerTodos" style="display:none">Ver todos ›</button>
+    </div>
     <div class="inst-lbl" id="instHomeSub">Oficial</div>
     <div class="inst-home-list" id="institucionesRow"></div>
+    <div class="pill-dots" id="instPillDots" aria-hidden="true"></div>
     <div id="urgentesWrap" style="display:none">
       <div class="avh" id="urgRow"></div>
     </div>
@@ -2983,14 +3012,20 @@
   function filaComunicado(c, conExtracto){
     const nom = c.institucion || "Institución";
     const esFecha = c.__tipo === "fecha";
-    const marca = c.urgente ? '<b class="urg">Urgente</b> · ' : '';
-    const tm = esFecha ? '<span class="tm hoy">Hoy</span>' : '<span class="tm">'+horaAviso(c.created_at)+'</span>';
+    const marca = esFecha ? '<b class="hoy">Hoy</b> · ' : (c.urgente ? '<b class="urg">Urgente</b> · ' : '');
+    // fechas del día: la hora del acto a la derecha; el resto, tiempo relativo ("hace 35 min")
+    const tm = esFecha ? '<span class="tm hoy">'+esc(horaDeFecha(c))+'</span>' : '<span class="tm">'+tiempoDesde(c.created_at)+'</span>';
     const est = estiloInstComunicado(c);
-    return '<div class="avh-row of" data-com-id="'+esc(c.id)+'" style="--inst:'+esc(est.col)+'">'
+    return '<div class="avh-row of'+(c.urgente && !esFecha ? ' urg' : '')+'" data-com-id="'+esc(c.id)+'" style="--inst:'+esc(est.col)+'">'
       + '<span class="mk">'+est.ico+'</span>'
       + '<div class="bd"><div class="src">'+marca+esc(nom)+'</div><div class="tt">'+esc(c.titulo||"")+'</div>'
       + (conExtracto && c.texto ? '<div class="ex">'+esc(c.texto)+'</div>' : '') + '</div>'
       + tm + '</div>';
+  }
+  // hora del acto de una fecha institucional, si es corta ("10 h", "20:30"); si no, "Hoy"
+  function horaDeFecha(c){
+    const h = String((c && c._fecha && c._fecha.horario) || "").trim();
+    return (h && h.length <= 14) ? h : "Hoy";
   }
   function abrirItemComunicado(lista, id){
     id = String(id||"");
@@ -3010,17 +3045,17 @@
     const wrap = document.getElementById("urgentesWrap");
     const row = document.getElementById("urgRow");
     const lista = listaComunicadosHome();
-    if(!lista.length){ wrap.style.display = "none"; row.innerHTML = ""; return; }
+    if(!lista.length){ wrap.style.display = "none"; row.innerHTML = ""; actualizarVerTodosOficial(0); return; }
     wrap.style.display = "block";
     const c = lista[0];
     const nom = c.institucion || "Institución";
     const esFecha = c.__tipo === "fecha";
     const marca = esFecha ? '<b>Hoy</b> · ' : (c.urgente ? '<b class="urg">Urgente</b> · ' : '');
     const foto = fotoDeComunicado(c);
-    const hora = esFecha ? "Hoy" : horaAviso(c.created_at);
+    const hora = esFecha ? horaDeFecha(c) : horaAviso(c.created_at);
     const desde = esFecha ? "" : tiempoDesde(c.created_at);
     const est = estiloInstComunicado(c);
-    let html = '<article class="avh-feat of'+(foto?" con-foto":"")+'" data-com-id="'+esc(c.id)+'" style="--inst:'+esc(est.col)+'">'
+    let html = '<article class="avh-feat of'+(foto?" con-foto":"")+(c.urgente && !esFecha ? " urg" : "")+'" data-com-id="'+esc(c.id)+'" style="--inst:'+esc(est.col)+'">'
       + (foto ? '<div class="ph" style="background-image:url(\''+esc(foto)+'\')"></div>' : '')
       + '<div class="tx">'
       + '<div class="k">'+est.ico+'<span>'+marca+'<b class="in">'+esc(nom)+'</b></span></div>'
@@ -3032,7 +3067,6 @@
       + '</article>';
     const resto = lista.slice(1, 4);
     if(resto.length) html += '<div class="avh-rows of-rows">' + resto.map(x=>filaComunicado(x, false)).join("") + '</div>';
-    if(lista.length > 4) html += '<div class="avh-more-row"><button type="button" class="avh-more" id="oficialVerTodos" aria-label="Ver los '+lista.length+' avisos oficiales">Ver todos ›</button></div>';
     html += '<div class="avh-end"></div>';
     row.innerHTML = html;
     row.querySelectorAll("[data-com-id]").forEach(el=>{
@@ -3054,9 +3088,17 @@
         if(typeof pintarInstituciones === "function") pintarInstituciones();
       });
     });
-    const vt = document.getElementById("oficialVerTodos");
-    if(vt) vt.addEventListener("click", (e)=>{ e.stopPropagation(); abrirOficiales(); });
+    actualizarVerTodosOficial(lista.length);
   }
+  // "Ver los N ›" en la cabecera: siempre visible salvo que no haya avisos
+  function actualizarVerTodosOficial(n){
+    const vt = document.getElementById("oficialVerTodos");
+    if(!vt) return;
+    vt.style.display = n > 0 ? "" : "none";
+    vt.textContent = n === 1 ? "Ver 1 ›" : "Ver los " + n + " ›";
+    vt.setAttribute("aria-label", "Ver " + (n === 1 ? "el aviso oficial" : "los " + n + " avisos oficiales"));
+  }
+  document.getElementById("oficialVerTodos").addEventListener("click", (e)=>{ e.stopPropagation(); abrirOficiales(); });
   // "Ver todos" de Oficial: todos los avisos vigentes (24 h) en el mismo formato de fila
   function abrirOficiales(){
     const lista = listaComunicadosHome();
@@ -3334,7 +3376,7 @@
         const hayCom = propios.length > 0 && (sinLeer > 0 || urgPendiente);
         const nombreCorto = (i.nombre||"").replace(/^Municipalidad de\s+/i,"").replace(/^Hospital\s+/i,"Hospital ");
         const corto = nombreCorto.length>16 ? nombreCorto.slice(0,15)+"…" : nombreCorto;
-        return '<button type="button" class="inst-pill'+(urgPendiente?" urgente":"")+'" data-inst-id="'+esc(i.id)+'" style="--inst:'+colorDeInst(i.id, i.nombre)+'">'
+        return '<button type="button" class="inst-pill'+(urgPendiente?" urgente":"")+'" data-inst-id="'+esc(i.id)+'" style="--inst:'+colorInstVisible(i.id, i.nombre)+'">'
           + '<span class="ic">'+iconoLineaDe(i)+'</span>'
           + '<span class="nm">'+esc(corto)+'</span>'
           + ((hayCom || urgPendiente || fechaPend) ? '<span class="dot"></span>' : '')
@@ -3377,6 +3419,16 @@
     if(!row) return;
     const finScroll = row.scrollLeft + row.clientWidth >= row.scrollWidth - 4;
     row.classList.toggle("sin-fade", row.clientWidth > 0 && finScroll);
+    // puntitos: una "página" por ancho visible; se ocultan si entran todas
+    const dots = document.getElementById("instPillDots");
+    if(!dots) return;
+    const paginas = row.clientWidth > 0 ? Math.ceil((row.scrollWidth - 4) / row.clientWidth) : 1;
+    if(paginas <= 1){ dots.classList.remove("on"); dots.innerHTML = ""; return; }
+    if(dots.children.length !== paginas) dots.innerHTML = '<i></i>'.repeat(paginas);
+    const max = row.scrollWidth - row.clientWidth;
+    const act = max > 0 ? Math.round(row.scrollLeft / max * (paginas - 1)) : 0;
+    [...dots.children].forEach((d,k)=> d.classList.toggle("on", k === act));
+    dots.classList.add("on");
   }
   function abrirInstitucion(id){
     const inst = INSTITUCIONES.find(x=>String(x.id)===String(id));
