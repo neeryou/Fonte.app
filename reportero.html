@@ -280,6 +280,10 @@
   .rep-top::after{ content:''; position:absolute; left:0; right:0; bottom:-4px; border-top:.5px solid var(--ink); }
   .rep-view{ display:none; }
   .rep-view.on{ display:block; }
+  /* En modo "Ver en Fonte" solo se ve la previa: nada del formulario ocupa lugar */
+  body.en-previa .rep-wrap > .rep-view:not(#viewPrevia){ display:none !important; }
+  body.en-previa #viewPrevia{ display:block; min-height:0; margin-top:0; padding-top:0; }
+  #viewPrevia{ scroll-margin-top:8px; }
   .tab-badge{ font-family:var(--sans); font-size:.62rem; font-weight:700; background:var(--urgente); color:#fff; padding:1px 6px; border-radius:999px; margin-left:4px; }
 
   /* ===== foto propia en el form de nota ===== */
@@ -667,6 +671,7 @@
         <div class="field-label">Foto (opcional)</div>
         <input class="inp" type="file" id="ofFoto" accept="image/*" style="padding:9px">
         <img class="foto-preview" id="ofFotoPreview">
+        <p id="ofFotoEstado" style="font-family:var(--sans);font-size:.68rem;color:var(--ink-faint);margin:4px 0 0"></p>
         <button class="btn-gen" id="ofPublicarBtn">Publicar oferta</button>
         <div class="err-msg hide" id="ofErr"></div>
       </div>
@@ -767,13 +772,15 @@
 
       <div class="card" id="institucionesAdminList"><p style="font-family:var(--sans);font-size:.78rem;color:var(--ink-faint)">Cargando…</p></div>
     </div>
-  </div>
-</div>
 
-<div class="rep-view" id="viewPrevia">
-  <h2 class="rep-h">Así va a quedar</h2>
-  <p class="rep-sub">Exactamente como lo va a ver el vecino en Fonte.</p>
-  <div id="previaCont"></div>
+    <!-- Vista previa "Ver en Fonte": vive DENTRO de .rep-wrap/#consoleView.
+         Antes estaba afuera y #consoleView (min-height:100vh) dejaba un hueco crema enorme arriba. -->
+    <div class="rep-view" id="viewPrevia">
+      <h2 class="rep-h">Así va a quedar</h2>
+      <p class="rep-sub">Exactamente como lo va a ver el vecino en Fonte.</p>
+      <div id="previaCont"></div>
+    </div>
+  </div>
 </div>
 
 <div class="barra-accion" id="barraAccion">
@@ -885,6 +892,7 @@
     if(barra) barra.classList.toggle("show", v === "viewCargar" && (typeof tipoPub === "undefined" || tipoPub === "nota"));
     if(v !== "viewCargar" && typeof enPrevia !== "undefined" && enPrevia){
       enPrevia = false;
+      document.body.classList.remove("en-previa");
       document.getElementById("viewPrevia").classList.remove("on");
       document.getElementById("btnVistaPrevia").textContent = "👁 Ver en Fonte";
     }
@@ -892,7 +900,7 @@
     if(v === "viewArchivo"){ cargarArchivo(); }
     if(v === "viewMetricas"){ cargarMetricas(); }
     if(v === "viewAportes"){ cargarAportesPendientes(); cargarAvisosPublicados(); }
-    if(v === "viewCargar"){ cargarBorradores(); cargarPublicadoHoy(); cargarOfertasAdmin(); cargarComunicadosAdmin(); }
+    if(v === "viewCargar"){ cargarBorradores(); cargarPublicadoHoy(); cargarOfertasAdmin(); cargarComunicadosAdmin(); asegurarInstitucionesSelect(true); }
     if(v === "viewInstituciones"){ cargarInstitucionesAdmin(); }
     window.scrollTo({ top:0, behavior:"instant" });
   }
@@ -964,23 +972,62 @@
     });
   }
 
+  // Foto de la oferta: mismo circuito que la del comunicado (vista previa con respaldo,
+  // tiempo límite y reintento en la subida, error visible y publicar espera la foto).
   let ofFotoUrl = null;
-  document.getElementById("ofFoto").addEventListener("change", async (e)=>{
-    const file = e.target.files[0];
+  let ofFotoSubida = null;
+  let ofFotoArchivo = null;
+  let ofFotoSeq = 0;
+  function estadoFotoOf(html, color){
+    const st = document.getElementById("ofFotoEstado");
+    if(!st) return;
+    st.innerHTML = html || "";
+    st.style.color = color || "var(--ink-faint)";
+    const r = st.querySelector("[data-reintentar]");
+    if(r) r.addEventListener("click", (ev)=>{ ev.preventDefault(); if(ofFotoArchivo) ofFotoSubida = procesarFotoOf(ofFotoArchivo, ++ofFotoSeq); });
+  }
+  async function procesarFotoOf(file, seq){
     ofFotoUrl = null;
-    if(!file) return;
-    const preview = document.getElementById("ofFotoPreview");
-    preview.src = URL.createObjectURL(file);
-    preview.style.display = "block";
+    estadoFotoOf("Preparando foto…");
+    const seVe = await mostrarPreviewCo(file, document.getElementById("ofFotoPreview"));
+    if(seq !== ofFotoSeq) return null;
+    if(!seVe){
+      ofFotoArchivo = null;
+      estadoFotoOf("Este formato de foto no se puede mostrar (¿HEIC?). Elegí una JPG o PNG — o sacale una captura de pantalla y subí la captura.", "#A8382C");
+      return null;
+    }
+    estadoFotoOf("Subiendo foto…");
     try{
-      const chico = await comprimirImagen(file);
-      const nombre = Date.now() + "." + ((chico.name||file.name).split(".").pop() || "jpg");
-      const { error } = await sb.storage.from("ofertas-fotos").upload(nombre, chico);
-      if(!error){
-        const { data } = sb.storage.from("ofertas-fotos").getPublicUrl(nombre);
-        ofFotoUrl = data.publicUrl;
-      }
-    }catch(err){ /* si falla la subida, se publica igual sin foto */ }
+      let chico = file;
+      try{ chico = await conTimeout(comprimirImagen(file), 15000, "compresión"); }catch(eC){ chico = file; }
+      const ext = (((chico.name || file.name || "").split(".").pop()) || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
+      const nombre = "of-" + Date.now() + "-" + Math.random().toString(36).slice(2, 7) + "." + ext;
+      const url = await subirAStorage("ofertas-fotos", nombre, chico);
+      if(seq !== ofFotoSeq) return null;
+      ofFotoUrl = url;
+      estadoFotoOf("Foto lista ✓", "var(--barrio)");
+      return url;
+    }catch(err){
+      if(seq !== ofFotoSeq) return null;
+      estadoFotoOf("No se pudo subir la foto: " + escA((err && err.message) || "error") + ' · <a href="#" data-reintentar style="color:var(--region);font-weight:700">Reintentar</a>', "#A8382C");
+      toast("La foto no se subió");
+      return null;
+    }
+  }
+  document.getElementById("ofFoto").addEventListener("change", (e)=>{
+    // leer el archivo antes que nada
+    const file = (e.target.files && e.target.files[0]) || null;
+    const seq = ++ofFotoSeq;
+    ofFotoUrl = null;
+    ofFotoArchivo = file;
+    ofFotoSubida = null;
+    if(!file){
+      const prev = document.getElementById("ofFotoPreview");
+      if(prev){ prev.style.display = "none"; prev.removeAttribute("src"); }
+      estadoFotoOf("");
+      return;
+    }
+    ofFotoSubida = procesarFotoOf(file, seq);
   });
 
   let inFotoUrl = null;
@@ -1046,6 +1093,8 @@
     setTimeout(()=>t.classList.remove("show"), 2400);
   }
 
+  // Solo guarda la sesión renovada; no llama a Supabase adentro (eso traba el cliente).
+  sb.auth.onAuthStateChange((_ev, s)=>{ if(s) sesion = s; });
   async function revisarSesion(){
     const { data } = await sb.auth.getSession();
     sesion = data.session;
@@ -1463,6 +1512,7 @@
     // Salir de Ver en Fonte si estaba abierta
     if(typeof enPrevia !== "undefined" && enPrevia){
       enPrevia = false;
+      document.body.classList.remove("en-previa");
       document.getElementById("viewCargar").classList.add("on");
       document.getElementById("viewPrevia").classList.remove("on");
       document.getElementById("btnVistaPrevia").textContent = "👁 Ver en Fonte";
@@ -1728,8 +1778,20 @@
       return;
     }
     const btn = document.getElementById("ofPublicarBtn");
-    btn.textContent = "Publicando...";
     btn.disabled = true;
+    // antes se publicaba sin esperar la subida: imagen_url quedaba vacío
+    if(ofFotoArchivo && !ofFotoUrl && ofFotoSubida){
+      btn.textContent = "Esperando la foto…";
+      try{ await ofFotoSubida; }catch(eF){}
+    }
+    if(ofFotoArchivo && !ofFotoUrl){
+      if(!confirm("La foto no se pudo subir. ¿Publicar la oferta sin foto?")){
+        btn.textContent = "Publicar oferta";
+        btn.disabled = false;
+        return;
+      }
+    }
+    btn.textContent = "Publicando...";
     const registro = {
       negocio, titulo,
       descripcion: document.getElementById("ofDesc").value.trim() || null,
@@ -1752,7 +1814,10 @@
     document.getElementById("ofValido").value = "";
     document.getElementById("ofFoto").value = "";
     document.getElementById("ofFotoPreview").style.display = "none";
+    document.getElementById("ofFotoPreview").removeAttribute("src");
     ofFotoUrl = null;
+    ofFotoSeq++; ofFotoArchivo = null; ofFotoSubida = null;
+    estadoFotoOf("");
     cargarOfertasAdmin();
   });
 
@@ -1801,8 +1866,20 @@
       return;
     }
     const btn = document.getElementById("coPublicarBtn");
-    btn.textContent = "Publicando...";
     btn.disabled = true;
+    // Si la foto se está subiendo, esperarla: antes se publicaba con imagen_url vacío
+    if(coFotoArchivo && !coFotoUrl && coFotoSubida){
+      btn.textContent = "Esperando la foto…";
+      try{ await coFotoSubida; }catch(eF){}
+    }
+    if(coFotoArchivo && !coFotoUrl){
+      if(!confirm("La foto no se pudo subir. ¿Publicar el comunicado sin foto?")){
+        btn.textContent = "Publicar comunicado";
+        btn.disabled = false;
+        return;
+      }
+    }
+    btn.textContent = "Publicando...";
     const selInst = document.getElementById("coInstitucionSel");
     const opt = selInst.options[selInst.selectedIndex];
     const idInst = selInst.value || null;
@@ -1843,6 +1920,9 @@
     document.getElementById("coVideo").value = "";
     document.getElementById("coFoto").value = "";
     document.getElementById("coFotoPreview").style.display = "none";
+    document.getElementById("coFotoPreview").removeAttribute("src");
+    coFotoSeq++; coFotoArchivo = null; coFotoSubida = null;
+    estadoFotoCo("");
     const coInp = document.getElementById("coInstitucion");
     const coSel = document.getElementById("coInstitucionSel");
     if(coSel) coSel.value = "";
@@ -1853,13 +1933,16 @@
 
   // ================= INSTITUCIONES VERIFICADAS =================
   const ICONS_INST = { salud:"🏥", social:"📦", municipio:"🏛️", seguridad:"🚓", educacion:"🏫", cultura:"🎭", deporte:"⚽", otro:"📍" };
-  async function cargarInstitucionesAdmin(){
-    const { data, error } = await sb.from("instituciones").select("*").eq("activa", true).order("created_at", { ascending:false });
-    INST_ADMIN = data || [];
-    revisarFechasVencidas();
+  // Listado de instituciones del formulario de comunicado. Antes solo se llenaba al entrar
+  // a Ciudad (cargarInstitucionesAdmin); ahora se llena al abrir el formulario y se vuelve a
+  // pintar cada vez que llegan los datos, sin perder lo que ya estaba elegido.
+  function pintarSelectInstituciones(lista){
     const sel = document.getElementById("coInstitucionSel");
+    if(!sel) return;
+    const elegido = sel.value;
     sel.innerHTML = '<option value="">— Elegir institución —</option>' +
-      (data||[]).map(i=>'<option value="'+i.id+'" data-nombre="'+escA(i.nombre)+'">'+(ICONS_INST[i.tipo]||"📍")+" "+escA(i.nombre)+'</option>').join("");
+      (lista||[]).map(i=>'<option value="'+i.id+'" data-nombre="'+escA(i.nombre)+'">'+(ICONS_INST[i.tipo]||"📍")+" "+escA(i.nombre)+'</option>').join("");
+    if(elegido && (lista||[]).some(i=>String(i.id)===String(elegido))) sel.value = elegido;
     // Al elegir del listado, el nombre se completa solo (evita que quede Municipalidad por error)
     if(!sel._fonteNombreHook){
       sel._fonteNombreHook = true;
@@ -1878,6 +1961,34 @@
         }
       });
     }
+  }
+  let instSelectCargando = null;
+  function asegurarInstitucionesSelect(forzar){
+    const sel = document.getElementById("coInstitucionSel");
+    if(!sel) return Promise.resolve();
+    if(!forzar && INST_ADMIN.length && sel.options.length > 1) return Promise.resolve();
+    if(INST_ADMIN.length) pintarSelectInstituciones(INST_ADMIN);
+    if(instSelectCargando) return instSelectCargando;
+    if(sel.options.length <= 1) sel.innerHTML = '<option value="">Cargando instituciones…</option>';
+    instSelectCargando = (async ()=>{
+      try{
+        const { data, error } = await sb.from("instituciones").select("*").eq("activa", true).order("created_at", { ascending:false });
+        if(!error && data){ INST_ADMIN = data; }
+      }catch(e){}
+      pintarSelectInstituciones(INST_ADMIN);
+      if(!INST_ADMIN.length){
+        sel.innerHTML = '<option value="">— No hay instituciones cargadas (o sin conexión) —</option>';
+      }
+      instSelectCargando = null;
+    })();
+    return instSelectCargando;
+  }
+  async function cargarInstitucionesAdmin(){
+    const { data, error } = await sb.from("instituciones").select("*").eq("activa", true).order("created_at", { ascending:false });
+    INST_ADMIN = data || [];
+    revisarFechasVencidas();
+    const sel = document.getElementById("coInstitucionSel");
+    pintarSelectInstituciones(INST_ADMIN);
     const cont = document.getElementById("institucionesAdminList");
     if(error || !data || !data.length){
       cont.innerHTML = '<p style="font-family:var(--sans);font-size:.78rem;color:var(--ink-faint)">Todavía no cargaste ninguna institución.</p>';
@@ -2634,6 +2745,7 @@
     let h = '<div class="cuerpo">'
       + '<div class="cat">'+(c.urgente?'⚡ URGENTE · ':'✓ ')+escA(c.institucion||"")+'</div>'
       + '<h3>'+escA(c.titulo||"")+'</h3>'
+      + (c.imagen_url ? '<img class="foto-zoom" src="'+escA(c.imagen_url)+'" alt="" style="width:100%;max-height:220px;object-fit:cover;border-radius:4px;margin:8px 0">' : '')
       + '<div class="txt">'+escA(c.texto||"")+'</div>'
       + '<div class="meta">'+fecha
       + (c.urgente ? '<br>Se muestra abierto en la portada por 48 hs' : '<br>Solo dentro de la ficha de la institución')
@@ -3454,6 +3566,7 @@
     });
     const pIn = document.getElementById("panelInstitucion");
     if(pIn) pIn.classList.add("hide");
+    if(t === "comunicado") asegurarInstitucionesSelect();
     const enPublicar = document.getElementById("viewCargar").classList.contains("on");
     document.getElementById("barraAccion").classList.toggle("show", enPublicar && t === "nota");
     if(!opts.preserveScroll) window.scrollTo({ top:0, behavior:"instant" });
@@ -3509,8 +3622,19 @@
     document.getElementById("viewCargar").classList.toggle("on", !enPrevia);
     document.getElementById("viewPrevia").classList.toggle("on", enPrevia);
     document.getElementById("btnVistaPrevia").textContent = enPrevia ? "✎ Seguir editando" : "👁 Ver en Fonte";
-    if(enPrevia) pintarPrevia();
-    window.scrollTo({ top:0, behavior:"instant" });
+    document.body.classList.toggle("en-previa", enPrevia);
+    if(enPrevia){
+      pintarPrevia();
+      // Ir al bloque "Así va a quedar" (no conservar el scroll del formulario)
+      const vp = document.getElementById("viewPrevia");
+      const y = vp.getBoundingClientRect().top + window.pageYOffset - 8;
+      window.scrollTo({ top: Math.max(0, y), behavior:"instant" });
+    } else {
+      // Volver a la tarjeta de edición
+      const pc = document.getElementById("previewCard");
+      if(pc && !pc.classList.contains("hide")) pc.scrollIntoView({ behavior:"instant", block:"start" });
+      else window.scrollTo({ top:0, behavior:"instant" });
+    }
   });
   document.getElementById("btnPublicarBarra").addEventListener("click", ()=>{
     const real = document.getElementById("pubBtn");
@@ -3797,37 +3921,134 @@
     });
   });
 
+  // Si al tocar el listado todavía está vacío, se carga en ese momento
+  (function(){
+    const sel = document.getElementById("coInstitucionSel");
+    if(!sel) return;
+    const siVacio = ()=>{ if(sel.options.length <= 1) asegurarInstitucionesSelect(); };
+    sel.addEventListener("pointerdown", siVacio);
+    sel.addEventListener("focus", siVacio);
+  })();
+
   // Foto del comunicado
   let coFotoUrl = null;
-  document.getElementById("coFoto").addEventListener("change", async (e)=>{
-    const file = e.target.files[0];
-    coFotoUrl = null;
-    const prev = document.getElementById("coFotoPreview");
+  let coFotoSubida = null;   // promesa de la subida en curso (publicar la espera)
+  let coFotoArchivo = null;  // el archivo elegido, para poder reintentar
+  let coFotoSeq = 0;         // si elige otra foto, se descarta el resultado de la anterior
+  function conTimeout(prom, ms, msg){
+    let t;
+    return Promise.race([prom, new Promise((_, rej)=>{ t = setTimeout(()=>rej(new Error(msg || "tardó demasiado")), ms); })])
+      .finally(()=>clearTimeout(t));
+  }
+  // Vista previa: primero con blob:, si el navegador no la dibuja se prueba con FileReader.
+  // Si tampoco, el formato no se puede mostrar (p.ej. HEIC en Android) y no tiene sentido subirlo.
+  function mostrarPreviewCo(file, prevEl){
+    const prev = prevEl || document.getElementById("coFotoPreview");
+    return new Promise((resolve)=>{
+      if(!prev){ resolve(true); return; }
+      let url = null;
+      const listo = (ok)=>{
+        prev.onload = prev.onerror = null;
+        if(url){ try{ URL.revokeObjectURL(url); }catch(e){} url = null; }
+        prev.style.display = ok ? "block" : "none";
+        if(!ok) prev.removeAttribute("src");
+        resolve(ok);
+      };
+      const conDataUrl = ()=>{
+        if(url){ try{ URL.revokeObjectURL(url); }catch(e){} url = null; }
+        const fr = new FileReader();
+        fr.onload = ()=>{ prev.onload = ()=>listo(true); prev.onerror = ()=>listo(false); prev.src = fr.result; };
+        fr.onerror = ()=>listo(false);
+        try{ fr.readAsDataURL(file); }catch(e){ listo(false); }
+      };
+      prev.onload = ()=>{ prev.onload = prev.onerror = null; prev.style.display = "block"; resolve(true); };
+      prev.onerror = conDataUrl;
+      try{ url = URL.createObjectURL(file); prev.src = url; }catch(e){ conDataUrl(); }
+    });
+  }
+  // Sube al bucket con tiempo límite. Si el cliente de Supabase se queda colgado (pasa en el
+  // celular al volver de la galería, mientras renueva la sesión), reintenta directo por REST.
+  async function subirAStorage(bucket, nombre, blob){
+    const tipo = blob.type || "image/jpeg";
+    try{
+      const { error } = await conTimeout(
+        sb.storage.from(bucket).upload(nombre, blob, { contentType: tipo, cacheControl: "3600", upsert: false }),
+        30000, "la subida tardó demasiado");
+      if(error) throw error;
+    }catch(err){
+      let token = sesion && sesion.access_token;
+      if(!token) throw err;
+      const ctrl = new AbortController();
+      const t = setTimeout(()=>ctrl.abort(), 45000);
+      let res;
+      try{
+        res = await fetch(SUPABASE_URL + "/storage/v1/object/" + bucket + "/" + encodeURIComponent(nombre), {
+          method: "POST",
+          headers: { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + token, "Content-Type": tipo, "x-upsert": "false", "cache-control": "max-age=3600" },
+          body: blob, signal: ctrl.signal
+        });
+      }catch(e2){ throw (e2 && e2.name === "AbortError") ? new Error("sin conexión o la subida se cortó") : e2; }
+      finally{ clearTimeout(t); }
+      // 409 = ya existe: el primer intento sí llegó, aunque tardó en responder
+      if(!res.ok && res.status !== 409){
+        let m = ""; try{ const j = await res.json(); m = j.message || j.error || ""; }catch(e3){}
+        throw new Error(m || (err && err.message) || ("error " + res.status));
+      }
+    }
+    const { data } = sb.storage.from(bucket).getPublicUrl(nombre);
+    if(!data || !data.publicUrl) throw new Error("sin URL pública");
+    return data.publicUrl;
+  }
+  function estadoFotoCo(html, color){
     const st = document.getElementById("coFotoEstado");
+    if(!st) return;
+    st.innerHTML = html || "";
+    st.style.color = color || "var(--ink-faint)";
+    const r = st.querySelector("[data-reintentar]");
+    if(r) r.addEventListener("click", (ev)=>{ ev.preventDefault(); if(coFotoArchivo) coFotoSubida = procesarFotoCo(coFotoArchivo, ++coFotoSeq); });
+  }
+  async function procesarFotoCo(file, seq){
+    coFotoUrl = null;
+    estadoFotoCo("Preparando foto…");
+    const seVe = await mostrarPreviewCo(file);
+    if(seq !== coFotoSeq) return null;
+    if(!seVe){
+      coFotoArchivo = null;
+      estadoFotoCo("Este formato de foto no se puede mostrar (¿HEIC?). Elegí una JPG o PNG — o sacale una captura de pantalla y subí la captura.", "#A8382C");
+      return null;
+    }
+    estadoFotoCo("Subiendo foto…");
+    try{
+      let chico = file;
+      try{ chico = await conTimeout(comprimirImagen(file), 15000, "compresión"); }catch(eC){ chico = file; }
+      const ext = (((chico.name || file.name || "").split(".").pop()) || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
+      const nombre = "com-" + Date.now() + "-" + Math.random().toString(36).slice(2, 7) + "." + ext;
+      const url = await subirAStorage("notas-fotos", nombre, chico);
+      if(seq !== coFotoSeq) return null;
+      coFotoUrl = url;
+      estadoFotoCo("Foto lista ✓", "var(--barrio)");
+      return url;
+    }catch(err){
+      if(seq !== coFotoSeq) return null;
+      estadoFotoCo("No se pudo subir la foto: " + escA((err && err.message) || "error") + ' · <a href="#" data-reintentar style="color:var(--region);font-weight:700">Reintentar</a>', "#A8382C");
+      toast("La foto no se subió");
+      return null;
+    }
+  }
+  document.getElementById("coFoto").addEventListener("change", (e)=>{
+    // leer el archivo ANTES de cualquier otra cosa (si el input se limpia, files queda vacío)
+    const file = (e.target.files && e.target.files[0]) || null;
+    const seq = ++coFotoSeq;
+    coFotoUrl = null;
+    coFotoArchivo = file;
+    coFotoSubida = null;
     if(!file){
-      if(prev) prev.style.display = "none";
-      if(st) st.textContent = "";
+      const prev = document.getElementById("coFotoPreview");
+      if(prev){ prev.style.display = "none"; prev.removeAttribute("src"); }
+      estadoFotoCo("");
       return;
     }
-    prev.src = URL.createObjectURL(file);
-    prev.style.display = "block";
-    if(st) st.textContent = "Subiendo foto…";
-    try{
-      const chico = await comprimirImagen(file);
-      const nombre = "com-" + Date.now() + "." + ((chico.name||file.name).split(".").pop() || "jpg");
-      const { error } = await sb.storage.from("notas-fotos").upload(nombre, chico);
-      if(error){
-        if(st) st.textContent = "No se pudo subir: " + error.message;
-        toast("La foto no se subió. El comunicado saldría sin imagen.");
-        return;
-      }
-      const { data } = sb.storage.from("notas-fotos").getPublicUrl(nombre);
-      coFotoUrl = data.publicUrl;
-      if(st) st.textContent = "Foto lista ✓";
-    }catch(err){
-      if(st) st.textContent = "Error al preparar la foto";
-      toast("La foto no se pudo cargar");
-    }
+    coFotoSubida = procesarFotoCo(file, seq);
   });
 
   // ================= FOTO A PANTALLA COMPLETA =================
@@ -3857,6 +4078,9 @@
       const opening = f.classList.contains("hide");
       if(opening && btn.getAttribute("data-form")==="formInstitucion"){
         resetFormInstitucion();
+      }
+      if(opening && btn.getAttribute("data-form")==="formComunicado"){
+        asegurarInstitucionesSelect();
       }
       f.classList.toggle("hide");
       btn.classList.toggle("abierto", !f.classList.contains("hide"));
