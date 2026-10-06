@@ -643,11 +643,11 @@
     </div>
 
     <div class="rep-view" id="viewAportes">
-      <h2 class="rep-h">Aportes pendientes</h2>
+      <h2 class="rep-h">Avisos de vecinos pendientes</h2>
       <p class="rep-sub">Categorías fijas, con foto y ubicación — revisalos antes de que aparezcan en Fonte.</p>
       <div id="aportesList"><p style="font-family:var(--sans);font-size:.78rem;color:var(--ink-faint)">Cargando…</p></div>
 
-      <h2 class="rep-h" style="font-size:1.05rem;margin-top:28px">Avisos publicados</h2>
+      <h2 class="rep-h" style="font-size:1.05rem;margin-top:28px">Avisos de vecinos publicados</h2>
       <p class="rep-sub">Lo que aprobaste y ya se ve en Fonte. Podés quitarlo cuando deje de ser relevante.</p>
       <div id="avisosPublicadosList"><p style="font-family:var(--sans);font-size:.78rem;color:var(--ink-faint)">Cargando…</p></div>
     </div>
@@ -1637,7 +1637,7 @@
       else { badge.classList.add("hide"); }
     }
     if(error || !data || !data.length){
-      cont.innerHTML = '<p style="font-family:var(--sans);font-size:.78rem;color:var(--ink-faint)">No hay aportes pendientes de revisión.</p>';
+      cont.innerHTML = '<p style="font-family:var(--sans);font-size:.78rem;color:var(--ink-faint)">No hay avisos de vecinos pendientes de revisión.</p>';
       return;
     }
     cont.innerHTML = data.map(a=>{
@@ -1666,7 +1666,7 @@
           const estado = btn.getAttribute("data-accion");
           const { error } = await sb.from("aportes").update({ estado, revisado_por: sesion.user.id }).eq("id", id);
           if(error){ toast("No se pudo actualizar: " + error.message); console.error("Fonte / error al actualizar aporte:", error); btn.disabled=false; return; }
-          toast(estado === "revisado" ? "Aporte publicado ✓" : "Aporte descartado");
+          toast(estado === "revisado" ? "Aviso publicado ✓" : "Aviso descartado");
           cargarAportesPendientes();
         });
       });
@@ -1682,7 +1682,7 @@
     (confRes.data||[]).forEach(c=>{ conteo[c.aporte_id] = (conteo[c.aporte_id]||0)+1; });
     const cont = document.getElementById("avisosPublicadosList");
     if(error || !data || !data.length){
-      cont.innerHTML = '<p style="font-family:var(--sans);font-size:.78rem;color:var(--ink-faint)">Todavía no publicaste ningún aviso.</p>';
+      cont.innerHTML = '<p style="font-family:var(--sans);font-size:.78rem;color:var(--ink-faint)">Todavía no publicaste ningún aviso de vecinos.</p>';
       return;
     }
     cont.innerHTML = data.map(a=>{
@@ -2545,7 +2545,7 @@
       + '<button class="compartir" id="btnCopiarLinkVisor" style="background:none;border:1px solid var(--line);color:var(--ink)">🔗 Copiar el enlace</button>'
       + '<button class="compartir" id="btnCopiarIgVisor" style="background:none;border:1.5px dashed var(--region);color:var(--region)">📱 Copiar texto para Instagram</button>'
       + '<button class="compartir" id="visorEditar" style="background:var(--region);margin-top:8px">✎ Editar este aviso</button>'
-      + '<button class="compartir" id="visorBorrarAporte" style="background:none;border:1px solid #A8382C;color:#A8382C;margin-top:8px">🗑 Borrar este aporte</button>'
+      + '<button class="compartir" id="visorBorrarAporte" style="background:none;border:1px solid #A8382C;color:#A8382C;margin-top:8px">🗑 Borrar este aviso</button>'
       + '<div id="editorAporte"></div>'
       + '<button class="cerrar" id="visorCerrar">Cerrar</button>'
       + '</div>';
@@ -2558,13 +2558,13 @@
     document.getElementById("visorCerrar").addEventListener("click", cerrarVisor);
     document.getElementById("visorEditar").addEventListener("click", ()=> abrirEditorAporte(a));
     document.getElementById("visorBorrarAporte").addEventListener("click", async (e)=>{
-      if(!confirm("¿Borrar este aporte para siempre? No se puede deshacer.")) return;
+      if(!confirm("¿Borrar este aviso para siempre? No se puede deshacer.")) return;
       e.currentTarget.disabled = true;
       // borra también las confirmaciones asociadas, si las hubiera
       try{ await sb.from("aporte_confirmaciones").delete().eq("aporte_id", a.id); }catch(err){}
       const { error } = await sb.from("aportes").delete().eq("id", a.id);
       if(error){ toast("No se pudo borrar: " + error.message); e.currentTarget.disabled = false; return; }
-      toast("Aporte borrado");
+      toast("Aviso borrado");
       cerrarVisor();
       if(typeof cargarAportesPendientes === "function") cargarAportesPendientes();
       if(typeof cargarAvisosPublicados === "function") cargarAvisosPublicados();
@@ -2817,7 +2817,7 @@
       + (c.imagen_url ? '<img class="foto-zoom" src="'+escA(c.imagen_url)+'" alt="" style="width:100%;max-height:220px;object-fit:cover;border-radius:4px;margin:8px 0">' : '')
       + '<div class="txt">'+escA(c.texto||"")+'</div>'
       + '<div class="meta">'+fecha
-      + (c.urgente ? '<br>Se muestra abierto en la portada por 48 hs' : '<br>Solo dentro de la ficha de la institución')
+      + '<br>En la portada por 48 hs'+(c.urgente ? ' (estilo urgente)' : '')+'; después solo en la ficha de la institución'
       + (c.video_url ? '<br>🎬 Con video' : '')
       + '</div>'
       + bloqueFormatoCompartir(c)
@@ -2902,7 +2902,7 @@
     const nPend = (pend.data||[]).length;
     if(nPend){
       const viejo = pend.data[0].created_at ? tiempoRel(pend.data[0].created_at) : "";
-      tareas.push({ urg:true, ic:"AP", t: nPend + (nPend===1?" aporte esperando revisión":" aportes esperando revisión"),
+      tareas.push({ urg:true, ic:"AP", t: nPend + (nPend===1?" aviso de vecinos esperando revisión":" avisos de vecinos esperando revisión"),
                     s: viejo ? "El más viejo, "+viejo : "", go:"Revisar ›", v:"viewAportes" });
     }
     const nVenc = (venc.data||[]).length;
@@ -2946,7 +2946,7 @@
     document.getElementById("hoyKpis").innerHTML =
       '<div class="kpi3"><span class="ic">📄</span><div class="n">'+(notasHoy.data||[]).length+'</div><div class="l">notas publicadas</div></div>'
       + '<div class="kpi3"><span class="ic">👥</span><div class="n">'+personasHoy+'</div><div class="l">personas entraron</div></div>'
-      + '<div class="kpi3"><span class="ic">💬</span><div class="n">'+nPend+'</div><div class="l">aportes por revisar</div></div>';
+      + '<div class="kpi3"><span class="ic">💬</span><div class="n">'+nPend+'</div><div class="l">avisos por revisar</div></div>';
 
     const ult = (notasHoy.data||[]).slice(0,3);
     const ultCont = document.getElementById("hoyUltimo");
@@ -2968,7 +2968,7 @@
   let ARCHIVO = [];
   let filtroArch = "todo";
   function itemArchivo(o, tipo){
-    const NOM = { nota:"Nota", oferta:"Oferta", comunicado:"Oficial", aporte:"Vecino" };
+    const NOM = { nota:"Nota", oferta:"Oferta", comunicado:"Oficial", aporte:"Aviso" };
     let titulo = "", meta = "", mini = "", fondo = "";
     if(tipo === "nota"){
       titulo = o.titulo || "";
