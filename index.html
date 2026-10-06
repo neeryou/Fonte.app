@@ -954,27 +954,120 @@
 
   .pag-k{ font-family:var(--sans); font-size:.58rem; font-weight:800; letter-spacing:.22em; text-transform:uppercase; color:var(--ink-faint); }
 
-  .inst-fachada{ display:flex; flex-direction:column; align-items:flex-start; gap:8px; margin:4px 0 14px; padding-bottom:14px; border-bottom:.5px solid var(--line-strong); }
-  .inst-fachada .pag-logo{ width:64px; height:64px; border-radius:4px; }
-  .inst-fachada .pag-nm{ font-size:1.85rem; margin:0; }
-  .inst-fachada .pag-verif{ color:var(--inst,var(--barrio)); }
-  .aviso-card .tag{ background:var(--inst,var(--barrio)); color:#fff; }
-  .pag-head{ display:flex; align-items:flex-start; gap:12px; margin:2px 0 8px; }
-  .pag-logo{ width:52px; height:52px; object-fit:cover; border-radius:8px; flex:0 0 auto; background:var(--paper-2); }
-  .pag-logo.txt{ display:flex; align-items:center; justify-content:center; color:#fff; font-family:var(--serif); font-weight:700; font-size:.92rem; letter-spacing:.04em; }
+  /* ===== ficha institución (Propuesta) ===== */
+  #sheetInstitucion .sheet2-top{ border-bottom:.5px solid var(--line); padding:14px 16px 8px; }
+  #sheetInstitucion .sheet2-body{ padding:14px 18px 40px; }
+  .inst-ficha{ --instc:var(--inst,var(--region)); }
+  [data-tema="oscuro"] .inst-ficha{ --instc:color-mix(in srgb,var(--inst,var(--region)) 55%,var(--ink)); }
+  .inst-fachada{
+    display:grid; grid-template-columns:56px 1fr; gap:12px; align-items:start;
+    margin:2px 0 0; padding-bottom:12px;
+  }
+  .inst-logo{
+    width:56px; height:56px; border-radius:3px; background:#fff; border:1px solid var(--line-strong);
+    display:flex; align-items:center; justify-content:center; position:relative; overflow:hidden;
+    box-shadow:inset 0 0 0 1px rgba(0,0,0,.04); flex:0 0 auto; object-fit:cover;
+  }
+  [data-tema="oscuro"] .inst-logo{ background:var(--paper-2); }
+  .inst-logo::before, .inst-logo::after{
+    content:""; position:absolute; width:10px; height:10px; border-color:var(--ink); border-style:solid; pointer-events:none; z-index:1;
+  }
+  .inst-logo::before{ top:4px; left:4px; border-width:1.5px 0 0 1.5px; }
+  .inst-logo::after{ bottom:4px; right:4px; border-width:0 1.5px 1.5px 0; }
+  .inst-logo img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .inst-logo.txt{ color:#fff; font-family:var(--serif); font-weight:700; font-size:1.05rem; letter-spacing:.02em; border-color:transparent; }
+  .inst-logo.txt::before, .inst-logo.txt::after{ border-color:rgba(255,255,255,.55); }
+  .inst-fachada .pag-nm{ font-family:var(--serif); font-weight:700; font-size:1.55rem; line-height:1.05; letter-spacing:-.04em; margin:0 0 4px; }
+  .inst-fachada .pag-verif{
+    display:inline-flex; align-items:center; gap:6px; font-family:var(--sans); font-size:.58rem; font-weight:700;
+    letter-spacing:.1em; text-transform:uppercase; color:var(--instc); margin:0 0 3px;
+  }
+  .inst-fachada .pag-verif .verif-badge{ width:14px; height:14px; background:var(--instc); }
+  .inst-fachada .inst-tipo{ font-family:var(--sans); font-size:.68rem; color:var(--ink-soft); font-weight:500; }
+  .inst-rule{ height:2.5px; background:var(--instc); margin:0 0 12px; border:0; }
+  .inst-qa{
+    display:grid; grid-template-columns:repeat(4,1fr); gap:4px;
+    margin:0 0 4px; padding:0 0 12px; border-bottom:.5px solid var(--line-strong);
+  }
+  .inst-qa:empty{ display:none; }
+  .inst-qa button, .inst-qa a.qa-btn{
+    display:flex; flex-direction:column; align-items:center; gap:5px;
+    background:none; border:0; padding:8px 2px; color:var(--instc);
+    font-family:var(--sans); font-size:.56rem; font-weight:700; letter-spacing:.01em;
+    text-decoration:none; cursor:pointer; -webkit-tap-highlight-color:transparent;
+  }
+  .inst-qa button svg, .inst-qa a.qa-btn svg{
+    width:18px; height:18px; display:block; stroke:currentColor; fill:none;
+    stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round;
+  }
+  .inst-qa .lbl{ color:var(--ink-soft); font-weight:600; line-height:1.15; text-align:center; max-width:100%; }
+  .inst-qa button.on{ color:var(--ink); }
+  .inst-qa button.on .lbl{ color:var(--ink); font-weight:700; }
+  .inst-qa button.on svg{ fill:color-mix(in srgb,var(--instc) 18%,transparent); }
+  .inst-sec{ margin-top:16px; }
+  .inst-sec-head{ display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+  .inst-sec-head .t{
+    font-family:var(--sans); font-size:.58rem; font-weight:800; letter-spacing:.18em;
+    text-transform:uppercase; color:var(--ink); white-space:nowrap;
+  }
+  .inst-sec-head .ln{ flex:1; height:.5px; background:var(--ink); opacity:.55; }
+  .inst-sec-head .more{
+    font-family:var(--sans); font-size:.7rem; font-weight:700; color:var(--instc);
+    background:none; border:0; padding:0; white-space:nowrap; cursor:pointer;
+  }
+  .inst-muted{ font-family:var(--sans); font-size:.78rem; color:var(--ink-faint); padding:6px 0 2px; font-style:italic; }
+  .inst-ficha .avh-row.of{ cursor:pointer; }
+  .inst-fecha-row{
+    display:grid; grid-template-columns:48px 1fr; gap:12px; align-items:center;
+    padding:8px 0; border-top:.5px solid var(--line);
+  }
+  .inst-fecha-row:first-of-type{ border-top:0; }
+  .inst-fecha-block{ text-align:center; border-right:.5px solid var(--line-strong); padding-right:8px; }
+  .inst-fecha-block .d{ font-family:var(--serif); font-weight:700; font-size:1.55rem; line-height:1; color:var(--instc); letter-spacing:-.03em; }
+  .inst-fecha-block .m{ font-family:var(--sans); font-size:.52rem; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-faint); margin-top:3px; }
+  .inst-fecha-tx .t{ font-family:var(--serif); font-weight:600; font-size:.92rem; line-height:1.2; color:var(--ink); }
+  .inst-fecha-tx .s{ font-family:var(--sans); font-size:.68rem; color:var(--ink-soft); margin-top:3px; }
+  .inst-ficha .svc-search{
+    border-radius:3px; border:.5px solid var(--line-strong); background:var(--paper);
+    margin:0 0 4px; padding:10px 12px;
+  }
+  .inst-ficha .svc-card{ border-bottom:.5px solid var(--line); }
+  .inst-ficha .svc-card-head{ padding:11px 0; }
+  .inst-ficha .svc-card-body{ padding:0 0 4px; }
+  .inst-ficha .svc-fila{ padding:9px 0; }
+  .inst-ficha .svc-fila .h{
+    font-family:var(--mono); font-size:.68rem; font-weight:600; letter-spacing:.02em;
+    color:var(--instc); text-transform:uppercase;
+  }
+  .aten-list{ border-top:.5px solid var(--line); }
+  .aten-item{
+    display:grid; grid-template-columns:22px 1fr; gap:10px; align-items:start;
+    padding:11px 0; border-bottom:.5px solid var(--line); font-family:var(--sans);
+  }
+  .aten-item svg{
+    width:16px; height:16px; color:var(--instc); margin-top:1px;
+    stroke:currentColor; fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round;
+  }
+  .aten-item .k{ font-size:.58rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-faint); }
+  .aten-item .v{ font-size:.86rem; font-weight:600; color:var(--ink); margin-top:2px; line-height:1.3; }
+  .aten-item a.v{ color:var(--instc); text-decoration:underline; text-underline-offset:2px; text-decoration-thickness:.5px; }
+  .inst-ficha .pag-pie{ margin-top:16px; padding-top:10px; border-top:.5px solid var(--line); font-size:.62rem; color:var(--ink-faint); }
+  /* legacy (otras pantallas / no usados en la ficha nueva) */
   .pag-nm{ font-family:var(--serif); font-weight:700; font-size:2.05rem; line-height:1.05; letter-spacing:-.04em; margin:0 0 6px; }
   .pag-verif{ display:inline-flex; align-items:center; gap:6px; font-family:var(--sans); font-size:.62rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-soft); margin-bottom:10px; }
   .pag-sec{ margin-top:18px; padding:12px 12px 4px; border:1px solid color-mix(in srgb,var(--inst,var(--line-strong)) 35%,var(--line));
     border-left:3px solid var(--inst,var(--ink)); border-radius:10px; background:color-mix(in srgb,var(--inst,var(--paper-2)) 8%,var(--paper)); }
   .pag-sec .h{ font-family:var(--sans); font-size:.62rem; font-weight:800; letter-spacing:.16em; text-transform:uppercase; color:var(--inst,var(--ink)); margin-bottom:12px; }
-  .aviso-card{ border:1px solid var(--line-strong); border-radius:10px; padding:12px 13px; margin-bottom:8px; background:var(--paper); }
+  .pag-pie{ font-family:var(--sans); font-size:.68rem; color:var(--ink-faint); margin-top:18px; }
   .aten-fila{ display:grid; grid-template-columns:88px 12px 1fr; align-items:baseline; gap:0; padding:8px 0; border-bottom:.5px solid var(--line); font-family:var(--sans); font-size:.82rem; }
   .aten-fila .k{ font-weight:600; color:var(--ink); }
   .aten-fila .d{ color:var(--ink-faint); text-align:center; }
   .aten-fila a{ color:var(--ink); }
-  .pag-pie{ font-family:var(--sans); font-size:.68rem; color:var(--ink-faint); margin-top:18px; }
+  .pag-logo{ width:52px; height:52px; object-fit:cover; border-radius:8px; flex:0 0 auto; background:var(--paper-2); }
+  .pag-logo.txt{ display:flex; align-items:center; justify-content:center; color:#fff; font-family:var(--serif); font-weight:700; font-size:.92rem; letter-spacing:.04em; }
+  .aviso-card{ border:1px solid var(--line-strong); border-radius:10px; padding:12px 13px; margin-bottom:8px; background:var(--paper); }
   .aviso-card .tag{ display:inline-block; font-family:var(--sans); font-size:.5rem; font-weight:800; letter-spacing:.06em;
-    text-transform:uppercase; background:var(--barrio); color:#fff; padding:2px 7px; border-radius:2px; margin-bottom:6px; }
+    text-transform:uppercase; background:var(--inst,var(--barrio)); color:#fff; padding:2px 7px; border-radius:2px; margin-bottom:6px; }
   .aviso-card.urg .tag{ background:var(--urgente); }
   .aviso-card .t{ font-family:var(--serif); font-weight:700; font-size:.98rem; color:var(--ink); line-height:1.25; }
   .aviso-card .p{ font-family:var(--sans); font-size:.78rem; color:var(--ink-soft); margin-top:5px; line-height:1.4; }
@@ -2030,6 +2123,7 @@
   let notaAbierta = null;
 
   function abrir(id){
+    navAlFrente("sheet");
     const n = NOTICIAS.find(x=>String(x.id)===String(id));
     if(!n) return;
     marcarLeido(n.id);
@@ -2724,6 +2818,7 @@
   });
 
   function abrirAporte(id){
+    navAlFrente("sheetAporte");
     const a = APORTES.find(x=>String(x.id)===String(id));
     if(!a) return;
     const cat = CAT_APORTE.find(c=>c.id===a.categoria) || {label:"Aporte", icon:"📍"};
@@ -2801,6 +2896,7 @@
   }
   let ofertaAbierta = null;
   function abrirOferta(id){
+    navAlFrente("sheetOferta");
     const o = OFERTAS.find(x=>String(x.id)===String(id));
     if(!o) return;
     ofertaAbierta = o;
@@ -3100,15 +3196,28 @@
   }
   document.getElementById("oficialVerTodos").addEventListener("click", (e)=>{ e.stopPropagation(); abrirOficiales(); });
   // "Ver todos" de Oficial: todos los avisos vigentes (24 h) en el mismo formato de fila
-  function abrirOficiales(){
-    const lista = listaComunicadosHome();
+  function abrirOficiales(institucionId){
+    navAlFrente("sheetOficiales");
+    const top = document.querySelector("#sheetOficiales .sheet2-top .b");
+    let lista, nota;
+    if(institucionId){
+      const inst = (INSTITUCIONES||[]).find(x=>String(x.id)===String(institucionId));
+      const nom = (inst && inst.nombre) || "Institución";
+      if(top) top.textContent = "Avisos de " + nom;
+      lista = comunicadosDe(institucionId).slice().sort((a,b)=> new Date(b.created_at||0) - new Date(a.created_at||0));
+      nota = '<p class="avh-lista-nota">'+SELLO_OFICIAL("sm")+'<span>Todos los avisos publicados por '+esc(nom)+'.</span></p>';
+    } else {
+      if(top) top.textContent = "Avisos oficiales de hoy";
+      lista = listaComunicadosHome();
+      nota = '<p class="avh-lista-nota">'+SELLO_OFICIAL("sm")+'<span>Publicados por instituciones verificadas en las últimas 24 h. Los anteriores quedan en la ficha de cada institución.</span></p>';
+    }
     const body = document.getElementById("oficialesBody");
     body.innerHTML = (lista.length
         ? '<div class="avh-rows of-rows" style="border-top:0">' + lista.map(x=>filaComunicado(x, true)).join("") + '</div>'
-        : '<p class="foot-note">No hay avisos oficiales en las últimas 24 horas.</p>')
-      + '<p class="avh-lista-nota">'+SELLO_OFICIAL("sm")+'<span>Publicados por instituciones verificadas en las últimas 24 h. Los anteriores quedan en la ficha de cada institución.</span></p>';
+        : '<p class="foot-note">'+(institucionId ? "Esta institución todavía no publicó avisos." : "No hay avisos oficiales en las últimas 24 horas.")+'</p>')
+      + nota;
     body.querySelectorAll("[data-com-id]").forEach(el=>{
-      el.addEventListener("click", ()=>{ cerrarOficiales(); abrirItemComunicado(lista, el.getAttribute("data-com-id")); });
+      el.addEventListener("click", ()=>{ abrirItemComunicado(lista, el.getAttribute("data-com-id")); });
     });
     document.getElementById("backdropOficiales").classList.add("show");
     document.getElementById("sheetOficiales").classList.add("show");
@@ -3122,6 +3231,7 @@
 
   let comunicadoAbierto = null;
   function abrirComunicado(id){
+    navAlFrente("sheetComunicado");
     const c = COMUNICADOS.find(x=>String(x.id)===String(id));
     if(!c) return;
     comunicadoAbierto = c;
@@ -3169,7 +3279,7 @@
     const fichaLink = document.getElementById("comunicadoFichaLink");
     if(c.institucion_id && INSTITUCIONES.find(x=>String(x.id)===String(c.institucion_id))){
       fichaLink.style.display = "inline-flex";
-      fichaLink.onclick = (e)=>{ e.preventDefault(); cerrarComunicado(); abrirInstitucion(c.institucion_id); };
+      fichaLink.onclick = (e)=>{ e.preventDefault(); abrirInstitucion(c.institucion_id); };
     } else {
       fichaLink.style.display = "none";
       fichaLink.onclick = null;
@@ -3430,68 +3540,118 @@
     [...dots.children].forEach((d,k)=> d.classList.toggle("on", k === act));
     dots.classList.add("on");
   }
+  function labelTipoInst(tipo, nombre){
+    const t = String(tipo||"").toLowerCase();
+    const MAP = { municipio:"Municipio", salud:"Salud", seguridad:"Seguridad", educacion:"Educación",
+      cultura:"Cultura", deporte:"Deporte", social:"Social", otro:"Institución" };
+    if(MAP[t]) return MAP[t];
+    const n = String(nombre||"").toLowerCase();
+    if(/municipal/.test(n)) return "Municipio";
+    if(/bomber/.test(n)) return "Bomberos";
+    if(/comis|polic/.test(n)) return "Seguridad";
+    if(/hospital|salud/.test(n)) return "Salud";
+    return "Institución";
+  }
+  function telSoloDigitos(tel){
+    return String(tel||"").replace(/\D/g,"");
+  }
+  function telWaMe(tel){
+    let d = telSoloDigitos(tel);
+    if(!d) return "";
+    if(d.startsWith("0")) d = d.slice(1);
+    if(!d.startsWith("54")) d = "54" + d;
+    return d;
+  }
+  function mapsUrlDe(direccion){
+    const q = String(direccion||"").trim();
+    if(!q) return "";
+    const full = /quitilipi/i.test(q) ? q : (q + ", Quitilipi, Chaco");
+    return "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(full);
+  }
+  const QA_SVG = {
+    llamar: '<svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>',
+    wa: '<svg viewBox="0 0 24 24"><path d="M20.5 11.5a8.5 8.5 0 0 1-12.7 7.4L4 20l1.2-3.6A8.5 8.5 0 1 1 20.5 11.5z"/><path d="M9.2 9.6c.2-.4.4-.4.6-.4h.5c.2 0 .4 0 .5.3l.7 1.7c.1.2 0 .4-.1.5l-.4.5c-.1.1-.1.3 0 .4.4.6 1 1.2 1.6 1.6.1.1.3.1.4 0l.5-.4c.2-.1.4-.2.5-.1l1.7.7c.3.1.3.3.3.5v.5c0 .2 0 .4-.4.6-.5.3-1.1.4-1.7.4-2.7 0-5.6-2.4-6.4-5-.2-.6-.1-1.2.2-1.7z"/></svg>',
+    maps: '<svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>',
+    avis: '<svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>',
+    reloj: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
+  };
   function abrirInstitucion(id){
+    navAlFrente("sheetInstitucion");
     const inst = INSTITUCIONES.find(x=>String(x.id)===String(id));
     if(!inst) return;
     marcarFechasInst(id);
     if(typeof pintarInstituciones === "function") pintarInstituciones();
-    const fechas = FECHAS_INST.filter(f=>String(f.institucion_id)===String(id));
-    const proxima = fechas[0];
-    const resto = fechas.slice(1);
+    const fechas = (FECHAS_INST||[]).filter(f=>String(f.institucion_id)===String(id));
     const sigue = instSeguidas().map(String).includes(String(inst.id));
-    const colInst = colorDeInst(inst.id, inst.nombre);
+    const colInst = colorInstVisible(inst.id, inst.nombre, inst.color);
     const selloInst = selloDeInst(inst.id, inst.nombre);
-    let html = '<div class="inst-fachada" style="--inst:'+colInst+'">'
-      + (inst.foto_url
-          ? '<img class="pag-logo" src="'+esc(inst.foto_url)+'" alt="">'
-          : '<span class="pag-logo txt" style="background:'+colInst+'">'+esc(selloInst)+'</span>')
+    const tipoLbl = labelTipoInst(inst.tipo, inst.nombre);
+    const tel = String(inst.telefono||"").trim();
+    const dir = String(inst.direccion||"").trim();
+    const horario = String(inst.horario||"").trim();
+    const wa = telWaMe(tel);
+    const maps = mapsUrlDe(dir);
+    const comInst = comunicadosDe(id).slice().sort((a,b)=> new Date(b.created_at||0) - new Date(a.created_at||0));
+    const avisosTop = comInst.slice(0, 3);
+
+    let html = '<div class="inst-ficha" style="--inst:'+colInst+'">';
+
+    // cabecera
+    html += '<div class="inst-fachada">';
+    if(inst.foto_url){
+      html += '<div class="inst-logo"><img src="'+esc(inst.foto_url)+'" alt=""></div>';
+    } else {
+      html += '<div class="inst-logo txt" style="background:'+colInst+'">'+esc(selloInst)+'</div>';
+    }
+    html += '<div>'
       + '<div class="pag-nm">'+esc(inst.nombre)+'</div>'
-      + '<div class="pag-verif"><span class="verif-badge" style="background:'+colInst+';width:14px;height:14px"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Institución verificada</div>'
-      + '</div>';
-    if(inst.descripcion) html += '<div class="ficha-desc">'+esc(inst.descripcion)+'</div>';
-    html += '<button type="button" class="btn-seguir'+(sigue?" on":"")+'" id="btnSeguirInst" data-id="'+esc(inst.id)+'">'
-      + (sigue ? "✓ Te avisamos de esta institución" : "Avisarme de esta institución")
-      + '</button>';
-    if(proxima){
-      const f = fmtFecha(proxima.fecha);
-      const when = diasHasta(proxima.fecha);
-      const cls = when==="HOY" ? " hoy" : (when==="MAÑANA" ? " man" : "");
-      const puntos = String(proxima.lugar||"").split(/\n+/).map(s=>s.trim()).filter(Boolean);
-      const varios = puntos.length > 1;
-      html += '<div class="date-box'+cls+'" style="--inst:'+colInst+';border-left:3px solid '+colInst+'">'
-        + '<div class="lbl">'+(when?'<span class="cd">'+when+'</span>':'')+'</div>'
-        + '<div class="fecha">'+esc(proxima.titulo||"Fecha")+'</div>'
-        + '<div class="lugar">'+f.full+'</div>'
-        + (proxima.horario ? '<div class="lugar">'+esc(proxima.horario)+'</div>' : '')
-        + (varios
-            ? '<input class="pto-buscar" placeholder="Buscá tu barrio" style="width:100%;margin-top:10px;font-family:var(--sans);font-size:.8rem;border:1px solid var(--line-strong);border-radius:8px;padding:8px 10px;background:var(--paper);color:var(--ink)">'
-              + '<div class="pto-lista">'+puntos.map(pt=>'<div class="pto" data-q="'+esc(pt.toLowerCase())+'">'+esc(pt)+'</div>').join("")+'</div>'
-            : (proxima.lugar ? '<div class="lugar">'+esc(proxima.lugar)+'</div>' : ''))
-        + '<button type="button" class="date-share" data-ftit="'+esc(proxima.titulo||"")+'" data-ffecha="'+(proxima.fecha||"")+'" data-flug="'+esc(varios?puntos.join(" · "):proxima.lugar||"")+'" data-fhor="'+esc(proxima.horario||"")+'">↗ Compartir</button>'
-        + '</div>';
-    }
-    if(resto.length){
-      html += '<div class="ficha-sec"><div class="h">Otras fechas / servicios</div>' + resto.map(f=>{
-        const fm = fmtFecha(f.fecha);
-        return '<div class="f-svc"><span class="d"></span><div><div class="t">'+esc(f.titulo)+'</div><div class="m">'+fm.full+(f.lugar?" · "+esc(f.lugar):"")+'</div></div></div>';
-      }).join("") + '</div>';
-    }
-    // Avisos recientes primero
-    const comInst = comunicadosDe(id);
+      + '<div class="pag-verif"><span class="verif-badge"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Institución verificada</div>'
+      + '<div class="inst-tipo">'+esc(tipoLbl)+' · Quitilipi</div>'
+      + '</div></div>';
+    html += '<hr class="inst-rule">';
+
+    // acciones rápidas (se ocultan las que no tienen dato; Avisarme siempre)
+    const qaItems = [];
+    if(tel) qaItems.push('<a class="qa-btn" href="tel:'+esc(telSoloDigitos(tel))+'" aria-label="Llamar">'+QA_SVG.llamar+'<span class="lbl">Llamar</span></a>');
+    if(wa) qaItems.push('<a class="qa-btn" href="https://wa.me/'+esc(wa)+'" target="_blank" rel="noopener" aria-label="WhatsApp">'+QA_SVG.wa+'<span class="lbl">WhatsApp</span></a>');
+    if(maps) qaItems.push('<a class="qa-btn" href="'+esc(maps)+'" target="_blank" rel="noopener" aria-label="Cómo llegar">'+QA_SVG.maps+'<span class="lbl">Cómo llegar</span></a>');
+    qaItems.push('<button type="button" class="'+(sigue?"on":"")+'" id="btnSeguirInst" data-id="'+esc(inst.id)+'" aria-label="Avisarme">'+QA_SVG.avis+'<span class="lbl">'+(sigue?"Avisado":"Avisarme")+'</span></button>');
+    // grid de 4: si faltan, dejar huecos solo a la izquierda de Avisarme no; mejor ajustar columnas
+    const nQa = qaItems.length;
+    html += '<div class="inst-qa" style="grid-template-columns:repeat('+nQa+',1fr)">'+qaItems.join("")+'</div>';
+
+    // Avisos recientes (siempre)
+    html += '<div class="inst-sec"><div class="inst-sec-head"><span class="t">Avisos recientes</span><span class="ln"></span>';
     if(comInst.length){
-      html += '<div class="pag-sec" style="--inst:'+colInst+'"><div class="h">1 · Avisos recientes</div>' + comInst.slice(0,8).map(c=>{
-        const cuando = c.created_at ? new Date(c.created_at).toLocaleDateString("es-AR",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}) : "";
-        const prev = (c.texto||"").length > 140 ? (c.texto||"").slice(0,140)+"…" : (c.texto||"");
-        const urgPend = c.urgente && !urgenteDescartado(c.id);
-        return '<div class="aviso-card'+(urgPend?" urg":"")+'" data-com-id="'+esc(c.id)+'" style="--inst:'+colInst+'">'
-          + '<span class="tag">'+(urgPend?"Urgente":esc(inst.nombre))+'</span>'
-          + '<div class="tx" data-abrir="'+esc(c.id)+'"><div class="t">'+esc(c.titulo||"")+'</div>'
-          + (prev ? '<div class="p">'+esc(prev)+'</div>' : '')
-          + '<div class="m">'+(cuando||"")+'</div></div>'
-          + '</div>';
-      }).join("") + '</div>';
+      html += '<button type="button" class="more" id="instVerTodosAvisos">Ver todos ›</button>';
     }
-    // Servicios fijos (recolección por barrio, horarios, etc.)
+    html += '</div>';
+    if(avisosTop.length){
+      html += '<div class="avh-rows of-rows" style="border-top:0;margin-top:0">'
+        + avisosTop.map(c=>filaComunicado(c, false)).join("")
+        + '</div>';
+    } else {
+      html += '<div class="inst-muted">Sin avisos en los últimos 7 días</div>';
+    }
+    html += '</div>';
+
+    // Próximas fechas (ocultar si no hay)
+    if(fechas.length){
+      html += '<div class="inst-sec"><div class="inst-sec-head"><span class="t">Próximas fechas</span><span class="ln"></span></div>';
+      fechas.forEach(f=>{
+        const fm = fmtFecha(f.fecha);
+        const lugarParts = String(f.lugar||"").split(/\n+/).map(s=>s.trim()).filter(Boolean);
+        const sub = [lugarParts.join(" · "), f.horario].filter(Boolean).join(" · ");
+        html += '<div class="inst-fecha-row">'
+          + '<div class="inst-fecha-block"><div class="d">'+fm.d+'</div><div class="m">'+esc(fm.m)+'</div></div>'
+          + '<div class="inst-fecha-tx"><div class="t">'+esc(f.titulo||"Fecha")+'</div>'
+          + (sub ? '<div class="s">'+esc(sub)+'</div>' : '')
+          + '</div></div>';
+      });
+      html += '</div>';
+    }
+
+    // Servicios (ocultar si no hay)
     let servicios = [];
     try{
       const raw = inst.servicios;
@@ -3506,7 +3666,7 @@
         if(!porSec[sec]){ porSec[sec] = []; ordenSec.push(sec); }
         porSec[sec].push(s);
       });
-      html += '<div class="pag-sec" id="serviciosFicha" style="--inst:'+colInst+'"><div class="h">2 · Servicios</div>';
+      html += '<div class="inst-sec" id="serviciosFicha"><div class="inst-sec-head"><span class="t">Servicios</span><span class="ln"></span></div>';
       html += '<input class="svc-search" id="svcBuscar" type="search" placeholder="Buscá tu barrio o un servicio…" autocomplete="off">';
       html += '<div id="svcLista">';
       ordenSec.forEach((sec, iSec)=>{
@@ -3515,31 +3675,59 @@
           + '<button type="button" class="svc-card-head"><span class="nom">'+esc(sec)+'</span><span class="cant">'+n+(n===1?" barrio":" barrios")+'</span><span class="fle">⌄</span></button>'
           + '<div class="svc-card-body">';
         porSec[sec].forEach(s=>{
-          html += '<div class="svc-fila svc-fila-t" data-q="'+esc(((s.clave||"")+" "+(s.valor||"")+" "+sec).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,""))+'">'
+          html += '<div class="svc-fila svc-fila-t" data-q="'+esc(((s.clave||"")+" "+(s.valor||"")+" "+sec).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,""))+'">'
             + '<span class="b">'+esc(s.clave||"")+'</span><span class="h">'+esc(s.valor||"")+'</span></div>';
         });
         html += '</div></div>';
       });
       html += '</div></div>';
     }
-    let contact = "";
-    if(inst.direccion) contact += '<div class="aten-fila"><span class="k">Dirección</span><span class="d">·</span><span>'+esc(inst.direccion)+'</span></div>';
-    if(inst.telefono) contact += '<div class="aten-fila"><span class="k">Teléfono</span><span class="d">·</span><span>'+esc(inst.telefono)+'</span></div>';
-    if(inst.horario) contact += '<div class="aten-fila"><span class="k">Horario</span><span class="d">·</span><span>'+esc(inst.horario)+'</span></div>';
-    if(inst.link_url) contact += '<div class="aten-fila"><span class="k">Más info</span><span class="d">·</span><span><a href="'+esc(inst.link_url)+'" target="_blank" rel="noopener">Sitio de la institución</a></span></div>';
-    html += '<div class="pag-sec" style="--inst:'+colInst+'"><div class="h">3 · Atención</div>';
-    html += contact || '<p style="font-family:var(--sans);font-size:.78rem;color:var(--ink-faint)">Todavía no hay datos de atención. Se cargan en el panel.</p>';
-    html += '</div>';
+
+    // Atención (ocultar si vacío)
+    let aten = "";
+    if(dir){
+      aten += '<div class="aten-item">'+QA_SVG.maps+'<div><div class="k">Dirección</div>'
+        + (maps ? '<a class="v" href="'+esc(maps)+'" target="_blank" rel="noopener">'+esc(dir)+'</a>' : '<div class="v">'+esc(dir)+'</div>')
+        + '</div></div>';
+    }
+    if(horario){
+      aten += '<div class="aten-item">'+QA_SVG.reloj+'<div><div class="k">Horario</div><div class="v">'+esc(horario)+'</div></div></div>';
+    }
+    if(tel){
+      aten += '<div class="aten-item">'+QA_SVG.llamar+'<div><div class="k">Teléfono</div>'
+        + '<a class="v" href="tel:'+esc(telSoloDigitos(tel))+'">'+esc(tel)+'</a></div></div>';
+    }
+    if(aten){
+      html += '<div class="inst-sec"><div class="inst-sec-head"><span class="t">Atención</span><span class="ln"></span></div>'
+        + '<div class="aten-list">'+aten+'</div></div>';
+    }
+
     html += '<div class="pag-pie">Página oficial · Fonte solo publica el texto recibido</div>';
+    html += '</div>';
+
     document.getElementById("institucionBody").innerHTML = html;
+
     const btnSeg = document.getElementById("btnSeguirInst");
     if(btnSeg){
       btnSeg.addEventListener("click", ()=>{
         const on = instSeguirToggle(btnSeg.getAttribute("data-id"));
         btnSeg.classList.toggle("on", on);
-        btnSeg.textContent = on ? "✓ Te avisamos de esta institución" : "Avisarme de esta institución";
+        const lbl = btnSeg.querySelector(".lbl");
+        if(lbl) lbl.textContent = on ? "Avisado" : "Avisarme";
       });
     }
+    const verTodos = document.getElementById("instVerTodosAvisos");
+    if(verTodos){
+      verTodos.addEventListener("click", (e)=>{ e.preventDefault(); e.stopPropagation(); abrirOficiales(inst.id); });
+    }
+    document.querySelectorAll("#institucionBody .avh-row.of[data-com-id]").forEach(el=>{
+      el.addEventListener("click", (e)=>{
+        e.preventDefault();
+        e.stopPropagation();
+        const cid = el.getAttribute("data-com-id");
+        if(cid) abrirComunicado(cid);
+      });
+    });
     document.querySelectorAll("#svcLista .svc-card-head").forEach(cab=>{
       cab.addEventListener("click", ()=>{ cab.closest(".svc-card").classList.toggle("abierta"); });
     });
@@ -3561,66 +3749,7 @@
         });
       });
     }
-    document.querySelectorAll("#institucionBody .aviso-card").forEach(el=>{
-      el.style.cursor = "pointer";
-      el.addEventListener("click", (e)=>{
-        e.preventDefault();
-        e.stopPropagation();
-        const cid = el.getAttribute("data-com-id") || (el.querySelector("[data-abrir]") && el.querySelector("[data-abrir]").getAttribute("data-abrir"));
-        if(cid) abrirComunicado(cid);
-      });
-    });
-    document.querySelectorAll("#institucionBody [data-descartar]").forEach(b=>{
-      b.addEventListener("click", (e)=>{
-        e.stopPropagation();
-        descartarUrgente(b.getAttribute("data-descartar"));
-        abrirInstitucion(id);                 // se redibuja sin el aviso
-        if(typeof pintarInstituciones === "function") pintarInstituciones();
-      });
-    });
-    async function compartirFechaDesde(el){
-      const titulo = el.getAttribute("data-ftit") || "Fecha";
-      const fecha = el.getAttribute("data-ffecha") || "";
-      const lugar = el.getAttribute("data-flug") || "";
-      const horario = el.getAttribute("data-fhor") || "";
-      const when = fecha ? (diasHasta(fecha) || "") : "";
-      const fm = fecha ? fmtFecha(fecha) : null;
-      const pieza = {
-        id: "fecha-"+(fecha||titulo), __tipo: "c",
-        titulo,
-        resumen_corto: [when, fm && fm.full, lugar, horario].filter(Boolean).join(" · "),
-        lugar: inst.nombre,
-        institucion_id: inst.id,
-        color: colorDeInst(inst.id, inst.nombre),
-        sello: selloDeInst(inst.id, inst.nombre),
-        fuente_etiqueta: inst.nombre,
-      };
-      await compartirPieza(pieza, el.classList.contains("date-share") ? el : el.querySelector(".date-share"));
-    }
-    document.querySelectorAll("#institucionBody .date-share").forEach(btn=>{
-      btn.addEventListener("click", async (e)=>{
-        e.preventDefault();
-        e.stopPropagation();
-        await compartirFechaDesde(btn);
-      });
-    });
-    document.querySelectorAll("#institucionBody .pto-buscar").forEach(inp=>{
-      inp.addEventListener("input", ()=>{
-        const q = (inp.value||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim();
-        inp.parentElement.querySelectorAll(".pto").forEach(el=>{
-          const hay = (el.getAttribute("data-q")||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"");
-          el.classList.toggle("oculta", !!q && !hay.includes(q));
-        });
-      });
-    });
-    document.querySelectorAll("#institucionBody .date-box").forEach(box=>{
-      box.style.cursor = "pointer";
-      box.addEventListener("click", async (e)=>{
-        if(e.target.closest(".date-share")) return;
-        const b = box.querySelector(".date-share");
-        if(b) await compartirFechaDesde(b);
-      });
-    });
+
     document.getElementById("backdropInstitucion").classList.add("show");
     document.getElementById("sheetInstitucion").classList.add("show");
   }
@@ -3632,6 +3761,7 @@
   document.getElementById("backdropInstitucion").addEventListener("click", cerrarInstitucion);
 
   function abrirProximasFechas(){
+    navAlFrente("sheetFechas");
     const html = FECHAS_INST.map(f=>{
       const inst = INSTITUCIONES.find(x=>String(x.id)===String(f.institucion_id)) || {};
       const fm = fmtFecha(f.fecha);
@@ -3643,7 +3773,7 @@
     }).join("");
     document.getElementById("fechasBody").innerHTML = html || '<p class="foot-note">No hay fechas próximas cargadas.</p>';
     document.querySelectorAll("#fechasBody .ag-row").forEach(el=>{
-      el.addEventListener("click", ()=>{ cerrarFechas(); abrirInstitucion(el.getAttribute("data-inst-id")); });
+      el.addEventListener("click", ()=>{ abrirInstitucion(el.getAttribute("data-inst-id")); });
     });
     document.getElementById("backdropFechas").classList.add("show");
     document.getElementById("sheetFechas").classList.add("show");
@@ -3667,6 +3797,7 @@
     });
   });
   function abrirForm(){
+    navAlFrente("sheetForm");
     document.getElementById("backdropForm").classList.add("show");
     document.getElementById("sheetForm").classList.add("show");
   }
@@ -3799,7 +3930,7 @@
     function s(y,fromBody){ vb=fromBody; if(fromBody&&body.scrollTop>0){drag=false;return;} drag=true; sy=y; sheet.style.transition="none"; }
     function m(y,e){ if(!drag)return; const d=y-sy; if(vb&&(body.scrollTop>0||d<0)){drag=false;sheet.style.transition="";sheet.style.transform="";return;}
       dy=Math.max(0,d); if(dy>0){ if(e&&e.cancelable)e.preventDefault(); sheet.style.transform="translateY("+dy+"px)"; } }
-    function en(){ if(!drag)return; drag=false; sheet.style.transition=""; if(dy>110)cerrar(); sheet.style.transform=""; dy=0; }
+    function en(){ if(!drag)return; drag=false; sheet.style.transition=""; if(dy>80)cerrarCapa("sheet"); sheet.style.transform=""; dy=0; }
     grip.addEventListener("touchstart",e=>s(e.touches[0].clientY,false),{passive:true});
     grip.addEventListener("touchmove",e=>m(e.touches[0].clientY,e),{passive:false});
     grip.addEventListener("touchend",en);
@@ -4063,6 +4194,7 @@
 
   // ================= MIS APORTES (devolución al que aporta) =================
   async function abrirMisAportes(){
+    navAlFrente("sheetMios");
     const body = document.getElementById("miosBody");
     body.innerHTML = '<p class="foot-note">Cargando…</p>';
     document.getElementById("backdropMios").classList.add("show");
@@ -4081,7 +4213,7 @@
         + '<div class="p">Cuando reportes algo, acá vas a poder ver si se publicó y cuántos vecinos lo confirmaron.</div>'
         + '<button class="b" id="miosAportar">+ Aportá un dato</button></div>';
       const b = document.getElementById("miosAportar");
-      if(b) b.addEventListener("click", ()=>{ cerrarMios(); document.getElementById("fabAportar").click(); });
+      if(b) b.addEventListener("click", ()=>{ document.getElementById("fabAportar").click(); });
       return;
     }
     const TXT = {
@@ -4323,6 +4455,7 @@
 
   // ================= FOTO A PANTALLA COMPLETA =================
   function abrirFoto(src){
+    navAlFrente("lightbox");
     document.getElementById("lightboxImg").src = src;
     document.getElementById("lightbox").classList.add("show");
   }
@@ -4393,77 +4526,289 @@
     abrirDesdeEnlace().then(ok=>{
       if(!ok) return;
       enlaceResuelto = true;
-      try{ history.replaceState(null, "", location.pathname); }catch(e){}
+      try{ history.replaceState(history.state, "", location.pathname); }catch(e){}
     });
   }
 
-  // ================= BOTÓN ATRÁS DEL CELULAR =================
-  // La gente espera que "atrás" cierre lo que está abierto y la deje donde estaba,
-  // no que la saque de Fonte. Cada panel que se abre suma un paso al historial.
-  (function(){
-    const PANELES = [
-      { sheet:"sheet",             cerrar:()=>cerrar() },
-      { sheet:"sheetAporte",       cerrar:()=>cerrarAporte() },
-      { sheet:"sheetOferta",       cerrar:()=>cerrarOferta() },
-      { sheet:"sheetComunicado",   cerrar:()=>cerrarComunicado() },
-      { sheet:"sheetInstitucion",  cerrar:()=>cerrarInstitucion() },
-      { sheet:"sheetFechas",       cerrar:()=>cerrarFechas() },
-      { sheet:"sheetVecinos",      cerrar:()=>cerrarVecinos() },
-      { sheet:"sheetOficiales",    cerrar:()=>cerrarOficiales() },
-      { sheet:"sheetMios",         cerrar:()=>cerrarMios() },
-      { sheet:"sheetTemas",        cerrar:()=>cerrarTemas() },
-      { sheet:"sheetBuscar",       cerrar:()=>cerrarBuscar() },
-      { sheet:"sheetForm",         cerrar:()=>cerrarForm() },
-      { sheet:"lightbox",          cerrar:()=>cerrarFoto() },
-    ];
-    // Arriba visualmente: comunicado encima de institución
-    const ORDEN = ["lightbox","sheetForm","sheetBuscar","sheetTemas","sheetMios","sheetVecinos","sheetOficiales","sheetFechas","sheetComunicado","sheetInstitucion","sheetNota","sheetOferta"];
-    function topPanel(){
-      for(const id of ORDEN){
-        const item = PANELES.find(p=>p.sheet===id);
-        const el = item && document.getElementById(id);
-        if(el && el.classList.contains("show")) return item;
-      }
-      for(let i = PANELES.length - 1; i >= 0; i--){
-        const el = document.getElementById(PANELES[i].sheet);
-        if(el && el.classList.contains("show")) return PANELES[i];
-      }
-      return null;
+  // ================= NAVEGACIÓN: UNA SOLA PILA PARA "ATRÁS" =================
+  // Cada pantalla que se abre encima de Inicio (nota, comunicado, institución, Alertas, Buscar,
+  // Más, Publicar, fotos, la pestaña "Más noticias"…) es una "capa". Al abrirse se suma a la pila
+  // y deja un paso en el historial; el botón atrás del celular, la X, tocar el fondo y deslizar
+  // hacia abajo cierran SIEMPRE la capa de arriba por el mismo camino (history.back()).
+  // En Inicio, sin nada abierto, atrás sale de Fonte como cualquier app.
+  //   abrirCapa(id)  → la suma (la llama sola el observador cuando un panel se muestra)
+  //   cerrarCapa(id) → la cierra con history.back(); el popstate hace el cierre de verdad
+  var NAV = null;
+  function navVisible(id){
+    const el = document.getElementById(id);
+    if(!el) return false;
+    if(id === "panelMas"){
+      // durante el arrastre entre pestañas los dos paneles quedan visibles: no cuenta como cambio
+      if(el.style.position === "absolute") return !!(NAV && NAV.pila.some(c=>c.id==="panelMas"));
+      return el.style.display === "block";
     }
-    let cerrandoPorAtras = false;
-    const vistos = {};
+    if(id === "masSobreVista"){
+      const m = document.getElementById("sheetMas");
+      return !el.classList.contains("hide") && !!(m && m.classList.contains("show"));
+    }
+    return el.classList.contains("show");
+  }
+  function navEstado(n){ return { fonte:1, s:NAV.sesion, n:n, capa:(NAV.pila[n-1]||{}).id || "" }; }
+  // Chrome saltea los pasos de historial que se crean antes de que la persona toque la pantalla
+  // (por ejemplo, una nota abierta desde un enlace compartido): esos pasos se agregan al primer toque.
+  function navPuedeEmpujar(){ const ua = navigator.userActivation; return !ua || ua.hasBeenActive; }
+  function navEsperarGesto(){
+    if(NAV.esperando) return;
+    NAV.esperando = true;
+    const listo = ()=>{
+      ["pointerup","touchend","keydown","click"].forEach(t=>document.removeEventListener(t, listo, true));
+      NAV.esperando = false;
+      setTimeout(navSincronizar, 0);
+    };
+    ["pointerup","touchend","keydown","click"].forEach(t=>document.addEventListener(t, listo, true));
+  }
+  // deja el historial con un paso propio por cada capa abierta
+  function navSincronizar(){
+    if(!NAV || NAV.yendo) return;
+    if(NAV.hist > NAV.pila.length){ navIr(NAV.pila.length - NAV.hist); return; }
+    while(NAV.hist < NAV.pila.length && navPuedeEmpujar()){
+      NAV.hist++;
+      try{ history.pushState(navEstado(NAV.hist), ""); }catch(e){}
+    }
+    if(NAV.hist < NAV.pila.length) navEsperarGesto();
+  }
+  function navIr(delta){
+    if(!delta) return;
+    NAV.yendo = true;
+    NAV.corte = NAV.seq;               // lo que se abra mientras tanto no lo cierra este paso
+    clearTimeout(NAV.reloj);
+    NAV.reloj = setTimeout(()=>{ NAV.yendo = false; navSincronizar(); }, 900);
+    try{ history.go(delta); }catch(e){ NAV.yendo = false; }
+  }
+  // capa encima de todo: z-index según el orden en que se abrió
+  function navFondo(id){
+    if(id === "sheet") return "backdrop";
+    if(/^sheet/.test(id)) return id.replace(/^sheet/, "backdrop");
+    return null;
+  }
+  function navZ(id, prof){
+    if(!NAV.capas[id] || NAV.capas[id].sinZ) return;
+    const z = 250 + prof*4;
+    const el = document.getElementById(id), f = navFondo(id) && document.getElementById(navFondo(id));
+    if(f) f.style.setProperty("z-index", String(z), "important");
+    if(el) el.style.setProperty("z-index", String(z+1), "important");
+  }
+  function navZFuera(id){
+    setTimeout(()=>{
+      if(NAV.pila.some(c=>c.id===id)) return;
+      const el = document.getElementById(id), f = navFondo(id) && document.getElementById(navFondo(id));
+      if(el) el.style.removeProperty("z-index");
+      if(f) f.style.removeProperty("z-index");
+    }, 420);
+  }
+  function navBarra(){
+    const TAB = { sheetVecinos:"navVecinos", sheetBuscar:"navBuscar", sheetMas:"navMas" };
+    let act = "navInicio";
+    NAV.pila.forEach(c=>{ if(TAB[c.id]) act = TAB[c.id]; });
+    document.querySelectorAll(".bn-item").forEach(b=>b.classList.toggle("active", b.id === act));
+  }
+  function abrirCapa(id){
+    if(!NAV || !NAV.capas[id] || NAV.pila.some(c=>c.id===id)) return;
+    NAV.pila.push({ id, seq: ++NAV.seq });
+    navZ(id, NAV.pila.length);
+    navSincronizar();
+    navBarra();
+  }
+  // si se vuelve a abrir algo que ya estaba abierto debajo (p. ej. un comunicado desde la
+  // página de la institución), pasa arriba de todo
+  function navAlFrente(id){
+    if(!NAV) return;
+    const i = NAV.pila.findIndex(c=>c.id===id);
+    if(i < 0 || i === NAV.pila.length - 1) return;
+    const c = NAV.pila.splice(i, 1)[0];
+    c.seq = ++NAV.seq;
+    NAV.pila.push(c);
+    NAV.pila.forEach((x,k)=> navZ(x.id, k+1));
+    navBarra();
+  }
+  function navCerrarTope(){
+    const c = NAV.pila.pop();
+    if(!c) return;
+    try{ NAV.capas[c.id].cerrar(); }catch(e){}
+    navZFuera(c.id);
+  }
+  function cerrarCapa(id){
+    if(!NAV) return;
+    const i = id ? NAV.pila.findIndex(c=>c.id===id) : NAV.pila.length - 1;
+    if(i < 0){ if(id && NAV.capas[id]) NAV.capas[id].cerrar(); return; }
+    if(NAV.yendo) return;                                  // ya hay un "atrás" en camino
+    if(NAV.hist === NAV.pila.length){ navIr(i - NAV.pila.length); return; }
+    // pasos todavía sin agregar (nadie tocó la pantalla): se cierra directo
+    while(NAV.pila.length > i) navCerrarTope();
+    navSincronizar(); navBarra();
+  }
+  (function(){
+    const raw = (fn)=>()=>{ if(typeof window[fn] === "function") window[fn](); };
+    NAV = {
+      sesion: String(Date.now()) + Math.random().toString(36).slice(2,6),
+      pila: [], hist: 0, seq: 0, corte: 0, yendo: false, esperando: false, reloj: null,
+      // cómo se cierra de verdad cada capa (sin tocar el historial)
+      capas: {
+        sheet:            { cerrar: raw("cerrar") },
+        sheetAporte:      { cerrar: raw("cerrarAporte") },
+        sheetOferta:      { cerrar: raw("cerrarOferta") },
+        sheetComunicado:  { cerrar: raw("cerrarComunicado") },
+        sheetInstitucion: { cerrar: raw("cerrarInstitucion") },
+        sheetFechas:      { cerrar: raw("cerrarFechas") },
+        sheetForm:        { cerrar: raw("cerrarForm") },
+        sheetTemas:       { cerrar: raw("cerrarTemas") },
+        sheetBuscar:      { cerrar: raw("cerrarBuscar") },
+        sheetMios:        { cerrar: raw("cerrarMios") },
+        sheetOficiales:   { cerrar: raw("cerrarOficiales") },
+        sheetVecinos:     { cerrar: raw("cerrarVecinos") },
+        sheetMas:         { cerrar: raw("cerrarMasPanel") },
+        lightbox:         { cerrar: raw("cerrarFoto") },
+        onb:              { cerrar: raw("cerrarOnb"), sinZ:true },
+        panelMas:         { cerrar: ()=> irAPestanaPrincipal("ciudad"), sinZ:true },
+        masSobreVista:    { cerrar: ()=>{
+                              document.getElementById("masSobreVista").classList.add("hide");
+                              ["masGrupoReportero","masGrupoAjustes","masGrupoFonte"].forEach(x=>document.getElementById(x).classList.remove("hide"));
+                            }, sinZ:true },
+      }
+    };
+    // X, "Listo", "Volver" y fondos: todos pasan por cerrarCapa → history.back()
+    const CIERRES = {
+      closeSheet:"sheet", backdrop:"sheet", closeAporte:"sheetAporte", backdropAporte:"sheetAporte",
+      closeOferta:"sheetOferta", backdropOferta:"sheetOferta", closeComunicado:"sheetComunicado", backdropComunicado:"sheetComunicado",
+      closeInstitucion:"sheetInstitucion", backdropInstitucion:"sheetInstitucion", closeFechas:"sheetFechas", backdropFechas:"sheetFechas",
+      closeForm:"sheetForm", backdropForm:"sheetForm", closeTemas:"sheetTemas", backdropTemas:"sheetTemas",
+      closeBuscar:"sheetBuscar", backdropBuscar:"sheetBuscar", closeMios:"sheetMios", backdropMios:"sheetMios",
+      closeOficiales:"sheetOficiales", backdropOficiales:"sheetOficiales", closeVecinos:"sheetVecinos", backdropVecinos:"sheetVecinos",
+      closeMas:"sheetMas", backdropMas:"sheetMas", lightboxCerrar:"lightbox", masVolver:"masSobreVista"
+    };
+    document.addEventListener("click", (e)=>{
+      const t = e.target;
+      if(!t || !t.closest) return;
+      let id = null;
+      if(t.id === "lightbox") id = "lightbox";
+      else if(t.id && CIERRES[t.id] && /^backdrop/.test(t.id)) id = CIERRES[t.id];
+      else {
+        const b = t.closest("button[id]");
+        if(b && CIERRES[b.id] && !/^backdrop/.test(b.id)) id = CIERRES[b.id];
+      }
+      if(!id || !NAV.pila.some(c=>c.id===id)) return;   // fuera de la pila: el cierre de siempre
+      e.stopPropagation(); e.preventDefault();
+      cerrarCapa(id);
+    }, true);
+    // El observador suma/saca capas cuando un panel se muestra o se oculta (lo abra quien lo abra).
+    // Si algo se cerró por código (no por "atrás"), se descuenta el paso del historial.
     const obs = new MutationObserver(()=>{
-      PANELES.forEach(p=>{
-        const el = document.getElementById(p.sheet);
-        const on = !!(el && el.classList.contains("show"));
-        if(on && !vistos[p.sheet]){
-          vistos[p.sheet] = true;
-          if(!cerrandoPorAtras){
-            try{ history.pushState({ fonte:p.sheet }, ""); }catch(e){}
-          }
-        }
-        if(!on) vistos[p.sheet] = false;
-      });
+      let cambio = false;
+      for(const id in NAV.capas){
+        const i = NAV.pila.findIndex(c=>c.id===id);
+        if(i >= 0 && !navVisible(id)){ NAV.pila.splice(i, 1); navZFuera(id); cambio = true; }
+      }
+      for(const id in NAV.capas){
+        if(navVisible(id) && !NAV.pila.some(c=>c.id===id)){ abrirCapa(id); cambio = true; }
+      }
+      if(cambio){ navSincronizar(); navBarra(); }
     });
-    PANELES.forEach(p=>{
-      const el = document.getElementById(p.sheet);
-      if(el) obs.observe(el, { attributes:true, attributeFilter:["class"] });
+    Object.keys(NAV.capas).forEach(id=>{
+      const el = document.getElementById(id);
+      if(el) obs.observe(el, { attributes:true, attributeFilter:["class","style"] });
     });
-
-    window.addEventListener("popstate", ()=>{
-      const p = topPanel();
-      if(p){
-        cerrandoPorAtras = true;
-        p.cerrar();
-        setTimeout(()=>{ cerrandoPorAtras = false; }, 80);
+    window.addEventListener("popstate", (e)=>{
+      const st = e.state;
+      const corte = NAV.yendo ? NAV.corte : Infinity;
+      NAV.yendo = false; clearTimeout(NAV.reloj);
+      if(!st || st.s !== NAV.sesion){
+        // paso de antes de recargar la página (o ajeno): detrás de la base no queda nada nuestro
+        while(NAV.pila.length) navCerrarTope();
+        NAV.hist = 0; navBarra();
+        try{ history.back(); }catch(err){}
         return;
       }
-      if(document.getElementById("panelMas") && document.getElementById("panelMas").style.display === "block"){
-        irAPestanaPrincipal("ciudad");
-        try{ history.pushState({ fonte:true }, ""); }catch(e){}
+      NAV.hist = st.n;
+      // cierra de arriba hacia abajo hasta quedar con n capas (sin tocar lo abierto recién)
+      for(let k = NAV.pila.length - 1; k >= 0 && NAV.pila.length > st.n; k--){
+        if(NAV.pila[k].seq > corte) continue;
+        const c = NAV.pila.splice(k, 1)[0];
+        try{ NAV.capas[c.id].cerrar(); }catch(err){}
+        navZFuera(c.id);
       }
+      if(NAV.pila.length < NAV.hist){ navIr(NAV.pila.length - NAV.hist); }   // "adelante": no se reabre nada
+      else navSincronizar();
+      navBarra();
     });
-    try{ history.replaceState({ fonte:true }, ""); }catch(e){}
+    // base limpia al cargar (un recargue no deja pasos viejos colgando)
+    try{ history.replaceState({ fonte:1, s:NAV.sesion, n:0, capa:"" }, ""); }catch(e){}
+    // lo que ya esté abierto al cargar (pestaña recordada, onboarding, enlace compartido)
+    Object.keys(NAV.capas).forEach(id=>{ if(navVisible(id)) abrirCapa(id); });
+  })();
+
+  // ================= DESLIZAR HACIA ABAJO PARA CERRAR (hojas que suben desde abajo) =================
+  // Se arrastra desde la barra de arriba o desde el contenido cuando está scrolleado al tope;
+  // la hoja sigue al dedo y, pasados ~80 px, se cierra por el mismo camino que "atrás".
+  (function(){
+    const HOJAS = ["sheetAporte","sheetOferta","sheetFechas","sheetForm","sheetTemas","sheetBuscar",
+                   "sheetMios","sheetOficiales","sheetVecinos","sheetMas"];
+    const UMBRAL = 80;
+    HOJAS.forEach(id=>{
+      const hoja = document.getElementById(id);
+      if(!hoja) return;
+      const fondo = document.getElementById(navFondo(id));
+      let y0 = null, x0 = 0, dy = 0, estado = "";   // "" | "arrastre" | "nada"
+      const enTope = (t)=>{
+        if(hoja.scrollTop > 0) return false;
+        for(let el = t; el && el !== hoja; el = el.parentElement){
+          if(el.scrollTop > 0) return false;     // hay algo scrolleado adentro
+        }
+        return true;
+      };
+      hoja.addEventListener("touchstart", (e)=>{
+        if(e.touches.length !== 1 || !hoja.classList.contains("show")){ y0 = null; return; }
+        const t = e.target;
+        if(t.closest && t.closest("input,textarea,select,iframe,#mapaAjuste,[data-sin-deslizar]")){ y0 = null; return; }
+        y0 = e.touches[0].clientY; x0 = e.touches[0].clientX; dy = 0;
+        estado = enTope(t) ? "" : "nada";
+      }, { passive:true });
+      hoja.addEventListener("touchmove", (e)=>{
+        if(y0 === null || estado === "nada") return;
+        const d = e.touches[0].clientY - y0, dx = e.touches[0].clientX - x0;
+        if(estado === ""){
+          if(Math.abs(d) < 8 && Math.abs(dx) < 8) return;
+          if(d <= 0 || Math.abs(dx) > Math.abs(d) || !enTope(e.target)){ estado = "nada"; return; }
+          estado = "arrastre";
+          hoja.style.transition = "none";
+          if(fondo) fondo.style.transition = "none";
+        }
+        dy = Math.max(0, d);
+        if(e.cancelable) e.preventDefault();       // sin scroll ni "tirar para recargar"
+        hoja.style.transform = "translateY(" + dy + "px)";
+        if(fondo) fondo.style.opacity = String(Math.max(0, 1 - dy / 400));
+      }, { passive:false });
+      const fin = ()=>{
+        if(y0 === null) return;
+        y0 = null;
+        if(estado !== "arrastre"){ estado = ""; return; }
+        estado = "";
+        hoja.style.transition = "transform .24s cubic-bezier(.22,.61,.36,1)";
+        if(fondo) fondo.style.transition = "";
+        if(dy > UMBRAL){
+          hoja.style.transform = "translateY(100%)";
+          if(fondo) fondo.style.opacity = "";
+          cerrarCapa(id);
+          setTimeout(()=>{ hoja.style.transform = ""; hoja.style.transition = ""; }, 320);
+        } else {
+          hoja.style.transform = "";
+          if(fondo) fondo.style.opacity = "";
+          setTimeout(()=>{ hoja.style.transition = ""; }, 260);
+        }
+        dy = 0;
+      };
+      hoja.addEventListener("touchend", fin);
+      hoja.addEventListener("touchcancel", fin);
+    });
   })();
 
   // ================= DESLIZAR ENTRE CIUDAD Y MÁS NOTICIAS (arrastre real) =================
@@ -4650,7 +4995,7 @@
       if(val === CLAVE_INTERNA){ localStorage.setItem("fonte_interno", "1"); }
       else if(val === "quitar"){ localStorage.removeItem("fonte_interno"); }
     }catch(e){}
-    try{ history.replaceState(null, "", location.pathname); }catch(e){} // saca el ?staff=... de la barra de direcciones
+    try{ history.replaceState(history.state, "", location.pathname); }catch(e){} // saca el ?staff=... de la barra de direcciones
   }
   revisarClaveStaff();
 
@@ -4705,6 +5050,7 @@
       document.getElementById("masGrupoAjustes").classList.remove("hide");
       document.getElementById("masGrupoFonte").classList.remove("hide");
     }
+    window.cerrarMasPanel = cerrarMas;
     document.getElementById("closeMas").addEventListener("click", cerrarMas);
     document.getElementById("backdropMas").addEventListener("click", cerrarMas);
     // reusa el mismo interruptor de tema que ya existe en la barra de clima
@@ -4783,6 +5129,7 @@
 
   // ================= FLOTANTE DE VECINOS =================
   function abrirVecinos(){
+    navAlFrente("sheetVecinos");
     const body = document.getElementById("vecinosBody");
     let html = "";
 
@@ -4853,18 +5200,18 @@
 
     body.innerHTML = html;
     body.querySelectorAll(".ap-card[data-aporte-id]").forEach(el=>{
-      el.addEventListener("click", ()=>{ cerrarVecinos(); abrirAporte(el.getAttribute("data-aporte-id")); });
+      el.addEventListener("click", ()=>{ abrirAporte(el.getAttribute("data-aporte-id")); });
     });
     body.querySelectorAll(".ap-card[data-inst-id]").forEach(el=>{
-      el.addEventListener("click", ()=>{ cerrarVecinos(); abrirInstitucion(el.getAttribute("data-inst-id")); });
+      el.addEventListener("click", ()=>{ abrirInstitucion(el.getAttribute("data-inst-id")); });
     });
     body.querySelectorAll(".ap-card[data-com-id]").forEach(el=>{
-      el.addEventListener("click", ()=>{ cerrarVecinos(); abrirComunicado(el.getAttribute("data-com-id")); });
+      el.addEventListener("click", ()=>{ abrirComunicado(el.getAttribute("data-com-id")); });
     });
     const vm = document.getElementById("verMisAportes2");
-    if(vm) vm.addEventListener("click", ()=>{ cerrarVecinos(); abrirMisAportes(); });
+    if(vm) vm.addEventListener("click", ()=>{ abrirMisAportes(); });
     const va = document.getElementById("vacioAportar2");
-    if(va) va.addEventListener("click", ()=>{ cerrarVecinos(); document.getElementById("fabAportar").click(); });
+    if(va) va.addEventListener("click", ()=>{ document.getElementById("fabAportar").click(); });
     try{ localStorage.setItem("fonte_aportes_vistos", JSON.stringify((APORTES||[]).map(a=>String(a.id)).slice(0,200))); }catch(e){}
     pintarBadgeVecinos();
     pintarAvisosHome();
@@ -4897,6 +5244,7 @@
 
   // ================= BUSCADOR =================
   function abrirBuscar(){
+    navAlFrente("sheetBuscar");
     document.getElementById("backdropBuscar").classList.add("show");
     document.getElementById("sheetBuscar").classList.add("show");
     setTimeout(()=> document.getElementById("buscarInput").focus(), 260);
@@ -4952,7 +5300,6 @@
     cont.querySelectorAll(".res-row").forEach(el=>{
       el.addEventListener("click", ()=>{
         const r = res[parseInt(el.getAttribute("data-i"),10)];
-        cerrarBuscar();
         if(r.tipo === "noticia") abrir(r.id);
         else if(r.tipo === "aviso") abrirAporte(r.id);
         else if(r.tipo === "oferta") abrirOferta(r.id);
