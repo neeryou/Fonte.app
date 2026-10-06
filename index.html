@@ -375,17 +375,6 @@
   .gloss-pop.open{ display:block; }
 
   /* ===== aportes del pueblo ===== */
-  .avisos-wrap{ padding:14px 0 4px; }
-  .avisos-label{ font-family:var(--sans); font-size:.68rem; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:var(--ink-faint); display:flex; align-items:center; gap:6px; padding:0 0 9px; }
-  .avisos-row{ display:flex; gap:14px; overflow-x:auto; scrollbar-width:none; padding-bottom:2px; }
-  .avisos-row::-webkit-scrollbar{ display:none; }
-  .aviso-mini{ flex:0 0 auto; width:92px; text-align:center; }
-  .aviso-mini .ic-circle{ width:50px; height:50px; margin:0 auto 6px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.35rem; }
-  .aviso-mini .foto-mini{ width:56px; height:56px; margin:0 auto 6px; border-radius:14px; position:relative; background-size:cover; background-position:center; background-color:var(--paper-2); }
-  .aviso-mini .foto-mini .badge{ position:absolute; bottom:-4px; right:-4px; width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:.72rem; border:2px solid var(--paper); }
-  .aviso-mini .cat{ font-family:var(--sans); font-size:.68rem; font-weight:700; color:var(--ink); line-height:1.22; }
-  .aviso-mini .m{ font-family:var(--sans); font-size:.58rem; color:var(--ink-faint); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .aviso-mini .nuevo{ display:inline-block; margin-top:4px; font-family:var(--sans); font-size:.5rem; font-weight:800; text-transform:uppercase; letter-spacing:.02em; color:#fff; background:var(--urgente); padding:2px 6px; border-radius:999px; }
   .fab{ display:none; }
 
   /* ===== ofertas de comercios locales (contenido pago, marcado como tal) ===== */
@@ -409,7 +398,7 @@
   .inst-row::-webkit-scrollbar{ display:none; }
 
   /* ===== instituciones en Ciudad: riel ocultable ===== */
-  .inst-home{ margin:2px 16px 8px; }
+  .inst-home{ margin:2px 18px 8px; }
   .inst-home-bar{ width:100%; display:flex; align-items:center; gap:10px;
     background:none; border:0; padding:10px 0 8px; cursor:pointer; color:var(--ink); }
   .inst-home-bar .ln{ flex:1; height:.5px; background:var(--ink); opacity:.55; }
@@ -430,7 +419,6 @@
   .inst-home-list::-webkit-scrollbar{ display:none; }
   .inst-home.open .inst-home-list{ display:flex; }
   .inst-home.has-avisos #urgentesWrap[style*="block"]{ display:block !important; }
-  .inst-home.has-avisos #urgentesWrap .urg-row{ padding:6px 0 2px; }
   .inst-home:not(.open) .inst-home-list{ display:none; }
   .inst-cell{ display:none; }
   .inst-pill{ flex:0 0 auto; display:flex; align-items:center; gap:8px; padding:7px 10px 7px 7px;
@@ -495,7 +483,7 @@
   /* Filetes capilares: separan sin pesar */
   .zitem, .li, .aporte-full, .f-com, .com-row, .ag-row, .res-row{ border-top-width:.5px !important; }
   /* Volanta: versalitas espaciadas, no mayúsculas apretadas */
-  .kicker, .zlabel .nm, .section-eyebrow .t, .avisos-label, .ofertas-label, .fav-title{
+  .kicker, .zlabel .nm, .section-eyebrow .t, .avh-label .t, .ofertas-label, .fav-title{
     letter-spacing:.16em; }
   /* Numeración de las notas secundarias (la app usa .li) */
   .zlist{ counter-reset:nota; }
@@ -575,31 +563,73 @@
   .instalar .pasos{ font-family:var(--sans); font-size:.73rem; line-height:1.6; }
   .instalar .pasos b{ color:#fff; }
 
-  /* ===== avisos urgentes deslizables ===== */
-  .urg-row{ display:flex; gap:8px; overflow-x:auto; padding:10px 16px 2px; scrollbar-width:none; scroll-snap-type:x mandatory; }
-  .urg-row::-webkit-scrollbar{ display:none; }
-  .urg-card{ flex:0 0 auto; width:calc(50% - 12px); min-width:148px; scroll-snap-align:start; background:color-mix(in srgb,var(--urgente) 6%,var(--paper-2));
-    border:1px solid color-mix(in srgb,var(--urgente) 30%,var(--line)); border-radius:11px; padding:9px 10px 10px; position:relative; }
-  .urg-card .lbl{ display:inline-block; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; gap:4px; background:var(--urgente); color:#fff;
-    font-family:var(--sans); font-size:.5rem; font-weight:800; text-transform:uppercase; letter-spacing:.05em; padding:2px 7px; border-radius:999px; }
-  .urg-card .urg-thumb{ width:100%; height:72px; object-fit:cover; border-radius:7px; margin-top:7px; display:block; }
-  .urg-card .h{ font-family:var(--serif); font-weight:700; font-size:.78rem; margin-top:6px; line-height:1.22; color:var(--ink);
-    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
-  .urg-card .p{ font-family:var(--sans); font-size:.66rem; color:var(--ink-soft); margin-top:3px; line-height:1.3;
-    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
-  .urg-card .f{ font-family:var(--sans); font-size:.61rem; color:var(--ink-faint); margin-top:7px; display:flex; align-items:center; gap:5px; flex-wrap:wrap; }
-  .urg-card .f .verif-badge{ width:13px; height:13px; background:var(--barrio); }
-  .urg-card .inst-pill{
-    display:inline-flex; align-items:center; gap:5px; font-family:var(--sans); font-size:.6rem; font-weight:700;
-    color:var(--ink); background:var(--paper); border:1px solid var(--line-strong); border-radius:999px;
-    padding:3px 9px; max-width:100%;
-  }
-  .urg-card .inst-pill .n{
-    min-width:16px; height:16px; padding:0 5px; border-radius:999px; background:var(--terracota); color:#fff;
-    font-size:.52rem; font-weight:800; display:inline-flex; align-items:center; justify-content:center;
-  }
-  .urg-card.oficial .inst-pill{ border-color:color-mix(in srgb,var(--inst,var(--barrio)) 40%,var(--line)); }
-  .urg-card.oficial .lbl{ background:var(--inst,var(--barrio)); }
+  /* ===== Avisos de hoy en Inicio: dos bloques paralelos (Oficial / Vecinos), estilo diario ===== */
+  .avh{ --avh-c:var(--region); }
+  .avh.vec{ --avh-c:var(--terracota); }
+  .avh-label{ display:flex; align-items:center; gap:10px; padding:12px 0 10px; }
+  .avh-label .t{ display:flex; align-items:center; gap:7px; font-family:var(--sans); font-size:.58rem; font-weight:800;
+    letter-spacing:.18em; text-transform:uppercase; color:var(--ink); white-space:nowrap; }
+  .avh-label .ln{ flex:1; height:.5px; background:var(--ink); opacity:.55; }
+  .avh-more{ font-family:var(--sans); font-size:.7rem; font-weight:700; color:var(--avh-c); white-space:nowrap;
+    background:none; border:0; padding:0; cursor:pointer; text-decoration:none; letter-spacing:0; text-transform:none; }
+  .avh-more-row{ display:flex; justify-content:flex-end; padding:0 0 9px; }
+  .avh-dot{ display:inline-block; width:7px; height:7px; border-radius:50%; background:var(--terracota); flex:0 0 auto; }
+  .avh-sello{ display:block; width:13px; height:13px; flex:0 0 auto; color:var(--region); }
+  .avh-sello.sm{ width:12px; height:12px; }
+  /* destacado */
+  .avh-feat{ display:grid; grid-template-columns:minmax(0,1fr); gap:12px; position:relative; padding:2px 0 11px; cursor:pointer; }
+  .avh-feat.con-foto{ grid-template-columns:104px minmax(0,1fr); }
+  .avh-feat .ph{ width:104px; height:104px; border-radius:3px; background:var(--paper-2) center/cover no-repeat;
+    box-shadow:inset 0 0 0 .5px rgba(20,18,13,.12); }
+  .avh-feat .tx{ min-width:0; display:flex; flex-direction:column; }
+  .avh-feat .k{ display:flex; align-items:flex-start; gap:5px; padding-right:26px; font-family:var(--sans); font-size:.56rem;
+    font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--avh-c); line-height:1.3; }
+  .avh-feat .k .avh-sello{ margin-top:-1px; }
+  .avh-feat .k .avh-dot{ margin-top:1px; }
+  .avh-feat .k b{ font-weight:800; }
+  .avh-feat .k b.urg{ color:var(--urgente); }
+  .avh-feat .h{ font-family:var(--serif); font-weight:700; font-size:1.06rem; line-height:1.16; letter-spacing:-.01em; margin:5px 0 0;
+    color:var(--ink); display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+  .avh-feat .p{ font-family:var(--sans); font-size:.72rem; color:var(--ink-soft); margin-top:4px; line-height:1.35;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .avh-feat .m{ display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-top:auto; padding-top:5px;
+    font-family:var(--mono); font-size:.6rem; color:var(--ink-faint); }
+  .avh-feat .m .sep{ width:2px; height:2px; border-radius:50%; background:var(--ink-20); }
+  .avh-feat .m .nuevo{ font-family:var(--sans); font-weight:700; color:var(--terracota); }
+  .avh-feat .eye{ position:absolute; top:-4px; right:-6px; width:32px; height:28px; display:flex; align-items:center; justify-content:center;
+    background:none; border:0; padding:0; color:var(--ink-faint); cursor:pointer; }
+  .avh-feat .eye svg{ display:block; }
+  /* "N vecinos lo confirmaron" */
+  .avh-conf{ display:flex; align-items:center; gap:5px; margin-top:4px; font-family:var(--sans); font-size:.6rem; font-weight:600; color:var(--terracota); }
+  .avh-conf .av{ display:flex; }
+  .avh-conf .av i{ width:9px; height:9px; border-radius:50%; border:1.2px solid var(--paper); margin-left:-3px;
+    background:color-mix(in srgb,var(--terracota) 55%,var(--paper)); }
+  .avh-conf .av i:first-child{ margin-left:0; background:var(--terracota); }
+  .avh-conf .av i:nth-child(3){ background:color-mix(in srgb,var(--terracota) 30%,var(--paper)); }
+  /* filas compactas */
+  .avh-rows{ border-top:.5px solid var(--line-strong); }
+  .avh-row{ display:grid; grid-template-columns:14px minmax(0,1fr) auto; column-gap:9px; align-items:start; padding:8px 0;
+    border-top:.5px solid var(--line); cursor:pointer; }
+  .avh-row:first-child{ border-top:0; }
+  .avh-row .mk{ display:flex; justify-content:center; padding-top:1px; }
+  .avh-row .mk .avh-dot{ width:8px; height:8px; margin-top:2px; }
+  .avh-row .bd{ min-width:0; }
+  .avh-row .src{ font-family:var(--sans); font-size:.55rem; font-weight:700; letter-spacing:.09em; text-transform:uppercase;
+    color:var(--avh-c); line-height:1.25; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .avh-row .src b.urg{ font-weight:800; color:var(--urgente); }
+  .avh-row .tt{ font-family:var(--serif); font-weight:600; font-size:.9rem; line-height:1.22; margin-top:2px; color:var(--ink);
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .avh-row .ex{ font-family:var(--sans); font-size:.68rem; color:var(--ink-soft); margin-top:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .avh-row .tm{ font-family:var(--mono); font-size:.58rem; color:var(--ink-faint); white-space:nowrap; padding-top:1px; }
+  .avh-row .tm.hoy{ font-family:var(--sans); font-size:.56rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--avh-c); }
+  .avh-end{ border-top:1px solid var(--ink); }
+  /* en la lista completa (Ver todos) los títulos pueden ir en dos líneas */
+  .avh-lista .avh-row{ padding:10px 0; }
+  .avh-lista .avh-row .tt{ white-space:normal; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
+  .avh-lista-nota{ font-family:var(--sans); font-size:.64rem; color:var(--ink-faint); line-height:1.5; margin:14px 0 0; display:flex; gap:6px; align-items:flex-start; }
+  #urgentesWrap .avh{ padding-top:2px; }
+  #avisosWrap.avh{ padding-bottom:4px; }
+  .inst-home:not(.has-avisos) + #avisosWrap .avh-label{ padding-top:2px; }
   .svc-search{ width:100%; font-family:var(--sans); font-size:.8rem; color:var(--ink); background:var(--paper);
     border:1px solid var(--line-strong); border-radius:10px; padding:11px 13px; margin:0 0 12px; }
   .svc-card{ background:transparent; border-radius:0; margin-bottom:0; overflow:hidden; border-bottom:.5px solid var(--line); }
@@ -617,17 +647,6 @@
   .svc-fila .h{ font-family:var(--mono); font-size:.72rem; color:var(--ink-soft); text-align:right; white-space:nowrap; }
   .svc-fila.oculta{ display:none; }
   .svc-fila.match .b{ background:#FFE8A3; border-radius:3px; padding:0 3px; }
-  .urg-card .x{ position:absolute; bottom:8px; right:8px; background:color-mix(in srgb,var(--paper) 80%,transparent);
-    border:0; color:var(--ink-soft); padding:4px; display:flex; border-radius:4px; }
-  .urg-card .x svg{ display:block; }
-  /* comunicado oficial (no urgente): misma tarjeta, sin rojo */
-  .urg-card.oficial{ background:color-mix(in srgb,var(--inst,var(--barrio)) 16%,var(--paper));
-    border-color:color-mix(in srgb,var(--inst,var(--barrio)) 45%,var(--line)); }
-  .urg-card.oficial .lbl{ background:var(--inst,var(--barrio)); }
-  .dots{ display:flex; justify-content:center; gap:4px; padding:9px 0 0; }
-  .dots i{ width:5px; height:5px; border-radius:50%; background:var(--line-strong); transition:.2s; }
-  .dots i.on{ background:var(--ink-soft); width:15px; border-radius:999px; }
-  .dots i.on.urg{ background:var(--urgente); }
 
   /* ===== contador de vecinos en la barra inferior ===== */
   .bn-badge{ position:absolute; top:-1px; right:calc(50% - 17px); min-width:16px; height:16px; padding:0 4px;
@@ -1076,20 +1095,19 @@
     <div class="inst-lbl" id="instHomeSub">Oficial</div>
     <div class="inst-home-list" id="institucionesRow"></div>
     <div id="urgentesWrap" style="display:none">
-      <div class="urg-row" id="urgRow"></div>
-      <div class="dots" id="urgDots"></div>
+      <div class="avh" id="urgRow"></div>
     </div>
     <div class="inst-home-hint" style="display:none"></div>
   </div>
 
+  <div class="wrap avh vec" id="avisosWrap" style="display:none">
+    <div class="avh-label"><span class="t"><span class="avh-dot"></span>Avisos de vecinos</span><span class="ln"></span><a class="avh-more" id="avisosVerTodos" href="#">Ver todos ›</a></div>
+    <div id="avisosRow"></div>
+    <div class="avh-end"></div>
+  </div>
+
   <div class="wrap"><div class="urgent-band" id="urgentBand"><div class="band-head">⚡ Cerca tuyo ahora</div><div class="band-list"></div></div></div>
 
-  <div class="wrap" id="avisosWrap" style="display:none;padding:14px 0 4px;">
-    <div class="avisos-label">📍 Avisos de vecinos
-      <a id="avisosVerTodos" style="margin-left:auto;font-weight:700;color:var(--region);text-transform:none;letter-spacing:0;font-size:.72rem">Ver todos ›</a>
-    </div>
-    <div class="avisos-row" id="avisosRow"></div>
-  </div>
 
   <main class="wrap" id="feedCiudad">
     <div class="state"><div class="spinner"></div><div class="big">Cargando noticias…</div></div>
@@ -1317,6 +1335,12 @@
 <div class="sheet2" id="sheetMios">
   <div class="sheet2-top"><span class="b">Mis aportes</span><button class="close" id="closeMios">Cerrar ✕</button></div>
   <div class="sheet2-body" id="miosBody"></div>
+</div>
+
+<div class="backdrop" id="backdropOficiales"></div>
+<div class="sheet2" id="sheetOficiales">
+  <div class="sheet2-top"><span class="b">Avisos oficiales de hoy</span><button class="close" id="closeOficiales">Cerrar ✕</button></div>
+  <div class="sheet2-body avh avh-lista" id="oficialesBody"></div>
 </div>
 
 <div class="backdrop" id="backdropVecinos"></div>
@@ -2498,26 +2522,50 @@
   function pintarAvisosHome(){
     const wrap = document.getElementById("avisosWrap");
     if(!wrap) return;
+    const row = document.getElementById("avisosRow");
     const vistos = aportesVistos();
     const nuevos = (APORTES||[]).filter(a => a.estado !== "resuelto" && !vistos.has(String(a.id))).slice(0, 8);
-    if(!nuevos.length){ wrap.style.display = "none"; document.getElementById("avisosRow").innerHTML = ""; return; }
+    if(!nuevos.length){ wrap.style.display = "none"; row.innerHTML = ""; return; }
     wrap.style.display = "block";
-    document.getElementById("avisosRow").innerHTML = nuevos.map(a=>{
+    // destacado: el más confirmado por vecinos; a igualdad, el más nuevo
+    const orden = nuevos.slice().sort((a,b)=>{
+      const ca = CONFIRMACIONES[a.id] || 0, cb = CONFIRMACIONES[b.id] || 0;
+      if(ca !== cb) return cb - ca;
+      return new Date(b.created_at||0) - new Date(a.created_at||0);
+    });
+    const feat = orden[0];
+    const resto = nuevos.filter(a => a !== feat).slice(0, 3);
+    const datos = (a)=>{
       const cat = CAT_APORTE.find(c=>c.id===a.categoria) || {label:"Aporte", icon:"📍"};
-      const color = CAT_APORTE_COLOR[a.categoria] || "var(--ink-faint)";
-      const esReciente = a.created_at && (Date.now() - new Date(a.created_at).getTime()) < 20*60000;
-      // con foto: la miniatura con el ícono como placa en la esquina. sin foto: el círculo de color de siempre.
-      const imagen = a.foto_url
-        ? '<div class="foto-mini" style="background-image:url(\''+esc(a.foto_url)+'\')"><span class="badge" style="background:'+color+'">'+cat.icon+'</span></div>'
-        : '<span class="ic-circle" style="background:color-mix(in srgb,'+color+' 16%,var(--paper));color:'+color+'">'+cat.icon+'</span>';
-      return '<a class="aviso-mini" data-aporte-id="'+esc(a.id)+'">'
-        + imagen
-        + '<div class="cat">'+esc(cat.label)+'</div>'
-        + (a.lugar_texto ? '<div class="m">'+esc(a.lugar_texto)+'</div>' : '<div class="m">'+tiempoDesde(a.created_at)+'</div>')
-        + (esReciente ? '<span class="nuevo">Recién publicado</span>' : '')
-        + '</a>';
-    }).join("");
-    document.querySelectorAll("#avisosRow .aviso-mini").forEach(el=>{
+      return { cat, titulo: a.titulo || cat.label, lugar: a.lugar_texto || cat.label, nC: CONFIRMACIONES[a.id] || 0 };
+    };
+    const f = datos(feat);
+    const foto = fotosDe(feat)[0] || "";
+    const esReciente = feat.created_at && (Date.now() - new Date(feat.created_at).getTime()) < 20*60000;
+    const hora = horaAviso(feat.created_at);
+    const desde = tiempoDesde(feat.created_at);
+    let html = '<article class="avh-feat'+(foto?" con-foto":"")+'" data-aporte-id="'+esc(feat.id)+'">'
+      + (foto ? '<div class="ph" style="background-image:url(\''+esc(foto)+'\')"></div>' : '')
+      + '<div class="tx">'
+      + '<div class="k"><span class="avh-dot"></span><span><b>Vecino</b> · '+esc(f.lugar)+'</span></div>'
+      + '<h3 class="h">'+esc(f.titulo)+'</h3>'
+      + (feat.descripcion ? '<div class="p">'+esc(feat.descripcion)+'</div>' : '')
+      + (f.nC ? htmlConfirmaciones(f.nC) : '')
+      + '<div class="m">'+[hora, (desde && desde !== hora ? desde : "")].filter(Boolean).join('<span class="sep"></span>')
+      + (esReciente ? '<span class="sep"></span><span class="nuevo">Recién publicado</span>' : '') + '</div>'
+      + '</div></article>';
+    if(resto.length){
+      html += '<div class="avh-rows">' + resto.map(a=>{
+        const d = datos(a);
+        return '<div class="avh-row" data-aporte-id="'+esc(a.id)+'">'
+          + '<span class="mk"><span class="avh-dot"></span></span>'
+          + '<div class="bd"><div class="src">Vecino · '+esc(d.lugar)+'</div><div class="tt">'+esc(d.titulo)+'</div>'
+          + (d.nC ? htmlConfirmaciones(d.nC) : '') + '</div>'
+          + '<span class="tm">'+horaAviso(a.created_at)+'</span></div>';
+      }).join("") + '</div>';
+    }
+    row.innerHTML = html;
+    row.querySelectorAll("[data-aporte-id]").forEach(el=>{
       el.addEventListener("click", ()=>{
         const id = el.getAttribute("data-aporte-id");
         marcarAporteVisto(id);
@@ -2526,6 +2574,23 @@
         abrirAporte(id);
       });
     });
+  }
+  function htmlConfirmaciones(n){
+    return '<div class="avh-conf"><span class="av"><i></i>'+(n>1?'<i></i>':'')+(n>2?'<i></i>':'')+'</span>'
+      + n + (n===1 ? ' vecino lo confirmó' : ' vecinos lo confirmaron') + '</div>';
+  }
+  // Hora corta para las filas de avisos: "14:20" si es de hoy, "Ayer", día de la semana o fecha.
+  function horaAviso(iso){
+    if(!iso) return "";
+    const d = new Date(iso);
+    if(isNaN(d)) return "";
+    const hoy = new Date(); hoy.setHours(0,0,0,0);
+    const dia = new Date(d); dia.setHours(0,0,0,0);
+    const dif = Math.round((hoy - dia) / 86400000);
+    if(dif <= 0) return d.toLocaleTimeString("es-AR", { hour:"2-digit", minute:"2-digit", hour12:false });
+    if(dif === 1) return "Ayer";
+    if(dif < 7) return d.toLocaleDateString("es-AR", { weekday:"short" }).replace(".","").replace(/^./, c=>c.toUpperCase());
+    return d.toLocaleDateString("es-AR", { day:"numeric", month:"short" }).replace(".","");
   }
   document.getElementById("avisosVerTodos").addEventListener("click", (e)=>{ e.preventDefault(); abrirVecinos(); });
   function pintarBadgeVecinos(){
@@ -2835,64 +2900,72 @@
       };
     });
   }
-  function renderComunicadosEn(){
-    const wrap = document.getElementById("urgentesWrap");
-    const row = document.getElementById("urgRow");
-    const dots = document.getElementById("urgDots");
-    const lista = comunicadosVigentes().concat(fechasHoyPortada()).slice().sort((a,b)=>{
+  // sello oficial (azul), el mismo que en la maqueta "Avisos de hoy"
+  const SELLO_OFICIAL = (cls)=> '<svg class="avh-sello'+(cls?" "+cls:"")+'" viewBox="0 0 24 24" aria-hidden="true">'
+    + '<path fill="currentColor" d="M12 1.6l2.3 1.7 2.85-.2.95 2.7 2.55 1.3-.6 2.8 1.45 2.5-1.95 2.1.1 2.85-2.75.8-1.45 2.5-2.8-.6L12 22.4l-2.3-1.7-2.8.6-1.45-2.5-2.75-.8.1-2.85L.85 12.6 2.3 10.1l-.6-2.8 2.55-1.3.95-2.7 2.85.2z"/>'
+    + '<path d="M7.6 12.3l3 3 5.8-6" fill="none" stroke="#fff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  const OJO_SVG = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+  // Misma selección y orden de siempre: urgentes, fechas de hoy, el resto; más nuevo primero.
+  function listaComunicadosHome(){
+    return comunicadosVigentes().concat(fechasHoyPortada()).slice().sort((a,b)=>{
       const ta = a.__tipo==="fecha" ? 2 : (a.urgente ? 3 : 1);
       const tb = b.__tipo==="fecha" ? 2 : (b.urgente ? 3 : 1);
       if(ta !== tb) return tb - ta;
       return new Date(b.created_at||0) - new Date(a.created_at||0);
     });
-    if(!lista.length){ wrap.style.display = "none"; row.innerHTML = ""; dots.innerHTML = ""; return; }
-    wrap.style.display = "block";
-    function countHoyInst(c){
-      const key = c.institucion_id ? ("id:"+c.institucion_id) : ("nm:"+(c.institucion||"").toLowerCase());
-      const hoy = new Date(); hoy.setHours(0,0,0,0);
-      return comunicadosVigentes().filter(x=>{
-        const k2 = x.institucion_id ? ("id:"+x.institucion_id) : ("nm:"+(x.institucion||"").toLowerCase());
-        if(k2 !== key) return false;
-        if(!x.created_at) return true;
-        const d = new Date(x.created_at); d.setHours(0,0,0,0);
-        return d.getTime() === hoy.getTime();
-      }).length;
+  }
+  function filaComunicado(c, conExtracto){
+    const nom = c.institucion || "Institución";
+    const esFecha = c.__tipo === "fecha";
+    const marca = c.urgente ? '<b class="urg">Urgente</b> · ' : '';
+    const tm = esFecha ? '<span class="tm hoy">Hoy</span>' : '<span class="tm">'+horaAviso(c.created_at)+'</span>';
+    return '<div class="avh-row" data-com-id="'+esc(c.id)+'">'
+      + '<span class="mk">'+SELLO_OFICIAL("sm")+'</span>'
+      + '<div class="bd"><div class="src">'+marca+esc(nom)+'</div><div class="tt">'+esc(c.titulo||"")+'</div>'
+      + (conExtracto && c.texto ? '<div class="ex">'+esc(c.texto)+'</div>' : '') + '</div>'
+      + tm + '</div>';
+  }
+  function abrirItemComunicado(lista, id){
+    id = String(id||"");
+    if(id.indexOf("fecha-")===0){
+      const item = lista.find(x=>String(x.id)===id);
+      if(item && item.institucion_id) abrirInstitucion(item.institucion_id);
+      return;
     }
-    row.innerHTML = lista.map(c=>{
-      const esUrg = !!c.urgente;
-      const nom = c.institucion || "Institución";
-      const col = c.color || colorDeInst(c.institucion_id, nom);
-      const marca = (c.__tipo==="fecha" ? "Hoy · " : (esUrg ? "Urgente · " : "")) + nom;
-      return '<div class="urg-card'+(esUrg?"":" oficial")+'" data-com-id="'+esc(c.id)+'" style="--inst:'+col+'">'
-        + '<button class="x" data-cerrar="'+esc(c.id)+'" aria-label="Ocultar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button>'
-        + '<span class="lbl">'+esc(marca)+'</span>'
-        + (c.imagen_url ? '<img class="urg-thumb" src="'+esc(c.imagen_url)+'" alt="">' : '')
-        + '<div class="h">'+esc(c.titulo||"")+'</div>'
-        + '<div class="p">'+esc((c.texto||"").length > 130 ? (c.texto||"").slice(0,130)+"…" : (c.texto||""))+'</div>'
-        + '<div class="f"><span class="verif-badge">'+check+'</span><span>'+tiempoDesde(c.created_at)+'</span></div>'
-        + '</div>';
-    }).join("");
-    dots.innerHTML = lista.length > 1
-      ? lista.map((c,i)=>'<i class="'+(i===0?"on":"")+(c.urgente?" urg":"")+'"></i>').join("")
-      : "";
-    row.querySelectorAll(".urg-card").forEach(el=>{
+    abrirComunicado(id);
+  }
+  function renderComunicadosEn(){
+    const wrap = document.getElementById("urgentesWrap");
+    const row = document.getElementById("urgRow");
+    const lista = listaComunicadosHome();
+    if(!lista.length){ wrap.style.display = "none"; row.innerHTML = ""; return; }
+    wrap.style.display = "block";
+    const c = lista[0];
+    const nom = c.institucion || "Institución";
+    const esFecha = c.__tipo === "fecha";
+    const marca = esFecha ? '<b>Hoy</b> · ' : (c.urgente ? '<b class="urg">Urgente</b> · ' : '');
+    const foto = c.imagen_url || "";
+    const hora = esFecha ? "Hoy" : horaAviso(c.created_at);
+    const desde = esFecha ? "" : tiempoDesde(c.created_at);
+    let html = '<article class="avh-feat'+(foto?" con-foto":"")+'" data-com-id="'+esc(c.id)+'">'
+      + (foto ? '<div class="ph" style="background-image:url(\''+esc(foto)+'\')"></div>' : '')
+      + '<div class="tx">'
+      + '<div class="k">'+SELLO_OFICIAL()+'<span>'+marca+esc(nom)+'</span></div>'
+      + '<h3 class="h">'+esc(c.titulo||"")+'</h3>'
+      + (c.texto ? '<div class="p">'+esc(c.texto)+'</div>' : '')
+      + '<div class="m">'+[hora, (desde && desde !== hora ? desde : "")].filter(Boolean).join('<span class="sep"></span>')+'</div>'
+      + '</div>'
+      + '<button type="button" class="eye" data-cerrar="'+esc(c.id)+'" aria-label="Ocultar este aviso">'+OJO_SVG+'</button>'
+      + '</article>';
+    const resto = lista.slice(1, 4);
+    if(resto.length) html += '<div class="avh-rows">' + resto.map(x=>filaComunicado(x, false)).join("") + '</div>';
+    if(lista.length > 4) html += '<div class="avh-more-row"><button type="button" class="avh-more" id="oficialVerTodos" aria-label="Ver los '+lista.length+' avisos oficiales">Ver todos ›</button></div>';
+    html += '<div class="avh-end"></div>';
+    row.innerHTML = html;
+    row.querySelectorAll("[data-com-id]").forEach(el=>{
       el.addEventListener("click", (e)=>{
-        if(e.target.hasAttribute("data-cerrar") || e.target.closest("[data-cerrar]")) return;
-        if(e.target.closest("[data-ir-inst]")) return;
-        const id = el.getAttribute("data-com-id") || "";
-        if(id.indexOf("fecha-")===0){
-          const item = lista.find(x=>String(x.id)===id);
-          if(item && item.institucion_id) abrirInstitucion(item.institucion_id);
-          return;
-        }
-        abrirComunicado(id);
-      });
-    });
-    row.querySelectorAll("[data-ir-inst]").forEach(b=>{
-      b.addEventListener("click", (e)=>{
-        e.stopPropagation();
-        const id = b.getAttribute("data-ir-inst");
-        if(id && typeof abrirInstitucion === "function") abrirInstitucion(id);
+        if(e.target.closest("[data-cerrar]")) return;
+        abrirItemComunicado(lista, el.getAttribute("data-com-id"));
       });
     });
     row.querySelectorAll("[data-cerrar]").forEach(b=>{
@@ -2908,11 +2981,29 @@
         if(typeof pintarInstituciones === "function") pintarInstituciones();
       });
     });
-    row.onscroll = ()=>{
-      const i = Math.round(row.scrollLeft / Math.max(1, row.clientWidth * 0.9));
-      [...dots.children].forEach((d,k)=> d.classList.toggle("on", k === Math.min(i, lista.length-1)));
-    };
+    const vt = document.getElementById("oficialVerTodos");
+    if(vt) vt.addEventListener("click", (e)=>{ e.stopPropagation(); abrirOficiales(); });
   }
+  // "Ver todos" de Oficial: todos los avisos vigentes (24 h) en el mismo formato de fila
+  function abrirOficiales(){
+    const lista = listaComunicadosHome();
+    const body = document.getElementById("oficialesBody");
+    body.innerHTML = (lista.length
+        ? '<div class="avh-rows" style="border-top:0">' + lista.map(x=>filaComunicado(x, true)).join("") + '</div>'
+        : '<p class="foot-note">No hay avisos oficiales en las últimas 24 horas.</p>')
+      + '<p class="avh-lista-nota">'+SELLO_OFICIAL("sm")+'<span>Publicados por instituciones verificadas en las últimas 24 h. Los anteriores quedan en la ficha de cada institución.</span></p>';
+    body.querySelectorAll("[data-com-id]").forEach(el=>{
+      el.addEventListener("click", ()=>{ cerrarOficiales(); abrirItemComunicado(lista, el.getAttribute("data-com-id")); });
+    });
+    document.getElementById("backdropOficiales").classList.add("show");
+    document.getElementById("sheetOficiales").classList.add("show");
+  }
+  function cerrarOficiales(){
+    document.getElementById("backdropOficiales").classList.remove("show");
+    document.getElementById("sheetOficiales").classList.remove("show");
+  }
+  document.getElementById("closeOficiales").addEventListener("click", cerrarOficiales);
+  document.getElementById("backdropOficiales").addEventListener("click", cerrarOficiales);
 
   let comunicadoAbierto = null;
   function abrirComunicado(id){
@@ -4163,6 +4254,7 @@
       { sheet:"sheetInstitucion",  cerrar:()=>cerrarInstitucion() },
       { sheet:"sheetFechas",       cerrar:()=>cerrarFechas() },
       { sheet:"sheetVecinos",      cerrar:()=>cerrarVecinos() },
+      { sheet:"sheetOficiales",    cerrar:()=>cerrarOficiales() },
       { sheet:"sheetMios",         cerrar:()=>cerrarMios() },
       { sheet:"sheetTemas",        cerrar:()=>cerrarTemas() },
       { sheet:"sheetBuscar",       cerrar:()=>cerrarBuscar() },
@@ -4170,7 +4262,7 @@
       { sheet:"lightbox",          cerrar:()=>cerrarFoto() },
     ];
     // Arriba visualmente: comunicado encima de institución
-    const ORDEN = ["lightbox","sheetForm","sheetBuscar","sheetTemas","sheetMios","sheetVecinos","sheetFechas","sheetComunicado","sheetInstitucion","sheetNota","sheetOferta"];
+    const ORDEN = ["lightbox","sheetForm","sheetBuscar","sheetTemas","sheetMios","sheetVecinos","sheetOficiales","sheetFechas","sheetComunicado","sheetInstitucion","sheetNota","sheetOferta"];
     function topPanel(){
       for(const id of ORDEN){
         const item = PANELES.find(p=>p.sheet===id);
@@ -4268,7 +4360,7 @@
     }
 
     function empieza(e){
-      if(e.target.closest(".urg-row, .inst-row, .inst-home, .inst-home-list, #institucionesRow, #institucionesWrap, .ofertas-bar, .gal-row, .mosaic-grid, .mosaic-card, .waves-in, .cats-in, .fav-in, .sheet, .sheet2, .lightbox, .backdrop")){
+      if(e.target.closest(".inst-row, .inst-home, .inst-home-list, #institucionesRow, #institucionesWrap, .ofertas-bar, .gal-row, .mosaic-grid, .mosaic-card, .waves-in, .cats-in, .fav-in, .sheet, .sheet2, .lightbox, .backdrop")){
         siguiendo = false; return;
       }
       // Si quedó un gesto a medias, no arrancar otro encima
