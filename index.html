@@ -323,34 +323,43 @@
   /* ===== variantes de nota dentro de zlist (cita / dato destacado) ===== */
   .li-quote{ font-family:var(--serif); font-style:italic; font-size:.98rem; line-height:1.32; color:var(--ink); margin:6px 0 4px; padding-left:14px; border-left:2px solid var(--ac,var(--ink-faint)); }
   .li-quote-who{ display:block; font-family:var(--sans); font-style:normal; font-size:.64rem; color:var(--ink-faint); margin-top:5px; }
+  /* dato destacado: filete doble (grueso + fino) arriba y abajo, número grande. Sin cápsulas ni rojo. */
   .li-databig{
     text-align:left;
-    background:transparent;
     border-radius:0;
-    padding:14px 0 12px !important;
+    padding:16px 0 15px !important;
     margin-left:0;
-    border-top:1px solid var(--ink);
-    border-bottom:1px solid var(--ink);
+    border-top:0 !important;
+    border-bottom:0;
+    position:relative;
+    background:
+      linear-gradient(var(--ink),var(--ink)) top/100% 3px no-repeat,
+      linear-gradient(var(--ink),var(--ink)) 0 5px/100% 1px no-repeat,
+      linear-gradient(var(--ink),var(--ink)) 0 calc(100% - 5px)/100% 1px no-repeat,
+      linear-gradient(var(--ink),var(--ink)) bottom/100% 3px no-repeat;
   }
   .li-databig::before{ display:none; }
+  .li-databig + .li{ border-top:0; }
+  .zlist .li.li-databig{ padding-left:0 !important; }
   .databig-lbl{
     font-family:var(--sans);
     font-size:.62rem;
-    font-weight:700;
-    color:var(--ink-soft);
+    font-weight:800;
+    color:var(--ink);
     text-transform:uppercase;
-    letter-spacing:.08em;
-    margin:0 0 6px;
+    letter-spacing:.12em;
+    margin:4px 0 2px;
   }
   .databig-num{
     font-family:var(--serif);
-    font-weight:700;
-    font-size:2.1rem;
+    font-weight:800;
+    font-size:3.4rem;
+    letter-spacing:-.03em;
     color:var(--ink);
-    line-height:1;
-    margin:0 0 8px;
+    line-height:.95;
+    margin:0 0 6px;
   }
-  .li-databig .h{ margin-top:0; }
+  .li-databig .h{ margin-top:0; font-size:1.02rem; line-height:1.2; }
   .databig-meta{
     font-family:var(--sans);
     font-size:.62rem;
@@ -631,6 +640,23 @@
   .avh-lista .avh-row{ padding:10px 0; }
   .avh-lista .avh-row .tt{ white-space:normal; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
   .avh-lista-nota{ font-family:var(--sans); font-size:.64rem; color:var(--ink-faint); line-height:1.5; margin:14px 0 0; display:flex; gap:6px; align-items:flex-start; }
+  /* Oficial: franja de 4 px, ícono y nombre en el color de cada institución ("URGENTE" sigue en rojo) */
+  .avh-feat.of, .avh-row.of{ --instc:var(--inst,var(--region)); }
+  [data-tema="oscuro"] .avh-feat.of, [data-tema="oscuro"] .avh-row.of{ --instc:color-mix(in srgb,var(--inst,var(--region)) 55%,var(--ink)); }
+  .avh-feat.of{ border-left:4px solid var(--instc); padding-left:10px; margin-top:2px; }
+  .avh-feat.of .k{ align-items:center; color:var(--instc); }
+  .avh-feat.of .k b.in{ font-weight:800; color:var(--instc); }
+  .avh .ico{ width:14px; height:14px; color:var(--instc); display:flex; flex:0 0 auto; margin-top:-1px; }
+  .avh .ico svg{ width:14px; height:14px; display:block; stroke-width:2; }
+  .avh-rows.of-rows{ border-top:0; margin-top:2px; }
+  .avh-row.of{ grid-template-columns:16px minmax(0,1fr) auto; border-left:4px solid var(--instc); border-top:0;
+    padding:6px 0 6px 10px; margin-top:6px; }
+  .avh-row.of .mk{ padding-top:0; }
+  .avh-row.of .mk .ico svg{ width:15px; height:15px; }
+  .avh-row.of .src{ font-weight:800; color:var(--instc); }
+  .avh-row.of .tt{ white-space:normal; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
+  .avh-rows.of-rows + .avh-more-row{ padding-top:8px; }
+  .avh-lista .avh-row.of{ padding:9px 0 9px 10px; }
   #urgentesWrap .avh{ padding-top:2px; }
   #avisosWrap.avh{ padding-bottom:4px; }
   .inst-home:not(.has-avisos) + #avisosWrap .avh-label{ padding-top:2px; }
@@ -1651,7 +1677,12 @@
 
   function renderCiudad(){
     const cont = document.getElementById("feedCiudad");
-    const locales = NOTICIAS.filter(n => ONDAS_LOCALES.has(n.onda));
+    let locales = NOTICIAS.filter(n => ONDAS_LOCALES.has(n.onda));
+    // lo que ya está en la banda "Cerca tuyo ahora" (justo arriba) no se repite en el feed,
+    // salvo que sea lo único que hay
+    const enBanda = new Set([...document.querySelectorAll("#urgentBand.show .u-item[data-id]")].map(el=>String(el.getAttribute("data-id"))));
+    const sinBanda = locales.filter(n => !enBanda.has(String(n.id)));
+    if(sinBanda.length) locales = sinBanda;
     if(!locales.length){
       cont.innerHTML = '<div class="state"><div class="big">Todavía no hay noticias de tu ciudad.</div>'
         + '<div class="sub">Cuando aparezca algo de Quitilipi o la zona, lo vas a ver acá.</div></div>';
@@ -1692,16 +1723,22 @@
     const lead = ordenadas[0];
     if(!lead) return html;
     const subLead = ordenadas[1];
-    const recientes = [...ordenadas].sort((a,b)=> new Date(b.created_at)-new Date(a.created_at)).slice(0,5);
+    // Lo que ya salió en Primera plana (lead, segunda nota y el riel "Cerca tuyo") no se repite
+    // más abajo: ni en "Últimas" ni en las zonas (p. ej. "Tu barrio"). Antes cada sección filtraba
+    // sobre la lista completa y la misma nota con la misma foto aparecía dos o tres veces.
+    const cercanasPP = conCercaTuyo ? ordenadas.slice(2, 6) : [];
+    const idsPP = new Set([lead, subLead].concat(cercanasPP).filter(Boolean).map(n=>String(n.id)));
+    const recientes = ordenadas.filter(n => !idsPP.has(String(n.id)))
+      .sort((a,b)=> new Date(b.created_at)-new Date(a.created_at)).slice(0,5);
+    const idsRecientes = new Set(recientes.map(n=>String(n.id)));
 
     html += '<section class="pp" id="pp">';
     html += '<div class="section-eyebrow"><span class="t">Primera plana</span><span class="src">'+ordenadas.length+' '+(ordenadas.length===1?'noticia':'noticias')+'</span></div>';
     html += '<div class="pp-grid'+(conCercaTuyo?'':' sin-cerca')+'">';
 
     if(conCercaTuyo){
-      const cercanas = ordenadas.slice(0, 6);
       html += '<aside class="pp-left"><div class="rail-title">Cerca tuyo</div>';
-      cercanas.slice(2,6).forEach(n=>{
+      cercanasPP.forEach(n=>{
         const lugar = n.lugar ? esc(n.lugar) : nombreDe(n.onda);
         const mini = miniFoto(n, 44);
         html += '<a class="article rail-item'+(mini?' foto':'')+'" data-id="'+esc(n.id)+'" style="--w:'+colorDe(n.onda)+'">'
@@ -1730,7 +1767,7 @@
     }
     html += '</div>';
 
-    html += '<aside class="pp-right recientes"><div class="rail-title">Últimas</div>';
+    if(recientes.length) html += '<aside class="pp-right recientes"><div class="rail-title">Últimas</div>';
     recientes.forEach(n=>{
       const mini = miniFoto(n, 44);
       html += '<a class="article rail-item'+(mini?' foto':'')+'" data-id="'+esc(n.id)+'">'
@@ -1738,7 +1775,7 @@
         + '<div><span class="tt">'+tiempoDesde(n.created_at)+'</span>'
         + '<h3 class="h">'+esc(n.titulo)+'</h3></div></a>';
     });
-    html += '</aside>';
+    if(recientes.length) html += '</aside>';
 
     html += '</div></section>';
 
@@ -1747,10 +1784,13 @@
     const seed = semillaRotativa();
     let contadorDatos = 0; // para que el "dato destacado" salga salteado, no en cada nota que tenga cifras
     // con volumen suficiente, reservamos 2 notas para un cierre en mosaico ("también pasó hoy")
-    const paraMosaico = ordenadas.length >= 8 ? ordenadas.slice(-Math.min(8, Math.floor(ordenadas.length/3))) : [];
+    // tampoco se repite lo que ya está en "Últimas"
+    const yaArriba = (n)=> idsPP.has(String(n.id)) || idsRecientes.has(String(n.id));
+    let paraMosaico = ordenadas.length >= 8 ? ordenadas.slice(-Math.min(8, Math.floor(ordenadas.length/3))).filter(n => !yaArriba(n)) : [];
+    if(paraMosaico.length < 2) paraMosaico = []; // si no alcanza para el cierre, esas notas vuelven a su zona
     const idsMosaico = new Set(paraMosaico.map(n=>String(n.id)));
     for(const o of conOndas){
-      const notas = ordenadas.filter(n => n.onda === o.id && !idsMosaico.has(String(n.id))).sort((a,b)=>{
+      const notas = ordenadas.filter(n => n.onda === o.id && !idsMosaico.has(String(n.id)) && !yaArriba(n)).sort((a,b)=>{
         const fa = favoritos.includes(a.categoria) ? 1 : 0;
         const fb = favoritos.includes(b.categoria) ? 1 : 0;
         if(fa !== fb) return fb - fa; // favoritos primero
@@ -1759,6 +1799,7 @@
         if(la !== lb) return la - lb; // no leídas primero
         return ordenRotativo(a.id, seed) - ordenRotativo(b.id, seed); // varía cada 25 min, no siempre el mismo orden
       });
+      // si no queda ninguna nota nueva para esta zona, la sección no se muestra (no se repite)
       if(!notas.length) continue;
       html += '<section class="zone" id="z-'+o.id+'" style="--w:'+o.color+'">';
       html += '<div class="zlabel"><span class="gl"></span><span class="nm">'+esc(o.nombre)+'</span><span class="km">'+notas.length+' '+(notas.length===1?'noticia':'noticias')+'</span></div>';
@@ -2834,6 +2875,11 @@
     const i = instPorIdONombre(id, nombre);
     if(i && local[i.id] && local[i.id].color) return local[i.id].color;
     if(i && i.color) return i.color;
+    return colorPorDefectoInst(id, nombre);
+  }
+  // color por nombre/tipo, sin mirar el color cargado
+  function colorPorDefectoInst(id, nombre){
+    const i = instPorIdONombre(id, nombre);
     const nom = ((i && i.nombre) || nombre || "").toLowerCase();
     if(/bombero/.test(nom)) return "#9B2C2C";
     if(/polic|comis/.test(nom)) return "#1B3A5C";
@@ -2841,6 +2887,22 @@
       cultura:"#9C7038", deporte:"#8A4A2A", social:"#3E6B8A", otro:"#5A5346"};
     if(i && TIPO[i.tipo]) return TIPO[i.tipo];
     return "#5C5A54";
+  }
+  // Para franjas y textos: un color casi negro (p. ej. #000000) se confunde con el cuerpo de texto,
+  // así que en ese caso se usa el color por defecto del tipo (Comisaría -> #1B3A5C).
+  function colorInstVisible(id, nombre, guardado){
+    const col = String(guardado || colorDeInst(id, nombre) || "").trim();
+    const m = /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(col);
+    if(!m) return colorPorDefectoInst(id, nombre);
+    let h = m[1]; if(h.length === 3) h = h.split("").map(x=>x+x).join("");
+    const lin = (v)=>{ v /= 255; return v <= 0.03928 ? v/12.92 : Math.pow((v+0.055)/1.055, 2.4); };
+    const L = 0.2126*lin(parseInt(h.slice(0,2),16)) + 0.7152*lin(parseInt(h.slice(2,4),16)) + 0.0722*lin(parseInt(h.slice(4,6),16));
+    return L < 0.015 ? colorPorDefectoInst(id, nombre) : "#"+h;
+  }
+  function estiloInstComunicado(c){
+    const nom = c.institucion || "";
+    const inst = instPorIdONombre(c.institucion_id, nom) || { nombre:nom, tipo:"" };
+    return { col: colorInstVisible(c.institucion_id, nom, c.color), ico: '<span class="ico">'+iconoLineaDe(inst)+'</span>' };
   }
   function selloDeInst(id, nombre){
     const local = metaInstLocal();
@@ -2923,8 +2985,9 @@
     const esFecha = c.__tipo === "fecha";
     const marca = c.urgente ? '<b class="urg">Urgente</b> · ' : '';
     const tm = esFecha ? '<span class="tm hoy">Hoy</span>' : '<span class="tm">'+horaAviso(c.created_at)+'</span>';
-    return '<div class="avh-row" data-com-id="'+esc(c.id)+'">'
-      + '<span class="mk">'+SELLO_OFICIAL("sm")+'</span>'
+    const est = estiloInstComunicado(c);
+    return '<div class="avh-row of" data-com-id="'+esc(c.id)+'" style="--inst:'+esc(est.col)+'">'
+      + '<span class="mk">'+est.ico+'</span>'
       + '<div class="bd"><div class="src">'+marca+esc(nom)+'</div><div class="tt">'+esc(c.titulo||"")+'</div>'
       + (conExtracto && c.texto ? '<div class="ex">'+esc(c.texto)+'</div>' : '') + '</div>'
       + tm + '</div>';
@@ -2956,10 +3019,11 @@
     const foto = fotoDeComunicado(c);
     const hora = esFecha ? "Hoy" : horaAviso(c.created_at);
     const desde = esFecha ? "" : tiempoDesde(c.created_at);
-    let html = '<article class="avh-feat'+(foto?" con-foto":"")+'" data-com-id="'+esc(c.id)+'">'
+    const est = estiloInstComunicado(c);
+    let html = '<article class="avh-feat of'+(foto?" con-foto":"")+'" data-com-id="'+esc(c.id)+'" style="--inst:'+esc(est.col)+'">'
       + (foto ? '<div class="ph" style="background-image:url(\''+esc(foto)+'\')"></div>' : '')
       + '<div class="tx">'
-      + '<div class="k">'+SELLO_OFICIAL()+'<span>'+marca+esc(nom)+'</span></div>'
+      + '<div class="k">'+est.ico+'<span>'+marca+'<b class="in">'+esc(nom)+'</b></span></div>'
       + '<h3 class="h">'+esc(c.titulo||"")+'</h3>'
       + (c.texto ? '<div class="p">'+esc(c.texto)+'</div>' : '')
       + '<div class="m">'+[hora, (desde && desde !== hora ? desde : "")].filter(Boolean).join('<span class="sep"></span>')+'</div>'
@@ -2967,7 +3031,7 @@
       + '<button type="button" class="eye" data-cerrar="'+esc(c.id)+'" aria-label="Ocultar este aviso">'+OJO_SVG+'</button>'
       + '</article>';
     const resto = lista.slice(1, 4);
-    if(resto.length) html += '<div class="avh-rows">' + resto.map(x=>filaComunicado(x, false)).join("") + '</div>';
+    if(resto.length) html += '<div class="avh-rows of-rows">' + resto.map(x=>filaComunicado(x, false)).join("") + '</div>';
     if(lista.length > 4) html += '<div class="avh-more-row"><button type="button" class="avh-more" id="oficialVerTodos" aria-label="Ver los '+lista.length+' avisos oficiales">Ver todos ›</button></div>';
     html += '<div class="avh-end"></div>';
     row.innerHTML = html;
@@ -2998,7 +3062,7 @@
     const lista = listaComunicadosHome();
     const body = document.getElementById("oficialesBody");
     body.innerHTML = (lista.length
-        ? '<div class="avh-rows" style="border-top:0">' + lista.map(x=>filaComunicado(x, true)).join("") + '</div>'
+        ? '<div class="avh-rows of-rows" style="border-top:0">' + lista.map(x=>filaComunicado(x, true)).join("") + '</div>'
         : '<p class="foot-note">No hay avisos oficiales en las últimas 24 horas.</p>')
       + '<p class="avh-lista-nota">'+SELLO_OFICIAL("sm")+'<span>Publicados por instituciones verificadas en las últimas 24 h. Los anteriores quedan en la ficha de cada institución.</span></p>';
     body.querySelectorAll("[data-com-id]").forEach(el=>{
@@ -3224,6 +3288,8 @@
       FECHAS_INST = rF.ok ? await rF.json() : [];
     }catch(e){ INSTITUCIONES = []; FECHAS_INST = []; }
     pintarInstituciones();
+    // los colores e íconos de cada institución recién se conocen ahora: repintar el bloque Oficial
+    if(typeof renderComunicadosEn === "function") renderComunicadosEn();
   }
   function instSeguidas(){
     try{ return JSON.parse(localStorage.getItem("fonte_inst_notif")||"[]"); }catch(e){ return []; }
