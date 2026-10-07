@@ -2183,6 +2183,26 @@
     if(!inst) return;
     irAVista("viewCargar");
     irATipo("comunicado");
+    // Asegurar que el form esté en panelComunicado (por si el mover falló)
+    const pCo = document.getElementById("panelComunicado");
+    const form0 = document.getElementById("formComunicado");
+    if(pCo && form0 && !pCo.contains(form0)){
+      const tog0 = document.querySelector('[data-form="formComunicado"]');
+      let start = form0;
+      if(tog0 && tog0.parentNode === form0.parentNode){
+        let n = tog0.previousElementSibling;
+        while(n && !(n.matches && n.matches("h2.rep-h"))) n = n.previousElementSibling;
+        start = n || tog0;
+      } else {
+        let n = form0.previousElementSibling;
+        while(n && !(n.matches && n.matches("h2.rep-h"))) n = n.previousElementSibling;
+        start = n || form0;
+      }
+      let nodo = start;
+      const mueve = [];
+      while(nodo){ mueve.push(nodo); nodo = nodo.nextSibling; }
+      mueve.forEach(n => pCo.appendChild(n));
+    }
     asegurarInstitucionesSelect().then(()=>{
       const sel = document.getElementById("coInstitucionSel");
       const inp = document.getElementById("coInstitucion");
@@ -3755,9 +3775,17 @@
     const pIn = document.getElementById("panelInstitucion");
     if(vOf && pOf && pCo){
       while(vOf.firstChild) pOf.appendChild(vOf.firstChild);
-      // el bloque de comunicado arranca en su propio título: lo separamos
+      // Bloque de aviso/comunicado: por título O por el form (por si se renombra el h2)
       const hs = pOf.querySelectorAll("h2.rep-h");
-      const hCom = Array.from(hs).find(h => /comunicado oficial/i.test(h.textContent));
+      let hCom = Array.from(hs).find(h => /aviso oficial|comunicado oficial/i.test(h.textContent||""));
+      if(!hCom){
+        const formCo = document.getElementById("formComunicado");
+        if(formCo){
+          let n = formCo.previousElementSibling;
+          while(n && !(n.matches && n.matches("h2.rep-h"))) n = n.previousElementSibling;
+          hCom = n || formCo;
+        }
+      }
       if(hCom){
         let nodo = hCom;
         const mueve = [];
