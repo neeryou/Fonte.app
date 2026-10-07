@@ -366,10 +366,10 @@
     padding:14px 14px 12px; margin-bottom:10px; }
   .inst-block:first-child{ }
   .inst-block-head{ display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
-  .inst-ico{ width:36px; height:36px; border-radius:50%; background:var(--paper-2); display:flex;
-    align-items:center; justify-content:center; font-size:1.05rem; flex:0 0 auto; }
-  .inst-block-head .h{ font-family:var(--serif); font-weight:700; font-size:.98rem; line-height:1.2; }
-  .inst-block-head .sub2{ font-family:var(--sans); font-size:.68rem; color:var(--ink-faint); margin-top:3px; }
+  .inst-ico{ width:40px; height:40px; border-radius:50%; background:var(--paper-2); display:flex;
+    align-items:center; justify-content:center; font-size:1.1rem; flex:0 0 auto; border:1px solid var(--line); }
+  .inst-block .h, .inst-block-head .h{ font-family:var(--serif); font-weight:700; font-size:.94rem; line-height:1.15; }
+  .inst-block .sub2, .inst-block-head .sub2{ font-family:var(--sans); font-size:.66rem; color:var(--ink-faint); margin-top:3px; }
   .inst-badge{ font-family:var(--sans); font-size:.62rem; font-weight:700; color:var(--barrio);
     border:1px solid color-mix(in srgb,var(--barrio) 35%,var(--line)); background:color-mix(in srgb,var(--barrio) 10%,var(--paper));
     padding:3px 8px; border-radius:999px; white-space:nowrap; }
@@ -407,6 +407,88 @@
   .fila-agregar .agregar{ font-family:var(--sans); font-size:.8rem; font-weight:800; padding:8px 13px; border-radius:7px; border:0; background:var(--barrio); color:#fff; flex:0 0 auto; }
   .pista-agregar{ font-family:var(--sans); font-size:.64rem; color:var(--ink-faint); margin:6px 0 0; }
   .fecha-add input[name=lugar],.fecha-add input[name=horario]{ flex:1 1 45%; }
+
+  /* ---- ciudad: pantalla institución → tres botones pares ---- */
+  .ciudad-crumb{
+    display:flex; align-items:center; gap:6px; margin:0 0 12px;
+    font-family:var(--sans); font-size:.68rem; font-weight:600; color:var(--ink-faint);
+  }
+  .ciudad-crumb button{
+    font:inherit; font-weight:700; color:var(--region); background:none; border:0; padding:0; cursor:pointer;
+  }
+  .ciudad-crumb .sep{ opacity:.45; }
+  .ciudad-crumb b{ color:var(--ink); }
+  .fachada{
+    display:grid; grid-template-columns:52px 1fr; gap:12px; align-items:center;
+    padding-bottom:14px; margin-bottom:4px; border-bottom:2.5px solid var(--ink);
+  }
+  .logo-sq{
+    width:52px; height:52px; border-radius:3px; background:#fff;
+    border:1px solid var(--line-strong); display:flex; align-items:center; justify-content:center;
+    position:relative; overflow:hidden;
+  }
+  .logo-sq::before, .logo-sq::after{
+    content:''; position:absolute; width:9px; height:9px; border-color:var(--ink); border-style:solid; z-index:1;
+  }
+  .logo-sq::before{ top:3px; left:3px; border-width:1.5px 0 0 1.5px; }
+  .logo-sq::after{ bottom:3px; right:3px; border-width:0 1.5px 1.5px 0; }
+  .logo-sq .f{
+    font-family:var(--serif); font-weight:700; font-size:1.25rem; color:var(--region);
+    letter-spacing:-.02em; line-height:1;
+  }
+  .logo-sq img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .pag-nm{ font-family:var(--serif); font-weight:700; font-size:1.22rem; line-height:1.1; margin:0 0 3px; letter-spacing:-.02em; }
+  .pag-meta{ font-size:.68rem; color:var(--ink-soft); font-weight:500; }
+  .pag-verif{
+    display:inline-flex; align-items:center; gap:5px; margin-top:4px;
+    font-size:.56rem; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:var(--region);
+  }
+  .pag-verif .badge{
+    width:13px; height:13px; border-radius:50%; background:var(--region);
+    display:inline-flex; align-items:center; justify-content:center;
+  }
+  .pag-verif .badge svg{ width:8px; height:8px; display:block; }
+  .ciudad-intro{
+    font-family:var(--serif); font-style:italic; font-size:.84rem; color:var(--ink-soft);
+    margin:14px 0 14px; line-height:1.4;
+  }
+  .acciones{ display:grid; grid-template-columns:1fr; gap:10px; }
+  .accion{
+    background:var(--paper-2); border:1.5px solid var(--line-strong); border-radius:14px;
+    padding:18px 15px; display:grid; grid-template-columns:48px 1fr auto; gap:13px; align-items:center;
+    text-align:left; min-height:78px; width:100%; cursor:pointer; font:inherit; color:inherit;
+  }
+  .accion .ic{
+    width:48px; height:48px; border-radius:12px; background:var(--paper);
+    border:1px solid var(--line); display:flex; align-items:center; justify-content:center;
+    color:var(--region);
+  }
+  .accion .ic svg{ width:24px; height:24px; stroke:currentColor; fill:none; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; }
+  .accion.aviso .ic{ color:var(--urgente); background:color-mix(in srgb,var(--urgente) 8%,var(--paper)); border-color:color-mix(in srgb,var(--urgente) 25%,var(--line)); }
+  .accion.fecha .ic{ color:var(--region); background:color-mix(in srgb,var(--region) 8%,var(--paper)); border-color:color-mix(in srgb,var(--region) 25%,var(--line)); }
+  .accion.servicio .ic{ color:var(--barrio); background:color-mix(in srgb,var(--barrio) 8%,var(--paper)); border-color:color-mix(in srgb,var(--barrio) 25%,var(--line)); }
+  .accion.on.aviso{ border-color:var(--urgente); box-shadow:0 0 0 3px color-mix(in srgb,var(--urgente) 18%,transparent); }
+  .accion.on.fecha{ border-color:var(--region); box-shadow:0 0 0 3px color-mix(in srgb,var(--region) 18%,transparent); }
+  .accion.on.servicio{ border-color:var(--barrio); box-shadow:0 0 0 3px color-mix(in srgb,var(--barrio) 18%,transparent); }
+  .accion .t{ font-family:var(--sans); font-weight:800; font-size:1.02rem; color:var(--ink); letter-spacing:-.01em; }
+  .accion .s{ font-family:var(--sans); font-size:.74rem; color:var(--ink-faint); margin-top:4px; line-height:1.35; }
+  .accion .go{
+    font-family:var(--sans); font-size:.78rem; font-weight:700; color:var(--ink-soft);
+    background:var(--paper); border:1px solid var(--line); width:30px; height:30px;
+    border-radius:8px; display:flex; align-items:center; justify-content:center;
+  }
+  .ciudad-sec{
+    display:flex; gap:8px; flex-wrap:wrap; margin-top:16px; padding-top:14px; border-top:1px solid var(--line);
+  }
+  .inst-block{ cursor:pointer; display:grid; grid-template-columns:40px 1fr auto; gap:11px; align-items:center; }
+  .inst-block .go-inst{
+    font-size:.78rem; font-weight:800; color:var(--region);
+    background:var(--paper); border:1px solid var(--line); width:28px; height:28px;
+    border-radius:8px; display:flex; align-items:center; justify-content:center;
+  }
+  .inst-block:active{ border-color:var(--region); background:color-mix(in srgb,var(--region) 6%,var(--paper)); }
+  #ciudadDetallePanel{ margin-top:14px; }
+  #ciudadDetallePanel .svc-panel, #ciudadDetallePanel .fechas-panel{ margin-top:0; }
 
   /* ===== métricas ===== */
   .kpi-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:18px; }
@@ -721,6 +803,7 @@
     </div>
 
     <div class="rep-view" id="viewInstituciones">
+      <div id="ciudadLista">
       <div id="avisoVencidas" class="hide" style="background:color-mix(in srgb,#B23A2E 10%,var(--paper));border:1px solid color-mix(in srgb,#B23A2E 30%,var(--line));border-radius:10px;padding:12px 14px;margin-bottom:16px;font-family:var(--sans);font-size:.8rem;color:#B23A2E;font-weight:600"></div>
       <h2 class="rep-h">Ciudad</h2>
       <p class="rep-sub">Instituciones verificadas — se cargan una vez. Después solo actualizás horarios o fechas.</p>
@@ -775,6 +858,49 @@
       </div>
 
       <div class="card" id="institucionesAdminList"><p style="font-family:var(--sans);font-size:.78rem;color:var(--ink-faint)">Cargando…</p></div>
+      </div><!-- /ciudadLista -->
+
+      <div id="ciudadDetalle" class="hide">
+        <div class="ciudad-crumb">
+          <button type="button" id="ciudadVolverBtn">← Instituciones</button>
+          <span class="sep">›</span>
+          <b id="ciudadCrumbNombre">Institución</b>
+        </div>
+        <div class="fachada">
+          <div class="logo-sq" id="ciudadLogoSq"><span class="f" id="ciudadLogoLetter">M</span></div>
+          <div>
+            <h2 class="pag-nm" id="ciudadPagNombre">Institución</h2>
+            <div class="pag-meta" id="ciudadPagMeta">Activa</div>
+            <div class="pag-verif">
+              <span class="badge"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span>
+              Verificada
+            </div>
+          </div>
+        </div>
+        <p class="ciudad-intro" id="ciudadIntro">¿Qué querés cargar hoy?</p>
+        <div class="acciones" id="ciudadAcciones">
+          <button type="button" class="accion aviso" data-carga="aviso">
+            <div class="ic"><svg viewBox="0 0 24 24"><path d="M4 6h12v10H4z"/><path d="M16 9l4-2v10l-4-2"/><path d="M8 20h4"/></svg></div>
+            <div><div class="t">Aviso</div><div class="s">Comunicado del día</div></div>
+            <div class="go">›</div>
+          </button>
+          <button type="button" class="accion fecha" data-carga="fecha">
+            <div class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/><path d="M8 14h.01M12 14h.01M16 14h.01"/></svg></div>
+            <div><div class="t">Fecha</div><div class="s">Agenda / evento</div></div>
+            <div class="go">›</div>
+          </button>
+          <button type="button" class="accion servicio" data-carga="servicio">
+            <div class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+            <div><div class="t">Servicio</div><div class="s">Horario fijo</div></div>
+            <div class="go">›</div>
+          </button>
+        </div>
+        <div id="ciudadDetallePanel" class="hide"></div>
+        <div class="ciudad-sec">
+          <button type="button" class="btn-mini" id="ciudadEditarBtn">Editar ficha</button>
+          <button type="button" class="btn-mini del" id="ciudadQuitarBtn">Quitar</button>
+        </div>
+      </div>
     </div>
 
     <!-- Vista previa "Ver en Fonte": vive DENTRO de .rep-wrap/#consoleView.
@@ -905,7 +1031,7 @@
     if(v === "viewMetricas"){ cargarMetricas(); }
     if(v === "viewAportes"){ cargarAportesPendientes(); cargarAvisosPublicados(); }
     if(v === "viewCargar"){ cargarBorradores(); cargarPublicadoHoy(); cargarOfertasAdmin(); cargarComunicadosAdmin(); asegurarInstitucionesSelect(true); }
-    if(v === "viewInstituciones"){ cargarInstitucionesAdmin(); }
+    if(v === "viewInstituciones"){ mostrarCiudadLista(); cargarInstitucionesAdmin(); }
     window.scrollTo({ top:0, behavior:"instant" });
   }
   // compatibilidad con llamadas viejas
@@ -1987,13 +2113,126 @@
     })();
     return instSelectCargando;
   }
+  const LABEL_TIPO_INST = {
+    salud:"Salud", social:"Desarrollo social", municipio:"Gobierno local",
+    seguridad:"Seguridad", educacion:"Educación", cultura:"Cultura",
+    deporte:"Deporte", otro:"Institución"
+  };
+  let ciudadInstActual = null;
+  let ciudadCargaActual = null;
+
+  function mostrarCiudadLista(){
+    ciudadInstActual = null;
+    ciudadCargaActual = null;
+    const lista = document.getElementById("ciudadLista");
+    const det = document.getElementById("ciudadDetalle");
+    if(lista) lista.classList.remove("hide");
+    if(det) det.classList.add("hide");
+    const panel = document.getElementById("ciudadDetallePanel");
+    if(panel){ panel.classList.add("hide"); panel.innerHTML = ""; }
+    document.querySelectorAll("#ciudadAcciones .accion").forEach(b=> b.classList.remove("on"));
+  }
+
+  function abrirCiudadDetalle(inst){
+    if(!inst) return;
+    ciudadInstActual = inst;
+    ciudadCargaActual = null;
+    const lista = document.getElementById("ciudadLista");
+    const det = document.getElementById("ciudadDetalle");
+    if(lista) lista.classList.add("hide");
+    if(det) det.classList.remove("hide");
+    const panel = document.getElementById("ciudadDetallePanel");
+    if(panel){ panel.classList.add("hide"); panel.innerHTML = ""; }
+    document.querySelectorAll("#ciudadAcciones .accion").forEach(b=> b.classList.remove("on"));
+
+    const nombre = inst.nombre || "Institución";
+    const crumb = document.getElementById("ciudadCrumbNombre");
+    if(crumb) crumb.textContent = nombre.length > 28 ? nombre.slice(0, 26) + "…" : nombre;
+    const pagNm = document.getElementById("ciudadPagNombre");
+    if(pagNm) pagNm.textContent = nombre;
+    const tipoLbl = LABEL_TIPO_INST[inst.tipo] || "Institución";
+    const meta = document.getElementById("ciudadPagMeta");
+    if(meta) meta.textContent = tipoLbl + " · activa";
+
+    const logoSq = document.getElementById("ciudadLogoSq");
+    if(logoSq){
+      const letra = (inst.sello || nombre || "?").trim().slice(0, 1).toUpperCase() || "?";
+      if(inst.foto_url){
+        logoSq.innerHTML = '<img src="'+escA(inst.foto_url)+'" alt="">';
+      } else {
+        logoSq.innerHTML = '<span class="f" id="ciudadLogoLetter">'+escA(letra)+'</span>';
+      }
+    }
+    window.scrollTo({ top:0, behavior:"instant" });
+  }
+
+  function abrirAvisoInstitucion(inst){
+    if(!inst) return;
+    irAVista("viewCargar");
+    irATipo("comunicado");
+    asegurarInstitucionesSelect().then(()=>{
+      const sel = document.getElementById("coInstitucionSel");
+      const inp = document.getElementById("coInstitucion");
+      if(sel){
+        sel.value = String(inst.id);
+        sel.dispatchEvent(new Event("change"));
+      }
+      if(inp){
+        inp.value = inst.nombre || "";
+        inp.readOnly = !!sel && !!sel.value;
+        inp.style.opacity = inp.readOnly ? ".72" : "1";
+      }
+      const form = document.getElementById("formComunicado");
+      const tog = document.querySelector('[data-form="formComunicado"]');
+      if(form) form.classList.remove("hide");
+      if(tog) tog.classList.add("abierto");
+      if(form) form.scrollIntoView({ behavior:"smooth", block:"start" });
+    });
+  }
+
+  function abrirCargaInstitucion(tipo){
+    const inst = ciudadInstActual;
+    if(!inst) return;
+    if(tipo === "aviso"){
+      abrirAvisoInstitucion(inst);
+      return;
+    }
+    const panelHost = document.getElementById("ciudadDetallePanel");
+    if(!panelHost) return;
+    document.querySelectorAll("#ciudadAcciones .accion").forEach(b=>{
+      b.classList.toggle("on", b.getAttribute("data-carga") === tipo);
+    });
+    // Si tocás de nuevo el mismo, cerrás el panel
+    if(ciudadCargaActual === tipo && !panelHost.classList.contains("hide")){
+      ciudadCargaActual = null;
+      panelHost.classList.add("hide");
+      panelHost.innerHTML = "";
+      document.querySelectorAll("#ciudadAcciones .accion").forEach(b=> b.classList.remove("on"));
+      return;
+    }
+    ciudadCargaActual = tipo;
+    panelHost.classList.remove("hide");
+    panelHost.innerHTML = "";
+    const inner = document.createElement("div");
+    if(tipo === "fecha"){
+      inner.className = "fechas-panel";
+      panelHost.appendChild(inner);
+      cargarFechasDe(inst.id, inner);
+    } else if(tipo === "servicio"){
+      inner.className = "svc-panel";
+      panelHost.appendChild(inner);
+      cargarServiciosDe(inst.id, inner, inst);
+    }
+    panelHost.scrollIntoView({ behavior:"smooth", block:"nearest" });
+  }
+
   async function cargarInstitucionesAdmin(){
     const { data, error } = await sb.from("instituciones").select("*").eq("activa", true).order("created_at", { ascending:false });
     INST_ADMIN = data || [];
     revisarFechasVencidas();
-    const sel = document.getElementById("coInstitucionSel");
     pintarSelectInstituciones(INST_ADMIN);
     const cont = document.getElementById("institucionesAdminList");
+    if(!cont) return;
     if(error || !data || !data.length){
       cont.innerHTML = '<p style="font-family:var(--sans);font-size:.78rem;color:var(--ink-faint)">Todavía no cargaste ninguna institución.</p>';
       return;
@@ -2005,65 +2244,32 @@
         const arr = typeof raw === "string" ? JSON.parse(raw||"[]") : (Array.isArray(raw)?raw:[]);
         nSvc = Array.isArray(arr) ? arr.length : 0;
       }catch(e){ nSvc = 0; }
-      const badge = nSvc
-        ? '<span class="inst-badge">🕐 '+nSvc+(nSvc===1?' horario':' horarios')+'</span>'
-        : '';
-      return '<div class="inst-block" data-id="'+escA(i.id)+'">'
-      + '<div class="inst-block-head">'
-      + '<div style="display:flex;gap:10px;align-items:flex-start;min-width:0">'
+      const meta = (LABEL_TIPO_INST[i.tipo] || "Institución")
+        + (nSvc ? " · "+nSvc+(nSvc===1?" horario":" horarios") : " · verificada");
+      return '<div class="inst-block" data-id="'+escA(i.id)+'" role="button" tabindex="0">'
       + '<span class="inst-ico">'+(ICONS_INST[i.tipo]||"📍")+'</span>'
       + '<div><div class="h">'+escA(i.nombre)+'</div>'
-      + (i.direccion ? '<div class="sub2">'+escA(i.direccion)+'</div>' : '')
-      + '</div></div>'
-      + '<button type="button" class="btn-lapiz edit" title="Editar institución" aria-label="Editar">'
-      + '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>'
-      + '</button></div>'
-      + '<div class="inst-block-btns"><button class="btn-mini svc-toggle">Servicios</button><button class="btn-mini fechas-toggle">Fechas</button><button class="btn-mini del">Quitar</button></div>'
-      + '<div class="svc-panel hide" id="svcPanel-'+escA(i.id)+'"></div>'
-      + '<div class="fechas-panel hide" id="fechasPanel-'+escA(i.id)+'"></div>'
+      + '<div class="sub2">'+escA(meta)+'</div></div>'
+      + '<div class="go-inst">›</div>'
       + '</div>';
     }).join("");
-    cont.querySelectorAll(".inst-block .edit").forEach(btn=>{
-      btn.addEventListener("click", ()=>{
-        const id = btn.closest(".inst-block").getAttribute("data-id");
+    cont.querySelectorAll(".inst-block").forEach(card=>{
+      const open = ()=>{
+        const id = card.getAttribute("data-id");
         const inst = (INST_ADMIN||[]).find(x=>String(x.id)===String(id));
-        if(inst) abrirEdicionInstitucion(inst);
+        if(inst) abrirCiudadDetalle(inst);
+      };
+      card.addEventListener("click", open);
+      card.addEventListener("keydown", e=>{
+        if(e.key === "Enter" || e.key === " "){ e.preventDefault(); open(); }
       });
     });
-    cont.querySelectorAll(".inst-block .del").forEach(btn=>{
-      btn.addEventListener("click", async ()=>{
-        const id = btn.closest(".inst-block").getAttribute("data-id");
-        if(!confirm("¿Quitar esta institución (y todas sus fechas) de Fonte?")) return;
-        btn.disabled = true;
-        const { error } = await sb.from("instituciones").delete().eq("id", id);
-        if(error){ toast("No se pudo quitar: " + error.message); btn.disabled=false; return; }
-        toast("Institución quitada");
-        cargarInstitucionesAdmin();
-      });
-    });
-    cont.querySelectorAll(".fechas-toggle").forEach(btn=>{
-      btn.addEventListener("click", ()=>{
-        const id = btn.closest(".inst-block").getAttribute("data-id");
-        const panel = document.getElementById("fechasPanel-"+id);
-        const svc = document.getElementById("svcPanel-"+id);
-        if(svc) svc.classList.add("hide");
-        panel.classList.toggle("hide");
-        if(!panel.classList.contains("hide")) cargarFechasDe(id, panel);
-      });
-    });
-    cont.querySelectorAll(".svc-toggle").forEach(btn=>{
-      btn.addEventListener("click", ()=>{
-        const id = btn.closest(".inst-block").getAttribute("data-id");
-        const panel = document.getElementById("svcPanel-"+id);
-        const fec = document.getElementById("fechasPanel-"+id);
-        if(fec) fec.classList.add("hide");
-        panel.classList.toggle("hide");
-        if(!panel.classList.contains("hide")) {
-          const inst = (data||[]).find(x=>String(x.id)===String(id));
-          cargarServiciosDe(id, panel, inst);
-        }
-      });
-    });
+    // Si seguimos en detalle (p.ej. tras recargar), refrescamos la ficha actual
+    if(ciudadInstActual){
+      const fresh = (INST_ADMIN||[]).find(x=>String(x.id)===String(ciudadInstActual.id));
+      if(fresh) abrirCiudadDetalle(fresh);
+      else mostrarCiudadLista();
+    }
   }
 
   function parseServicios(raw){
@@ -4155,6 +4361,34 @@
       btn.classList.toggle("abierto", !f.classList.contains("hide"));
     });
   });
+
+  (function wireCiudadDetalle(){
+    const volver = document.getElementById("ciudadVolverBtn");
+    if(volver) volver.addEventListener("click", ()=> mostrarCiudadLista());
+    document.querySelectorAll("#ciudadAcciones .accion").forEach(btn=>{
+      btn.addEventListener("click", ()=> abrirCargaInstitucion(btn.getAttribute("data-carga")));
+    });
+    const editar = document.getElementById("ciudadEditarBtn");
+    if(editar) editar.addEventListener("click", ()=>{
+      const inst = ciudadInstActual;
+      if(!inst) return;
+      mostrarCiudadLista();
+      abrirEdicionInstitucion(inst);
+    });
+    const quitar = document.getElementById("ciudadQuitarBtn");
+    if(quitar) quitar.addEventListener("click", async ()=>{
+      const inst = ciudadInstActual;
+      if(!inst) return;
+      if(!confirm("¿Quitar esta institución (y todas sus fechas) de Fonte?")) return;
+      quitar.disabled = true;
+      const { error } = await sb.from("instituciones").delete().eq("id", inst.id);
+      quitar.disabled = false;
+      if(error){ toast("No se pudo quitar: " + error.message); return; }
+      toast("Institución quitada");
+      mostrarCiudadLista();
+      cargarInstitucionesAdmin();
+    });
+  })();
 
   revisarSesion();
 </script>
