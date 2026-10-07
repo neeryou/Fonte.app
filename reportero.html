@@ -257,14 +257,16 @@
     font-size:.66rem; font-weight:700; color:var(--ink); background:none; border:0; padding:0; cursor:pointer; }
   .path-com .pill{ background:var(--paper); border:1px solid var(--line-strong); padding:4px 8px; border-radius:999px; }
   .path-com .arr{ color:var(--urgente); }
-  .aviso-ctx{ display:flex; align-items:center; gap:12px; margin:0 0 14px; padding:12px 13px;
-    border-radius:12px; border:1.5px solid color-mix(in srgb,var(--urgente) 35%,var(--line-strong));
-    background:color-mix(in srgb,var(--urgente) 6%,var(--paper)); }
+  /* Ciudad → Aviso: solo volver, sin caja rosa promocional */
+  .aviso-ctx{ display:flex; align-items:center; margin:0 0 10px; padding:0;
+    border:0; background:transparent; gap:0; }
   .aviso-ctx.hide{ display:none; }
-  .aviso-ctx-back{ font-family:var(--sans); font-size:.72rem; font-weight:800; color:var(--region);
-    background:var(--paper); border:1px solid var(--line-strong); border-radius:8px; padding:8px 11px; flex:0 0 auto; }
-  .aviso-ctx .lbl{ font-size:.56rem; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:var(--urgente); }
-  .aviso-ctx .ss{ font-size:.7rem; color:var(--ink-soft); margin-top:3px; line-height:1.35; }
+  .aviso-ctx-back{ font-family:var(--sans); font-size:.78rem; font-weight:700; color:var(--region);
+    background:none; border:0; border-radius:0; padding:2px 0; flex:0 0 auto; cursor:pointer; }
+  .aviso-ctx-back:active{ opacity:.7; }
+  .hoy-estado{ font-family:var(--sans); font-size:.72rem; color:var(--ink-faint);
+    margin:6px 0 0; line-height:1.45; padding:0 2px; }
+  .hoy-estado.hide{ display:none; }
 
   /* nav con filete doble arriba */
   .rep-nav{ border-top:2.5px solid var(--ink); }
@@ -544,6 +546,7 @@
 
       <div class="sec-lbl">Para hacer ahora <span class="n hide" id="hoyPendN">0</span></div>
       <div id="hoyTareas"></div>
+      <div id="hoyEstado" class="hoy-estado hide"></div>
 
       <div class="sec-lbl">Lo último que publicaste</div>
       <div id="hoyUltimo"></div>
@@ -570,10 +573,6 @@
 
     <div id="avisoCtx" class="aviso-ctx hide">
       <button type="button" class="aviso-ctx-back" id="avisoCtxBack">← Ciudad</button>
-      <div class="aviso-ctx-tx">
-        <div class="lbl">Aviso oficial</div>
-        <div class="ss">Se carga desde la institución · pack imagen + caption</div>
-      </div>
     </div>
 
     <div class="tipos" id="tiposPub">
@@ -1051,10 +1050,16 @@
   }
   document.querySelectorAll(".rnv").forEach(b=>{
     b.addEventListener("click", ()=>{
-      irAVista(b.getAttribute("data-v"));
+      const v = b.getAttribute("data-v");
+      irAVista(v);
+      // Publicar tab = siempre Nota|Oferta; nunca dejar el aviso de Ciudad pegado
+      if(v === "viewCargar" && typeof irATipo === "function") irATipo("nota");
     });
   });
-  document.getElementById("btnPublicarAhora").addEventListener("click", ()=> irAVista("viewCargar"));
+  document.getElementById("btnPublicarAhora").addEventListener("click", ()=>{
+    irAVista("viewCargar");
+    if(typeof irATipo === "function") irATipo("nota");
+  });
 
   let fotosPropias = [];
   const MAX_FOTOS_NOTA = 6;
@@ -3046,16 +3051,27 @@
       if(!c.created_at) return false;
       return (Date.now() - new Date(c.created_at).getTime()) < 48*3600000;
     });
-    urgVigentes.forEach(c=>{
-      const horas = Math.max(0, Math.round(48 - (Date.now()-new Date(c.created_at).getTime())/3600000));
-      tareas.push({ urg:false, ic:"UR", t:"Aviso urgente en portada",
-                    s:'"'+(c.titulo||"")+'" sale de portada en '+horas+" h", go:"Ver ›", v:"comunicado" });
-    });
+    // Urgentes en portada = estado, no tarea (Hoy solo accionables)
+    const estadoEl = document.getElementById("hoyEstado");
+    if(estadoEl){
+      if(urgVigentes.length){
+        estadoEl.innerHTML = urgVigentes.map(c=>{
+          const horas = Math.max(0, Math.round(48 - (Date.now()-new Date(c.created_at).getTime())/3600000));
+          const tit = (c.titulo||"Aviso").trim();
+          const corto = tit.length > 42 ? tit.slice(0,40) + "…" : tit;
+          return "En portada · “"+escA(corto)+"” · sale en "+horas+" h";
+        }).join("<br>");
+        estadoEl.classList.remove("hide");
+      } else {
+        estadoEl.innerHTML = "";
+        estadoEl.classList.add("hide");
+      }
+    }
 
     const cont = document.getElementById("hoyTareas");
     const badge = document.getElementById("hoyPendN");
     const navPip = document.getElementById("navPendN");
-    const totalPend = nPend + nVenc;
+    const totalPend = nPend + nVenc; // solo accionables
     if(totalPend){ badge.textContent = totalPend; badge.classList.remove("hide"); navPip.textContent = totalPend; navPip.classList.remove("hide"); }
     else { badge.classList.add("hide"); navPip.classList.add("hide"); }
 
@@ -3789,6 +3805,8 @@
     } else {
       irAVista("viewInstituciones");
     }
+    // limpiar modo aviso sin flash: Publicar vuelve limpio a Nota|Oferta
+    if(typeof irATipo === "function") irATipo("nota");
   });
   irATipo("nota");
 
