@@ -407,6 +407,11 @@
   .fecha-row:first-child{ border-top:0; }
   .fecha-row .t{ font-family:var(--sans); font-size:.78rem; font-weight:600; color:var(--ink); }
   .fecha-row .m{ font-family:var(--sans); font-size:.66rem; color:var(--ink-faint); }
+  .fecha-row .acts{ display:flex; gap:4px; flex:0 0 auto; align-items:center; }
+  .fecha-row .share-f{
+    font-family:var(--sans); font-size:.7rem; font-weight:700; padding:5px 9px; border-radius:7px;
+    border:1px solid var(--line-strong); background:var(--paper); color:var(--region); white-space:nowrap;
+  }
   .fecha-add{ display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
   .fecha-add input{ font-family:var(--sans); font-size:.78rem; border:1px solid var(--line-strong); border-radius:7px; padding:8px; background:var(--paper); color:var(--ink); }
   .fecha-add input[name=titulo]{ flex:1 1 100%; }
@@ -2457,16 +2462,37 @@
     el.textContent = "⚠️ Hay " + data.length + (data.length===1 ? " fecha vencida" : " fechas vencidas") + ". Abrí \u201CFechas\u201D en la institución y cargá la próxima para que la ficha no quede vacía en Fonte.";
   }
 
+  function etiquetaFechaIso(iso){
+    const [y,m,d] = String(iso||"").split("-").map(Number);
+    if(!y || !m || !d) return String(iso||"");
+    const dt = new Date(y, m-1, d);
+    const dias = ["domingo","lunes","martes","miércoles","jueves","viernes","sábado"];
+    const meses = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+    return dias[dt.getDay()] + " " + d + " de " + meses[m-1];
+  }
+  function partesFechaFlyer(iso){
+    const [y,m,d] = String(iso||"").split("-").map(Number);
+    if(!y || !m || !d) return { dia:"—", weekday:"", mes:"", etiqueta:String(iso||"") };
+    const dt = new Date(y, m-1, d);
+    const dias = ["DOMINGO","LUNES","MARTES","MIÉRCOLES","JUEVES","VIERNES","SÁBADO"];
+    const meses = ["ENERO","FEBRERO","MARZO","ABRIL","MAYO","JUNIO","JULIO","AGOSTO","SEPTIEMBRE","OCTUBRE","NOVIEMBRE","DICIEMBRE"];
+    return { dia:String(d), weekday:dias[dt.getDay()], mes:meses[m-1], etiqueta:etiquetaFechaIso(iso) };
+  }
+
   async function cargarFechasDe(institucionId, panel){
     panel.innerHTML = "Cargando…";
     const { data, error } = await sb.from("institucion_fechas").select("*").eq("institucion_id", institucionId).eq("activa", true).order("fecha", { ascending:true });
     const fechas = error ? [] : data;
     const hoyStr = new Date().toISOString().slice(0,10);
     const vencidas = fechas.filter(f=>f.fecha < hoyStr).length;
+    const inst = (INST_ADMIN||[]).find(x=>String(x.id)===String(institucionId)) || null;
     panel.innerHTML =
       (vencidas ? '<div style="background:color-mix(in srgb,#B23A2E 10%,var(--paper));border:1px solid color-mix(in srgb,#B23A2E 30%,var(--line));border-radius:8px;padding:9px 11px;margin-bottom:10px;font-family:var(--sans);font-size:.72rem;color:#B23A2E;font-weight:600">⚠️ '+vencidas+(vencidas===1?' fecha ya pasó':' fechas ya pasaron')+'. Actualizala o quitala para que la ficha no quede vacía.</div>' : '')
       + (fechas.length ? fechas.map(f=>
-        '<div class="fecha-row" data-fecha-id="'+escA(f.id)+'"'+(f.fecha < hoyStr ? ' style="opacity:.55"' : '')+'><div><div class="t">'+escA(f.titulo)+(f.fecha < hoyStr ? ' <span style="font-size:.6rem;color:#B23A2E;font-weight:800">VENCIDA</span>' : '')+'</div><div class="m">'+escA(f.fecha)+((f.lugar||"").includes("\n")?" · "+(f.lugar.split(/\n+/).filter(Boolean).length)+" puntos":(f.lugar?" · "+escA(f.lugar):""))+'</div></div><button class="del" style="padding:4px 8px">✕</button></div>'
+        '<div class="fecha-row" data-fecha-id="'+escA(f.id)+'"'+(f.fecha < hoyStr ? ' style="opacity:.55"' : '')+'>'
+        + '<div><div class="t">'+escA(f.titulo)+(f.fecha < hoyStr ? ' <span style="font-size:.6rem;color:#B23A2E;font-weight:800">VENCIDA</span>' : '')+'</div>'
+        + '<div class="m">'+escA(etiquetaFechaIso(f.fecha))+((f.horario||"")?" · "+escA(f.horario):"")+((f.lugar||"").includes("\n")?" · "+(f.lugar.split(/\n+/).filter(Boolean).length)+" puntos":(f.lugar?" · "+escA(f.lugar):""))+'</div></div>'
+        + '<div class="acts"><button type="button" class="share-f" title="Compartir">↗</button><button type="button" class="del" style="padding:4px 8px">✕</button></div></div>'
       ).join("") : '<p style="font-family:var(--sans);font-size:.72rem;color:var(--ink-faint);margin:0 0 8px">Sin fechas cargadas.</p>')
       + '<div class="fecha-add">'
       + '<input name="titulo" placeholder="Ej: Entrega de mercadería">'
@@ -2484,6 +2510,13 @@
         cargarFechasDe(institucionId, panel);
       });
     });
+    panel.querySelectorAll(".fecha-row .share-f").forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        const id = btn.closest(".fecha-row").getAttribute("data-fecha-id");
+        const f = (fechas||[]).find(x=>String(x.id)===String(id));
+        if(f) abrirVisorFecha(f, inst);
+      });
+    });
     panel.querySelector("[data-add]").addEventListener("click", async (e)=>{
       const btn = e.target;
       const titulo = panel.querySelector('[name="titulo"]').value.trim();
@@ -2499,6 +2532,8 @@
       btn.disabled = false;
       if(error){ toast("No se pudo agregar: " + error.message); return; }
       toast("Fecha agregada ✓");
+      // Abrimos el pack de share al toque; el id real llega al recargar la lista.
+      abrirVisorFecha(Object.assign({ id:"tmp-"+Date.now() }, registro), inst);
       cargarFechasDe(institucionId, panel);
     });
   }
@@ -3005,6 +3040,38 @@
     document.getElementById("btnEditarComunicado").addEventListener("click", ()=> editarComunicado(c));
   }
 
+  function abrirVisorFecha(f, inst){
+    const nombreInst = (inst && inst.nombre) || f.institucion || "";
+    const fObj = Object.assign({}, f, { institucion: nombreInst });
+    const partes = [];
+    if(f.fecha) partes.push(etiquetaFechaIso(f.fecha));
+    if(f.horario) partes.push(f.horario);
+    const puntos = String(f.lugar||"").split(/\n+/).map(s=>s.trim()).filter(Boolean);
+    let cuerpo = '<div class="txt">' + escA(partes.join(" · "));
+    if(puntos.length){
+      cuerpo += '<ul style="margin:10px 0 0;padding-left:18px;font-family:var(--sans);font-size:.86rem;color:var(--ink-soft);line-height:1.45">'
+        + puntos.map(p=>'<li>'+escA(p)+'</li>').join("") + '</ul>';
+    }
+    cuerpo += '</div>';
+    let h = '<div class="cuerpo">'
+      + '<div class="cat">📅 FECHA · '+escA(nombreInst)+'</div>'
+      + '<h3>'+escA(f.titulo||"")+'</h3>'
+      + cuerpo
+      + '<div class="meta">Sale en portada el día del acto · después solo en la ficha</div>'
+      + bloqueFormatoCompartir(fObj, "fecha")
+      + '<button class="compartir" id="btnCompartirVisor">↗ Compartir en redes</button>'
+      + '<button class="compartir" id="btnCopiarTextoVisor" style="background:none;border:1px solid var(--line);color:var(--ink)">📋 Copiar el texto</button>'
+      + '<button class="compartir" id="btnCopiarLinkVisor" style="background:none;border:1px solid var(--line);color:var(--ink)">🔗 Copiar el enlace</button>'
+      + '<button class="compartir" id="btnCopiarIgVisor" style="background:none;border:1.5px dashed var(--region);color:var(--region)">📱 Copiar texto para Instagram</button>'
+      + '</div>';
+    abrirVisorHTML(h);
+    engancharFormatoCompartir(fObj, "fecha");
+    document.getElementById("btnCompartirVisor").addEventListener("click", (e)=> compartirDesdeConsola(fObj, "fecha", e.currentTarget));
+    document.getElementById("btnCopiarTextoVisor").addEventListener("click", (e)=> copiarTextoConsola(fObj, "fecha", e.currentTarget));
+    document.getElementById("btnCopiarLinkVisor").addEventListener("click", (e)=> copiarLinkConsola(fObj, "fecha", e.currentTarget));
+    document.getElementById("btnCopiarIgVisor").addEventListener("click", (e)=> copiarTextoInstagramConsola(fObj, "fecha", e.currentTarget));
+  }
+
   function editarComunicado(c){
     const cont = document.getElementById("editorComunicado");
     document.getElementById("btnEditarComunicado").classList.add("hide");
@@ -3252,8 +3319,13 @@
   // entrando por la dirección vieja de Vercel.
   const URL_FONTE = "https://fonte.city/";
   function urlDe(n, tipo){
+    const t = tipo || (n && n.__tipo) || "n";
+    if(t === "f" || t === "fecha" || t === "i"){
+      const iid = n && (n.institucion_id || (t === "i" ? n.id : null));
+      return iid ? URL_FONTE + "?i=" + encodeURIComponent(iid) : URL_FONTE;
+    }
     if(!n || !n.id) return URL_FONTE;
-    return URL_FONTE + "?" + (tipo || "n") + "=" + encodeURIComponent(n.id);
+    return URL_FONTE + "?" + t + "=" + encodeURIComponent(n.id);
   }
 
   function textoCompartir(n, paraInstagram){
@@ -3262,9 +3334,16 @@
     if(n.__tipo === "o") partes.push("🏷️ ESPACIO DE UN COMERCIO", "");
     else if(n.__tipo === "c") partes.push("📢 COMUNICADO OFICIAL", "Fonte no reescribe este texto.", "");
     else if(n.__tipo === "a") partes.push("📍 AVISO DE UN VECINO", "");
+    else if(n.__tipo === "f") partes.push("📅 FECHA · " + (n.fuente_etiqueta || "Institución"), "");
     partes.push(n.titulo || "");
     const resumen = n.resumen_corto || n.resumen_extendido || "";
-    if(n.__tipo === "c"){
+    if(n.__tipo === "f"){
+      const datos = [];
+      if(n.fecha_iso) datos.push(etiquetaFechaIso(n.fecha_iso));
+      if(n.horario) datos.push("🕐 " + n.horario);
+      String(n.lugar_puntos || "").split(/\n+/).map(s=>s.trim()).filter(Boolean).forEach(l=> datos.push("📍 " + l));
+      if(datos.length) partes.push("", datos.join("\n"));
+    } else if(n.__tipo === "c"){
       // Igual que la app: el texto oficial completo, sin cortar.
       if(resumen) partes.push("", resumen);
     } else if(resumen){
@@ -3272,11 +3351,17 @@
     }
     if(n.dato_extra) partes.push("", "📌 " + n.dato_extra);
     if(n.accion_etiqueta && n.accion_url) partes.push("", "📎 " + n.accion_etiqueta + " → " + n.accion_url);
-    if(n.fuente_etiqueta) partes.push("", "Fuente: " + n.fuente_etiqueta);
+    if(n.fuente_etiqueta && n.__tipo !== "f") partes.push("", "Fuente: " + n.fuente_etiqueta);
     // Instagram no deja tocar links sueltos en el texto de un post o historia — ahí se manda
     // a la bio en vez del link real. En cualquier otro lado (WhatsApp, Facebook, mail) el
     // link de siempre queda tocable, así que ese sigue siendo el comportamiento por defecto.
-    partes.push("", paraInstagram ? "🔗 Mirala completa en el link de la bio" : "👉 Leelo completo en Fonte: " + urlDe(n, n.__tipo));
+    if(paraInstagram){
+      partes.push("", "🔗 Mirala completa en el link de la bio");
+    } else if(n.__tipo === "f"){
+      partes.push("", "👉 Ver en Fonte: " + urlDe(n, "f"));
+    } else {
+      partes.push("", "👉 Leelo completo en Fonte: " + urlDe(n, n.__tipo));
+    }
     return partes.join("\n");
   }
 
@@ -3448,6 +3533,119 @@
 
   async function generarPlaca(n){
     await fuentesListas();
+
+    // Fecha institucional: flyer oficial (día grande + datos + sello). Un solo diseño.
+    // Márgenes seguros ~100px arriba/abajo (IG Stories recorta UI) + "Fonte" chiquito en el pie.
+    if(n.__tipo === "f"){
+      const W = 1080, H = 1920;
+      const SAFE = 100; // zona que IG Stories suele tapar / recortar
+      const cnv = document.createElement("canvas");
+      cnv.width = W; cnv.height = H;
+      const ctx = cnv.getContext("2d");
+      const TINTA = "#1A1814", PAPEL = "#F4F0E6";
+      const instObj = (INST_ADMIN||[]).find(x=>String(x.id)===String(n.institucion_id||"")) || null;
+      const VERDE = n.color || colorDeInst(n.institucion_id, n.fuente_etiqueta);
+      const VERDE2 = oscurecerHex(VERDE, 0.72);
+      ctx.fillStyle = PAPEL; ctx.fillRect(0,0,W,H);
+      const inst = (n.fuente_etiqueta || (instObj&&instObj.nombre) || "Institución").trim();
+      const sigla = n.sello || selloDeInst(n.institucion_id, inst);
+      // banner institución — debajo del safe top
+      const banY = SAFE + 80; // ~180
+      const banH = 92;
+      const banCy = banY + banH/2;
+      ctx.font = "600 32px 'Work Sans',sans-serif";
+      const instW = Math.min(W - SAFE*2 - 40, Math.max(420, ctx.measureText(inst).width + 160));
+      const banX = (W - instW) / 2;
+      ctx.fillStyle = VERDE;
+      ctx.beginPath(); ctx.roundRect(banX, banY, instW, banH, 20); ctx.fill();
+      ctx.beginPath(); ctx.arc(banX + 46, banCy, 28, 0, Math.PI*2); ctx.fillStyle = "#163828"; ctx.fill();
+      ctx.strokeStyle = "#F4F0E6"; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(banX + 46, banCy, 26, 0, Math.PI*2); ctx.stroke();
+      const logoUrl = (instObj && instObj.foto_url) || "";
+      if(logoUrl){
+        const lim = await cargarImagen(logoUrl, 4000);
+        if(lim){
+          ctx.save();
+          ctx.beginPath(); ctx.arc(banX + 46, banCy, 26, 0, Math.PI*2); ctx.clip();
+          ctx.drawImage(lim, banX + 20, banCy - 26, 52, 52);
+          ctx.restore();
+        } else {
+          ctx.fillStyle = "#F4F0E6"; ctx.font = "700 22px 'Fraunces',Georgia,serif";
+          ctx.textAlign = "center"; ctx.fillText(sigla, banX + 46, banCy + 8);
+        }
+      } else {
+        ctx.fillStyle = "#F4F0E6"; ctx.font = "700 22px 'Fraunces',Georgia,serif";
+        ctx.textAlign = "center";
+        ctx.fillText(sigla, banX + 46, banCy + 8);
+      }
+      ctx.textAlign = "left";
+      ctx.fillStyle = tintaSobre(VERDE);
+      ctx.font = "700 32px 'Work Sans',sans-serif";
+      const nom = inst.length > 28 ? inst.slice(0,27)+"…" : inst;
+      ctx.fillText(nom, banX + 88, banCy + 12);
+      // día grande — aire debajo del banner, sin pegarse al borde
+      const pf = partesFechaFlyer(n.fecha_iso);
+      ctx.textAlign = "center";
+      ctx.fillStyle = VERDE2; ctx.font = "700 34px 'Work Sans',sans-serif";
+      ctx.fillText(pf.weekday, W/2, banY + banH + 90);
+      ctx.fillStyle = VERDE;
+      ctx.font = "700 200px 'Fraunces',Georgia,serif";
+      const diaY = banY + banH + 300;
+      ctx.fillText(pf.dia, W/2, diaY);
+      ctx.fillStyle = VERDE2; ctx.font = "700 40px 'Work Sans',sans-serif";
+      ctx.fillText(pf.mes, W/2, diaY + 70);
+      const divY = diaY + 120;
+      ctx.strokeStyle = VERDE2; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(W/2-90, divY); ctx.lineTo(W/2-12, divY); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(W/2+12, divY); ctx.lineTo(W/2+90, divY); ctx.stroke();
+      ctx.fillStyle = VERDE2; ctx.font = "20px serif";
+      ctx.fillText("✦", W/2, divY + 6);
+      // título
+      ctx.fillStyle = TINTA;
+      ctx.font = "700 56px 'Fraunces',Georgia,serif";
+      const tit = envolver(ctx, n.titulo || "", W - SAFE*2 - 40, 3);
+      let y = divY + 80;
+      tit.forEach((l)=>{ ctx.fillText(l, W/2, y); y += 68; });
+      // horario + lugares — no invadir el pie (sigla + Fecha oficial + link + Fonte)
+      const pieTop = H - SAFE - 360; // techo del bloque de pie
+      y += 24;
+      if(n.horario){
+        ctx.fillStyle = VERDE;
+        ctx.font = "700 36px 'Work Sans',sans-serif";
+        ctx.fillText(n.horario, W/2, y);
+        y += 56;
+      }
+      const puntos = String(n.lugar_puntos || "").split(/\n+/).map(s=>s.trim()).filter(Boolean);
+      ctx.fillStyle = TINTA;
+      ctx.font = "500 32px 'Work Sans',sans-serif";
+      ctx.textAlign = "left";
+      const lineasLugar = [];
+      puntos.forEach(p=> envolver(ctx, p, W - SAFE*2 - 40, 2).forEach(l=> lineasLugar.push(l)));
+      const maxLugar = Math.max(0, Math.floor((pieTop - 24 - y) / 44));
+      lineasLugar.slice(0, Math.min(8, maxLugar)).forEach((l,i)=> ctx.fillText(l, SAFE + 20, y + i*44));
+      // pie: sello → Fecha oficial → link → Fonte (todo dentro del safe bottom)
+      ctx.textAlign = "center";
+      ctx.fillStyle = VERDE;
+      ctx.font = "700 100px 'Fraunces',Georgia,serif";
+      ctx.fillText(sigla, W/2, H - SAFE - 280);
+      ctx.strokeStyle = VERDE2; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(W/2-70, H - SAFE - 240); ctx.lineTo(W/2-14, H - SAFE - 240); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(W/2+14, H - SAFE - 240); ctx.lineTo(W/2+70, H - SAFE - 240); ctx.stroke();
+      ctx.font = "20px serif"; ctx.fillText("✦", W/2, H - SAFE - 234);
+      ctx.fillStyle = TINTA;
+      ctx.font = "600 28px 'Work Sans',sans-serif";
+      ctx.fillText("Fecha oficial", W/2, H - SAFE - 170);
+      const link = urlDe(n, "f").replace(/^https?:\/\//,"");
+      ctx.fillStyle = VERDE2;
+      ctx.font = "500 24px 'Work Sans',sans-serif";
+      ctx.fillText(link, W/2, H - SAFE - 120);
+      // marca Fonte chiquita en el pie
+      ctx.fillStyle = VERDE2;
+      ctx.font = "600 22px 'Work Sans',sans-serif";
+      ctx.fillText("Fonte", W/2, H - SAFE - 50);
+      ctx.textAlign = "left";
+      return new Promise(res=> cnv.toBlob(res, "image/jpeg", 0.92));
+    }
 
     // Comunicado: UNA sola placa oficial, igual que en la app (index). Sin picker de diseños.
     if(n.__tipo === "c"){
@@ -3811,6 +4009,21 @@
                lugar:o.lugar_texto || "", imagen_url:o.foto_url || null, fotos:o.fotos || null,
                fuente_etiqueta:"Aviso de un vecino" };
     }
+    if(tipo === "fecha"){
+      const inst = (INST_ADMIN||[]).find(x=>String(x.id)===String(o.institucion_id)) || null;
+      const nombreInst = (inst && inst.nombre) || o.institucion || "";
+      return {
+        id:o.id, __tipo:"f",
+        titulo:o.titulo || "Fecha",
+        fecha_iso:o.fecha || "",
+        horario:o.horario || "",
+        lugar_puntos:o.lugar || "",
+        institucion_id:o.institucion_id || null,
+        color: colorDeInst(o.institucion_id, nombreInst),
+        sello: selloDeInst(o.institucion_id, nombreInst),
+        fuente_etiqueta: nombreInst,
+      };
+    }
     return Object.assign({}, o, { __tipo:"n" });
   }
 
@@ -3820,10 +4033,14 @@
   const formatoElegidoPorId = {};
   const dimensionElegidaPorId = {};
   function bloqueFormatoCompartir(obj, tipo){
-    // Comunicados: un solo diseño oficial (igual que la app). Sin picker de formatos.
-    if(tipo === "comunicado"){
-      return '<div class="field-label" style="margin-top:16px">Placa oficial</div>'
-        + '<div class="recorte-ayuda" style="margin-top:-4px;margin-bottom:8px">Misma imagen que ve el vecino al compartir desde Fonte — sin opciones de diseño.</div>'
+    // Comunicados y fechas: un solo diseño oficial. Sin picker de formatos.
+    if(tipo === "comunicado" || tipo === "fecha"){
+      const label = tipo === "fecha" ? "Flyer de fecha" : "Placa oficial";
+      const ayuda = tipo === "fecha"
+        ? "Un solo formato para Channel / IG / FB — día grande, datos y sello de la institución."
+        : "Misma imagen que ve el vecino al compartir desde Fonte — sin opciones de diseño.";
+      return '<div class="field-label" style="margin-top:16px">'+label+'</div>'
+        + '<div class="recorte-ayuda" style="margin-top:-4px;margin-bottom:8px">'+ayuda+'</div>'
         + '<button class="compartir" id="btnVerImagen-'+escA(obj.id)+'" style="background:none;border:1px solid var(--line);color:var(--ink);margin-top:8px">👁 Ver la imagen antes de compartir</button>'
         + '<div id="previewImg-'+escA(obj.id)+'" class="hide" style="margin-top:10px"></div>';
     }
@@ -3853,7 +4070,7 @@
   }
   async function verImagenConsola(obj, tipo, btn){
     const n = comoNota(obj, tipo);
-    if(tipo !== "comunicado"){
+    if(tipo !== "comunicado" && tipo !== "fecha"){
       const formato = formatoElegidoPorId[obj.id];
       if(formato && formato !== "auto") n.estilo_placa = formato;
       n.__dim = dimensionElegidaPorId[obj.id] || "historia";
@@ -3939,7 +4156,7 @@
 
   async function compartirDesdeConsola(obj, tipo, btn){
     const n = comoNota(obj, tipo);
-    if(tipo !== "comunicado"){
+    if(tipo !== "comunicado" && tipo !== "fecha"){
       const formato = formatoElegidoPorId[obj.id];
       if(formato && formato !== "auto") n.estilo_placa = formato;
       n.__dim = dimensionElegidaPorId[obj.id] || "historia";
