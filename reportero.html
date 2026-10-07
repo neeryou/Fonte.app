@@ -232,19 +232,39 @@
   .arch-item .mini{ border-radius:2px; }
   .arch-item .m{ font-family:var(--mono); font-size:.57rem; }
 
-  /* selector de tipo: tres tiras como la maqueta */
-  .tipos{ display:flex; flex-direction:column; gap:9px; margin-bottom:16px; }
-  .tipo{ display:flex; flex-direction:row; align-items:center; gap:14px;
-    background:var(--paper); border:1px solid var(--line-strong); border-radius:12px;
-    padding:16px 16px; text-align:left; }
-  .tipo .e{ display:flex; width:36px; height:36px; flex:0 0 auto; align-items:center; justify-content:center;
-    font-size:1.25rem; border-right:1px solid var(--line); padding-right:12px; margin-right:2px; }
+  /* selector de tipo: Nota | Oferta (2 columnas, como maqueta) */
+  .tipos{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px; }
+  .tipo{ display:flex; flex-direction:column; gap:4px;
+    background:var(--paper); border:1.5px solid var(--line-strong); border-radius:14px;
+    padding:16px 12px; text-align:left; }
+  .tipo .e{ font-size:1.35rem; line-height:1; border:0; padding:0; margin:0; width:auto; height:auto; display:block; }
   .tipo::before{ content:none; }
-  .tipo .t{ font-family:var(--serif); font-weight:700; font-size:1.05rem; letter-spacing:-.02em; display:block; }
-  .tipo .s{ font-family:var(--sans); font-size:.72rem; opacity:.7; font-weight:500; }
-  .tipo.on{ background:var(--paper); color:var(--ink); border-color:var(--ink); box-shadow:inset 3px 0 0 var(--ink); }
-  .tipo.on .e{ border-color:var(--line); }
+  .tipo .t{ font-family:var(--sans); font-weight:800; font-size:.92rem; letter-spacing:-.01em; display:block; margin-top:6px; }
+  .tipo .s{ font-family:var(--sans); font-size:.66rem; color:var(--ink-faint); opacity:1; font-weight:500; line-height:1.3; }
+  .tipo.on{ background:color-mix(in srgb,var(--region) 7%,var(--paper)); color:var(--ink);
+    border-color:var(--region); box-shadow:0 0 0 3px color-mix(in srgb,var(--region) 16%,transparent); }
+  .tipo.on .e{ border-color:transparent; }
   .hint-ciudad{ font-family:var(--sans); font-size:.72rem; color:var(--ink-faint); margin:-8px 0 16px; }
+  .path-com{ margin:0 0 18px; padding:14px; border-radius:14px;
+    border:1.5px dashed color-mix(in srgb,var(--urgente) 40%,var(--line-strong));
+    background:color-mix(in srgb,var(--urgente) 5%,var(--paper)); text-align:left; width:100%; }
+  .path-com .lbl{ font-size:.56rem; font-weight:800; letter-spacing:.12em; text-transform:uppercase;
+    color:var(--urgente); margin:0 0 6px; }
+  .path-com .tt{ font-weight:800; font-size:.9rem; color:var(--ink); }
+  .path-com .ss{ font-size:.7rem; color:var(--ink-soft); margin-top:4px; line-height:1.4; }
+  .path-com .flow, button.path-com .flow, #pathComIr{
+    margin-top:10px; display:flex; align-items:center; gap:6px; flex-wrap:wrap;
+    font-size:.66rem; font-weight:700; color:var(--ink); background:none; border:0; padding:0; cursor:pointer; }
+  .path-com .pill{ background:var(--paper); border:1px solid var(--line-strong); padding:4px 8px; border-radius:999px; }
+  .path-com .arr{ color:var(--urgente); }
+  .aviso-ctx{ display:flex; align-items:center; gap:12px; margin:0 0 14px; padding:12px 13px;
+    border-radius:12px; border:1.5px solid color-mix(in srgb,var(--urgente) 35%,var(--line-strong));
+    background:color-mix(in srgb,var(--urgente) 6%,var(--paper)); }
+  .aviso-ctx.hide{ display:none; }
+  .aviso-ctx-back{ font-family:var(--sans); font-size:.72rem; font-weight:800; color:var(--region);
+    background:var(--paper); border:1px solid var(--line-strong); border-radius:8px; padding:8px 11px; flex:0 0 auto; }
+  .aviso-ctx .lbl{ font-size:.56rem; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:var(--urgente); }
+  .aviso-ctx .ss{ font-size:.7rem; color:var(--ink-soft); margin-top:3px; line-height:1.35; }
 
   /* nav con filete doble arriba */
   .rep-nav{ border-top:2.5px solid var(--ink); }
@@ -490,23 +510,6 @@
   #ciudadDetallePanel{ margin-top:14px; }
   #ciudadDetallePanel .svc-panel, #ciudadDetallePanel .fechas-panel{ margin-top:0; }
 
-  /* ===== métricas ===== */
-  .kpi-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:18px; }
-  .kpi{ background:var(--paper); border:1px solid var(--line); border-radius:12px; padding:13px 14px; }
-  .kpi .n{ font-family:var(--serif); font-weight:700; font-size:1.7rem; color:var(--ink); line-height:1; }
-  .kpi .l{ font-family:var(--sans); font-size:.68rem; font-weight:600; color:var(--ink-faint); margin-top:5px; line-height:1.3; }
-  .kpi.destacado{ background:color-mix(in srgb,var(--barrio) 8%,var(--paper)); border-color:color-mix(in srgb,var(--barrio) 35%,var(--line)); }
-  .kpi.destacado .n{ color:var(--barrio); }
-  .meta-bar{ margin:4px 0 18px; }
-  .meta-bar .track{ height:9px; background:var(--paper-2); border-radius:999px; overflow:hidden; }
-  .meta-bar .fill{ height:100%; background:var(--barrio); border-radius:999px; transition:width .4s; }
-  .meta-bar .cap{ font-family:var(--sans); font-size:.7rem; color:var(--ink-soft); margin-top:7px; }
-  .chart{ display:flex; align-items:flex-end; gap:3px; height:110px; padding:8px 0; }
-  .chart .col{ flex:1; display:flex; flex-direction:column; justify-content:flex-end; align-items:center; gap:4px; }
-  .chart .bar{ width:100%; background:var(--barrio); border-radius:3px 3px 0 0; min-height:2px; }
-  .chart .bar.hoy{ background:var(--int); }
-  .chart .d{ font-family:var(--sans); font-size:.54rem; color:var(--ink-faint); }
-  .chart-lbl{ font-family:var(--sans); font-size:.68rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-faint); margin-bottom:2px; }
 </style>
 </head>
 <body>
@@ -542,9 +545,6 @@
       <div class="sec-lbl">Para hacer ahora <span class="n hide" id="hoyPendN">0</span></div>
       <div id="hoyTareas"></div>
 
-      <div class="sec-lbl">Hoy en Fonte</div>
-      <div class="kpis" id="hoyKpis"></div>
-
       <div class="sec-lbl">Lo último que publicaste</div>
       <div id="hoyUltimo"></div>
     </div>
@@ -566,15 +566,32 @@
 
     <div class="rep-view" id="viewCargar">
     <h2 class="rep-h">Publicar</h2>
-    <p class="rep-sub">Lo que sale hoy en Fonte.</p>
+    <p class="rep-sub">Lo que sale hoy en Fonte — sin mezclar con la carga institucional.</p>
 
+    <div id="avisoCtx" class="aviso-ctx hide">
+      <button type="button" class="aviso-ctx-back" id="avisoCtxBack">← Ciudad</button>
+      <div class="aviso-ctx-tx">
+        <div class="lbl">Aviso oficial</div>
+        <div class="ss">Se carga desde la institución · pack imagen + caption</div>
+      </div>
+    </div>
 
     <div class="tipos" id="tiposPub">
       <button class="tipo on" data-tipo="nota" data-sig="NO"><span class="e">📰</span><span class="t">Nota</span><span class="s">Una noticia de la ciudad o la zona</span></button>
-      <button class="tipo" data-tipo="comunicado" data-sig="CO"><span class="e">📢</span><span class="t">Comunicado</span><span class="s">Aviso de una institución</span></button>
       <button class="tipo" data-tipo="oferta" data-sig="OF"><span class="e">🏷️</span><span class="t">Oferta</span><span class="s">Promoción de un comercio</span></button>
     </div>
-    <p class="hint-ciudad">Las instituciones se editan en Ciudad ›</p>
+    <div class="path-com" id="pathCom">
+      <div class="lbl">Camino institucional</div>
+      <div class="tt">¿Comunicado / aviso oficial?</div>
+      <div class="ss">No se elige acá. Se carga desde la institución para que salga con sello, foto y pack listo para redes.</div>
+      <button type="button" class="flow" id="pathComIr">
+        <span class="pill">Ciudad</span>
+        <span class="arr">→</span>
+        <span class="pill">Institución</span>
+        <span class="arr">→</span>
+        <span class="pill">Aviso</span>
+      </button>
+    </div>
 
     <div id="panelNota">
 
@@ -761,9 +778,9 @@
       <h2 class="rep-h" style="font-size:1.05rem">Ofertas activas</h2>
       <div class="card" id="ofertasAdminList"><p style="font-family:var(--sans);font-size:.78rem;color:var(--ink-faint)">Cargando…</p></div>
 
-      <h2 class="rep-h" style="margin-top:28px">Comunicado oficial</h2>
-      <p class="rep-sub">Se publica tal cual lo escribas. Fonte no lo resume ni lo reescribe. Ese es el sello para la institución.</p>
-      <button class="form-toggle" data-form="formComunicado"><span>+ Publicar un comunicado</span><span class="chev">⌄</span></button>
+      <h2 class="rep-h" style="margin-top:8px">Aviso oficial</h2>
+      <p class="rep-sub">Se publica tal cual lo escribas. Fonte no lo resume ni lo reescribe. Entrás acá desde Ciudad → institución → Aviso.</p>
+      <button class="form-toggle" data-form="formComunicado"><span>+ Cargar aviso</span><span class="chev">⌄</span></button>
       <div class="card hide" id="formComunicado">
         <div class="field-label">Institución verificada</div>
         <select class="inp" id="coInstitucionSel">
@@ -792,21 +809,16 @@
         <div class="err-msg hide" id="coErr"></div>
       </div>
 
-      <h2 class="rep-h" style="font-size:1.05rem">Comunicados publicados</h2>
+      <h2 class="rep-h" style="font-size:1.05rem">Avisos publicados</h2>
+      <p class="rep-sub" style="margin-top:-6px">También los encontrás en Archivo → Comunicados.</p>
       <div class="card" id="comunicadosAdminList"><p style="font-family:var(--sans);font-size:.78rem;color:var(--ink-faint)">Cargando…</p></div>
-    </div>
-
-    <div class="rep-view" id="viewMetricas">
-      <h2 class="rep-h">Métricas</h2>
-      <p class="rep-sub">La cifra que importa es <b>usuarios recurrentes</b>: gente que volvió 3 o más días distintos. Es la señal de que Fonte se volvió un hábito, no una visita suelta.</p>
-      <div id="metricasBody"><p style="font-family:var(--sans);font-size:.78rem;color:var(--ink-faint)">Cargando…</p></div>
     </div>
 
     <div class="rep-view" id="viewInstituciones">
       <div id="ciudadLista">
       <div id="avisoVencidas" class="hide" style="background:color-mix(in srgb,#B23A2E 10%,var(--paper));border:1px solid color-mix(in srgb,#B23A2E 30%,var(--line));border-radius:10px;padding:12px 14px;margin-bottom:16px;font-family:var(--sans);font-size:.8rem;color:#B23A2E;font-weight:600"></div>
       <h2 class="rep-h">Ciudad</h2>
-      <p class="rep-sub">Instituciones verificadas — se cargan una vez. Después solo actualizás horarios o fechas.</p>
+      <p class="rep-sub">Tocá una institución → Aviso, Fecha o Servicio.</p>
 
       <button class="ciudad-nueva form-toggle" data-form="formInstitucion"><span>+ Nueva institución</span><span class="chev">⌄</span></button>
       <div class="card hide" id="formInstitucion">
@@ -925,15 +937,12 @@
   <button class="rnv" data-v="viewCargar">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
     <span>Publicar</span></button>
-  <button class="rnv" data-v="viewArchivo">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
-    <span>Archivo</span></button>
-  <button class="rnv" data-v="viewMetricas">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>
-    <span>Panel</span></button>
   <button class="rnv" data-v="viewInstituciones">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 21h18M5 21V8l7-5 7 5v13M9 21v-6h6v6"/></svg>
     <span>Ciudad</span></button>
+  <button class="rnv" data-v="viewArchivo">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+    <span>Archivo</span></button>
 </nav>
 
 <div class="toast" id="toast"></div>
@@ -1010,7 +1019,7 @@
     {id:"otro_riesgo", label:"Otro riesgo", icon:"⚠️"}
   ];
 
-  const VISTAS = ["viewHoy","viewCargar","viewArchivo","viewMetricas","viewAportes","viewOfertas","viewInstituciones"];
+  const VISTAS = ["viewHoy","viewCargar","viewArchivo","viewAportes","viewOfertas","viewInstituciones"];
   function irAVista(v){
     VISTAS.forEach(x=>{
       const el = document.getElementById(x);
@@ -1028,7 +1037,6 @@
     }
     if(v === "viewHoy"){ cargarHoy(); }
     if(v === "viewArchivo"){ cargarArchivo(); }
-    if(v === "viewMetricas"){ cargarMetricas(); }
     if(v === "viewAportes"){ cargarAportesPendientes(); cargarAvisosPublicados(); }
     if(v === "viewCargar"){ cargarBorradores(); cargarPublicadoHoy(); cargarOfertasAdmin(); cargarComunicadosAdmin(); asegurarInstitucionesSelect(true); }
     if(v === "viewInstituciones"){ mostrarCiudadLista(); cargarInstitucionesAdmin(); }
@@ -1038,7 +1046,7 @@
   function irAPestana(tabId){
     if(tabId === "tabOfertas"){ irAVista("viewCargar"); irATipo("oferta"); return; }
     if(tabId === "tabInstituciones"){ irAVista("viewInstituciones"); return; }
-    const map = { tabCargar:"viewCargar", tabAportes:"viewAportes", tabMetricas:"viewMetricas" };
+    const map = { tabCargar:"viewCargar", tabAportes:"viewAportes" };
     irAVista(map[tabId] || "viewHoy");
   }
   document.querySelectorAll(".rnv").forEach(b=>{
@@ -2238,14 +2246,8 @@
       return;
     }
     cont.innerHTML = data.map(i=>{
-      let nSvc = 0;
-      try{
-        const raw = i.servicios;
-        const arr = typeof raw === "string" ? JSON.parse(raw||"[]") : (Array.isArray(raw)?raw:[]);
-        nSvc = Array.isArray(arr) ? arr.length : 0;
-      }catch(e){ nSvc = 0; }
       const meta = (LABEL_TIPO_INST[i.tipo] || "Institución")
-        + (nSvc ? " · "+nSvc+(nSvc===1?" horario":" horarios") : " · verificada");
+        + " · Aviso · Fecha · Servicio";
       return '<div class="inst-block" data-id="'+escA(i.id)+'" role="button" tabindex="0">'
       + '<span class="inst-ico">'+(ICONS_INST[i.tipo]||"📍")+'</span>'
       + '<div><div class="h">'+escA(i.nombre)+'</div>'
@@ -2654,81 +2656,6 @@
     cargarInstitucionesAdmin();
   });
 
-  // ================= MÉTRICAS =================
-  async function cargarMetricas(){
-    const cont = document.getElementById("metricasBody");
-    const desde = new Date(Date.now() - 29*86400000).toISOString().slice(0,10);
-    const { data, error } = await sb.from("visitas").select("dispositivo_id,fecha,es_nuevo,instalada").gte("fecha", desde);
-    if(error){
-      cont.innerHTML = '<p style="font-family:var(--sans);font-size:.78rem;color:#B23A2E">No se pudieron cargar las métricas: '+escA(error.message)+'</p>';
-      return;
-    }
-    const filas = data || [];
-    const hoy = new Date().toISOString().slice(0,10);
-    const hace7 = new Date(Date.now() - 6*86400000).toISOString().slice(0,10);
-
-    const diasPorDisp = {};
-    filas.forEach(f=>{
-      (diasPorDisp[f.dispositivo_id] = diasPorDisp[f.dispositivo_id] || new Set()).add(f.fecha);
-    });
-    const dispositivos = Object.keys(diasPorDisp);
-    const recurrentes = dispositivos.filter(d=> diasPorDisp[d].size >= 3).length;
-    const hoyUnicos = new Set(filas.filter(f=>f.fecha===hoy).map(f=>f.dispositivo_id)).size;
-    const semanaUnicos = new Set(filas.filter(f=>f.fecha>=hace7).map(f=>f.dispositivo_id)).size;
-    const instalada = new Set(filas.filter(f=>f.instalada).map(f=>f.dispositivo_id)).size;
-    const nuevosSemana = new Set(filas.filter(f=>f.es_nuevo && f.fecha>=hace7).map(f=>f.dispositivo_id)).size;
-    const META = 50;
-    const pct = Math.min(100, Math.round(recurrentes / META * 100));
-
-    const dias = [];
-    for(let i=13;i>=0;i--){
-      const f = new Date(Date.now() - i*86400000).toISOString().slice(0,10);
-      dias.push({ fecha:f, n: new Set(filas.filter(x=>x.fecha===f).map(x=>x.dispositivo_id)).size });
-    }
-    const maxN = Math.max(1, ...dias.map(d=>d.n));
-
-    // Gasto estimado de la IA este mes (aproximado: el número real está en Google)
-    const inicioMes = new Date(); inicioMes.setDate(1); inicioMes.setHours(0,0,0,0);
-    let notasMes = 0;
-    try{
-      const r = await sb.from("noticias").select("id", { count:"exact", head:true })
-        .gte("created_at", inicioMes.toISOString());
-      notasMes = r.count || 0;
-    }catch(e){}
-    const COSTO_POR_NOTA = 0.006;                 // dólares, aproximado
-    const gasto = (notasMes * COSTO_POR_NOTA);
-    const TOPE_USD = 10;
-    const pctGasto = Math.min(100, Math.round(gasto / TOPE_USD * 100));
-
-    cont.innerHTML =
-      '<div class="kpi-grid">'
-      + '<div class="kpi destacado"><div class="n">'+recurrentes+'</div><div class="l">Usuarios recurrentes<br>(3+ días en el último mes)</div></div>'
-      + '<div class="kpi"><div class="n">'+hoyUnicos+'</div><div class="l">Personas hoy</div></div>'
-      + '<div class="kpi"><div class="n">'+semanaUnicos+'</div><div class="l">Personas esta semana</div></div>'
-      + '<div class="kpi"><div class="n">'+dispositivos.length+'</div><div class="l">Personas en 30 días</div></div>'
-      + '<div class="kpi"><div class="n">'+nuevosSemana+'</div><div class="l">Nuevos esta semana</div></div>'
-      + '<div class="kpi"><div class="n">'+instalada+'</div><div class="l">La instalaron como app</div></div>'
-      + '</div>'
-      + '<div class="meta-bar"><div class="track"><div class="fill" style="width:'+pct+'%"></div></div>'
-      + '<div class="cap"><b>'+recurrentes+' de '+META+'</b> usuarios recurrentes — la meta antes de activar el contacto en la Provincia.</div></div>'
-      + '<div class="chart-lbl">Personas por día (últimos 14)</div>'
-      + '<div class="chart">' + dias.map(d=>{
-          const alto = Math.round(d.n / maxN * 92);
-          const dd = d.fecha.slice(8,10);
-          return '<div class="col"><div class="bar'+(d.fecha===hoy?" hoy":"")+'" style="height:'+alto+'px" title="'+d.fecha+': '+d.n+'"></div><div class="d">'+dd+'</div></div>';
-        }).join("") + '</div>'
-      + (dispositivos.length === 0 ? '<p style="font-family:var(--sans);font-size:.78rem;color:var(--ink-faint);margin-top:14px">Todavía no hay visitas registradas. Van a aparecer a partir de que la gente entre a Fonte.</p>' : '')
-      + '<div class="sec-lbl" style="margin-top:24px">Gasto de la IA este mes</div>'
-      + '<div class="kpi-grid" style="grid-template-columns:1fr 1fr">'
-      + '<div class="kpi"><div class="n">'+notasMes+'</div><div class="l">notas generadas</div></div>'
-      + '<div class="kpi"><div class="n">US$'+gasto.toFixed(2)+'</div><div class="l">estimado</div></div>'
-      + '</div>'
-      + '<div class="meta-bar"><div class="track"><div class="fill" style="width:'+pctGasto+'%;background:'
-      + (pctGasto > 80 ? '#B23A2E' : 'var(--int)')+'"></div></div>'
-      + '<div class="cap">Sobre un tope de US$'+TOPE_USD+'. Es un cálculo aproximado '
-      + '(unos US$0,006 por nota); el número exacto está en Google AI Studio.</div></div>';
-  }
-
   // ================= VISOR DE AVISO =================
   function abrirVisor(a){
     const cat = CAT_APORTE.find(c=>c.id===a.categoria) || {label:a.categoria, icon:"📍"};
@@ -3096,12 +3023,11 @@
     document.getElementById("hoyFecha").textContent =
       hoy.toLocaleDateString("es-AR",{weekday:"long",day:"numeric",month:"long"}) + " · Esto es lo que necesita tu atención.";
 
-    const [pend, venc, urg, notasHoy, visitasHoy] = await Promise.all([
+    const [pend, venc, urg, notasHoy] = await Promise.all([
       sb.from("aportes").select("id,created_at").eq("estado","pendiente").order("created_at",{ascending:true}),
       sb.from("institucion_fechas").select("id,titulo,fecha,institucion_id").eq("activa",true).lt("fecha", hoyIso),
       sb.from("comunicados").select("id,titulo,created_at").eq("urgente",true).order("created_at",{ascending:false}).limit(5),
       sb.from("noticias").select("*").eq("creada_por", sesion.user.id).eq("publicada",true).gte("created_at", inicioHoy.toISOString()).order("created_at",{ascending:false}),
-      sb.from("visitas").select("dispositivo_id").eq("fecha", hoyIso),
     ]);
 
     const tareas = [];
@@ -3142,17 +3068,13 @@
     cont.querySelectorAll(".task[data-i]").forEach(el=>{
       el.addEventListener("click", ()=>{
         const destino = tareas[parseInt(el.getAttribute("data-i"),10)].v;
-        if(["nota","comunicado","oferta","institucion"].includes(destino)){
+        if(destino === "institucion"){
+          irAVista("viewInstituciones");
+        } else if(["nota","comunicado","oferta"].includes(destino)){
           irAVista("viewCargar"); irATipo(destino);
         } else irAVista(destino);
       });
     });
-
-    const personasHoy = new Set((visitasHoy.data||[]).map(v=>v.dispositivo_id)).size;
-    document.getElementById("hoyKpis").innerHTML =
-      '<div class="kpi3"><span class="ic">📄</span><div class="n">'+(notasHoy.data||[]).length+'</div><div class="l">notas publicadas</div></div>'
-      + '<div class="kpi3"><span class="ic">👥</span><div class="n">'+personasHoy+'</div><div class="l">personas entraron</div></div>'
-      + '<div class="kpi3"><span class="ic">💬</span><div class="n">'+nPend+'</div><div class="l">avisos por revisar</div></div>';
 
     const ult = (notasHoy.data||[]).slice(0,3);
     const ultCont = document.getElementById("hoyUltimo");
@@ -3833,14 +3755,22 @@
 
   function irATipo(t, opts){
     opts = opts || {};
+    // Comunicado ya no es un tipo de Publicar: solo entra por Ciudad → Aviso
     tipoPub = t;
-    document.querySelectorAll("#tiposPub .tipo").forEach(b=> b.classList.toggle("on", b.getAttribute("data-tipo") === t));
+    const esAviso = (t === "comunicado");
+    document.querySelectorAll("#tiposPub .tipo").forEach(b=> b.classList.toggle("on", !esAviso && b.getAttribute("data-tipo") === t));
     ["nota","comunicado","oferta"].forEach(x=>{
       const p = document.getElementById("panel" + x.charAt(0).toUpperCase() + x.slice(1));
       if(p) p.classList.toggle("hide", x !== t);
     });
     const pIn = document.getElementById("panelInstitucion");
     if(pIn) pIn.classList.add("hide");
+    const tiposEl = document.getElementById("tiposPub");
+    const pathEl = document.getElementById("pathCom");
+    const ctxEl = document.getElementById("avisoCtx");
+    if(tiposEl) tiposEl.classList.toggle("hide", esAviso);
+    if(pathEl) pathEl.classList.toggle("hide", esAviso);
+    if(ctxEl) ctxEl.classList.toggle("hide", !esAviso);
     if(t === "comunicado") asegurarInstitucionesSelect();
     const enPublicar = document.getElementById("viewCargar").classList.contains("on");
     document.getElementById("barraAccion").classList.toggle("show", enPublicar && t === "nota");
@@ -3848,6 +3778,17 @@
   }
   document.querySelectorAll("#tiposPub .tipo").forEach(b=>{
     b.addEventListener("click", ()=> irATipo(b.getAttribute("data-tipo")));
+  });
+  const pathComIr = document.getElementById("pathComIr");
+  if(pathComIr) pathComIr.addEventListener("click", ()=> irAVista("viewInstituciones"));
+  const avisoCtxBack = document.getElementById("avisoCtxBack");
+  if(avisoCtxBack) avisoCtxBack.addEventListener("click", ()=>{
+    if(typeof ciudadInstActual !== "undefined" && ciudadInstActual){
+      irAVista("viewInstituciones");
+      if(typeof abrirCiudadDetalle === "function") abrirCiudadDetalle(ciudadInstActual);
+    } else {
+      irAVista("viewInstituciones");
+    }
   });
   irATipo("nota");
 
