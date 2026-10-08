@@ -1652,7 +1652,27 @@
   const colorDe = (o) => (ONDAS.find(x=>x.id===o)||{}).color || "var(--ink-faint)";
   const nombreDe = (o) => (ONDAS.find(x=>x.id===o)||{}).nombre || "Argentina";
   const gradDe = (id) => GRADIENTES[Math.abs(String(id).split("").reduce((a,c)=>a+c.charCodeAt(0),0)) % GRADIENTES.length];
-  const esc = (s) => (s||"").replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const esc = (s) => (s||"").replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  // URLs que vienen de la base (avisos de vecinos, notas, comunicados…): solo http(s), así un
+  // "javascript:" cargado a mano no llega nunca a un src/href/iframe. Comillas, paréntesis y
+  // espacios se codifican para que tampoco rompan un url('…') de CSS.
+  const urlSegura = (u) => {
+    const t = (u==null ? "" : String(u)).trim();
+    if(!/^https?:\/\//i.test(t)) return "";
+    return t.replace(/["'()\\\s<>]/g, c=>"%"+c.charCodeAt(0).toString(16).toUpperCase().padStart(2,"0"));
+  };
+
+  // "Hoy" del negocio = día calendario en Buenos Aires, no en UTC (con toISOString,
+  // desde las 21 h ya era "mañana"). Argentina está en UTC-3 todo el año.
+  function fechaBA(d){
+    return new Intl.DateTimeFormat("en-CA", { timeZone:"America/Argentina/Buenos_Aires", year:"numeric", month:"2-digit", day:"2-digit" }).format(d || new Date());
+  }
+  function hoyBA(){ return fechaBA(new Date()); }
+  // días de calendario entre dos "YYYY-MM-DD" (sin depender de la zona del teléfono)
+  function difDiasIso(desde, hasta){
+    const a = String(desde||"").split("-").map(Number), b = String(hasta||"").split("-").map(Number);
+    return Math.round((Date.UTC(b[0], b[1]-1, b[2]) - Date.UTC(a[0], a[1]-1, a[2])) / 86400000);
+  }
   // glosario estilo Wikipedia: subraya el término y agrega una tarjetita con la definición, sin salir de la nota
   function conGlosario(texto, terminos){
     let out = esc(texto);
@@ -1665,7 +1685,7 @@
     });
     return out;
   }
-  const bgDe = (n) => n.imagen_url ? "background-image:url('"+esc(n.imagen_url)+"');background-size:cover;background-position:center;" : "background:"+gradDe(n.id)+";";
+  const bgDe = (n) => urlSegura(n.imagen_url) ? "background-image:url('"+esc(urlSegura(n.imagen_url))+"');background-size:cover;background-position:center;" : "background:"+gradDe(n.id)+";";
   const tiempoDesde = (iso) => {
     if(!iso) return "";
     const diffMin = Math.round((Date.now() - new Date(iso).getTime())/60000);
@@ -1715,6 +1735,8 @@
     arbol_caido:"var(--barrio)", otro_riesgo:"var(--urgente)"
   };
   let APORTES = [];
+  // Columnas que la app pública realmente muestra de un aviso de vecinos (nunca dispositivo_id).
+  const COLS_APORTE_PUBLICO = "id,categoria,titulo,descripcion,foto_url,fotos,lat,lng,lugar_texto,estado,created_at";
   function getDispositivoId(){
     let id = localStorage.getItem("fonte_dispositivo_id");
     if(!id){ id = (crypto.randomUUID ? crypto.randomUUID() : (Date.now()+"-"+Math.random())); localStorage.setItem("fonte_dispositivo_id", id); }
@@ -2157,7 +2179,7 @@
       // como imagen al compartir, así que nunca puede quedar oculta en un carrusel.
       if(listaN.length){
         heroEl.setAttribute("style", "display:block;margin-bottom:16px;aspect-ratio:auto;overflow:visible;background:none");
-        heroEl.innerHTML = '<img src="'+esc(listaN[0])+'" alt="" '
+        heroEl.innerHTML = '<img src="'+esc(urlSegura(listaN[0]))+'" alt="" '
           + 'style="width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:10px;cursor:zoom-in">';
         // precarga en caché de compartir (CORS) mientras leés la nota
         try{ cargarImagen(listaN[0], 8000); }catch(e){}
@@ -2213,14 +2235,14 @@
     else { datoEl.style.display = "none"; datoEl.textContent = ""; }
 
     const accEl = document.getElementById("s-accion");
-    if(n.accion_etiqueta && n.accion_url){
+    if(n.accion_etiqueta && urlSegura(n.accion_url)){
       accEl.style.display = "flex";
       accEl.textContent = n.accion_etiqueta;
-      accEl.href = n.accion_url;
+      accEl.href = urlSegura(n.accion_url);
     } else { accEl.style.display = "none"; accEl.removeAttribute("href"); }
 
     const orig = document.getElementById("s-orig");
-    if(n.url_original){ orig.href = n.url_original; orig.style.display="inline-flex"; }
+    if(urlSegura(n.url_original)){ orig.href = urlSegura(n.url_original); orig.style.display="inline-flex"; }
     else { orig.style.display="none"; }
 
     // relacionadas: reales, misma onda o categoría, sin inventar nada
@@ -2664,8 +2686,14 @@
   // ================= APORTES DEL PUEBLO =================
   async function cargarAportes(){
     try{
-      const url = SUPABASE_URL + "/rest/v1/aportes?select=*&estado=in.(revisado,resuelto)&order=created_at.desc&limit=30";
-      const res = await fetch(url, { headers: { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + SUPABASE_KEY } });
+      // Vista pública (sin datos del vecino, con el conteo de confirmaciones).
+      // Si todavía no existe en la base, se usa la tabla pidiendo solo las columnas que se muestran.
+      const h = { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + SUPABASE_KEY };
+      const filtro = "&estado=in.(revisado,resuelto)&order=created_at.desc&limit=30";
+      let res = await fetch(SUPABASE_URL + "/rest/v1/aportes_publicos?select=*" + filtro, { headers: h });
+      if(!res.ok){
+        res = await fetch(SUPABASE_URL + "/rest/v1/aportes?select=" + COLS_APORTE_PUBLICO + filtro, { headers: h });
+      }
       APORTES = res.ok ? await res.json() : [];
       await cargarConfirmaciones();
     }catch(e){ APORTES = []; }
@@ -2713,7 +2741,7 @@
     const hora = horaAviso(feat.created_at);
     const desde = tiempoDesde(feat.created_at);
     let html = '<article class="avh-feat'+(foto?" con-foto":"")+'" data-aporte-id="'+esc(feat.id)+'">'
-      + (foto ? '<div class="ph" style="background-image:url(\''+esc(foto)+'\')"></div>' : '')
+      + (urlSegura(foto) ? '<div class="ph" style="background-image:url(\''+esc(urlSegura(foto))+'\')"></div>' : '')
       + '<div class="tx">'
       + '<div class="k"><span class="avh-dot"></span><span><b>Vecino</b> · '+esc(f.lugar)+'</span></div>'
       + '<h3 class="h">'+esc(f.titulo)+'</h3>'
@@ -2775,18 +2803,45 @@
   let CONFIRMACIONES = {};
   let MIS_CONFIRMACIONES = new Set();
   let aporteAbiertoId = null;
-  async function cargarConfirmaciones(){
+  function misConfLocal(){
+    try{ return JSON.parse(localStorage.getItem("fonte_mis_conf") || "[]").map(String); }catch(e){ return []; }
+  }
+  function guardarMiConfLocal(id){
     try{
-      const url = SUPABASE_URL + "/rest/v1/aporte_confirmaciones?select=aporte_id,dispositivo_id";
-      const res = await fetch(url, { headers: { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + SUPABASE_KEY } });
-      const filas = res.ok ? await res.json() : [];
-      const disp = getDispositivoId();
-      CONFIRMACIONES = {}; MIS_CONFIRMACIONES = new Set();
-      filas.forEach(f=>{
-        CONFIRMACIONES[f.aporte_id] = (CONFIRMACIONES[f.aporte_id]||0) + 1;
-        if(f.dispositivo_id === disp) MIS_CONFIRMACIONES.add(String(f.aporte_id));
-      });
+      const v = new Set(misConfLocal()); v.add(String(id));
+      localStorage.setItem("fonte_mis_conf", JSON.stringify(Array.from(v).slice(-300)));
+    }catch(e){}
+  }
+  async function cargarConfirmaciones(){
+    const h = { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + SUPABASE_KEY };
+    const disp = getDispositivoId();
+    CONFIRMACIONES = {}; MIS_CONFIRMACIONES = new Set(misConfLocal());
+    try{
+      // Cuántos vecinos confirmaron: viene en la vista pública (campo "confirmaciones").
+      const conVista = (APORTES||[]).length && (APORTES||[]).every(a => typeof a.confirmaciones === "number");
+      if(conVista){
+        (APORTES||[]).forEach(a=>{ if(a.confirmaciones) CONFIRMACIONES[a.id] = a.confirmaciones; });
+      } else {
+        // Respaldo (base sin actualizar): solo aporte_id, sin datos de nadie.
+        const res = await fetch(SUPABASE_URL + "/rest/v1/aporte_confirmaciones?select=aporte_id", { headers: h });
+        const filas = res.ok ? await res.json() : [];
+        filas.forEach(f=>{ CONFIRMACIONES[f.aporte_id] = (CONFIRMACIONES[f.aporte_id]||0) + 1; });
+      }
     }catch(e){ CONFIRMACIONES = {}; }
+    try{
+      // Cuáles confirmó este celular.
+      let r = await fetch(SUPABASE_URL + "/rest/v1/rpc/mis_confirmaciones", {
+        method: "POST", headers: Object.assign({ "Content-Type": "application/json" }, h),
+        body: JSON.stringify({ disp })
+      });
+      let ids = [];
+      if(r.ok){ ids = await r.json(); }
+      else {
+        r = await fetch(SUPABASE_URL + "/rest/v1/aporte_confirmaciones?select=aporte_id&dispositivo_id=eq." + encodeURIComponent(disp), { headers: h });
+        ids = r.ok ? (await r.json()).map(f=>f.aporte_id) : [];
+      }
+      (ids||[]).forEach(id=>{ MIS_CONFIRMACIONES.add(String(id)); guardarMiConfLocal(id); });
+    }catch(e){}
   }
   function pintarConfirmacion(aporteId){
     const n = CONFIRMACIONES[aporteId] || 0;
@@ -2804,14 +2859,26 @@
     const btn = document.getElementById("aporteConfirmar");
     btn.disabled = true;
     try{
-      const res = await fetch(SUPABASE_URL + "/rest/v1/aporte_confirmaciones", {
-        method: "POST",
-        headers: { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + SUPABASE_KEY, "Content-Type": "application/json", "Prefer": "return=minimal" },
-        body: JSON.stringify({ aporte_id: aporteAbiertoId, dispositivo_id: getDispositivoId() })
+      const h = { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + SUPABASE_KEY, "Content-Type": "application/json" };
+      // Por función del servidor: un voto por celular, sin exponer la tabla.
+      let res = await fetch(SUPABASE_URL + "/rest/v1/rpc/confirmar_aporte", {
+        method: "POST", headers: h,
+        body: JSON.stringify({ aporte: String(aporteAbiertoId), disp: getDispositivoId() })
       });
+      let total = null;
+      if(res.ok){ try{ total = await res.json(); }catch(e){} }
+      else if(res.status === 404){
+        // La función todavía no existe en la base: forma vieja.
+        res = await fetch(SUPABASE_URL + "/rest/v1/aporte_confirmaciones", {
+          method: "POST",
+          headers: Object.assign({ "Prefer": "return=minimal" }, h),
+          body: JSON.stringify({ aporte_id: aporteAbiertoId, dispositivo_id: getDispositivoId() })
+        });
+      }
       if(!res.ok){ btn.disabled = false; return; }
-      CONFIRMACIONES[aporteAbiertoId] = (CONFIRMACIONES[aporteAbiertoId]||0) + 1;
+      CONFIRMACIONES[aporteAbiertoId] = (typeof total === "number") ? total : (CONFIRMACIONES[aporteAbiertoId]||0) + 1;
       MIS_CONFIRMACIONES.add(String(aporteAbiertoId));
+      guardarMiConfLocal(aporteAbiertoId);
       pintarConfirmacion(aporteAbiertoId);
       cargarAportes();
     }catch(e){ btn.disabled = false; }
@@ -2901,7 +2968,7 @@
     if(!o) return;
     ofertaAbierta = o;
     const check = '<svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-    const foto = o.imagen_url ? "background-image:url('"+esc(o.imagen_url)+"');background-size:cover;background-position:center;" : "background:var(--paper-3);";
+    const foto = urlSegura(o.imagen_url) ? "background-image:url('"+esc(urlSegura(o.imagen_url))+"');background-size:cover;background-position:center;" : "background:var(--paper-3);";
     document.getElementById("ofertaHero").setAttribute("style", foto);
     document.getElementById("ofertaHero").innerHTML = '<span class="badge-float">'+check+'Auspiciante verificado</span>';
     document.getElementById("ofertaNeg").querySelector("span:last-child").textContent = o.negocio || "";
@@ -3152,7 +3219,7 @@
     const desde = esFecha ? "" : tiempoDesde(c.created_at);
     const est = estiloInstComunicado(c);
     let html = '<article class="avh-feat of'+(foto?" con-foto":"")+(c.urgente && !esFecha ? " urg" : "")+'" data-com-id="'+esc(c.id)+'" style="--inst:'+esc(est.col)+'">'
-      + (foto ? '<div class="ph" style="background-image:url(\''+esc(foto)+'\')"></div>' : '')
+      + (urlSegura(foto) ? '<div class="ph" style="background-image:url(\''+esc(urlSegura(foto))+'\')"></div>' : '')
       + '<div class="tx">'
       + '<div class="k">'+est.ico+'<span>'+marca+'<b class="in">'+esc(nom)+'</b></span></div>'
       + '<h3 class="h">'+esc(c.titulo||"")+'</h3>'
@@ -3256,8 +3323,8 @@
     if(sn){ sn.innerHTML = esc(nomInst)+'<small id="comunicadoSelloSub">Comunicado oficial</small>'; }
     if(sl) sl.textContent = "Comunicado oficial";
     const instObj = (INSTITUCIONES||[]).find(x=>String(x.id)===String(c.institucion_id));
-    if(sg && instObj && instObj.foto_url){
-      sg.style.backgroundImage = "url('"+instObj.foto_url+"')";
+    if(sg && instObj && urlSegura(instObj.foto_url)){
+      sg.style.backgroundImage = "url('"+urlSegura(instObj.foto_url)+"')";
       sg.style.backgroundSize = "cover";
       sg.style.backgroundPosition = "center";
       sg.textContent = "";
@@ -3267,7 +3334,7 @@
     const cf = document.getElementById("comunicadoFoto");
     if(cf){
       const fotoC = fotoDeComunicado(c);
-      if(fotoC){ cf.src = fotoC; cf.style.display = "block"; }
+      if(urlSegura(fotoC)){ cf.src = urlSegura(fotoC); cf.style.display = "block"; }
       else { cf.removeAttribute("src"); cf.style.display = "none"; }
     }
     const cv = document.getElementById("comunicadoVideo");
@@ -3388,9 +3455,7 @@
     return { d: parseInt(d,10), m: meses[parseInt(m,10)-1], full: parseInt(d,10)+" de "+["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"][parseInt(m,10)-1] };
   }
   function diasHasta(iso){
-    const hoy = new Date(); hoy.setHours(0,0,0,0);
-    const f = new Date(iso+"T00:00:00");
-    const dif = Math.round((f-hoy)/86400000);
+    const dif = difDiasIso(hoyBA(), iso);
     if(dif < 0) return null;
     if(dif === 0) return "HOY";
     if(dif === 1) return "MAÑANA";
@@ -3431,7 +3496,7 @@
   }
   async function cargarInstituciones(){
     try{
-      const hoyIso = new Date().toISOString().slice(0,10);
+      const hoyIso = hoyBA();
       const [rI, rF] = await Promise.all([
         fetch(SUPABASE_URL + "/rest/v1/instituciones?select=*&activa=eq.true&order=orden.asc", { headers: { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + SUPABASE_KEY } }),
         fetch(SUPABASE_URL + "/rest/v1/institucion_fechas?select=*&activa=eq.true&fecha=gte."+hoyIso+"&order=fecha.asc", { headers: { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + SUPABASE_KEY } })
@@ -3599,7 +3664,7 @@
     // cabecera
     html += '<div class="inst-fachada">';
     if(inst.foto_url){
-      html += '<div class="inst-logo"><img src="'+esc(inst.foto_url)+'" alt=""></div>';
+      html += '<div class="inst-logo"><img src="'+esc(urlSegura(inst.foto_url))+'" alt=""></div>';
     } else {
       html += '<div class="inst-logo txt" style="background:'+colInst+'">'+esc(selloInst)+'</div>';
     }
@@ -3840,7 +3905,9 @@
             ? "Subiendo foto " + (i+1) + " de " + elegidas.length + "…"
             : "Subiendo foto…";
           const file = elegidas[i];
-          const nombre = disp + "-" + Date.now() + "-" + i + "." + (file.name.split(".").pop() || "jpg");
+          // nombre al azar: la URL de la foto es pública y no debe llevar el id del celular
+          const azar = (crypto.randomUUID ? crypto.randomUUID() : (Date.now() + "-" + Math.random().toString(36).slice(2)));
+          const nombre = azar + "-" + i + "." + (file.name.split(".").pop() || "jpg");
           try{
             const chico = await comprimirImagen(file);
             const upRes = await fetch(SUPABASE_URL + "/storage/v1/object/aportes-fotos/" + nombre, {
@@ -4089,7 +4156,7 @@
 
   async function registrarVisita(){
     if(esDispositivoInterno()){ avisoDebug("registrarVisita — dispositivo marcado como interno, no se cuenta"); return; }
-    const hoy = new Date().toISOString().slice(0,10);
+    const hoy = hoyBA();
     let ultima = null;
     try{ ultima = localStorage.getItem("fonte_ultima_visita"); }catch(e){}
     avisoDebug("registrarVisita — hoy=" + hoy + " | última guardada=" + (ultima || "ninguna"));
@@ -4324,12 +4391,12 @@
     return "16/9";
   }
   function marcoVideo(src){
-    return '<iframe src="'+esc(src)+'" width="100%" height="100%" frameborder="0" scrolling="no" '
+    return '<iframe src="'+esc(urlSegura(src))+'" width="100%" height="100%" frameborder="0" scrolling="no" '
       + 'allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share" allowfullscreen></iframe>';
   }
   function enlaceVideo(u, donde, color){
     const c = color || "var(--ink)";
-    return '<a href="'+esc(u)+'" target="_blank" rel="noopener" '
+    return '<a href="'+esc(urlSegura(u))+'" target="_blank" rel="noopener" '
       + 'style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:11px;height:100%;'
       + 'background:linear-gradient(160deg,color-mix(in srgb,'+c+' 12%,var(--paper-2)),var(--paper-2));'
       + 'border:1px solid color-mix(in srgb,'+c+' 28%,var(--line));border-radius:12px;text-decoration:none;padding:22px">'
@@ -4343,7 +4410,7 @@
     u = String(u).trim();
     const yt = idYoutube(u);
     if(yt) return marcoVideo("https://www.youtube.com/embed/" + yt);
-    if(esArchivoVideo(u)) return '<video src="'+esc(u)+'" width="100%" height="100%" controls playsinline style="object-fit:contain;background:#000"></video>';
+    if(esArchivoVideo(u)) return '<video src="'+esc(urlSegura(u))+'" width="100%" height="100%" controls playsinline style="object-fit:contain;background:#000"></video>';
     // Facebook bloquea la reproducción fuera de su sitio en la mayoría de los casos:
     // en vez de mostrar un recuadro de error, ofrecemos abrirlo allá.
     if(esFacebook(u)) return enlaceVideo(u, "Facebook", "#1877F2");
@@ -4384,14 +4451,14 @@
     const fotos = fotosDe(n);
     if(!fotos.length) return "";
     const extra = fotos.length > 1 ? '<span class="pf">📷 '+fotos.length+'</span>' : '';
-    return '<span class="mini" style="width:'+tam+'px;height:'+tam+'px;background-image:url(\''+esc(fotos[0])+'\')">'+extra+'</span>';
+    return '<span class="mini" style="width:'+tam+'px;height:'+tam+'px;background-image:url(\''+esc(urlSegura(fotos[0]))+'\')">'+extra+'</span>';
   }
   function htmlGaleria(lista){
     if(!lista.length) return "";
-    if(lista.length === 1) return '<img src="'+esc(lista[0])+'" style="width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:10px;margin-bottom:14px;cursor:zoom-in" alt="">';
+    if(lista.length === 1) return '<img src="'+esc(urlSegura(lista[0]))+'" style="width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:10px;margin-bottom:14px;cursor:zoom-in" alt="">';
     const id = "gal" + Math.random().toString(36).slice(2,8);
     return '<div class="galeria"><div class="gal-row" id="'+id+'">'
-      + lista.map(u=>'<img src="'+esc(u)+'" alt="">').join("")
+      + lista.map(u=>'<img src="'+esc(urlSegura(u))+'" alt="">').join("")
       + '</div>'
       + '<button class="gal-nav prev" type="button" aria-label="Foto anterior">‹</button>'
       + '<button class="gal-nav next" type="button" aria-label="Foto siguiente">›</button>'
@@ -4484,13 +4551,13 @@
   });
 
   // ================= ABRIR DESDE UN ENLACE COMPARTIDO =================
-  // fonte.city/?n=<id> abre esa nota; ?c=<id> un comunicado; ?a=<id> un aviso; ?o=<id> una oferta.
+  // fonte.city/?n=<id> abre esa nota; ?c=<id> un comunicado; ?a=<id> un aviso; ?o=<id> una oferta; ?i=<id> una ficha de institución.
   function paramsDeEnlace(){
     try{ return new URLSearchParams(location.search); }catch(e){ return new URLSearchParams(); }
   }
   function vieneDeCompartir(){
     const p = paramsDeEnlace();
-    return !!(p.get("n") || p.get("c") || p.get("a") || p.get("o"));
+    return !!(p.get("n") || p.get("c") || p.get("a") || p.get("o") || p.get("i"));
   }
   async function traerNotaPorId(id){
     try{
@@ -4506,8 +4573,8 @@
   }
   async function abrirDesdeEnlace(){
     const p = paramsDeEnlace();
-    const nid = p.get("n"), cid = p.get("c"), aid = p.get("a"), oid = p.get("o");
-    if(!nid && !cid && !aid && !oid) return false;
+    const nid = p.get("n"), cid = p.get("c"), aid = p.get("a"), oid = p.get("o"), iid = p.get("i");
+    if(!nid && !cid && !aid && !oid && !iid) return false;
     if(nid){
       let ok = (NOTICIAS||[]).some(x=>String(x.id)===String(nid));
       if(!ok){ await traerNotaPorId(nid); ok = (NOTICIAS||[]).some(x=>String(x.id)===String(nid)); }
@@ -4517,6 +4584,7 @@
     if(cid && (COMUNICADOS||[]).some(x=>String(x.id)===String(cid))){ abrirComunicado(cid); return true; }
     if(aid && (APORTES||[]).some(x=>String(x.id)===String(aid))){ abrirAporte(aid); return true; }
     if(oid && (OFERTAS||[]).some(x=>String(x.id)===String(oid))){ abrirOferta(oid); return true; }
+    if(iid && (INSTITUCIONES||[]).some(x=>String(x.id)===String(iid))){ abrirInstitucion(iid); return true; }
     return false;
   }
   let enlaceResuelto = false;
@@ -5145,8 +5213,8 @@
           const cat = CAT_APORTE.find(c=>c.id===a.categoria) || {label:"Aviso", icon:"📍"};
           const nC = CONFIRMACIONES[a.id] || 0;
           const res = a.estado === "resuelto";
-          const im = a.foto_url
-            ? '<span class="im" style="background-image:url(\''+esc(a.foto_url)+'\')"></span>'
+          const im = urlSegura(a.foto_url)
+            ? '<span class="im" style="background-image:url(\''+esc(urlSegura(a.foto_url))+'\')"></span>'
             : '<span class="im">'+cat.icon+'</span>';
           const cuando = a.created_at ? tiempoDesde(a.created_at) : "";
           return '<div class="ap-card'+(res?" es-resuelto":"")+'" data-aporte-id="'+esc(a.id)+'">'+im
@@ -5175,8 +5243,8 @@
           : (i.direccion ? '<div class="m">'+esc(i.direccion)+'</div>' : '');
         const col = colorDeInst(i.id, i.nombre);
         const sel = selloDeInst(i.id, i.nombre);
-        const logo = i.foto_url
-          ? '<span class="im" style="background-image:url(\''+esc(i.foto_url)+'\');background-size:cover;background-position:center"></span>'
+        const logo = urlSegura(i.foto_url)
+          ? '<span class="im" style="background-image:url(\''+esc(urlSegura(i.foto_url))+'\');background-size:cover;background-position:center"></span>'
           : '<span class="im" style="display:flex;align-items:center;justify-content:center;background:'+col+';color:#fff;font-family:var(--serif);font-weight:700;font-size:.72rem;letter-spacing:.04em">'+esc(sel)+'</span>';
         return '<div class="ap-card" data-inst-id="'+esc(i.id)+'">'
           + logo

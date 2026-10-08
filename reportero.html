@@ -109,6 +109,8 @@
   .task .t{ font-family:var(--sans); font-weight:700; font-size:.86rem; color:var(--ink); }
   .task .s{ font-family:var(--sans); font-size:.7rem; color:var(--ink-faint); margin-top:2px; line-height:1.35; }
   .task .go{ font-family:var(--sans); font-size:.68rem; font-weight:700; color:var(--region); white-space:nowrap; }
+  .task .bot-acts{ display:flex; gap:8px; margin-top:9px; }
+  .task .bot-acts button{ flex:1; font-family:var(--sans); font-size:.76rem; font-weight:700; padding:9px; border-radius:8px; border:0; }
   .task.ok{ border-color:color-mix(in srgb,var(--barrio) 30%,var(--line)); background:color-mix(in srgb,var(--barrio) 5%,var(--paper)); }
   .task.ok .ic{ background:var(--barrio); color:#fff; }
   .task.ok .go{ color:var(--barrio); }
@@ -1721,6 +1723,9 @@
       // No tocamos creada_por: si el bot (u otro reportero) ya lo cargó, se respeta;
       // si venía null, queda null. La publicación la marca publicada=true.
       const id = borradorEditandoId;
+      // Sale con la hora de publicación, no la de cuando se armó el borrador
+      // (la base también lo fuerza con un trigger, por si el reloj del celu está mal).
+      registro.created_at = new Date().toISOString();
       const r = await sb.from("noticias").update(registro).eq("id", id);
       error = r.error;
     } else {
@@ -1742,7 +1747,7 @@
   });
 
   async function cargarPublicadoHoy(){
-    const inicioHoy = new Date(); inicioHoy.setHours(0,0,0,0);
+    const inicioHoy = inicioHoyBA();
     const { data, error } = await sb.from("noticias")
       .select("*")
       .eq("creada_por", sesion.user.id)
@@ -1770,7 +1775,23 @@
     });
   }
 
-  const escA = (s) => (s||"").toString().replace(/[<>&]/g, c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));
+  const escA = (s) => (s||"").toString().replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  // URLs que vienen de la base (avisos de vecinos, notas, ofertas…): solo http(s), así un
+  // "javascript:" cargado a mano no llega nunca a un src/href. Comillas, paréntesis y
+  // espacios se codifican para que tampoco rompan un url('…') de CSS.
+  const urlSegura = (u) => {
+    const t = (u==null ? "" : String(u)).trim();
+    if(!/^https?:\/\//i.test(t)) return "";
+    return t.replace(/["'()\\\s<>]/g, c=>"%"+c.charCodeAt(0).toString(16).toUpperCase().padStart(2,"0"));
+  };
+
+  // "Hoy" del negocio = día calendario en Buenos Aires, no en UTC (con toISOString,
+  // desde las 21 h ya era "mañana"). Argentina está en UTC-3 todo el año.
+  function fechaBA(d){
+    return new Intl.DateTimeFormat("en-CA", { timeZone:"America/Argentina/Buenos_Aires", year:"numeric", month:"2-digit", day:"2-digit" }).format(d || new Date());
+  }
+  function hoyBA(){ return fechaBA(new Date()); }
+  function inicioHoyBA(){ return new Date(hoyBA() + "T00:00:00-03:00"); }
 
   async function cargarAportesPendientes(){
     const { data, error } = await sb.from("aportes").select("*").eq("estado","pendiente").order("created_at",{ascending:true});
@@ -1789,7 +1810,7 @@
       const mapa = (a.lat && a.lng) ? '<a href="https://www.google.com/maps?q='+a.lat+','+a.lng+'" target="_blank">Ver ubicación</a>' : "sin ubicación";
       const fecha = a.created_at ? new Date(a.created_at).toLocaleString("es-AR") : "";
       return '<div class="card aporte-review" data-id="'+escA(a.id)+'">'
-        + '<img src="'+escA(a.foto_url||"")+'">'
+        + '<img src="'+escA(urlSegura(a.foto_url))+'">'
         + '<div class="info">'
         + '<div class="cat">'+cat.icon+' '+escA(cat.label)+'</div>'
         + '<div class="desc">'+(a.titulo?('<b>'+escA(a.titulo)+'</b> — '):'')+escA(a.descripcion||"sin descripción")+'</div>'
@@ -1835,7 +1856,7 @@
       const resuelto = a.estado === "resuelto";
       const mapa = (a.lat && a.lng) ? '<a href="https://www.google.com/maps?q='+a.lat+','+a.lng+'" target="_blank">Ver ubicación</a>' : "sin ubicación";
       const fecha = a.created_at ? new Date(a.created_at).toLocaleString("es-AR") : "";
-      const foto = a.foto_url ? '<img src="'+escA(a.foto_url)+'">' : '<img alt="sin foto">';
+      const foto = urlSegura(a.foto_url) ? '<img src="'+escA(urlSegura(a.foto_url))+'">' : '<img alt="sin foto">';
       return '<div class="card aporte-review publicado'+(resuelto?" resuelto":"")+'" data-id="'+escA(a.id)+'">'
         + foto
         + '<div class="info">'
@@ -2176,7 +2197,7 @@
     if(logoSq){
       const letra = (inst.sello || nombre || "?").trim().slice(0, 1).toUpperCase() || "?";
       if(inst.foto_url){
-        logoSq.innerHTML = '<img src="'+escA(inst.foto_url)+'" alt="">';
+        logoSq.innerHTML = '<img src="'+escA(urlSegura(inst.foto_url))+'" alt="">';
       } else {
         logoSq.innerHTML = '<span class="f" id="ciudadLogoLetter">'+escA(letra)+'</span>';
       }
@@ -2454,7 +2475,7 @@
   }
 
   async function revisarFechasVencidas(){
-    const hoyStr = new Date().toISOString().slice(0,10);
+    const hoyStr = hoyBA();
     const { data } = await sb.from("institucion_fechas").select("id,fecha,titulo,institucion_id").eq("activa", true).lt("fecha", hoyStr);
     const el = document.getElementById("avisoVencidas");
     if(!data || !data.length){ el.classList.add("hide"); return; }
@@ -2483,7 +2504,7 @@
     panel.innerHTML = "Cargando…";
     const { data, error } = await sb.from("institucion_fechas").select("*").eq("institucion_id", institucionId).eq("activa", true).order("fecha", { ascending:true });
     const fechas = error ? [] : data;
-    const hoyStr = new Date().toISOString().slice(0,10);
+    const hoyStr = hoyBA();
     const vencidas = fechas.filter(f=>f.fecha < hoyStr).length;
     const inst = (INST_ADMIN||[]).find(x=>String(x.id)===String(institucionId)) || null;
     panel.innerHTML =
@@ -2725,13 +2746,13 @@
       : "Sin ubicación";
     const estados = { pendiente:"En revisión", revisado:"Publicado", resuelto:"Resuelto", descartado:"No publicado" };
     document.getElementById("visor").innerHTML =
-      (a.foto_url ? '<img src="'+escA(a.foto_url)+'" alt="">' : '')
+      (urlSegura(a.foto_url) ? '<img src="'+escA(urlSegura(a.foto_url))+'" alt="">' : '')
       + '<div class="cuerpo">'
       + '<div class="cat">'+cat.icon+' '+escA(cat.label)+'</div>'
       + '<h3>'+escA(a.titulo || cat.label)+'</h3>'
       + '<div class="txt">'+escA(a.descripcion || a.texto || "Sin descripción.")+'</div>'
       + '<div class="meta">'+mapa+'<br>'+fecha+'<br>Estado: <b>'+(estados[a.estado]||a.estado)+'</b></div>'
-      + (a.foto_url ? '<div class="meta"><a href="'+escA(a.foto_url)+'" target="_blank" rel="noopener">Abrir foto en tamaño completo ↗</a></div>' : '')
+      + (urlSegura(a.foto_url) ? '<div class="meta"><a href="'+escA(urlSegura(a.foto_url))+'" target="_blank" rel="noopener">Abrir foto en tamaño completo ↗</a></div>' : '')
       + bloqueFormatoCompartir(a, "aporte")
       + '<button class="compartir" id="btnCompartirVisor">↗ Compartir en redes</button>'
       + '<button class="compartir" id="btnCopiarTextoVisor" style="background:none;border:1px solid var(--line);color:var(--ink)">📋 Copiar el texto</button>'
@@ -2794,9 +2815,9 @@
   }
   function galeriaVisor(lista){
     if(!lista || !lista.length) return "";
-    if(lista.length === 1) return '<img class="foto-zoom" src="'+escA(lista[0])+'" alt="" style="cursor:zoom-in">';
+    if(lista.length === 1) return '<img class="foto-zoom" src="'+escA(urlSegura(lista[0]))+'" alt="" style="cursor:zoom-in">';
     return '<div style="display:flex;gap:6px;overflow-x:auto;background:#16140F;scroll-snap-type:x mandatory">'
-      + lista.map(u=>'<img class="foto-zoom" src="'+escA(u)+'" style="flex:0 0 100%;scroll-snap-align:center;max-height:56vh;object-fit:contain;cursor:zoom-in" alt="">').join("")
+      + lista.map(u=>'<img class="foto-zoom" src="'+escA(urlSegura(u))+'" style="flex:0 0 100%;scroll-snap-align:center;max-height:56vh;object-fit:contain;cursor:zoom-in" alt="">').join("")
       + '</div><div style="font-family:var(--sans);font-size:.7rem;color:var(--ink-faint);padding:8px 18px 0">'
       + lista.length + ' fotos — deslizá al costado, tocá para verla en grande</div>';
   }
@@ -2830,12 +2851,12 @@
       + '<h3>'+escA(n.titulo||"")+'</h3>'
       + '<div class="txt">'+escA(n.resumen_extendido || n.resumen_corto || "")+'</div>'
       + (n.dato_extra ? '<div class="txt" style="margin-top:12px;padding:10px 12px;background:var(--paper-2);border-left:3px solid var(--int);border-radius:0 8px 8px 0">📌 '+escA(n.dato_extra)+'</div>' : '')
-      + (n.accion_etiqueta && n.accion_url ? '<div class="meta" style="margin-top:12px"><b>Botón:</b> '+escA(n.accion_etiqueta)+' → <a href="'+escA(n.accion_url)+'" target="_blank" rel="noopener">'+escA(n.accion_url)+'</a></div>' : '')
+      + (n.accion_etiqueta && n.accion_url ? '<div class="meta" style="margin-top:12px"><b>Botón:</b> '+escA(n.accion_etiqueta)+' → <a href="'+escA(urlSegura(n.accion_url))+'" target="_blank" rel="noopener">'+escA(n.accion_url)+'</a></div>' : '')
       + '<div class="meta">'+escA(n.fuente_etiqueta || "sin fuente")+'<br>'+fecha
       + (n.video_url ? '<br>🎬 Con video' : '')
       + (lista.length ? '<br>📷 '+lista.length+(lista.length===1?' foto':' fotos') : '<br>Sin foto')
       + '</div>'
-      + (n.url_original ? '<div class="meta"><a href="'+escA(n.url_original)+'" target="_blank" rel="noopener">Ver la fuente original ↗</a></div>' : '')
+      + (n.url_original ? '<div class="meta"><a href="'+escA(urlSegura(n.url_original))+'" target="_blank" rel="noopener">Ver la fuente original ↗</a></div>' : '')
       + '<button class="compartir" id="btnEditarLink" style="background:none;border:1px solid var(--line);color:var(--ink);margin-top:8px">🔗 '+(n.url_original?'Cambiar':'Agregar')+' el enlace original</button>'
       + '<div id="editorLinkNota"></div>'
       + '<div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--line)">'
@@ -2941,7 +2962,7 @@
     cont.innerHTML = '<div class="edit-box">'
       + '<div class="fl">Tocá la foto que querés como portada</div>'
       + '<div style="display:flex;gap:8px;overflow-x:auto;padding:6px 0 10px">'
-      + fotos.map((u,i)=> '<img src="'+escA(u)+'" data-i="'+i+'" style="width:72px;height:72px;object-fit:cover;border-radius:9px;cursor:pointer;flex:0 0 auto;'
+      + fotos.map((u,i)=> '<img src="'+escA(urlSegura(u))+'" data-i="'+i+'" style="width:72px;height:72px;object-fit:cover;border-radius:9px;cursor:pointer;flex:0 0 auto;'
           + (i===0 ? 'border:3px solid var(--region)' : 'border:1px solid var(--line)') + '">').join("")
       + '</div>'
       + '<div class="acciones"><button class="btn-cancelar" id="epCancelar">Cancelar</button></div></div>';
@@ -2967,7 +2988,7 @@
   }
 
   function abrirVisorOferta(o){
-    let h = o.imagen_url ? '<img src="'+escA(o.imagen_url)+'" alt="">' : "";
+    let h = urlSegura(o.imagen_url) ? '<img src="'+escA(urlSegura(o.imagen_url))+'" alt="">' : "";
     h += '<div class="cuerpo">'
       + '<div class="cat">🏷️ '+escA(o.negocio||"")+'</div>'
       + '<h3>'+escA(o.titulo||"")+'</h3>'
@@ -3007,7 +3028,7 @@
     let h = '<div class="cuerpo">'
       + '<div class="cat">'+(c.urgente?'⚡ URGENTE · ':'✓ ')+escA(c.institucion||"")+'</div>'
       + '<h3>'+escA(c.titulo||"")+'</h3>'
-      + (c.imagen_url ? '<img class="foto-zoom" src="'+escA(c.imagen_url)+'" alt="" style="width:100%;max-height:220px;object-fit:cover;border-radius:4px;margin:8px 0">' : '')
+      + (urlSegura(c.imagen_url) ? '<img class="foto-zoom" src="'+escA(urlSegura(c.imagen_url))+'" alt="" style="width:100%;max-height:220px;object-fit:cover;border-radius:4px;margin:8px 0">' : '')
       + '<div class="txt">'+escA(c.texto||"")+'</div>'
       + '<div class="meta">'+fecha
       + '<br>En la portada por 48 hs'+(c.urgente ? ' (estilo urgente)' : '')+'; después solo en la ficha de la institución'
@@ -3107,19 +3128,23 @@
   // ================= HOY: bandeja de trabajo =================
   async function cargarHoy(){
     const hoy = new Date();
-    const inicioHoy = new Date(); inicioHoy.setHours(0,0,0,0);
-    const hoyIso = hoy.toISOString().slice(0,10);
+    const inicioHoy = inicioHoyBA();
+    const hoyIso = hoyBA();
     document.getElementById("hoySaludo").textContent =
       (hoy.getHours() < 13 ? "Buen día" : hoy.getHours() < 20 ? "Buenas tardes" : "Buenas noches")
       + (sesion && sesion.user ? ", " + (sesion.user.email||"").split("@")[0] : "");
     document.getElementById("hoyFecha").textContent =
       hoy.toLocaleDateString("es-AR",{weekday:"long",day:"numeric",month:"long"}) + " · Esto es lo que necesita tu atención.";
 
-    const [pend, venc, urg, notasHoy] = await Promise.all([
+    const [pend, venc, urg, notasHoy, botNotas, botBorr] = await Promise.all([
       sb.from("aportes").select("id,created_at").eq("estado","pendiente").order("created_at",{ascending:true}),
       sb.from("institucion_fechas").select("id,titulo,fecha,institucion_id").eq("activa",true).lt("fecha", hoyIso),
       sb.from("comunicados").select("id,titulo,created_at").eq("urgente",true).order("created_at",{ascending:false}).limit(5),
       sb.from("noticias").select("*").eq("creada_por", sesion.user.id).eq("publicada",true).gte("created_at", inicioHoy.toISOString()).order("created_at",{ascending:false}),
+      // Lo que cargó el bot: notas en borrador y la bandeja bot_borradores (avisos, fechas…).
+      // Si la tabla todavía no existe en la base, vuelve con error y simplemente no se muestra.
+      sb.from("noticias").select("id,created_at").eq("publicada",false).eq("origen","bot"),
+      sb.from("bot_borradores").select("id,tipo,institucion_id,payload,origen,created_at,instituciones(nombre)").eq("estado","pendiente").order("created_at",{ascending:true}).limit(20),
     ]);
 
     const tareas = [];
@@ -3134,6 +3159,12 @@
       tareas.push({ urg:true, ic:"FE", t: nVenc + (nVenc===1?" fecha vencida":" fechas vencidas"),
                     s: (venc.data[0].titulo||"") + " — actualizala o la ficha queda vacía", go:"Actualizar ›", v:"institucion" });
     }
+    const nBotNotas = (botNotas && !botNotas.error) ? (botNotas.data||[]).length : 0;
+    if(nBotNotas){
+      tareas.push({ urg:false, ic:"BOT", t: nBotNotas + (nBotNotas===1?" nota del bot para revisar":" notas del bot para revisar"),
+                    s: "Están en Publicar → Borradores", go:"Revisar ›", v:"borradores" });
+    }
+    const botPend = (botBorr && !botBorr.error) ? (botBorr.data||[]) : [];
     const urgVigentes = (urg.data||[]).filter(c=>{
       if(!c.created_at) return false;
       return (Date.now() - new Date(c.created_at).getTime()) < 48*3600000;
@@ -3158,14 +3189,15 @@
     const cont = document.getElementById("hoyTareas");
     const badge = document.getElementById("hoyPendN");
     const navPip = document.getElementById("navPendN");
-    const totalPend = nPend + nVenc; // solo accionables
+    const totalPend = nPend + nVenc + nBotNotas + botPend.length; // solo accionables
     if(totalPend){ badge.textContent = totalPend; badge.classList.remove("hide"); navPip.textContent = totalPend; navPip.classList.remove("hide"); }
     else { badge.classList.add("hide"); navPip.classList.add("hide"); }
 
-    cont.innerHTML = tareas.length
+    cont.innerHTML = (tareas.length || botPend.length)
       ? tareas.map((t,i)=>'<div class="task'+(t.urg?" urg":"")+'" data-i="'+i+'">'
           + '<span class="ic">'+t.ic+'</span><div class="tx"><div class="t">'+escA(t.t)+'</div>'
           + (t.s?'<div class="s">'+escA(t.s)+'</div>':'') + '</div><span class="go">'+t.go+'</span></div>').join("")
+        + botPend.map(htmlBorradorBot).join("")
       : '<div class="task ok"><span class="ic">✓</span><div class="tx"><div class="t">Todo al día</div>'
         + '<div class="s">No hay nada pendiente de revisión.</div></div></div>';
     cont.querySelectorAll(".task[data-i]").forEach(el=>{
@@ -3173,11 +3205,17 @@
         const destino = tareas[parseInt(el.getAttribute("data-i"),10)].v;
         if(destino === "institucion"){
           irAVista("viewInstituciones");
+        } else if(destino === "borradores"){
+          irAVista("viewCargar"); irATipo("nota");
+          const bl = document.getElementById("borradoresList");
+          if(bl) setTimeout(()=> bl.scrollIntoView({ behavior:"smooth", block:"start" }), 150);
         } else if(["nota","comunicado","oferta"].includes(destino)){
           irAVista("viewCargar"); irATipo(destino);
         } else irAVista(destino);
       });
     });
+
+    engancharBorradoresBot(cont, botPend);
 
     const ult = (notasHoy.data||[]).slice(0,3);
     const ultCont = document.getElementById("hoyUltimo");
@@ -3185,6 +3223,52 @@
       ? ult.map(n=>itemArchivo(n,"nota")).join("")
       : '<div class="vacio-card"><span class="ic">📝</span><div class="t">Aún no hay publicaciones</div><div class="s">Las notas que publiques aparecerán aquí.</div></div>';
     enganchArchivo(ultCont, ult.map(n=>({o:n,tipo:"nota"})));
+  }
+
+  // ---- Bandeja del bot (tabla bot_borradores): Publicar copia a la tabla real
+  //      con la función confirmar_bot_borrador (todo junto o nada); Descartar lo archiva.
+  const NOMBRE_TIPO_BOT = { comunicado:"Aviso oficial", fecha:"Fecha", servicio:"Servicio", nota:"Nota", aporte:"Aviso de vecino" };
+  function htmlBorradorBot(b){
+    const p = (b && b.payload) || {};
+    const inst = (b.instituciones && b.instituciones.nombre) || p.institucion || "";
+    let titulo = p.titulo || (b.tipo === "servicio" ? [p.seccion, p.clave].filter(Boolean).join(" · ") : "") || "(sin título)";
+    if(b.tipo === "fecha" && p.fecha) titulo += " · " + p.fecha;
+    const detalle = String(p.texto || p.descripcion || p.resumen_corto || p.valor || "").trim();
+    const corto = detalle.length > 140 ? detalle.slice(0,138) + "…" : detalle;
+    return '<div class="task" data-bot="'+escA(b.id)+'">'
+      + '<span class="ic">BOT</span><div class="tx">'
+      + '<div class="t">'+escA((NOMBRE_TIPO_BOT[b.tipo]||"Borrador") + ": " + titulo)+'</div>'
+      + '<div class="s">'+escA([inst, "del bot", b.created_at ? tiempoRel(b.created_at) : ""].filter(Boolean).join(" · "))+'</div>'
+      + (corto ? '<div class="s">'+escA(corto)+'</div>' : '')
+      + '<div class="bot-acts"><button type="button" class="btn-aprobar" data-bot-ok>Publicar</button>'
+      + '<button type="button" class="btn-rechazar" data-bot-no>Descartar</button></div>'
+      + '</div></div>';
+  }
+  function engancharBorradoresBot(cont, lista){
+    cont.querySelectorAll(".task[data-bot]").forEach(el=>{
+      const id = el.getAttribute("data-bot");
+      const b = (lista||[]).find(x=>String(x.id)===String(id));
+      const ok = el.querySelector("[data-bot-ok]"), no = el.querySelector("[data-bot-no]");
+      if(ok) ok.addEventListener("click", async (e)=>{
+        e.stopPropagation();
+        const tit = (b && b.payload && (b.payload.titulo || b.payload.clave)) || "este borrador";
+        if(!confirm("¿Publicar en Fonte “" + tit + "”?")) return;
+        ok.disabled = true; if(no) no.disabled = true;
+        const { error } = await sb.rpc("confirmar_bot_borrador", { borrador: id });
+        if(error){ toast("No se pudo publicar: " + error.message); ok.disabled = false; if(no) no.disabled = false; return; }
+        toast("Publicado en Fonte ✓");
+        cargarHoy();
+      });
+      if(no) no.addEventListener("click", async (e)=>{
+        e.stopPropagation();
+        if(!confirm("¿Descartar este borrador del bot? No se publica.")) return;
+        no.disabled = true; if(ok) ok.disabled = true;
+        const { error } = await sb.from("bot_borradores").update({ estado:"descartado" }).eq("id", id).eq("estado","pendiente");
+        if(error){ toast("No se pudo descartar: " + error.message); no.disabled = false; if(ok) ok.disabled = false; return; }
+        toast("Borrador descartado");
+        cargarHoy();
+      });
+    });
   }
 
   function tiempoRel(iso){
@@ -3220,7 +3304,7 @@
       fondo = o.foto_url || ""; mini = fondo ? "" : cat.icon;
       meta = cat.label + " · " + (o.estado==="resuelto"?"resuelto":"publicado");
     }
-    const estilo = fondo ? 'style="background-image:url('+"'"+escA(fondo)+"'"+')"' : "";
+    const estilo = urlSegura(fondo) ? 'style="background-image:url('+"'"+escA(urlSegura(fondo))+"'"+')"' : "";
     return '<div class="arch-item" data-tipo="'+tipo+'" data-id="'+escA(o.id)+'">'
       + '<span class="mini" '+estilo+'>'+mini+'</span>'
       + '<div class="tx"><div class="t">'+escA(titulo)+'</div>'
@@ -4419,7 +4503,7 @@
     cont.style.cssText = "display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px";
     cont.innerHTML = EDIT_FOTOS.map((url,i)=>
       '<div style="position:relative">'
-      + '<img data-idx="'+i+'" src="'+escA(url)+'" style="width:60px;height:60px;object-fit:cover;border-radius:6px;cursor:pointer;'
+      + '<img data-idx="'+i+'" src="'+escA(urlSegura(url))+'" style="width:60px;height:60px;object-fit:cover;border-radius:6px;cursor:pointer;'
       + 'border:2px solid '+(i===EDIT_FOTO_IDX?"var(--barrio)":"transparent")+'">'
       + '<button data-del="'+i+'" style="position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;'
       + 'background:#A8382C;color:#fff;border:0;font-size:.65rem;line-height:1">✕</button>'
@@ -4446,7 +4530,7 @@
     EDIT_FOTO_IDX = i;
     pintarMiniaturasEdicion();
     const wrap = document.getElementById("edRecorteWrap");
-    wrap.innerHTML = '<div class="recorte" id="recorte"><img id="recorteImg" src="'+escA(EDIT_FOTOS[i])+'" alt="">'
+    wrap.innerHTML = '<div class="recorte" id="recorte"><img id="recorteImg" src="'+escA(urlSegura(EDIT_FOTOS[i]))+'" alt="">'
       + '<div class="marco" id="recorteMarco"><span class="tirador"></span></div></div>'
       + '<div class="recorte-ayuda">Arrastrá el marco para elegir qué parte queda de esta foto. '
       + 'Si no lo tocás, se guarda igual. Podés recortar cada foto por separado.</div>';
