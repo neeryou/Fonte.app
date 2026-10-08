@@ -3655,11 +3655,19 @@
     const z = (n)=> String(n).padStart(2,"0");
     return d.getFullYear()+"-"+z(d.getMonth()+1)+"-"+z(d.getDate())+"T"+z(d.getHours())+":"+z(d.getMinutes());
   }
+  // Misma URL que usa Publicar (payload.imagen_url) o, en pedidos de ayuda, ayuda_foto.
+  // Son URLs públicas de notas-fotos; urlSegura descarta cualquier cosa que no sea http(s).
+  function fotoUrlBorradorBot(p){
+    if(!p) return "";
+    return urlSegura(p.imagen_url || p.ayuda_foto || "");
+  }
   function abrirEditorBorradorBot(b, caja){
     const p = Object.assign({}, (b && b.payload) || {});
     const v = (x)=> escA(x == null ? "" : String(x));
     const elegirTipo = pidioAyudaBot(b) || p.tipo_adivinado;
     const items = Array.isArray(p.items) ? p.items : (p.clave ? [{ seccion:p.seccion, clave:p.clave, valor:p.valor }] : []);
+    let sinFoto = false;
+    const fotoInicial = fotoUrlBorradorBot(p);
     const campos = (tipo)=>{
       if(tipo === "fecha"){
         return '<label>Título</label><input name="titulo" maxlength="120" value="'+v(p.titulo)+'">'
@@ -3679,6 +3687,13 @@
         + '<label>Vence (opcional, hora fija)</label><input name="vence_at" type="datetime-local" value="'+v(isoALocal(p.vence_at))+'">'
         + '<div class="ayuda-campo">Vacío = '+(h > 0 ? h : 48)+' h desde que publiques.</div>';
     };
+    const htmlFoto = ()=>{
+      if(sinFoto || !fotoInicial) return '<div data-bot-foto></div>';
+      const etiqueta = pidioAyudaBot(b) ? "Foto (lo que mandó)" : "Foto adjunta";
+      return '<div data-bot-foto><label>'+etiqueta+'</label>'
+        + '<a href="'+escA(fotoInicial)+'" target="_blank" rel="noopener"><img class="ayuda-foto" src="'+escA(fotoInicial)+'" alt="Foto del borrador"></a>'
+        + '<button type="button" class="btn-rechazar" data-ed-foto-no style="margin-top:6px;align-self:flex-start;flex:0 0 auto;width:auto;padding:6px 10px">Quitar foto</button></div>';
+    };
     let tipoActual = b.tipo;
     caja.innerHTML = (elegirTipo
         ? '<label>Tipo</label><select name="tipo">'
@@ -3686,6 +3701,7 @@
           + '</select>'
         : '')
       + '<div data-campos>'+campos(tipoActual)+'</div>'
+      + htmlFoto()
       + '<div class="bot-acts"><button type="button" class="btn-aprobar" data-ed-ok>Guardar cambios</button>'
       + '<button type="button" class="btn-rechazar" data-ed-no>Cerrar</button></div>';
     caja.classList.remove("hide");
@@ -3696,6 +3712,13 @@
       ["titulo","texto","fecha","horario","lugar"].forEach(n=>{ const x = val(n); if(x !== undefined) p[n] = x; });
       tipoActual = sel.value;
       caja.querySelector("[data-campos]").innerHTML = campos(tipoActual);
+    });
+    const btnQuitarFoto = caja.querySelector("[data-ed-foto-no]");
+    if(btnQuitarFoto) btnQuitarFoto.addEventListener("click", (e)=>{
+      e.stopPropagation();
+      sinFoto = true;
+      const slot = caja.querySelector("[data-bot-foto]");
+      if(slot) slot.innerHTML = '<div class="ayuda-campo">Sin foto (se guarda al tocar Guardar cambios).</div>';
     });
     caja.querySelector("[data-ed-no]").addEventListener("click", (e)=>{ e.stopPropagation(); caja.classList.add("hide"); caja.innerHTML = ""; });
     caja.querySelector("[data-ed-ok]").addEventListener("click", async (e)=>{
@@ -3720,8 +3743,9 @@
           if(isNaN(d.getTime()) || d.getTime() <= Date.now()){ toast("El vencimiento tiene que ser más adelante."); return; }
           nuevo.vence_at = d.toISOString();
         }
+        if(sinFoto){ delete nuevo.imagen_url; delete nuevo.ayuda_foto; }
         // la foto que mandó el oficial queda como foto del aviso, si no había otra
-        if(!nuevo.imagen_url && nuevo.ayuda_foto) nuevo.imagen_url = nuevo.ayuda_foto;
+        else if(!nuevo.imagen_url && nuevo.ayuda_foto) nuevo.imagen_url = nuevo.ayuda_foto;
       } else if(tipoActual === "fecha"){
         nuevo.titulo = val("titulo"); nuevo.fecha = val("fecha");
         if(!nuevo.titulo || !/^\d{4}-\d{2}-\d{2}$/.test(nuevo.fecha)){ toast("La fecha necesita título y día."); return; }
@@ -3730,6 +3754,7 @@
         const lugar = val("lugar").split(/\n+/).map(x=>x.trim()).filter(Boolean).join("\n");
         if(lugar) nuevo.lugar = lugar;
         delete nuevo.imagen_url;
+        if(sinFoto) delete nuevo.ayuda_foto;
       } else {
         const seccion = val("seccion") || "Servicios";
         const its = val("items").split(/\n+/).map(l=>{
@@ -3740,6 +3765,7 @@
         if(!its.length){ toast('Cargá al menos un renglón "Barrio: horario".'); return; }
         nuevo.items = its;
         delete nuevo.imagen_url;
+        if(sinFoto) delete nuevo.ayuda_foto;
       }
       if(elegirTipo) delete nuevo.tipo_adivinado;
       nuevo.editado_at = new Date().toISOString();
