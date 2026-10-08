@@ -634,6 +634,7 @@
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .avh-row .ex{ font-family:var(--sans); font-size:.68rem; color:var(--ink-soft); margin-top:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .avh-row .tm{ font-family:var(--mono); font-size:.58rem; color:var(--ink-faint); white-space:nowrap; padding-top:1px; }
+  .avh-feat .m .vence, .avh-row .tm.vence{ font-family:var(--sans); font-weight:700; color:var(--urgente); }
   .avh-row .tm.hoy{ font-family:var(--sans); font-size:.56rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--avh-c); }
   .avh-end{ border-top:1px solid var(--ink); }
   /* en la lista completa (Ver todos) los títulos pueden ir en dos líneas */
@@ -1497,7 +1498,7 @@
 
 <div class="backdrop" id="backdropVecinos"></div>
 <div class="sheet2" id="sheetVecinos">
-  <div class="sheet2-top"><span class="b">🔔 Alertas</span><button class="close" id="closeVecinos">Cerrar ✕</button></div>
+  <div class="sheet2-top"><span class="b" style="display:inline-flex;align-items:center;gap:7px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--terracota)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>Vecinos</span><button class="close" id="closeVecinos">Cerrar ✕</button></div>
   <div class="sheet2-body" id="vecinosBody"></div>
 </div>
 
@@ -1521,8 +1522,8 @@
     <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
     <span>Inicio</span></button>
   <button class="bn-item" id="navVecinos">
-    <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
-    <span>Alertas</span><span class="bn-badge" id="navVecinosN" style="display:none">0</span></button>
+    <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+    <span>Vecinos</span><span class="bn-badge" id="navVecinosN" style="display:none">0</span></button>
   <button class="bn-item center" id="navPublicar">
     <span class="ic-circle"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span>
     <span>Publicar</span></button>
@@ -1673,6 +1674,48 @@
     const a = String(desde||"").split("-").map(Number), b = String(hasta||"").split("-").map(Number);
     return Math.round((Date.UTC(b[0], b[1]-1, b[2]) - Date.UTC(a[0], a[1]-1, a[2])) / 86400000);
   }
+  // ---- Vencimiento de los avisos oficiales (una sola regla para todo) ----
+  // Cada comunicado está en portada mientras vence_at > ahora. Si la columna todavía no
+  // existe o viene vacía (filas viejas), vale created_at + 48 h, como antes.
+  // Un urgente vencido deja de estar rojo en TODOS lados a la vez: portada, pastilla, ficha.
+  const HORAS_PORTADA = 48;
+  // Si la respuesta de Supabase trae la hora del servidor, se corrige un reloj de teléfono
+  // muy desfasado (más de 2 min). Si no la trae, se usa la hora del teléfono.
+  let _desfaseReloj = 0;
+  function ahoraServidor(){ return Date.now() + _desfaseReloj; }
+  function ajustarReloj(res){
+    try{
+      const h = res && res.headers && res.headers.get("date");
+      if(!h) return;
+      const t = new Date(h).getTime();
+      if(isNaN(t)) return;
+      const d = t - Date.now();
+      _desfaseReloj = Math.abs(d) > 120000 ? d : 0;
+    }catch(e){}
+  }
+  // milisegundos en que vence; null = sin datos (se considera vigente, como antes)
+  function venceDe(c){
+    if(!c) return null;
+    if(c.vence_at){ const t = new Date(c.vence_at).getTime(); if(!isNaN(t)) return t; }
+    if(c.created_at){ const t = new Date(c.created_at).getTime(); if(!isNaN(t)) return t + HORAS_PORTADA*3600000; }
+    return null;
+  }
+  function comunicadoVigente(c){ const v = venceDe(c); return v == null ? true : v > ahoraServidor(); }
+  function urgenteVigente(c){ return !!(c && c.urgente && comunicadoVigente(c)); }
+  // "Hasta hoy 19:50" · "Hasta mañana 08:00" · "Hasta jue 15, 10:00" (hora de Buenos Aires)
+  function hastaTexto(ms){
+    if(ms == null || isNaN(ms)) return "";
+    const d = new Date(ms);
+    const tz = "America/Argentina/Buenos_Aires";
+    const hora = new Intl.DateTimeFormat("es-AR", { timeZone:tz, hour:"2-digit", minute:"2-digit", hourCycle:"h23" }).format(d);
+    const dif = difDiasIso(fechaBA(new Date(ahoraServidor())), fechaBA(d));
+    if(dif <= 0) return "Hasta hoy " + hora;
+    if(dif === 1) return "Hasta mañana " + hora;
+    const dias = ["dom","lun","mar","mié","jue","vie","sáb"];
+    const [yy,mm,dd] = fechaBA(d).split("-").map(Number);
+    const dow = new Date(Date.UTC(yy, mm-1, dd)).getUTCDay();
+    return "Hasta " + dias[dow] + " " + dd + ", " + hora;
+  }
   // glosario estilo Wikipedia: subraya el término y agrega una tarjetita con la definición, sin salir de la nota
   function conGlosario(texto, terminos){
     let out = esc(texto);
@@ -1696,6 +1739,17 @@
     return "hace " + Math.round(h/24) + " d";
   };
   const ONDAS_LOCALES = new Set(["barrio","ciudad"]); // lo que va en la pestaña Ciudad
+  // Noticias urgentes que cuentan como "Cerca tuyo ahora": locales y de las últimas 12 h.
+  // La misma regla para la banda y para la notificación.
+  const HORAS_BANDA = 12;
+  function urgentesLocales(){
+    const corte = ahoraServidor() - HORAS_BANDA*3600000;
+    return (NOTICIAS||[]).filter(n=>{
+      if(!n || !n.urgente || !ONDAS_LOCALES.has(n.onda) || !n.created_at) return false;
+      const t = new Date(n.created_at).getTime();
+      return !isNaN(t) && t > corte;
+    });
+  }
   const RANGO_KM = { barrio:1, ciudad:2, region:3, pais:4, mundo:5 }; // orden de cercanía para "Cerca tuyo"
 
   // ---- ticker: clima y sensación térmica (Open-Meteo, sin key) ----
@@ -2070,12 +2124,9 @@
     });
     if(typeof pintarContadorTemas === "function") pintarContadorTemas();
 
-    // banda urgente: primero lo urgente de Quitilipi/barrio, y solo si no alcanza
-    // se completa con lo urgente de la región — "cerca tuyo" tiene que ser cerca de verdad.
-    const urgentesTodas = NOTICIAS.filter(n => n.urgente);
-    const urgCiudad = urgentesTodas.filter(n => ONDAS_LOCALES.has(n.onda));
-    const urgResto = urgentesTodas.filter(n => !ONDAS_LOCALES.has(n.onda));
-    const urgentes = urgCiudad.concat(urgResto).slice(0,4);
+    // banda urgente: solo lo urgente de Quitilipi/barrio de las últimas 12 h, sin relleno
+    // de la región. Si no hay nada, la banda no se muestra.
+    const urgentes = urgentesLocales().slice(0,4);
     const band = document.getElementById("urgentBand");
     if(urgentes.length){
       band.classList.add("show");
@@ -2702,7 +2753,9 @@
       ctx.fillText(cinta.txt, W/2, H-55);
       ctx.textAlign = "left";
     }
-    ctx.fillStyle = "#fff";
+    // el link va claro solo sobre fondo oscuro (foto con velo) o rojo (urgente);
+    // en el diseño de papel (oferta o nota sin foto) va en gris tinta, si no no se ve.
+    ctx.fillStyle = (urgente || img) ? "#fff" : "#57503F";
     ctx.font = "600 22px 'Work Sans',sans-serif";
     ctx.fillText((urlDe(n, n.__tipo||"n")||"").replace(/^https?:\/\//,""), 80, H-138);
     return new Promise(res=> c.toBlob(res, "image/jpeg", 0.9));
@@ -2839,7 +2892,7 @@
       APORTES = res.ok ? await res.json() : [];
       await cargarConfirmaciones();
     }catch(e){ APORTES = []; }
-    // La lista completa vive en Alertas (abrirVecinos). Acá solo el contador de la barra
+    // La lista completa vive en Vecinos (abrirVecinos). Acá solo el contador de la barra
     // y la fila de "recién publicados" en Inicio.
     pintarBadgeVecinos();
     pintarAvisosHome();
@@ -2856,7 +2909,7 @@
     }catch(e){}
   }
   // Fila de "recién publicados" en Inicio, igual que instituciones/urgentes: solo lo nuevo,
-  // y lo que se toca para ver se saca de acá y queda en la lista completa (Alertas).
+  // y lo que se toca para ver se saca de acá y queda en la lista completa (Vecinos).
   function pintarAvisosHome(){
     const wrap = document.getElementById("avisosWrap");
     if(!wrap) return;
@@ -3166,20 +3219,19 @@
     try{
       const url = SUPABASE_URL + "/rest/v1/comunicados?select=*&order=created_at.desc&limit=30";
       const res = await fetch(url, { headers: { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + SUPABASE_KEY } });
+      ajustarReloj(res);
       COMUNICADOS = res.ok ? await res.json() : [];
     }catch(e){ COMUNICADOS = []; }
     renderComunicadosEn();
   }
-  const HORAS_RECIENTE = 48;
-  // En inicio: solo las últimas 48 h. Después viven en la ficha de la institución.
+  // En inicio: solo los vigentes (vence_at; si falta, 48 h desde que se publicó).
+  // Después viven en la ficha de la institución.
   function comunicadosVigentes(){
-    const ahora = Date.now();
     let ocultos = [];
     try{ ocultos = JSON.parse(localStorage.getItem("fonte_urg_cerrados") || "[]"); }catch(e){}
     return (COMUNICADOS||[]).filter(c=>{
       if(ocultos.includes(String(c.id))) return false;
-      if(!c.created_at) return true;
-      return (ahora - new Date(c.created_at).getTime()) < HORAS_RECIENTE*3600000;
+      return comunicadoVigente(c);
     });
   }
   function metaInstLocal(){
@@ -3309,11 +3361,13 @@
   function filaComunicado(c, conExtracto){
     const nom = c.institucion || "Institución";
     const esFecha = c.__tipo === "fecha";
-    const marca = esFecha ? '<b class="hoy">Hoy</b> · ' : (c.urgente ? '<b class="urg">Urgente</b> · ' : '');
-    // fechas del día: la hora del acto a la derecha; el resto, tiempo relativo ("hace 35 min")
-    const tm = esFecha ? '<span class="tm hoy">'+esc(horaDeFecha(c))+'</span>' : '<span class="tm">'+tiempoDesde(c.created_at)+'</span>';
+    const urg = !esFecha && urgenteVigente(c);   // un urgente vencido se ve como aviso común
+    const marca = esFecha ? '<b class="hoy">Hoy</b> · ' : (urg ? '<b class="urg">Urgente</b> · ' : '');
+    // fechas del día: la hora del acto a la derecha; urgentes: hasta cuándo; el resto, "hace 35 min"
+    const tm = esFecha ? '<span class="tm hoy">'+esc(horaDeFecha(c))+'</span>'
+      : (urg ? '<span class="tm vence">'+esc(hastaTexto(venceDe(c)))+'</span>' : '<span class="tm">'+tiempoDesde(c.created_at)+'</span>');
     const est = estiloInstComunicado(c);
-    return '<div class="avh-row of'+(c.urgente && !esFecha ? ' urg' : '')+'" data-com-id="'+esc(c.id)+'" style="--inst:'+esc(est.col)+'">'
+    return '<div class="avh-row of'+(urg ? ' urg' : '')+'" data-com-id="'+esc(c.id)+'" style="--inst:'+esc(est.col)+'">'
       + '<span class="mk">'+est.ico+'</span>'
       + '<div class="bd"><div class="src">'+marca+esc(nom)+'</div><div class="tt">'+esc(c.titulo||"")+'</div>'
       + (conExtracto && c.texto ? '<div class="ex">'+esc(c.texto)+'</div>' : '') + '</div>'
@@ -3347,18 +3401,20 @@
     const c = lista[0];
     const nom = c.institucion || "Institución";
     const esFecha = c.__tipo === "fecha";
-    const marca = esFecha ? '<b>Hoy</b> · ' : (c.urgente ? '<b class="urg">Urgente</b> · ' : '');
+    const urg = !esFecha && urgenteVigente(c);
+    const marca = esFecha ? '<b>Hoy</b> · ' : (urg ? '<b class="urg">Urgente</b> · ' : '');
     const foto = fotoDeComunicado(c);
     const hora = esFecha ? horaDeFecha(c) : horaAviso(c.created_at);
     const desde = esFecha ? "" : tiempoDesde(c.created_at);
+    const hasta = urg ? hastaTexto(venceDe(c)) : "";
     const est = estiloInstComunicado(c);
-    let html = '<article class="avh-feat of'+(foto?" con-foto":"")+(c.urgente && !esFecha ? " urg" : "")+'" data-com-id="'+esc(c.id)+'" style="--inst:'+esc(est.col)+'">'
+    let html = '<article class="avh-feat of'+(foto?" con-foto":"")+(urg ? " urg" : "")+'" data-com-id="'+esc(c.id)+'" style="--inst:'+esc(est.col)+'">'
       + (urlSegura(foto) ? '<div class="ph" style="background-image:url(\''+esc(urlSegura(foto))+'\')"></div>' : '')
       + '<div class="tx">'
       + '<div class="k">'+est.ico+'<span>'+marca+'<b class="in">'+esc(nom)+'</b></span></div>'
       + '<h3 class="h">'+esc(c.titulo||"")+'</h3>'
       + (c.texto ? '<div class="p">'+esc(c.texto)+'</div>' : '')
-      + '<div class="m">'+[hora, (desde && desde !== hora ? desde : "")].filter(Boolean).join('<span class="sep"></span>')+'</div>'
+      + '<div class="m">'+[hora, (desde && desde !== hora ? desde : ""), (hasta ? '<span class="vence">'+esc(hasta)+'</span>' : "")].filter(Boolean).join('<span class="sep"></span>')+'</div>'
       + '</div>'
       + '<button type="button" class="eye" data-cerrar="'+esc(c.id)+'" aria-label="Ocultar este aviso">'+OJO_SVG+'</button>'
       + '</article>';
@@ -3396,7 +3452,7 @@
     vt.setAttribute("aria-label", "Ver " + (n === 1 ? "el aviso oficial" : "los " + n + " avisos oficiales"));
   }
   document.getElementById("oficialVerTodos").addEventListener("click", (e)=>{ e.stopPropagation(); abrirOficiales(); });
-  // "Ver todos" de Oficial: todos los avisos vigentes (48 h) en el mismo formato de fila
+  // "Ver todos" de Oficial: todos los avisos vigentes en el mismo formato de fila
   function abrirOficiales(institucionId){
     navAlFrente("sheetOficiales");
     const top = document.querySelector("#sheetOficiales .sheet2-top .b");
@@ -3410,12 +3466,12 @@
     } else {
       if(top) top.textContent = "Avisos oficiales de hoy";
       lista = listaComunicadosHome();
-      nota = '<p class="avh-lista-nota">'+SELLO_OFICIAL("sm")+'<span>Publicados por instituciones verificadas en las últimas 48 h. Los anteriores quedan en la ficha de cada institución.</span></p>';
+      nota = '<p class="avh-lista-nota">'+SELLO_OFICIAL("sm")+'<span>Avisos vigentes de instituciones verificadas. Cuando vencen, quedan en la ficha de cada institución.</span></p>';
     }
     const body = document.getElementById("oficialesBody");
     body.innerHTML = (lista.length
         ? '<div class="avh-rows of-rows" style="border-top:0">' + lista.map(x=>filaComunicado(x, true)).join("") + '</div>'
-        : '<p class="foot-note">'+(institucionId ? "Esta institución todavía no publicó avisos." : "No hay avisos oficiales en las últimas 48 horas.")+'</p>')
+        : '<p class="foot-note">'+(institucionId ? "Esta institución todavía no publicó avisos." : "No hay avisos oficiales vigentes.")+'</p>')
       + nota;
     body.querySelectorAll("[data-com-id]").forEach(el=>{
       el.addEventListener("click", ()=>{ abrirItemComunicado(lista, el.getAttribute("data-com-id")); });
@@ -3597,21 +3653,6 @@
     if(dif === 1) return "MAÑANA";
     return "EN "+dif+" DÍAS";
   }
-  // Un urgente pasa por dos etapas: se cierra de la portada (sigue con puntito
-  // en su ficha) y recién al cerrarlo dentro de la ficha se descarta del todo.
-  function urgenteDescartado(id){
-    try{
-      const l = JSON.parse(localStorage.getItem("fonte_urg_descartados") || "[]");
-      return l.includes(String(id));
-    }catch(e){ return false; }
-  }
-  function descartarUrgente(id){
-    try{
-      const l = JSON.parse(localStorage.getItem("fonte_urg_descartados") || "[]");
-      l.push(String(id));
-      localStorage.setItem("fonte_urg_descartados", JSON.stringify(l.slice(-80)));
-    }catch(e){}
-  }
   function comunicadosVistos(){
     try{ return new Set(JSON.parse(localStorage.getItem("fonte_com_vistos") || "[]")); }catch(e){ return new Set(); }
   }
@@ -3666,7 +3707,7 @@
     const prioridadInst = (i)=>{
       const propios = comunicadosDe(i.id);
       const vistos = comunicadosVistos();
-      if(propios.some(c=> c.urgente && !urgenteDescartado(c.id))) return 2;
+      if(propios.some(urgenteVigente)) return 2;
       if(propios.some(c=>!vistos.has(String(c.id)))) return 1;
       const vistasF = fechasVistas();
       if((FECHAS_INST||[]).some(f=>String(f.institucion_id)===String(i.id) && !vistasF.has(String(f.id)))) return 1;
@@ -3679,7 +3720,7 @@
         const propios = comunicadosDe(i.id);
         const vistos = comunicadosVistos();
         const sinLeer = propios.filter(c=>!vistos.has(String(c.id))).length;
-        const urgPendiente = propios.some(c=> c.urgente && !urgenteDescartado(c.id));
+        const urgPendiente = propios.some(urgenteVigente);   // roja solo mientras la alerta no venció
         if(urgPendiente) hayUrgente = true;
         const vistasF = fechasVistas();
         const fechasInst = (FECHAS_INST||[]).filter(f=>String(f.institucion_id)===String(i.id));
@@ -4245,8 +4286,8 @@
   function revisarNovedades(){
     const vistosCom = idsVistos("fonte_vistos_comunicados");
     const vistosUrg = idsVistos("fonte_vistos_urgentes");
-    const nuevosCom = (COMUNICADOS||[]).filter(c=>c.urgente && !vistosCom.has(String(c.id)));
-    const urgentes = (NOTICIAS||[]).filter(n=>n.urgente);
+    const nuevosCom = (COMUNICADOS||[]).filter(c=>urgenteVigente(c) && !vistosCom.has(String(c.id)));
+    const urgentes = urgentesLocales();
     const nuevosUrg = urgentes.filter(n=>!vistosUrg.has(String(n.id)));
 
     if(!primeraPasada){
@@ -4362,7 +4403,7 @@
       ico: "＋",
       h: "Vos también contás",
       p: "¿Un bache, un corte de luz, agua estancada? Tocá el botón + y avisale al resto del pueblo. Es anónimo.",
-      extra: '<p class="onb-p" style="margin-top:12px;font-size:.78rem;color:var(--ink-faint)">Podés seguir tus avisos desde “Mis avisos”, en Alertas.</p>'
+      extra: '<p class="onb-p" style="margin-top:12px;font-size:.78rem;color:var(--ink-faint)">Podés seguir tus avisos desde “Mis avisos”, en Vecinos.</p>'
     }
   ];
   let onbPaso = 0;
@@ -4771,7 +4812,7 @@
   }
 
   // ================= NAVEGACIÓN: UNA SOLA PILA PARA "ATRÁS" =================
-  // Cada pantalla que se abre encima de Inicio (nota, comunicado, institución, Alertas, Buscar,
+  // Cada pantalla que se abre encima de Inicio (nota, comunicado, institución, Vecinos, Buscar,
   // Más, Publicar, fotos, la pestaña "Más noticias"…) es una "capa". Al abrirse se suma a la pila
   // y deja un paso en el historial; el botón atrás del celular, la X, tocar el fondo y deslizar
   // hacia abajo cierran SIEMPRE la capa de arriba por el mismo camino (history.back()).
@@ -5381,7 +5422,9 @@
         + '<div class="p">Acá van a aparecer los avisos de vecinos: baches, cortes de luz, agua estancada, alumbrado.</div>'
         + '<button class="b" id="vacioAportar2">+ Aviso de vecinos</button></div>';
     } else {
-      html += '<div style="text-align:right;padding:0 0 10px"><button id="verMisAportes2" style="font-family:var(--sans);font-size:.72rem;font-weight:700;color:var(--region);background:none;border:0">📋 Mis avisos ›</button></div>'
+      html += '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:0 0 10px">'
+        + '<span style="font-family:var(--sans);font-size:.7rem;color:var(--ink-faint)">Lo que avisan los vecinos de Quitilipi</span>'
+        + '<button id="verMisAportes2" style="font-family:var(--sans);font-size:.72rem;font-weight:700;color:var(--region);background:none;border:0;flex:0 0 auto">📋 Mis avisos ›</button></div>'
         + APORTES.map(a=>{
           const cat = CAT_APORTE.find(c=>c.id===a.categoria) || {label:"Aviso", icon:"📍"};
           const nC = CONFIRMACIONES[a.id] || 0;
@@ -5398,56 +5441,16 @@
             + (res ? '<span class="est">✓ Resuelto</span>'
                    : (nC ? '<span class="conf">👥 '+nC+(nC===1?" vecino lo confirma":" vecinos lo confirman")+'</span>' : ''))
             + '</div></div>';
-        }).join("");
+        }).join("")
+        + '<div class="vacio" style="padding:6px 0 4px"><button class="b" id="vacioAportar2">+ Aviso de vecinos</button></div>';
     }
 
-    // ---- instituciones verificadas: tocás una y se abre la ficha (servicios viven ahí) ----
-    if((INSTITUCIONES||[]).length){
-      html += '<div class="rail-title" style="margin:22px 0 10px">✓ Instituciones verificadas</div>';
-      html += INSTITUCIONES.map(i=>{
-        let nSvc = 0;
-        try{
-          const raw = i.servicios;
-          const arr = typeof raw === "string" ? JSON.parse(raw||"[]") : (Array.isArray(raw) ? raw : []);
-          nSvc = Array.isArray(arr) ? arr.length : 0;
-        }catch(e){ nSvc = 0; }
-        const meta = nSvc
-          ? '<div class="m" style="color:var(--barrio);font-weight:600">🕐 Horarios y servicios · '+nSvc+(nSvc===1?' dato':' datos')+'</div>'
-          : (i.direccion ? '<div class="m">'+esc(i.direccion)+'</div>' : '');
-        const col = colorDeInst(i.id, i.nombre);
-        const sel = selloDeInst(i.id, i.nombre);
-        const logo = urlSegura(i.foto_url)
-          ? '<span class="im" style="background-image:url(\''+esc(urlSegura(i.foto_url))+'\');background-size:cover;background-position:center"></span>'
-          : '<span class="im" style="display:flex;align-items:center;justify-content:center;background:'+col+';color:#fff;font-family:var(--serif);font-weight:700;font-size:.72rem;letter-spacing:.04em">'+esc(sel)+'</span>';
-        return '<div class="ap-card" data-inst-id="'+esc(i.id)+'">'
-          + logo
-          + '<div class="tx"><div class="cat2">Institución verificada</div><div class="h">'+esc(i.nombre)+'</div>'
-          + meta + '</div></div>';
-      }).join("");
-      html += '<p class="foot-note" style="margin:4px 0 0">Tocá una para ver avisos y buscar tu barrio.</p>';
-    }
-
-    // ---- historial de alertas cerca tuyo: se van acumulando acá, no desaparecen al cerrarlas ----
-    const historialUrg = (COMUNICADOS||[]).filter(c=>c.urgente);
-    if(historialUrg.length){
-      html += '<div class="rail-title" style="margin:22px 0 10px">⚡ Alertas cerca tuyo</div>';
-      html += historialUrg.map(c=>
-        '<div class="ap-card" data-com-id="'+esc(c.id)+'">'
-        + '<span class="im" style="display:flex;align-items:center;justify-content:center;font-size:1.3rem;color:var(--urgente)">⚡</span>'
-        + '<div class="tx"><div class="cat2">'+esc(c.institucion||"Alerta")+'</div><div class="h">'+esc(c.titulo||"")+'</div>'
-        + '<div class="m">'+tiempoDesde(c.created_at)+'</div></div></div>'
-      ).join("");
-    }
+    // (Las instituciones verificadas están en Inicio → Oficial, y las alertas oficiales
+    //  viven en Inicio con su vencimiento: acá van solo los avisos de vecinos.)
 
     body.innerHTML = html;
     body.querySelectorAll(".ap-card[data-aporte-id]").forEach(el=>{
       el.addEventListener("click", ()=>{ abrirAporte(el.getAttribute("data-aporte-id")); });
-    });
-    body.querySelectorAll(".ap-card[data-inst-id]").forEach(el=>{
-      el.addEventListener("click", ()=>{ abrirInstitucion(el.getAttribute("data-inst-id")); });
-    });
-    body.querySelectorAll(".ap-card[data-com-id]").forEach(el=>{
-      el.addEventListener("click", ()=>{ abrirComunicado(el.getAttribute("data-com-id")); });
     });
     const vm = document.getElementById("verMisAportes2");
     if(vm) vm.addEventListener("click", ()=>{ abrirMisAportes(); });
