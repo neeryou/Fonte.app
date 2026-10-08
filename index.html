@@ -1738,6 +1738,11 @@
     if(h < 24) return "hace " + h + " h";
     return "hace " + Math.round(h/24) + " d";
   };
+  // Fecha "de verdad" de una nota: cuando se publicó (published_at). Las que vienen del
+  // reportero o del bot se crean como borrador y se publican horas después; con created_at
+  // parecían viejas apenas salían. Si no hay published_at (RSS, filas viejas), created_at.
+  function fechaNota(n){ return (n && (n.published_at || n.created_at)) || null; }
+  function msNota(n){ const f = fechaNota(n); const t = f ? new Date(f).getTime() : NaN; return isNaN(t) ? 0 : t; }
   const ONDAS_LOCALES = new Set(["barrio","ciudad"]); // lo que va en la pestaña Ciudad
   // Noticias urgentes que cuentan como "Cerca tuyo ahora": locales y de las últimas 12 h.
   // La misma regla para la banda y para la notificación.
@@ -1745,9 +1750,9 @@
   function urgentesLocales(){
     const corte = ahoraServidor() - HORAS_BANDA*3600000;
     return (NOTICIAS||[]).filter(n=>{
-      if(!n || !n.urgente || !ONDAS_LOCALES.has(n.onda) || !n.created_at) return false;
-      const t = new Date(n.created_at).getTime();
-      return !isNaN(t) && t > corte;
+      if(!n || !n.urgente || !ONDAS_LOCALES.has(n.onda) || !fechaNota(n)) return false;
+      const t = msNota(n);
+      return t > 0 && t > corte;
     });
   }
   const RANGO_KM = { barrio:1, ciudad:2, region:3, pais:4, mundo:5 }; // orden de cercanía para "Cerca tuyo"
@@ -1799,7 +1804,12 @@
   try{ localStorage.removeItem("fonte_prueba"); localStorage.removeItem("fonte_prueba_on"); }catch(e){}
 
 
+  // NOTICIAS = todo lo que bajó la app (las últimas 90 de cualquier onda + las locales de la
+  // consulta aparte, sin repetir). Lo usan Más noticias, abrir(), relacionadas, buscador y enlaces.
+  // NOTICIAS_LOCALES = solo Quitilipi (barrio/ciudad), últimos 7 días o al menos 15: la pestaña Ciudad.
   let NOTICIAS = [];
+  let NOTICIAS_LOCALES = null; // null = la consulta local falló → Ciudad usa las locales de NOTICIAS
+  const DIAS_LOCALES = 7, MIN_LOCALES = 15, LIMITE_LOCALES = 40;
   let catActiva = "todo";
   let favoritos = [];
   try{ favoritos = JSON.parse(localStorage.getItem("fonte_favoritos") || "[]"); }catch(e){ favoritos = []; }
@@ -1830,13 +1840,29 @@
       document.getElementById("feed").innerHTML = '<div class="state"><div class="spinner"></div><div class="big">Cargando noticias…</div></div>';
     }
     try{
+      const hdr = { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + SUPABASE_KEY };
       const url = SUPABASE_URL + "/rest/v1/noticias"
         + "?select=*&publicada=eq.true&order=created_at.desc&limit=90";
-      const res = await fetch(url, {
-        headers: { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + SUPABASE_KEY }
-      });
+      // Las locales van aparte: con ~30 notas por día de país/mundo/región, entre las últimas 90
+      // entraban solo ~2,5 días de Quitilipi (unas 12 notas).
+      const urlLoc = SUPABASE_URL + "/rest/v1/noticias"
+        + "?select=*&publicada=eq.true&onda=in.(barrio,ciudad)&order=created_at.desc&limit=" + LIMITE_LOCALES;
+      const [res, locales] = await Promise.all([
+        fetch(url, { headers: hdr }),
+        fetch(urlLoc, { headers: hdr }).then(r => r.ok ? r.json() : null).catch(() => null)
+      ]);
       if(!res.ok){ throw new Error("HTTP " + res.status); }
-      NOTICIAS = await res.json();
+      const generales = await res.json();
+      if(Array.isArray(locales)){
+        const porFecha = locales.slice().sort((a,b)=> msNota(b) - msNota(a));
+        const corte = Date.now() - DIAS_LOCALES*86400000;
+        const recientes = porFecha.filter(n => msNota(n) >= corte);
+        NOTICIAS_LOCALES = recientes.length >= MIN_LOCALES ? recientes : porFecha.slice(0, MIN_LOCALES);
+      } else {
+        NOTICIAS_LOCALES = null;
+      }
+      const ids = new Set(generales.map(n => String(n.id)));
+      NOTICIAS = generales.concat((NOTICIAS_LOCALES || []).filter(n => !ids.has(String(n.id))));
       render();
     renderCiudad();
     if(typeof intentarEnlace === "function") intentarEnlace();
@@ -1875,7 +1901,7 @@
 
   function renderCiudad(){
     const cont = document.getElementById("feedCiudad");
-    let locales = NOTICIAS.filter(n => ONDAS_LOCALES.has(n.onda));
+    let locales = (NOTICIAS_LOCALES || NOTICIAS).filter(n => ONDAS_LOCALES.has(n.onda));
     // lo que ya está en la banda "Cerca tuyo ahora" (justo arriba) no se repite en el feed,
     // salvo que sea lo único que hay
     const enBanda = new Set([...document.querySelectorAll("#urgentBand.show .u-item[data-id]")].map(el=>String(el.getAttribute("data-id"))));
@@ -1886,17 +1912,26 @@
         + '<div class="sub">Cuando aparezca algo de Quitilipi o la zona, lo vas a ver acá.</div></div>';
       return;
     }
-    // mismo criterio de orden que "Más noticias" (no leídas primero, más cerca primero,
-    // más nueva primero) — para que las dos pestañas se sientan la misma app.
+    // Primera plana: la nota local más nueva, sin importar si ya la leíste ni si es "barrio"
+    // o "ciudad" (antes una de barrio de hace 2 días le ganaba a todo lo de hoy):
+    //   1) urgente local de las últimas 12 h  2) la más nueva con foto de las últimas 36 h
+    //   3) si no hay, la más nueva.
+    const porFecha = [...locales].sort((a,b)=> msNota(b) - msNota(a));
+    const ahoraPP = ahoraServidor();
+    const horasDe = (n)=> (ahoraPP - msNota(n)) / 3600000;
+    const leadPP = porFecha.find(n => n.urgente && horasDe(n) < HORAS_BANDA)
+                || porFecha.find(n => urlSegura(n.imagen_url) && horasDe(n) < 36)
+                || porFecha[0];
+    // El resto: no leídas primero y, dentro de eso, la más nueva primero. Barrio y ciudad
+    // cuentan igual acá (las zonas de abajo igual las separan).
     const leidosPP = getLeidos();
-    const ordenadas = [...locales].sort((a,b)=>{
+    const resto = porFecha.filter(n => n !== leadPP).sort((a,b)=>{
       const la = leidosPP.has(String(a.id)) ? 1 : 0;
       const lb = leidosPP.has(String(b.id)) ? 1 : 0;
       if(la !== lb) return la - lb;
-      const ra = RANGO_KM[a.onda]||9, rb = RANGO_KM[b.onda]||9;
-      if(ra !== rb) return ra - rb;
-      return new Date(b.created_at) - new Date(a.created_at);
+      return msNota(b) - msNota(a);
     });
+    const ordenadas = [leadPP].concat(resto);
     const conOndas = ONDAS.filter(o => ONDAS_LOCALES.has(o.id) && locales.some(n => n.onda === o.id));
 
     // mismo bloque que arma "Más noticias" (Primera plana + zonas), pero sin el
@@ -1927,7 +1962,7 @@
     const cercanasPP = conCercaTuyo ? ordenadas.slice(2, 6) : [];
     const idsPP = new Set([lead, subLead].concat(cercanasPP).filter(Boolean).map(n=>String(n.id)));
     const recientes = ordenadas.filter(n => !idsPP.has(String(n.id)))
-      .sort((a,b)=> new Date(b.created_at)-new Date(a.created_at)).slice(0,5);
+      .sort((a,b)=> msNota(b) - msNota(a)).slice(0,5);
     const idsRecientes = new Set(recientes.map(n=>String(n.id)));
 
     html += '<section class="pp" id="pp">';
@@ -1954,7 +1989,7 @@
       + '<span class="kicker"><span class="dot"></span>'+leadLugar+'</span>'
       + '<h2 class="h">'+esc(lead.titulo)+'</h2>'
       + (lead.resumen_corto?'<p class="dek">'+esc(lead.resumen_corto)+'</p>':'')
-      + '<div class="byl">'+(lead.fuente_etiqueta?'<span class="fuente-tag">'+esc(lead.fuente_etiqueta)+'</span>':'')+'<span class="src">'+tiempoDesde(lead.created_at)+'</span></div></a>';
+      + '<div class="byl">'+(lead.fuente_etiqueta?'<span class="fuente-tag">'+esc(lead.fuente_etiqueta)+'</span>':'')+'<span class="src">'+tiempoDesde(fechaNota(lead))+'</span></div></a>';
     if(subLead){
       const subLugar = subLead.lugar ? esc(subLead.lugar) : nombreDe(subLead.onda);
       html += '<a class="article pp-sub" data-id="'+esc(subLead.id)+'" style="--w:'+colorDe(subLead.onda)+'">'
@@ -1970,7 +2005,7 @@
       const mini = miniFoto(n, 44);
       html += '<a class="article rail-item'+(mini?' foto':'')+'" data-id="'+esc(n.id)+'">'
         + mini
-        + '<div><span class="tt">'+tiempoDesde(n.created_at)+'</span>'
+        + '<div><span class="tt">'+tiempoDesde(fechaNota(n))+'</span>'
         + '<h3 class="h">'+esc(n.titulo)+'</h3></div></a>';
     });
     if(recientes.length) html += '</aside>';
@@ -2011,7 +2046,7 @@
         + '<div class="ph-img" style="'+bgDe(zLead)+'"></div>'
         + '<h3 class="h">'+esc(zLead.titulo)+'</h3>'
         + (zLead.resumen_corto?'<p class="dek">'+esc(zLead.resumen_corto)+'</p>':'')
-        + '<div class="byl">'+zFav+zCatTag+(zLead.fuente_etiqueta?'<span class="fuente-tag">'+esc(zLead.fuente_etiqueta)+'</span>':'')+'<span class="src">'+tiempoDesde(zLead.created_at)+'</span></div></a>';
+        + '<div class="byl">'+zFav+zCatTag+(zLead.fuente_etiqueta?'<span class="fuente-tag">'+esc(zLead.fuente_etiqueta)+'</span>':'')+'<span class="src">'+tiempoDesde(fechaNota(zLead))+'</span></div></a>';
       // con suficiente volumen en la zona, una mini-tira deslizable justo después del lead —
       // la misma técnica del cierre, pero como parte normal de la interfaz, no solo al final
       const miniN = notas.length >= 7 ? Math.min(3, notas.length - 5) : 0;
@@ -2025,8 +2060,8 @@
         const fav = favoritos.includes(n.categoria) ? ' <span class="why int" style="margin-left:5px">★</span>' : '';
         const color = CAT_COLOR[n.categoria] || "#8B8271";
         const catTag = n.categoria ? '<span class="ctag" style="--ac:'+color+'">'+(CAT_NOMBRE[n.categoria]||n.categoria)+'</span>' : '';
-        const esReciente = (Date.now() - new Date(n.created_at).getTime()) < 15*60000;
-        const tiempo = (esReciente ? '<span class="pulse-dot"></span>' : '') + tiempoDesde(n.created_at);
+        const esReciente = (Date.now() - msNota(n)) < 15*60000;
+        const tiempo = (esReciente ? '<span class="pulse-dot"></span>' : '') + tiempoDesde(fechaNota(n));
         // cada 4 ítems, uno "respira" con foto para romper el ritmo apilado
         const destacada = (i % 4 === 3);
         const est = n.resumen_estructurado;
@@ -2094,7 +2129,7 @@
       let desde = 0;
       try{ desde = parseInt(localStorage.getItem("fonte_mas_visto") || "0", 10); }catch(e){}
       if(!desde){ el.textContent = ""; el.className = "n"; return; }
-      const nuevas = NO_LOCAL.filter(n => n.created_at && new Date(n.created_at).getTime() > desde).length;
+      const nuevas = NO_LOCAL.filter(n => msNota(n) > desde).length;
       if(nuevas > 0){ el.textContent = nuevas > 99 ? "99+" : nuevas; el.className = "n nuevo"; }
       else { el.textContent = ""; el.className = "n"; }
     })();
@@ -2166,7 +2201,7 @@
       if(la !== lb) return la - lb;
       const ra = RANGO_KM[a.onda]||9, rb = RANGO_KM[b.onda]||9;
       if(ra !== rb) return ra - rb;
-      return new Date(b.created_at) - new Date(a.created_at);
+      return msNota(b) - msNota(a);
     });
 
     // Primera plana + zonas: bloque compartido con la pestaña Ciudad (ver htmlPrimeraPlanaYZonas).
@@ -2208,7 +2243,7 @@
     document.getElementById("s-kicker").style.setProperty("--w", colorDe(n.onda));
     document.getElementById("s-place").textContent = nombreDe(n.onda) + (n.lugar ? " · " + n.lugar : "");
     document.getElementById("s-title").textContent = n.titulo || "";
-    document.getElementById("s-src").textContent = [n.fuente_etiqueta, tiempoDesde(n.created_at)].filter(Boolean).join(" · ");
+    document.getElementById("s-src").textContent = [n.fuente_etiqueta, tiempoDesde(fechaNota(n))].filter(Boolean).join(" · ");
     document.getElementById("s-urg").innerHTML = n.urgente ? '<span class="why urg">⚡ Urgente</span>' : '';
     const heroEl = document.getElementById("s-hero");
     const videoEl = document.getElementById("s-video");
