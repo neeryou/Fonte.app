@@ -111,6 +111,18 @@
   .task .go{ font-family:var(--sans); font-size:.68rem; font-weight:700; color:var(--region); white-space:nowrap; }
   .task .bot-acts{ display:flex; gap:8px; margin-top:9px; }
   .task .bot-acts button{ flex:1; font-family:var(--sans); font-size:.76rem; font-weight:700; padding:9px; border-radius:8px; border:0; }
+  /* Pedido de ayuda del bot de WhatsApp + edición rápida del borrador */
+  .task.ayuda{ border-color:#C9822B; box-shadow:0 0 0 1px rgba(201,130,43,.25); }
+  .task .tag-ayuda{ display:inline-block; font-family:var(--sans); font-size:.64rem; font-weight:800; color:#8A4B0F; background:#FBEBD3; border-radius:99px; padding:2px 8px; margin-bottom:5px; }
+  .task .ayuda-orig{ font-family:var(--sans); font-size:.72rem; color:var(--ink-soft); background:var(--paper-2, #f4f0e6); border-radius:7px; padding:8px 9px; margin-top:6px; white-space:pre-wrap; word-break:break-word; }
+  .task .ayuda-foto{ display:block; max-width:100%; max-height:200px; border-radius:7px; margin-top:6px; border:1px solid var(--line); }
+  .task .bot-edit{ display:flex; flex-direction:column; gap:6px; margin-top:10px; }
+  .task .bot-edit label{ font-family:var(--sans); font-size:.66rem; font-weight:700; color:var(--ink-faint); margin-top:2px; }
+  .task .bot-edit input, .task .bot-edit textarea, .task .bot-edit select{ width:100%; box-sizing:border-box; font-family:var(--sans); font-size:.78rem; border:1px solid var(--line-strong); border-radius:7px; padding:8px; background:var(--paper); color:var(--ink); }
+  .task .bot-edit input[type=checkbox]{ width:auto; }
+  .task .bot-edit textarea{ min-height:90px; }
+  .task .bot-edit .fila-check{ display:flex; align-items:center; gap:6px; font-family:var(--sans); font-size:.74rem; color:var(--ink); }
+  .task .bot-edit .ayuda-campo{ font-family:var(--sans); font-size:.64rem; color:var(--ink-faint); }
   .task.ok{ border-color:color-mix(in srgb,var(--barrio) 30%,var(--line)); background:color-mix(in srgb,var(--barrio) 5%,var(--paper)); }
   .task.ok .ic{ background:var(--barrio); color:#fff; }
   .task.ok .go{ color:var(--barrio); }
@@ -935,6 +947,7 @@
         </div>
         <div id="ciudadDetallePanel" class="hide"></div>
         <div class="ciudad-sec">
+          <button type="button" class="btn-mini" id="ciudadOficialesBtn">Oficiales del bot</button>
           <button type="button" class="btn-mini" id="ciudadEditarBtn">Editar ficha</button>
           <button type="button" class="btn-mini del" id="ciudadQuitarBtn">Quitar</button>
         </div>
@@ -1015,6 +1028,7 @@
   const SUPABASE_URL = "https://skpfycmkilahghvoxqxw.supabase.co";
   const SUPABASE_KEY = "sb_publishable_3YK9XChJ8YeJzlXymHXUeQ_TbCPQReT";
   const FUNCION_GENERAR = SUPABASE_URL + "/functions/v1/fonte-generar-nota";
+  const FUNCION_WHATSAPP = SUPABASE_URL + "/functions/v1/whatsapp-webhook";
 
   const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   try{ localStorage.removeItem("fonte_prueba"); localStorage.removeItem("fonte_prueba_on"); }catch(e){}
@@ -2480,8 +2494,71 @@
       inner.className = "svc-panel";
       panelHost.appendChild(inner);
       cargarServiciosDe(inst.id, inner, inst);
+    } else if(tipo === "oficiales"){
+      inner.className = "fechas-panel";
+      panelHost.appendChild(inner);
+      cargarOficialesDe(inst, inner);
     }
     panelHost.scrollIntoView({ behavior:"smooth", block:"nearest" });
+  }
+
+  async function cargarOficialesDe(inst, panel){
+    panel.innerHTML = "Cargando…";
+    const { data, error } = await sb.from("bot_oficiales")
+      .select("id,nombre,telefono_ult4,activo,created_at")
+      .eq("institucion_id", inst.id).eq("activo", true)
+      .order("created_at", { ascending:true });
+    if(error){
+      const falta = /bot_oficiales|does not exist|PGRST/i.test(error.message||"");
+      panel.innerHTML = '<p style="font-family:var(--sans);font-size:.78rem;color:var(--ink-faint)">'
+        + (falta
+          ? "Falta correr <code>supabase-bot-whatsapp.sql</code> en Supabase para habilitar el bot de WhatsApp."
+          : ("No se pudo cargar: " + escA(error.message)))
+        + "</p>";
+      return;
+    }
+    const filas = (data||[]).map(o=>
+      '<div class="fecha-row" data-oficial-id="'+escA(o.id)+'">'
+      + '<div><div class="t">'+escA(o.nombre)+'</div>'
+      + '<div class="m">•••• '+escA(o.telefono_ult4||"????")+'</div></div>'
+      + '<div class="acts"><button type="button" class="del" style="padding:4px 8px">✕</button></div></div>'
+    ).join("");
+    panel.innerHTML =
+      (filas || '<p style="font-family:var(--sans);font-size:.72rem;color:var(--ink-faint);margin:0 0 8px">Todavía no hay oficiales cargados para esta institución.</p>')
+      + '<div class="fecha-add">'
+      + '<input name="nombre" placeholder="Nombre (ej: Elías Gómez)" maxlength="60">'
+      + '<input name="telefono" placeholder="Celular (ej: 3735 41-2345 o +54 9 …)" inputmode="tel">'
+      + '<p style="font-family:var(--sans);font-size:.68rem;color:var(--ink-faint);margin:0;flex:1 1 100%">El número se guarda hasheado: en Fonte solo se ven los últimos 4 dígitos.</p>'
+      + '<button class="btn-mini" style="width:100%;background:var(--barrio);color:#fff;border-color:var(--barrio)" data-add-oficial="1">+ Agregar oficial</button>'
+      + '</div>';
+    panel.querySelectorAll(".fecha-row .del").forEach(btn=>{
+      btn.addEventListener("click", async ()=>{
+        const id = btn.closest(".fecha-row").getAttribute("data-oficial-id");
+        const nom = (btn.closest(".fecha-row").querySelector(".t")||{}).textContent || "este oficial";
+        if(!confirm("¿Quitar a “"+nom+"” del bot de esta institución?")) return;
+        btn.disabled = true;
+        const { error } = await sb.rpc("quitar_oficial", { oficial: id });
+        if(error){ toast("No se pudo quitar: " + error.message); btn.disabled = false; return; }
+        toast("Oficial quitado");
+        cargarOficialesDe(inst, panel);
+      });
+    });
+    const addBtn = panel.querySelector("[data-add-oficial]");
+    if(addBtn) addBtn.addEventListener("click", async ()=>{
+      const nombre = (panel.querySelector('[name="nombre"]').value||"").trim();
+      const telefono = (panel.querySelector('[name="telefono"]').value||"").trim();
+      if(!nombre || !telefono){ toast("Completá el nombre y el celular."); return; }
+      addBtn.disabled = true;
+      const { data: r, error } = await sb.rpc("agregar_oficial", {
+        telefono, nombre, institucion: String(inst.id)
+      });
+      addBtn.disabled = false;
+      if(error){ toast("No se pudo agregar: " + error.message); return; }
+      toast("Oficial agregado · •••• " + ((r && r.telefono_ult4) || "????"));
+      panel.querySelector('[name="nombre"]').value = "";
+      panel.querySelector('[name="telefono"]').value = "";
+      cargarOficialesDe(inst, panel);
+    });
   }
 
   async function cargarInstitucionesAdmin(){
@@ -3417,7 +3494,9 @@
       tareas.push({ urg:false, ic:"BOT", t: nBotNotas + (nBotNotas===1?" nota del bot para revisar":" notas del bot para revisar"),
                     s: "Están en Publicar → Borradores", go:"Revisar ›", v:"borradores" });
     }
-    const botPend = (botBorr && !botBorr.error) ? (botBorr.data||[]) : [];
+    const botPend = (botBorr && !botBorr.error) ? (botBorr.data||[]).slice() : [];
+    // Los pedidos de ayuda del bot de WhatsApp van primero (el resto, del más viejo al más nuevo).
+    botPend.sort((a,b)=> (pidioAyudaBot(b)?1:0) - (pidioAyudaBot(a)?1:0));
     const urgVigentes = (urg.data||[]).filter(c=> c.created_at && comUrgenteVigente(c));
     // Urgentes en portada = estado, no tarea (Hoy solo accionables)
     const estadoEl = document.getElementById("hoyEstado");
@@ -3477,12 +3556,30 @@
   // ---- Bandeja del bot (tabla bot_borradores): Publicar copia a la tabla real
   //      con la función confirmar_bot_borrador (todo junto o nada); Descartar lo archiva.
   const NOMBRE_TIPO_BOT = { comunicado:"Aviso oficial", fecha:"Fecha", servicio:"Servicio", nota:"Nota", aporte:"Aviso de vecino" };
+  function origenBot(b){
+    const p = (b && b.payload) || {};
+    if(typeof b.origen === "string" && b.origen.indexOf("wa:") === 0){
+      return "por WhatsApp" + (p.oficial ? (" · " + p.oficial) : "");
+    }
+    return "del bot";
+  }
+  function pidioAyudaBot(b){
+    const p = (b && b.payload) || {};
+    return p.necesita_ayuda === true || p.necesita_ayuda === "true";
+  }
   function htmlBorradorBot(b){
     const p = (b && b.payload) || {};
+    const ayuda = pidioAyudaBot(b);
     const inst = (b.instituciones && b.instituciones.nombre) || p.institucion || "";
-    let titulo = p.titulo || (b.tipo === "servicio" ? [p.seccion, p.clave].filter(Boolean).join(" · ") : "") || "(sin título)";
+    const items = (b.tipo === "servicio" && Array.isArray(p.items)) ? p.items : null;
+    let titulo = p.titulo || (b.tipo === "servicio"
+      ? (items && items.length
+          ? (items[0].seccion || "Servicio") + " · " + items.length + (items.length === 1 ? " ítem" : " ítems")
+          : [p.seccion, p.clave].filter(Boolean).join(" · "))
+      : "") || "(sin título)";
     if(b.tipo === "fecha" && p.fecha) titulo += " · " + p.fecha;
-    const detalle = String(p.texto || p.descripcion || p.resumen_corto || p.valor || "").trim();
+    const detalle = String(p.texto || p.descripcion || p.resumen_corto || p.valor
+      || (items ? items.map(x=> (x.clave||"") + ": " + (x.valor||"")).join(" · ") : "") || "").trim();
     const corto = detalle.length > 140 ? detalle.slice(0,138) + "…" : detalle;
     if(b.tipo === "comunicado" && (p.urgente === true || p.urgente === "true")){
       // vence_horas se cuenta desde que tocás Publicar; vence_at es una hora fija
@@ -3491,12 +3588,22 @@
       titulo = "⚡ URGENTE · " + titulo + (!isNaN(fijo) ? " · hasta " + cuandoCorto(fijo)
         : (h > 0 ? " · " + h + " h desde que publiques" : " · 48 h desde que publiques"));
     }
-    return '<div class="task" data-bot="'+escA(b.id)+'">'
+    const editable = ["comunicado","fecha","servicio"].includes(b.tipo);
+    const fotoAyuda = ayuda && p.ayuda_foto ? urlSegura(p.ayuda_foto) : "";
+    return '<div class="task'+(ayuda?' ayuda':'')+'" data-bot="'+escA(b.id)+'">'
       + '<span class="ic">BOT</span><div class="tx">'
+      + (ayuda ? '<div class="tag-ayuda">🙋 Pidió ayuda'
+          + (p.ayuda_motivo === "correcciones" ? ' · corrigió ' + escA(String(p.correcciones || 2)) + ' veces' : '')
+          + (p.tipo_adivinado ? ' · revisá el tipo' : '')
+          + (p.editado_at ? ' · editado' : '') + '</div>' : '')
       + '<div class="t">'+escA((NOMBRE_TIPO_BOT[b.tipo]||"Borrador") + ": " + titulo)+'</div>'
-      + '<div class="s">'+escA([inst, "del bot", b.created_at ? tiempoRel(b.created_at) : ""].filter(Boolean).join(" · "))+'</div>'
+      + '<div class="s">'+escA([inst, origenBot(b), b.created_at ? tiempoRel(b.created_at) : ""].filter(Boolean).join(" · "))+'</div>'
       + (corto ? '<div class="s">'+escA(corto)+'</div>' : '')
+      + (ayuda && p.ayuda_texto ? '<div class="ayuda-orig"><b>Lo que mandó:</b>\n'+escA(String(p.ayuda_texto))+'</div>' : '')
+      + (fotoAyuda ? '<a href="'+escA(fotoAyuda)+'" target="_blank" rel="noopener"><img class="ayuda-foto" src="'+escA(fotoAyuda)+'" alt="Foto que mandó el oficial"></a>' : '')
+      + '<div class="bot-edit hide" data-bot-edit></div>'
       + '<div class="bot-acts"><button type="button" class="btn-aprobar" data-bot-ok>Publicar</button>'
+      + (editable ? '<button type="button" class="btn-rechazar" data-bot-ed>Editar</button>' : '')
       + '<button type="button" class="btn-rechazar" data-bot-no>Descartar</button></div>'
       + '</div></div>';
   }
@@ -3507,13 +3614,26 @@
       const ok = el.querySelector("[data-bot-ok]"), no = el.querySelector("[data-bot-no]");
       if(ok) ok.addEventListener("click", async (e)=>{
         e.stopPropagation();
-        const tit = (b && b.payload && (b.payload.titulo || b.payload.clave)) || "este borrador";
-        if(!confirm("¿Publicar en Fonte “" + tit + "”?")) return;
+        const tit = (b && b.payload && (b.payload.titulo || b.payload.clave
+          || (Array.isArray(b.payload.items) && b.payload.items[0] && b.payload.items[0].seccion))) || "este borrador";
+        const sinEditar = pidioAyudaBot(b) && !(b.payload && b.payload.editado_at);
+        if(!confirm((sinEditar ? "Este pedido de ayuda todavía no lo editaste.\n" : "") + "¿Publicar en Fonte “" + tit + "”?")) return;
         ok.disabled = true; if(no) no.disabled = true;
-        const { error } = await sb.rpc("confirmar_bot_borrador", { borrador: id });
+        const { data: nuevoId, error } = await sb.rpc("confirmar_bot_borrador", { borrador: id });
         if(error){ toast("No se pudo publicar: " + error.message); ok.disabled = false; if(no) no.disabled = false; return; }
         toast("Publicado en Fonte ✓");
+        if(b && typeof b.origen === "string" && b.origen.indexOf("wa:") === 0){
+          avisarOficialBot(b, nuevoId).catch(err=> console.warn("aviso WA", err));
+        }
         cargarHoy();
+      });
+      const ed = el.querySelector("[data-bot-ed]");
+      if(ed && b) ed.addEventListener("click", (e)=>{
+        e.stopPropagation();
+        const caja = el.querySelector("[data-bot-edit]");
+        if(!caja) return;
+        if(!caja.classList.contains("hide")){ caja.classList.add("hide"); caja.innerHTML = ""; return; }
+        abrirEditorBorradorBot(b, caja);
       });
       if(no) no.addEventListener("click", async (e)=>{
         e.stopPropagation();
@@ -3525,6 +3645,154 @@
         cargarHoy();
       });
     });
+  }
+
+  // ---- Editar un borrador del bot antes de publicarlo (sobre todo los pedidos de ayuda).
+  //      Guarda en bot_borradores (tipo + payload); Publicar después usa lo guardado.
+  function isoALocal(iso){
+    const d = iso ? new Date(iso) : null;
+    if(!d || isNaN(d.getTime())) return "";
+    const z = (n)=> String(n).padStart(2,"0");
+    return d.getFullYear()+"-"+z(d.getMonth()+1)+"-"+z(d.getDate())+"T"+z(d.getHours())+":"+z(d.getMinutes());
+  }
+  function abrirEditorBorradorBot(b, caja){
+    const p = Object.assign({}, (b && b.payload) || {});
+    const v = (x)=> escA(x == null ? "" : String(x));
+    const elegirTipo = pidioAyudaBot(b) || p.tipo_adivinado;
+    const items = Array.isArray(p.items) ? p.items : (p.clave ? [{ seccion:p.seccion, clave:p.clave, valor:p.valor }] : []);
+    const campos = (tipo)=>{
+      if(tipo === "fecha"){
+        return '<label>Título</label><input name="titulo" maxlength="120" value="'+v(p.titulo)+'">'
+          + '<label>Día</label><input name="fecha" type="date" value="'+v(p.fecha)+'">'
+          + '<label>Horario</label><input name="horario" maxlength="80" placeholder="Ej: de 8 a 12" value="'+v(p.horario)+'">'
+          + '<label>Lugar (un punto por línea)</label><textarea name="lugar">'+v(p.lugar)+'</textarea>';
+      }
+      if(tipo === "servicio"){
+        return '<label>Servicio</label><input name="seccion" maxlength="80" placeholder="Ej: Recolección de residuos" value="'+v((items[0] && items[0].seccion) || p.seccion || "")+'">'
+          + '<label>Barrios / ítems (uno por línea, "Barrio: días y horario")</label>'
+          + '<textarea name="items" placeholder="Centro: lunes, miércoles y viernes 7 h">'+v(items.map(i=> (i.clave||"") + ": " + (i.valor||"")).join("\n"))+'</textarea>';
+      }
+      const h = parseFloat(p.vence_horas);
+      return '<label>Título</label><input name="titulo" maxlength="120" value="'+v(p.titulo)+'">'
+        + '<label>Texto</label><textarea name="texto">'+v(p.texto)+'</textarea>'
+        + '<div class="fila-check"><input type="checkbox" name="urgente"'+((p.urgente === true || p.urgente === "true") ? ' checked' : '')+' id="bed-urg-'+v(b.id)+'"><label for="bed-urg-'+v(b.id)+'" style="margin:0">Urgente (sale en rojo arriba)</label></div>'
+        + '<label>Vence (opcional, hora fija)</label><input name="vence_at" type="datetime-local" value="'+v(isoALocal(p.vence_at))+'">'
+        + '<div class="ayuda-campo">Vacío = '+(h > 0 ? h : 48)+' h desde que publiques.</div>';
+    };
+    let tipoActual = b.tipo;
+    caja.innerHTML = (elegirTipo
+        ? '<label>Tipo</label><select name="tipo">'
+          + [["comunicado","Aviso oficial"],["fecha","Fecha"],["servicio","Servicio"]].map(([k,l])=> '<option value="'+k+'"'+(k===tipoActual?' selected':'')+'>'+l+'</option>').join("")
+          + '</select>'
+        : '')
+      + '<div data-campos>'+campos(tipoActual)+'</div>'
+      + '<div class="bot-acts"><button type="button" class="btn-aprobar" data-ed-ok>Guardar cambios</button>'
+      + '<button type="button" class="btn-rechazar" data-ed-no>Cerrar</button></div>';
+    caja.classList.remove("hide");
+    const sel = caja.querySelector('select[name="tipo"]');
+    if(sel) sel.addEventListener("change", ()=>{
+      // Lo ya escrito se conserva al cambiar de tipo
+      const val = (n)=>{ const x = caja.querySelector('[name="'+n+'"]'); return x ? x.value : undefined; };
+      ["titulo","texto","fecha","horario","lugar"].forEach(n=>{ const x = val(n); if(x !== undefined) p[n] = x; });
+      tipoActual = sel.value;
+      caja.querySelector("[data-campos]").innerHTML = campos(tipoActual);
+    });
+    caja.querySelector("[data-ed-no]").addEventListener("click", (e)=>{ e.stopPropagation(); caja.classList.add("hide"); caja.innerHTML = ""; });
+    caja.querySelector("[data-ed-ok]").addEventListener("click", async (e)=>{
+      e.stopPropagation();
+      const btn = e.currentTarget;
+      const val = (n)=>{ const x = caja.querySelector('[name="'+n+'"]'); return x ? String(x.value || "").trim() : ""; };
+      const nuevo = Object.assign({}, (b && b.payload) || {});
+      // Se limpian los campos del otro tipo para que no queden mezclados
+      ["titulo","texto","urgente","vence_at","vence_horas","fecha","horario","lugar","items","seccion","clave","valor"].forEach(k=>{
+        if(k === "vence_horas" && tipoActual === "comunicado") return;
+        if(k === "urgente" && tipoActual === "comunicado") return;
+        delete nuevo[k];
+      });
+      if(tipoActual === "comunicado"){
+        nuevo.titulo = val("titulo"); nuevo.texto = val("texto");
+        if(!nuevo.titulo || !nuevo.texto){ toast("El aviso necesita título y texto."); return; }
+        nuevo.urgente = !!(caja.querySelector('[name="urgente"]') || {}).checked;
+        if(!nuevo.urgente) delete nuevo.vence_horas;
+        const va = val("vence_at");
+        if(va){
+          const d = new Date(va);
+          if(isNaN(d.getTime()) || d.getTime() <= Date.now()){ toast("El vencimiento tiene que ser más adelante."); return; }
+          nuevo.vence_at = d.toISOString();
+        }
+        // la foto que mandó el oficial queda como foto del aviso, si no había otra
+        if(!nuevo.imagen_url && nuevo.ayuda_foto) nuevo.imagen_url = nuevo.ayuda_foto;
+      } else if(tipoActual === "fecha"){
+        nuevo.titulo = val("titulo"); nuevo.fecha = val("fecha");
+        if(!nuevo.titulo || !/^\d{4}-\d{2}-\d{2}$/.test(nuevo.fecha)){ toast("La fecha necesita título y día."); return; }
+        if(nuevo.fecha < hoyBA()){ toast("Ese día ya pasó."); return; }
+        if(val("horario")) nuevo.horario = val("horario");
+        const lugar = val("lugar").split(/\n+/).map(x=>x.trim()).filter(Boolean).join("\n");
+        if(lugar) nuevo.lugar = lugar;
+        delete nuevo.imagen_url;
+      } else {
+        const seccion = val("seccion") || "Servicios";
+        const its = val("items").split(/\n+/).map(l=>{
+          const k = l.indexOf(":"); // solo el primer ":" separa (los horarios tipo 9:30 quedan enteros)
+          const clave = (k >= 0 ? l.slice(0, k) : "").trim(); const valor = (k >= 0 ? l.slice(k + 1) : "").trim();
+          return { seccion, clave, valor };
+        }).filter(i=> i.clave && i.valor);
+        if(!its.length){ toast('Cargá al menos un renglón "Barrio: horario".'); return; }
+        nuevo.items = its;
+        delete nuevo.imagen_url;
+      }
+      if(elegirTipo) delete nuevo.tipo_adivinado;
+      nuevo.editado_at = new Date().toISOString();
+      btn.disabled = true;
+      const { data, error } = await sb.from("bot_borradores").update({ tipo: tipoActual, payload: nuevo })
+        .eq("id", b.id).eq("estado","pendiente").select("id");
+      btn.disabled = false;
+      if(error){ toast("No se pudo guardar: " + error.message); return; }
+      if(!data || !data.length){ toast("Ese borrador ya no está pendiente."); cargarHoy(); return; }
+      toast("Cambios guardados ✓ Ahora podés publicarlo.");
+      cargarHoy();
+    });
+  }
+
+  async function avisarOficialBot(b, publicadoId){
+    if(!sesion || !sesion.access_token) return;
+    let placaUrl = null;
+    try{
+      if(b.tipo === "comunicado" || b.tipo === "fecha"){
+        let fila = null;
+        if(b.tipo === "comunicado" && publicadoId){
+          const { data } = await sb.from("comunicados").select("*").eq("id", publicadoId).maybeSingle();
+          fila = data;
+        } else if(b.tipo === "fecha" && publicadoId){
+          const { data } = await sb.from("institucion_fechas").select("*").eq("id", publicadoId).maybeSingle();
+          fila = data;
+        }
+        if(fila){
+          const n = notaParaPlaca(Object.assign({}, fila, {
+            institucion: (b.instituciones && b.instituciones.nombre) || (b.payload && b.payload.institucion) || "",
+            institucion_id: b.institucion_id || fila.institucion_id
+          }), b.tipo);
+          n.__dim = "feed";
+          const blob = await conTimeout(generarPlaca(n), 20000, "la placa tardó demasiado");
+          if(blob){
+            const nombre = "placa-wa-" + Date.now() + "-" + Math.random().toString(36).slice(2,8) + ".jpg";
+            placaUrl = await subirAStorage("notas-fotos", nombre, blob);
+          }
+        }
+      }
+    }catch(e){ console.warn("placa WA", e); }
+    try{
+      const r = await fetch(FUNCION_WHATSAPP + "/notificar", {
+        method: "POST",
+        headers: { "content-type": "application/json", "Authorization": "Bearer " + sesion.access_token },
+        body: JSON.stringify({ borrador_id: b.id, placa_url: placaUrl || undefined })
+      });
+      const j = await r.json().catch(()=>({}));
+      if(j && j.estado === "enviado") toast("Avisamos al oficial por WhatsApp ✓");
+      else if(j && j.estado === "fuera_de_ventana") toast("Publicado. El oficial se enterará cuando vuelva a escribirle al bot (pasaron más de 24 h).");
+      else if(j && j.estado === "ya_enviado") { /* nada */ }
+      else if(!r.ok) toast("Publicado, pero no se pudo avisar por WhatsApp.");
+    }catch(e){ toast("Publicado, pero no se pudo avisar por WhatsApp."); }
   }
 
   function tiempoRel(iso){
@@ -5271,6 +5539,8 @@
     document.querySelectorAll("#ciudadAcciones .accion").forEach(btn=>{
       btn.addEventListener("click", ()=> abrirCargaInstitucion(btn.getAttribute("data-carga")));
     });
+    const oficiales = document.getElementById("ciudadOficialesBtn");
+    if(oficiales) oficiales.addEventListener("click", ()=> abrirCargaInstitucion("oficiales"));
     const editar = document.getElementById("ciudadEditarBtn");
     if(editar) editar.addEventListener("click", ()=>{
       const inst = ciudadInstActual;
