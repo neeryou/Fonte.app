@@ -2151,6 +2151,8 @@
     marcarLeido(n.id);
     document.querySelectorAll('.article[data-id="'+String(n.id).replace(/"/g,'')+'"]').forEach(el=> el.classList.add("leida"));
     notaAbierta = n;
+    // la placa para compartir se arma ya (sin trabar la animación), así el botón sale al toque
+    setTimeout(()=>{ if(notaAbierta === n) prepararPlaca(n); }, 450);
     pararAudio();
     document.getElementById("s-kicker").style.setProperty("--w", colorDe(n.onda));
     document.getElementById("s-place").textContent = nombreDe(n.onda) + (n.lugar ? " · " + n.lugar : "");
@@ -2383,14 +2385,28 @@
     return URL_FONTE + "?" + (tipo || "n") + "=" + encodeURIComponent(n.id);
   }
 
+  // Instagram corta el texto en 2.200 caracteres: si se pasa, se acorta el cuerpo
+  // (nunca el encabezado ni el link del final).
+  const LIMITE_CAPTION = 2200;
+  function captionConTope(partes, iCuerpo){
+    let txt = partes.join("\n");
+    if(txt.length > LIMITE_CAPTION && iCuerpo >= 0){
+      const sobra = txt.length - LIMITE_CAPTION + 1;
+      const cuerpo = String(partes[iCuerpo] || "");
+      partes[iCuerpo] = cuerpo.slice(0, Math.max(0, cuerpo.length - sobra)).trim() + "…";
+      txt = partes.join("\n");
+    }
+    return txt.length > LIMITE_CAPTION ? txt.slice(0, LIMITE_CAPTION - 1) + "…" : txt;
+  }
   function textoCompartir(n, tipo){
     const partes = [];
+    let iCuerpo = -1;
     if(n.__tipo === "o") partes.push("🏷️ ESPACIO DE UN COMERCIO", "");
     else if(n.__tipo === "c") partes.push("📢 COMUNICADO OFICIAL", "Fonte no reescribe este texto.", "");
     partes.push(n.titulo || "");
     const resumen = n.resumen_corto || n.resumen_extendido || "";
     if(n.__tipo === "c"){
-      if(resumen) partes.push("", resumen);
+      if(resumen){ partes.push("", resumen); iCuerpo = partes.length - 1; }
     } else if(resumen){
       partes.push("", resumen.length > 220 ? resumen.slice(0,220).trim() + "…" : resumen);
     }
@@ -2398,7 +2414,7 @@
     if(n.accion_etiqueta && n.accion_url) partes.push("", "📎 " + n.accion_etiqueta + " → " + n.accion_url);
     if(n.fuente_etiqueta) partes.push("", "Fuente: " + n.fuente_etiqueta);
     partes.push("", "👉 Leelo completo en Fonte: " + urlDe(n, tipo));
-    return partes.join("\n");
+    return captionConTope(partes, iCuerpo);
   }
 
   let _fuentes = null;
@@ -2454,15 +2470,16 @@
   }
   function envolver(ctx, texto, maxAncho, maxLineas){
     const palabras = String(texto||"").split(/\s+/);
-    const lineas = []; let linea = "";
+    const lineas = []; let linea = ""; let cortado = false;
     for(const p of palabras){
       const prueba = linea ? linea + " " + p : p;
       if(ctx.measureText(prueba).width > maxAncho && linea){ lineas.push(linea); linea = p; }
       else linea = prueba;
-      if(lineas.length === maxLineas) break;
+      if(lineas.length === maxLineas){ cortado = true; break; }
     }
     if(linea && lineas.length < maxLineas) lineas.push(linea);
-    if(lineas.length === maxLineas){
+    // "…" solo si quedó texto afuera (antes lo ponía también cuando entraba justo)
+    if(cortado && lineas.length === maxLineas){
       let ult = lineas[maxLineas-1];
       while(ctx.measureText(ult + "…").width > maxAncho && ult.length > 4) ult = ult.slice(0,-1);
       lineas[maxLineas-1] = ult.trim() + "…";
@@ -2471,64 +2488,81 @@
   }
   async function generarPlaca(n){
     await fuentesListas();
-    const W = 1080, H = 1920;
-    const c = document.createElement("canvas");
-    c.width = W; c.height = H;
-    const ctx = c.getContext("2d");
 
+    // Comunicado: UNA sola placa oficial, igual que en la app (index). Sin picker de diseños.
+    // Dos tamaños del mismo diseño: historia 1080x1920 y feed 1080x1350 (4:5, lo que IG acepta en el feed).
+    // En historia el texto clave queda fuera de los ~250px de arriba y de abajo (barras de IG / WhatsApp).
     if(n.__tipo === "c"){
+      const feed = n.__dim === "feed";
+      const W = 1080, H = feed ? 1350 : 1920;
+      const TOP = feed ? 70 : 250, BOT = feed ? 60 : 250;
+      const cnv = document.createElement("canvas");
+      cnv.width = W; cnv.height = H;
+      const ctx = cnv.getContext("2d");
       const TINTA = "#1A1814", PAPEL = "#F4F0E6";
-      const instObj = (INSTITUCIONES||[]).find(x=>String(x.id)===String(n.institucion_id||""));
+      const instObj = (INSTITUCIONES||[]).find(x=>String(x.id)===String(n.institucion_id||""))
+        || (INSTITUCIONES||[]).find(x=>(x.nombre||"").trim().toLowerCase()===String(n.lugar||n.fuente_etiqueta||"").trim().toLowerCase())
+        || null;
       const VERDE = n.color || colorDeInst(n.institucion_id, n.lugar || n.fuente_etiqueta);
       const VERDE2 = oscurecerHex(VERDE, 0.72);
       ctx.fillStyle = PAPEL; ctx.fillRect(0,0,W,H);
       const inst = (n.lugar || n.fuente_etiqueta || (instObj&&instObj.nombre) || "Institución").trim();
       const sigla = n.sello || selloDeInst(n.institucion_id, inst);
+      // banner de la institución
+      const banY = TOP, banH = 92, banCy = banY + banH/2;
       ctx.font = "600 32px 'Work Sans',sans-serif";
       const instW = Math.min(W-200, Math.max(420, ctx.measureText(inst).width + 160));
       const banX = (W - instW) / 2;
       ctx.fillStyle = VERDE;
-      ctx.beginPath(); ctx.roundRect(banX, 150, instW, 92, 20); ctx.fill();
-      ctx.beginPath(); ctx.arc(banX + 46, 196, 28, 0, Math.PI*2); ctx.fillStyle = "#163828"; ctx.fill();
+      ctx.beginPath(); ctx.roundRect(banX, banY, instW, banH, 20); ctx.fill();
+      ctx.beginPath(); ctx.arc(banX + 46, banCy, 28, 0, Math.PI*2); ctx.fillStyle = "#163828"; ctx.fill();
       ctx.strokeStyle = "#F4F0E6"; ctx.lineWidth = 3;
-      ctx.beginPath(); ctx.arc(banX + 46, 196, 26, 0, Math.PI*2); ctx.stroke();
+      ctx.beginPath(); ctx.arc(banX + 46, banCy, 26, 0, Math.PI*2); ctx.stroke();
       const logoUrl = (instObj && instObj.foto_url) || "";
-      if(logoUrl){
-        const lim = await cargarImagen(logoUrl, 4000);
-        if(lim){
-          ctx.save();
-          ctx.beginPath(); ctx.arc(banX + 46, 196, 26, 0, Math.PI*2); ctx.clip();
-          ctx.drawImage(lim, banX + 20, 170, 52, 52);
-          ctx.restore();
-        } else {
-          ctx.fillStyle = "#F4F0E6"; ctx.font = "700 22px 'Fraunces',Georgia,serif";
-          ctx.textAlign = "center"; ctx.fillText(sigla, banX + 46, 204);
-        }
+      const lim = logoUrl ? await cargarImagen(logoUrl, 4000) : null;
+      if(lim){
+        ctx.save();
+        ctx.beginPath(); ctx.arc(banX + 46, banCy, 26, 0, Math.PI*2); ctx.clip();
+        ctx.drawImage(lim, banX + 20, banCy - 26, 52, 52);
+        ctx.restore();
       } else {
         ctx.fillStyle = "#F4F0E6"; ctx.font = "700 22px 'Fraunces',Georgia,serif";
-        ctx.textAlign = "center";
-        ctx.fillText(sigla, banX + 46, 204);
+        ctx.textAlign = "center"; ctx.fillText(sigla, banX + 46, banCy + 8);
       }
       ctx.textAlign = "left";
       ctx.fillStyle = tintaSobre(VERDE);
       ctx.font = "700 32px 'Work Sans',sans-serif";
       const nom = inst.length > 28 ? inst.slice(0,27)+"…" : inst;
-      ctx.fillText(nom, banX + 88, 208);
+      ctx.fillText(nom, banX + 88, banCy + 12);
+      // ✦ divisor + título
+      const divY = banY + banH + 58;
       ctx.strokeStyle = VERDE2; ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.moveTo(W/2-90, 300); ctx.lineTo(W/2-12, 300); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(W/2+12, 300); ctx.lineTo(W/2+90, 300); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(W/2-90, divY); ctx.lineTo(W/2-12, divY); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(W/2+12, divY); ctx.lineTo(W/2+90, divY); ctx.stroke();
       ctx.fillStyle = VERDE2; ctx.font = "20px serif"; ctx.textAlign = "center";
-      ctx.fillText("✦", W/2, 306);
+      ctx.fillText("✦", W/2, divY + 6);
+      const tFont = feed ? 62 : 72, tLinea = feed ? 74 : 84;
       ctx.fillStyle = VERDE;
-      ctx.font = "700 72px 'Fraunces',Georgia,serif";
-      const tit = envolver(ctx, n.titulo || "", W-200, 4);
-      let y = 410;
-      tit.forEach((l)=>{ ctx.fillText(l, W/2, y); y += 84; });
+      ctx.font = "700 "+tFont+"px 'Fraunces',Georgia,serif";
+      const tit = envolver(ctx, n.titulo || "", W-200, feed ? 3 : 4);
+      let y = divY + (feed ? 96 : 110);
+      tit.forEach((l)=>{ ctx.fillText(l, W/2, y); y += tLinea; });
+      y -= tLinea; // y = base de la última línea del título
+      const RG = feed ? 50 : 60; // raya debajo del título
       ctx.strokeStyle = VERDE2; ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.moveTo(120, y+10); ctx.lineTo(W-120, y+10); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(120, y+RG); ctx.lineTo(W-120, y+RG); ctx.stroke();
+      // pie, de abajo hacia arriba: link → "Comunicado oficial" → ✦ → sigla
+      const linkY = H - BOT;
+      const rotY = linkY - (feed ? 50 : 60);
+      const sepY = rotY - (feed ? 58 : 70);
+      const sigFont = feed ? 100 : 130;
+      const sigY = sepY - 40;
+      const pieTop = sigY - Math.round(sigFont*0.75) - 44; // nada del cuerpo ni la foto pasa de acá
+      // cuerpo: tantas líneas como entren antes del pie; si no entra todo, termina en "…"
+      const bFont = feed ? 32 : 34, bLinea = feed ? 44 : 46;
       const cuerpo = (n.resumen_corto || "").trim();
       ctx.fillStyle = TINTA;
-      ctx.font = "500 34px 'Work Sans',sans-serif";
+      ctx.font = "500 "+bFont+"px 'Work Sans',sans-serif";
       ctx.textAlign = "left";
       function puntosDe(txt){
         return txt
@@ -2542,15 +2576,26 @@
       }
       const lineas = [];
       puntosDe(cuerpo).forEach(p=>{
-        envolver(ctx, p, W-220, 3).forEach(l=> lineas.push(l));
+        envolver(ctx, p, W-240, 3).forEach(l=> lineas.push(l));
       });
-      lineas.slice(0, 14).forEach((l,i)=> ctx.fillText(l, 120, y + 78 + i*46));
+      const b0 = y + RG + (feed ? 62 : 70);
       const fotoOf = n.imagen_url || ((n.fotos||[])[0]) || "";
-      if(fotoOf){
-        const im = await cargarImagen(fotoOf, 7000);
+      const im = fotoOf ? await cargarImagen(fotoOf, 7000) : null;
+      const FOTO_MIN = feed ? 240 : 300; // con foto, el texto se corta antes para que la foto entre
+      const techoTexto = im ? pieTop - FOTO_MIN - 34 : pieTop;
+      const entran = Math.max(0, Math.floor((techoTexto - b0) / bLinea) + 1);
+      const visibles = lineas.slice(0, entran);
+      if(lineas.length > entran && visibles.length){
+        let ult = visibles[visibles.length-1].replace(/…$/,"");
+        while(ctx.measureText(ult + "…").width > W-240 && ult.length > 4) ult = ult.slice(0,-1);
+        visibles[visibles.length-1] = ult.trim() + "…";
+      }
+      visibles.forEach((l,i)=> ctx.fillText(l, 120, b0 + i*bLinea));
+      // foto (si hay) entre el texto y el pie
+      {
         if(im){
-          const cajaY = y + 80 + lineas.length*50 + 24;
-          const cajaH = Math.min(360, H - 520 - cajaY);
+          const cajaY = (visibles.length ? b0 + (visibles.length-1)*bLinea + 34 : b0 - 30);
+          const cajaH = Math.min(feed ? 300 : 380, pieTop - cajaY);
           if(cajaH > 140){
             const cajaW = W - 240;
             const cajaX = 120;
@@ -2567,22 +2612,27 @@
       }
       ctx.textAlign = "center";
       ctx.fillStyle = VERDE;
-      ctx.font = "700 140px 'Fraunces',Georgia,serif";
-      ctx.fillText(sigla, W/2, H - 340);
+      ctx.font = "700 "+sigFont+"px 'Fraunces',Georgia,serif";
+      ctx.fillText(sigla, W/2, sigY);
       ctx.strokeStyle = VERDE2; ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.moveTo(W/2-70, H-300); ctx.lineTo(W/2-14, H-300); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(W/2+14, H-300); ctx.lineTo(W/2+70, H-300); ctx.stroke();
-      ctx.font = "20px serif"; ctx.fillText("✦", W/2, H-294);
+      ctx.beginPath(); ctx.moveTo(W/2-70, sepY); ctx.lineTo(W/2-14, sepY); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(W/2+14, sepY); ctx.lineTo(W/2+70, sepY); ctx.stroke();
+      ctx.font = "20px serif"; ctx.fillText("✦", W/2, sepY + 6);
       ctx.fillStyle = TINTA;
-      ctx.font = "600 28px 'Work Sans',sans-serif";
-      ctx.fillText("Comunicado oficial", W/2, H - 230);
+      ctx.font = "600 "+(feed ? 26 : 28)+"px 'Work Sans',sans-serif";
+      ctx.fillText("Comunicado oficial", W/2, rotY);
       const link = urlDe(n, "c").replace(/^https?:\/\//,"");
       ctx.fillStyle = VERDE2;
-      ctx.font = "500 26px 'Work Sans',sans-serif";
-      ctx.fillText(link, W/2, H - 170);
+      ctx.font = "500 "+(feed ? 24 : 26)+"px 'Work Sans',sans-serif";
+      ctx.fillText(link, W/2, linkY);
       ctx.textAlign = "left";
-      return new Promise(res=> c.toBlob(res, "image/jpeg", 0.92));
+      return new Promise(res=> cnv.toBlob(res, "image/jpeg", 0.92));
     }
+
+    const W = 1080, H = 1920;
+    const c = document.createElement("canvas");
+    c.width = W; c.height = H;
+    const ctx = c.getContext("2d");
 
     const urgente = !!n.urgente;
     const lista = (typeof fotosDe === "function") ? fotosDe(n) : (n.imagen_url ? [n.imagen_url] : []);
@@ -2658,27 +2708,119 @@
     return new Promise(res=> c.toBlob(res, "image/jpeg", 0.9));
   }
 
-  document.getElementById("shareBtn").addEventListener("click", async ()=>{
-    if(!notaAbierta) return;
-    const btn = document.getElementById("shareBtn");
-    const original = btn.textContent;
-    const texto = textoCompartir(notaAbierta, "n");
-    btn.textContent = "Preparando…";
+  // ---- Compartir sin fallas: la placa se arma ANTES del toque ----
+  // El celular solo acepta abrir "Compartir" si se llama enseguida después de tocar el botón.
+  // Si esperamos la foto / el logo / el proxy después del toque, el permiso vence y el compartir
+  // falla en silencio. Por eso la placa se prepara apenas se abre la pieza (y cuando se cambia
+  // diseño o tamaño), y al tocar solo se entrega el archivo que ya está listo.
+  const _placasListas = {};
+  let _placasOrden = [];
+  function clavePlaca(n){
+    try{ return JSON.stringify(n); }catch(e){ return String(n && n.id) + "|" + String(n && n.__dim); }
+  }
+  function prepararPlaca(n){
+    const k = clavePlaca(n);
+    let e = _placasListas[k];
+    if(e && !(e.listo && !e.blob)) return e; // ya está (o en camino); si falló, se reintenta
+    e = { blob:null, listo:false };
+    e.p = Promise.resolve().then(()=> generarPlaca(n)).catch(()=> null)
+      .then(b=>{ e.blob = b || null; e.listo = true; return e.blob; });
+    _placasListas[k] = e;
+    _placasOrden = _placasOrden.filter(x=> x !== k).concat(k);
+    while(_placasOrden.length > 12){ delete _placasListas[_placasOrden.shift()]; }
+    return e;
+  }
+  function esCompu(){
     try{
-      let blob = null;
-      try{ blob = await generarPlaca(notaAbierta); }catch(e){ blob = null; }
-      const archivo = blob ? new File([blob], "fonte.jpg", { type:"image/jpeg" }) : null;
-
+      const tactil = matchMedia("(pointer:coarse)").matches || /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent||"");
+      return !tactil;
+    }catch(e){ return false; }
+  }
+  function descargarBlob(blob, nombre){
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = nombre || "fonte.jpg";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=> URL.revokeObjectURL(url), 4000);
+  }
+  async function copiarTexto(texto){
+    try{ await navigator.clipboard.writeText(texto); return true; }catch(e){}
+    try{
+      const ta = document.createElement("textarea");
+      ta.value = texto; ta.setAttribute("readonly", "");
+      ta.style.cssText = "position:fixed;top:0;left:0;opacity:0";
+      document.body.appendChild(ta); ta.select();
+      const ok = document.execCommand("copy");
+      ta.remove();
+      return !!ok;
+    }catch(e){ return false; }
+  }
+  // Plan B si el celular no deja compartir: la imagen a la vista + Descargar + Copiar texto.
+  function mostrarAlternativaCompartir(blob, texto, titulo){
+    const viejo = document.getElementById("altCompartir");
+    if(viejo) viejo.remove();
+    const url = blob ? URL.createObjectURL(blob) : "";
+    const back = document.createElement("div");
+    back.id = "altCompartir";
+    back.style.cssText = "position:fixed;inset:0;z-index:950;background:rgba(10,9,7,.72);display:flex;align-items:flex-end;justify-content:center;padding:12px";
+    const btnCss = "display:block;width:100%;box-sizing:border-box;margin-top:8px;padding:12px;border-radius:10px;font-family:inherit;font-size:.86rem;font-weight:700;text-align:center;text-decoration:none;cursor:pointer;";
+    back.innerHTML = '<div style="background:var(--paper,#FDFCF9);color:var(--ink,#16140F);width:100%;max-width:440px;max-height:92vh;overflow:auto;border-radius:14px;padding:16px;font-family:var(--sans,sans-serif)">'
+      + '<div style="font-weight:700;font-size:.92rem;margin-bottom:4px">'+(titulo || "No se pudo abrir el menú de compartir")+'</div>'
+      + '<div style="font-size:.78rem;opacity:.75;margin-bottom:12px">'
+      + (url ? 'Descargá la imagen (o mantené apretada la foto) y copiá el texto para pegarlo donde quieras.' : 'La imagen no se pudo armar. Copiá el texto y pegalo donde quieras.')
+      + '</div>'
+      + (url ? '<img src="'+url+'" alt="" style="width:100%;max-height:50vh;object-fit:contain;display:block;border-radius:10px;border:1px solid var(--line,#ddd);background:#eee">' : '')
+      + (url ? '<a id="altDescargar" href="'+url+'" download="fonte.jpg" style="'+btnCss+'background:var(--ink,#16140F);color:var(--paper,#fff);border:0">⬇ Descargar imagen</a>' : '')
+      + '<button type="button" id="altCopiar" style="'+btnCss+'background:none;color:var(--ink,#16140F);border:1px solid var(--line,#ccc)">📋 Copiar texto</button>'
+      + '<button type="button" id="altCerrar" style="'+btnCss+'background:none;color:var(--ink,#16140F);border:0;opacity:.7">Cerrar</button>'
+      + '</div>';
+    document.body.appendChild(back);
+    const cerrar = ()=>{ back.remove(); if(url) setTimeout(()=> URL.revokeObjectURL(url), 1500); };
+    back.addEventListener("click", (e)=>{ if(e.target === back) cerrar(); });
+    back.querySelector("#altCerrar").addEventListener("click", cerrar);
+    back.querySelector("#altCopiar").addEventListener("click", async (e)=>{
+      const b = e.currentTarget;
+      const ok = await copiarTexto(texto);
+      b.textContent = ok ? "✓ Texto copiado" : "No se pudo copiar";
+      setTimeout(()=>{ b.textContent = "📋 Copiar texto"; }, 1800);
+    });
+  }
+  // Toque en "Compartir": celular → menú de compartir con la placa ya lista;
+  // compu → baja la imagen y copia el texto. Si algo falla (que no sea "cancelar"), plan B.
+  async function compartirConPlaca(n, texto, btn){
+    const orig = btn ? btn.textContent : "";
+    const e = prepararPlaca(n);
+    let blob = e.blob;
+    if(!e.listo){
+      if(btn){ btn.textContent = "Preparando…"; btn.disabled = true; }
+      blob = await e.p;
+      if(btn){ btn.textContent = orig; btn.disabled = false; }
+    }
+    if(esCompu()){
+      if(blob) descargarBlob(blob, "fonte.jpg");
+      const ok = await copiarTexto(texto);
+      if(blob && ok) toastFonte("Imagen descargada y texto copiado ✓");
+      else mostrarAlternativaCompartir(blob, texto, blob ? "La imagen se descargó" : "No se pudo armar la imagen");
+      return;
+    }
+    const archivo = blob ? new File([blob], "fonte.jpg", { type:"image/jpeg" }) : null;
+    try{
       if(archivo && navigator.canShare && navigator.canShare({ files:[archivo] })){
         await navigator.share({ files:[archivo], text: texto });
-      } else if(navigator.share){
-        await navigator.share({ title: notaAbierta.titulo, text: texto, url: urlDe(notaAbierta, "n") });
+      } else if(!archivo && navigator.share){
+        await navigator.share({ title: n.titulo || "Fonte", text: texto });
       } else {
-        await navigator.clipboard.writeText(texto);
-        alert("Texto copiado. Pegalo donde quieras compartirlo.");
+        mostrarAlternativaCompartir(blob, texto, "Este celular no deja compartir la imagen directo");
       }
-    }catch(e){ /* el usuario canceló, no hacemos nada */ }
-    btn.textContent = original;
+    }catch(err){
+      if(err && err.name === "AbortError") return; // la persona canceló: no es un error
+      mostrarAlternativaCompartir(blob, texto);
+    }
+  }
+
+  document.getElementById("shareBtn").addEventListener("click", (e)=>{
+    if(!notaAbierta) return;
+    compartirConPlaca(notaAbierta, textoCompartir(notaAbierta, "n"), e.currentTarget);
   });
 
   document.getElementById("refreshBtn").addEventListener("click", ()=>{ cargar(false); cargarOfertas(); cargarComunicados().then(cargarInstituciones); });
@@ -2884,10 +3026,12 @@
     }catch(e){ btn.disabled = false; }
   });
 
-  function abrirAporte(id){
+  // fila: el aviso ya traído por id desde aportes_publicos (enlace compartido más viejo)
+  function abrirAporte(id, fila){
     navAlFrente("sheetAporte");
-    const a = APORTES.find(x=>String(x.id)===String(id));
+    const a = fila || APORTES.find(x=>String(x.id)===String(id));
     if(!a) return;
+    if(fila && CONFIRMACIONES[a.id] == null && a.confirmaciones != null) CONFIRMACIONES[a.id] = a.confirmaciones;
     const cat = CAT_APORTE.find(c=>c.id===a.categoria) || {label:"Aviso", icon:"📍"};
     const fotoEl = document.getElementById("aporteFoto");
     const lista = fotosDe(a);
@@ -2962,11 +3106,24 @@
     });
   }
   let ofertaAbierta = null;
-  function abrirOferta(id){
+  function piezaDeOferta(o){
+    return {
+      id: o.id, __tipo: "o",
+      titulo: o.titulo,
+      resumen_corto: o.descripcion || "",
+      lugar: o.negocio || "",
+      imagen_url: o.imagen_url || null,
+      dato_extra: o.valido_hasta ? ("Válido hasta " + o.valido_hasta) : null,
+      fuente_etiqueta: o.negocio || "",
+    };
+  }
+  // fila: la oferta ya traída por id (enlace compartido que no está entre las cargadas)
+  function abrirOferta(id, fila){
     navAlFrente("sheetOferta");
-    const o = OFERTAS.find(x=>String(x.id)===String(id));
+    const o = fila || OFERTAS.find(x=>String(x.id)===String(id));
     if(!o) return;
     ofertaAbierta = o;
+    setTimeout(()=>{ if(ofertaAbierta === o) prepararPlaca(piezaDeOferta(o)); }, 450);
     const check = '<svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
     const foto = urlSegura(o.imagen_url) ? "background-image:url('"+esc(urlSegura(o.imagen_url))+"');background-size:cover;background-position:center;" : "background:var(--paper-3);";
     document.getElementById("ofertaHero").setAttribute("style", foto);
@@ -2994,35 +3151,12 @@
   document.getElementById("backdropOferta").addEventListener("click", cerrarOferta);
   document.getElementById("ofertaCompartirBtn").addEventListener("click", async (e)=>{
     if(!ofertaAbierta) return;
-    await compartirPieza({
-      id: ofertaAbierta.id, __tipo: "o",
-      titulo: ofertaAbierta.titulo,
-      resumen_corto: ofertaAbierta.descripcion || "",
-      lugar: ofertaAbierta.negocio || "",
-      imagen_url: ofertaAbierta.imagen_url || null,
-      dato_extra: ofertaAbierta.valido_hasta ? ("Válido hasta " + ofertaAbierta.valido_hasta) : null,
-      fuente_etiqueta: ofertaAbierta.negocio || "",
-    }, e.currentTarget);
+    await compartirPieza(piezaDeOferta(ofertaAbierta), e.currentTarget);
   });
 
-  // Compartir cualquier pieza (nota, oferta o comunicado) con su placa
-  async function compartirPieza(pieza, btn){
-    const original = btn ? btn.textContent : "";
-    if(btn) btn.textContent = "Preparando…";
-    const texto = textoCompartir(pieza, pieza.__tipo);
-    try{
-      let blob = null;
-      try{ blob = await generarPlaca(pieza); }catch(e){ blob = null; }
-      const archivo = blob ? new File([blob], "fonte.jpg", { type:"image/jpeg" }) : null;
-      if(archivo && navigator.canShare && navigator.canShare({ files:[archivo] })){
-        await navigator.share({ files:[archivo], text: texto });
-      } else if(navigator.share){
-        await navigator.share({ title: pieza.titulo, text: texto, url: urlDe(pieza, pieza.__tipo) });
-      } else {
-        await navigator.clipboard.writeText(texto);
-      }
-    }catch(e){}
-    if(btn) btn.textContent = original;
+  // Compartir cualquier pieza (nota, oferta o comunicado) con su placa (ya armada al abrirla)
+  function compartirPieza(pieza, btn){
+    return compartirConPlaca(pieza, textoCompartir(pieza, pieza.__tipo), btn);
   }
 
   // ================= COMUNICADOS OFICIALES (municipio / instituciones verificadas) =================
@@ -3297,11 +3431,13 @@
   document.getElementById("backdropOficiales").addEventListener("click", cerrarOficiales);
 
   let comunicadoAbierto = null;
-  function abrirComunicado(id){
+  // fila: el comunicado ya traído por id (enlace compartido más viejo que los cargados)
+  function abrirComunicado(id, fila){
     navAlFrente("sheetComunicado");
-    const c = COMUNICADOS.find(x=>String(x.id)===String(id));
+    const c = fila || COMUNICADOS.find(x=>String(x.id)===String(id));
     if(!c) return;
     comunicadoAbierto = c;
+    setTimeout(()=>{ if(comunicadoAbierto === c) prepararPlaca(piezaDelComunicado(c)); }, 450);
     marcarComunicadoVisto(id);
     if(typeof pintarInstituciones === "function") pintarInstituciones();
     const nomInst = c.institucion || "Institución";
@@ -3387,7 +3523,7 @@
     const orig = btn.textContent;
     btn.textContent = "Preparando…";
     try{
-      const blob = await generarPlaca(piezaDelComunicado(comunicadoAbierto));
+      const blob = await prepararPlaca(piezaDelComunicado(comunicadoAbierto)).p;
       if(!blob) throw new Error("sin placa");
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -4559,43 +4695,79 @@
     const p = paramsDeEnlace();
     return !!(p.get("n") || p.get("c") || p.get("a") || p.get("o") || p.get("i"));
   }
-  async function traerNotaPorId(id){
+  // Trae UNA fila por id (enlaces viejos que ya no están entre lo que baja la app).
+  // Devuelve la fila; null si no existe o ya no es pública; undefined si falló la conexión.
+  async function traerFilaPorId(tabla, id, filtroExtra){
     try{
-      const url = SUPABASE_URL + "/rest/v1/noticias?select=*&id=eq." + encodeURIComponent(id) + "&publicada=eq.true&limit=1";
+      const url = SUPABASE_URL + "/rest/v1/" + tabla + "?select=*&id=eq." + encodeURIComponent(id) + (filtroExtra || "") + "&limit=1";
       const res = await fetch(url, { headers: { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + SUPABASE_KEY } });
-      if(!res.ok) return null;
+      if(!res.ok) return res.status >= 500 ? undefined : null; // 400 = id inválido → no existe
       const arr = await res.json();
-      const n = arr && arr[0];
-      if(!n) return null;
-      if(!(NOTICIAS||[]).some(x=>String(x.id)===String(n.id))) NOTICIAS = [n].concat(NOTICIAS||[]);
-      return n;
-    }catch(e){ return null; }
+      return (arr && arr[0]) || null;
+    }catch(e){ return undefined; }
   }
-  async function abrirDesdeEnlace(){
+  async function traerNotaPorId(id){
+    const n = await traerFilaPorId("noticias", id, "&publicada=eq.true");
+    if(n && !(NOTICIAS||[]).some(x=>String(x.id)===String(n.id))) NOTICIAS = [n].concat(NOTICIAS||[]);
+    return n;
+  }
+  // Devuelve "ok" (abierto), "no" (ya no está disponible) o null (todavía no se sabe: esperar
+  // a que termine de cargar todo). final = última pasada, con todo ya cargado.
+  async function abrirDesdeEnlace(final){
     const p = paramsDeEnlace();
     const nid = p.get("n"), cid = p.get("c"), aid = p.get("a"), oid = p.get("o"), iid = p.get("i");
-    if(!nid && !cid && !aid && !oid && !iid) return false;
+    if(!nid && !cid && !aid && !oid && !iid) return null;
+    const esta = (lista, id)=> (lista||[]).some(x=>String(x.id)===String(id));
     if(nid){
-      let ok = (NOTICIAS||[]).some(x=>String(x.id)===String(nid));
-      if(!ok){ await traerNotaPorId(nid); ok = (NOTICIAS||[]).some(x=>String(x.id)===String(nid)); }
-      if(ok){ abrir(nid); return true; }
-      return false;
+      if(!esta(NOTICIAS, nid)){
+        const n = await traerNotaPorId(nid);
+        if(n === null) return "no";
+      }
+      if(esta(NOTICIAS, nid)){ abrir(nid); return "ok"; }
+      return final ? "no" : null;
     }
-    if(cid && (COMUNICADOS||[]).some(x=>String(x.id)===String(cid))){ abrirComunicado(cid); return true; }
-    if(aid && (APORTES||[]).some(x=>String(x.id)===String(aid))){ abrirAporte(aid); return true; }
-    if(oid && (OFERTAS||[]).some(x=>String(x.id)===String(oid))){ abrirOferta(oid); return true; }
-    if(iid && (INSTITUCIONES||[]).some(x=>String(x.id)===String(iid))){ abrirInstitucion(iid); return true; }
-    return false;
+    // comunicados / avisos / ofertas / fichas: primero lo ya cargado (los recientes);
+    // si en la última pasada no está, se busca ese único registro por id.
+    if(cid){
+      if(esta(COMUNICADOS, cid)){ abrirComunicado(cid); return "ok"; }
+      if(!final) return null;
+      const c = await traerFilaPorId("comunicados", cid);
+      if(c){ abrirComunicado(cid, c); return "ok"; }
+      return "no";
+    }
+    if(aid){
+      if(esta(APORTES, aid)){ abrirAporte(aid); return "ok"; }
+      if(!final) return null;
+      const a = await traerFilaPorId("aportes_publicos", aid); // la vista solo trae los publicados
+      if(a){ abrirAporte(aid, a); return "ok"; }
+      return "no";
+    }
+    if(oid){
+      if(esta(OFERTAS, oid)){ abrirOferta(oid); return "ok"; }
+      if(!final) return null;
+      const o = await traerFilaPorId("ofertas", oid, "&activa=eq.true");
+      if(o){ abrirOferta(oid, o); return "ok"; }
+      return "no";
+    }
+    if(iid){
+      if(esta(INSTITUCIONES, iid)){ abrirInstitucion(iid); return "ok"; }
+      return final ? "no" : null;
+    }
+    return null;
   }
   let enlaceResuelto = false;
-  function intentarEnlace(){
+  let enlaceEnCurso = null;
+  function intentarEnlace(final){
     if(enlaceResuelto) return;
     if(!vieneDeCompartir()){ enlaceResuelto = true; return; }
-    abrirDesdeEnlace().then(ok=>{
-      if(!ok) return;
+    if(enlaceEnCurso){ if(final) enlaceEnCurso.then(()=> intentarEnlace(true)); return; }
+    enlaceEnCurso = abrirDesdeEnlace(!!final).then(r=>{
+      enlaceEnCurso = null;
+      if(!r) return;
       enlaceResuelto = true;
       try{ history.replaceState(history.state, "", location.pathname); }catch(e){}
-    });
+      if(r === "no") toastFonte("Esta publicación ya no está disponible");
+    }, ()=>{ enlaceEnCurso = null; });
   }
 
   // ================= NAVEGACIÓN: UNA SOLA PILA PARA "ATRÁS" =================
@@ -5076,8 +5248,9 @@
     Promise.all([
       cargarAportes(),
       cargarOfertas(),
-      cargarComunicados().then(()=>{ cargarInstituciones(); revisarNovedades(); })
-    ]).then(()=> intentarEnlace());
+      // las fichas también se esperan: un enlace ?i= (Fecha compartida) necesita INSTITUCIONES cargadas
+      cargarComunicados().then(()=>{ const pI = cargarInstituciones(); revisarNovedades(); return pI; })
+    ]).catch(()=>{}).then(()=> intentarEnlace(true)); // última pasada: si no estaba entre lo cargado, se busca por id
     mostrarBannerNotif();
   });
   setInterval(()=>{
