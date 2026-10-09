@@ -1064,6 +1064,27 @@
   .inst-fecha-block .m{ font-family:var(--sans); font-size:.52rem; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-faint); margin-top:3px; }
   .inst-fecha-tx .t{ font-family:var(--serif); font-weight:600; font-size:.92rem; line-height:1.2; color:var(--ink); }
   .inst-fecha-tx .s{ font-family:var(--sans); font-size:.68rem; color:var(--ink-soft); margin-top:3px; }
+  /* Buscador de la ficha: discreto, una línea, a tono con la institución. Filtra fechas, avisos y servicios. */
+  .inst-ficha .fb{ display:flex; align-items:center; gap:8px; margin:14px 0 0; padding:0 4px 0 12px; height:36px;
+    border:1px solid var(--line); border-radius:999px; background:var(--paper-2); color:var(--ink-faint); transition:border-color .15s; }
+  .inst-ficha .fb:focus-within{ border-color:var(--inst); background:var(--surface); color:var(--inst); }
+  .inst-ficha .fb svg{ width:15px; height:15px; flex:0 0 auto; }
+  .inst-ficha .fb input{ flex:1; min-width:0; border:0; outline:0; background:none; font-family:var(--sans); font-size:.8rem; color:var(--ink); padding:0; height:100%; }
+  .inst-ficha .fb input::placeholder{ color:var(--ink-faint); }
+  .inst-ficha .fb input::-webkit-search-cancel-button{ display:none; }
+  .inst-ficha .fb-x{ width:28px; height:28px; border:0; border-radius:50%; background:var(--paper-3); color:var(--ink-soft); font-size:.72rem; cursor:pointer; flex:0 0 auto; }
+  .fb-cuenta{ font-family:var(--sans); font-size:.7rem; color:var(--ink-faint); margin:10px 2px 0; }
+  mark.fb-m{ background:color-mix(in srgb, var(--inst) 16%, transparent); color:inherit; border-radius:3px; padding:0 1px; box-shadow:inset 0 -2px 0 color-mix(in srgb, var(--inst) 55%, transparent); }
+  .fb-ex{ font-family:var(--sans); font-size:.74rem; color:var(--ink-soft); margin-top:3px; }
+  .fb-svc{ padding:8px 0 2px; border-bottom:1px solid var(--line); }
+  .fb-svc .sec{ font-family:var(--sans); font-size:.66rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-faint); }
+  .fb-svc .svc-fila{ border:0; padding-top:4px; }
+  .fb-vacio{ text-align:center; padding:34px 12px 26px; }
+  .fb-vacio .t{ font-family:var(--serif); font-weight:600; font-size:1.05rem; color:var(--ink); }
+  .fb-vacio .s{ font-family:var(--sans); font-size:.78rem; color:var(--ink-faint); margin-top:6px; line-height:1.4; }
+  .fb-limpiar{ margin-top:14px; font-family:var(--sans); font-size:.76rem; font-weight:700; color:var(--inst); background:none; border:1px solid var(--inst); border-radius:999px; padding:7px 16px; cursor:pointer; }
+  #fbRes .inst-fecha-tx, #fbRes .avh-row, #fbRes .fb-svc{ cursor:pointer; }
+  .inst-ficha .svc-fila.fb-destacada{ background:color-mix(in srgb, var(--inst) 12%, transparent); border-radius:4px; transition:background .6s; }
   .inst-ficha .svc-search{
     border-radius:3px; border:.5px solid var(--line-strong); background:var(--paper);
     margin:0 0 4px; padding:10px 12px;
@@ -4138,6 +4159,12 @@
     // grid de 4: si faltan, dejar huecos solo a la izquierda de Avisarme no; mejor ajustar columnas
     const nQa = qaItems.length;
     html += '<div class="inst-qa" style="grid-template-columns:repeat('+nQa+',1fr)">'+qaItems.join("")+'</div>';
+    // buscador de la ficha (fechas, avisos y servicios); reemplaza al viejo "Buscá tu barrio o un servicio…"
+    const artInst = /^municipalidad/i.test(inst.nombre||"") ? "la " : "";
+    html += '<div class="fb"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="11" cy="11" r="6.5" stroke="currentColor" stroke-width="2"/><path d="M16 16l4.5 4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>'
+      + '<input id="fbInput" type="search" enterkeyhint="search" autocomplete="off" placeholder="Buscar en '+esc(artInst + (inst.nombre||""))+'" aria-label="Buscar fechas, avisos y servicios">'
+      + '<button type="button" class="fb-x" id="fbX" aria-label="Borrar búsqueda" hidden>✕</button></div>'
+      + '<div id="fbRes" hidden></div>';
 
     // Avisos recientes (siempre)
     html += '<div class="inst-sec"><div class="inst-sec-head"><span class="t">Avisos recientes</span><span class="ln"></span>';
@@ -4189,7 +4216,6 @@
       });
       Object.assign(porSecFicha, porSec); ordenSecFicha.push(...ordenSec);
       html += '<div class="inst-sec" id="serviciosFicha"><div class="inst-sec-head"><span class="t">Servicios</span><span class="ln"></span></div>';
-      html += '<input class="svc-search" id="svcBuscar" type="search" placeholder="Buscá tu barrio o un servicio…" autocomplete="off">';
       html += '<div id="svcLista">';
       ordenSec.forEach((sec, iSec)=>{
         const n = porSec[sec].length;
@@ -4271,24 +4297,7 @@
     });
     const btnCF = document.getElementById("btnCompartirFicha");
     if(btnCF) btnCF.addEventListener("click", (e)=> compartirSoloTexto(inst.nombre, textoCompartirFicha(inst), e.currentTarget));
-    const svcBuscar = document.getElementById("svcBuscar");
-    if(svcBuscar){
-      svcBuscar.addEventListener("input", ()=>{
-        const q = (svcBuscar.value||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim();
-        document.querySelectorAll("#svcLista .svc-card").forEach(card=>{
-          let algunaCoincide = false;
-          card.querySelectorAll(".svc-fila").forEach(fila=>{
-            const hay = (fila.getAttribute("data-q")||"");
-            const coincide = !q || hay.includes(q);
-            fila.classList.toggle("oculta", !coincide);
-            fila.classList.toggle("match", !!q && coincide);
-            if(coincide) algunaCoincide = true;
-          });
-          card.style.display = algunaCoincide ? "" : "none";
-          card.classList.toggle("abierta", !!q && algunaCoincide);
-        });
-      });
-    }
+    montarBuscadorFicha(inst, fechas, comInst, servicios);
 
     document.getElementById("backdropInstitucion").classList.add("show");
     document.getElementById("sheetInstitucion").classList.add("show");
@@ -4296,6 +4305,115 @@
     const foco = opts.resaltar ? document.getElementById("fecha-" + opts.resaltar)
       : (opts.seccion ? document.querySelector("#svcLista .svc-card.abierta") : null);
     if(foco) setTimeout(()=>{ try{ foco.scrollIntoView({ block:"center" }); }catch(e){} }, 60);
+  }
+  // ================= BUSCADOR DE LA FICHA =================
+  // Sin tildes ni mayúsculas (ñ → n). El resaltado se arma sobre el texto original y TODO pasa por esc().
+  function normBusq(s){ return String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase(); }
+  function resaltarBusq(txt, q){
+    txt = String(txt||""); if(!q) return esc(txt);
+    let n = ""; const mapa = [];
+    for(let i = 0; i < txt.length; i++){ for(const ch of normBusq(txt[i])){ n += ch; mapa.push(i); } }
+    let out = "", desde = 0, k = n.indexOf(q);
+    while(k !== -1){
+      const a = mapa[k], b = mapa[k + q.length - 1] + 1;
+      if(a >= desde){ out += esc(txt.slice(desde, a)) + '<mark class="fb-m">' + esc(txt.slice(a, b)) + '</mark>'; desde = b; }
+      k = n.indexOf(q, k + q.length);
+    }
+    return out + esc(txt.slice(desde));
+  }
+  function recorteBusq(txt, q, ancho){
+    txt = String(txt||""); const k = normBusq(txt).indexOf(q); if(k < 0) return null;
+    const a = Math.max(0, k - ancho), b = Math.min(txt.length, k + q.length + ancho);
+    return (a > 0 ? "…" : "") + txt.slice(a, b).trim() + (b < txt.length ? "…" : "");
+  }
+  function montarBuscadorFicha(inst, fechas, avisos, servicios){
+    const ficha = document.querySelector("#institucionBody .inst-ficha");
+    const inp = document.getElementById("fbInput"), x = document.getElementById("fbX"), res = document.getElementById("fbRes");
+    if(!ficha || !inp || !x || !res) return;
+    const secciones = Array.from(ficha.querySelectorAll(":scope > .inst-sec, :scope > .pag-pie"));
+    let fF = [], fA = [], fS = [];
+    function pintar(){
+      const crudo = inp.value.trim(), q = normBusq(crudo);
+      x.hidden = !crudo;
+      const buscando = q.length >= 2;
+      secciones.forEach(sec=> sec.style.display = buscando ? "none" : "");
+      res.hidden = !buscando;
+      if(!buscando){ res.innerHTML = ""; return; }
+      fF = (fechas||[]).filter(f=> normBusq([f.titulo, f.lugar, f.horario].join(" ")).includes(q));
+      fA = (avisos||[]).filter(c=> normBusq([c.titulo, c.texto].join(" ")).includes(q));
+      fS = (servicios||[]).filter(sv=> normBusq([sv.seccion, sv.clave, sv.valor].join(" ")).includes(q));
+      const total = fF.length + fA.length + fS.length;
+      if(!total){
+        res.innerHTML = '<div class="fb-vacio"><div class="t">No encontré nada con «'+esc(crudo)+'»</div>'
+          + '<div class="s">Probá con otra palabra: un barrio, un día o el nombre del programa.</div>'
+          + '<button type="button" class="fb-limpiar">Borrar búsqueda</button></div>';
+        res.querySelector(".fb-limpiar").addEventListener("click", limpiar);
+        return;
+      }
+      let h = '<div class="fb-cuenta">'+total+(total===1?" resultado":" resultados")+'</div>';
+      const cab = (t, n)=> '<div class="inst-sec-head"><span class="t">'+t+' · '+n+'</span><span class="ln"></span></div>';
+      if(fF.length){
+        h += '<div class="inst-sec">'+cab("Fechas", fF.length);
+        fF.forEach((f, i)=>{
+          const fm = fmtFecha(f.fecha);
+          const sub = [String(f.lugar||"").split(/\n+/).map(t=>t.trim()).filter(Boolean).join(" · "), f.horario].filter(Boolean).join(" · ");
+          h += '<div class="inst-fecha-row con-share" data-fb-f="'+i+'"><div class="inst-fecha-block"><div class="d">'+fm.d+'</div><div class="m">'+esc(fm.m)+'</div></div>'
+            + '<div class="inst-fecha-tx"><div class="t">'+resaltarBusq(f.titulo||"Fecha", q)+'</div>'+(sub?'<div class="s">'+resaltarBusq(sub, q)+'</div>':'')+'</div>'
+            + '<button type="button" class="fecha-share">↗ Compartir</button></div>';
+        });
+        h += '</div>';
+      }
+      if(fA.length){
+        h += '<div class="inst-sec">'+cab("Avisos", fA.length)+'<div class="avh-rows of-rows" style="border-top:0;margin-top:0">';
+        fA.forEach((c, i)=>{
+          const est = estiloInstComunicado(c);
+          const ex = normBusq(c.titulo).includes(q) ? null : recorteBusq(c.texto, q, 34);
+          h += '<div class="avh-row of" data-fb-a="'+i+'" style="--inst:'+esc(est.col)+'"><span class="mk">'+est.ico+'</span>'
+            + '<div class="bd"><div class="tt">'+resaltarBusq(c.titulo||"", q)+'</div>'+(ex?'<div class="ex fb-ex">'+resaltarBusq(ex, q)+'</div>':'')+'</div>'
+            + '<span class="tm">'+tiempoDesde(c.created_at)+'</span></div>';
+        });
+        h += '</div></div>';
+      }
+      if(fS.length){
+        h += '<div class="inst-sec">'+cab("Servicios", fS.length);
+        fS.forEach((sv, i)=>{
+          h += '<div class="fb-svc" data-fb-s="'+i+'"><div class="sec">'+resaltarBusq(sv.seccion||"Servicios", q)+'</div>'
+            + '<div class="svc-fila svc-fila-t"><span class="b">'+resaltarBusq(sv.clave||"", q)+'</span><span class="h">'+resaltarBusq(sv.valor||"", q)+'</span></div></div>';
+        });
+        h += '</div>';
+      }
+      res.innerHTML = h;
+      res.querySelectorAll("[data-fb-f]").forEach(row=>{
+        const f = fF[Number(row.getAttribute("data-fb-f"))];
+        row.querySelector(".inst-fecha-tx").addEventListener("click", ()=> abrirFecha(f));
+        row.querySelector(".fecha-share").addEventListener("click", (e)=>{ e.stopPropagation(); abrirCompartirFecha(f); });
+      });
+      res.querySelectorAll("[data-fb-a]").forEach(row=>{
+        const c = fA[Number(row.getAttribute("data-fb-a"))];
+        row.addEventListener("click", (e)=>{ e.preventDefault(); e.stopPropagation(); abrirComunicado(c.id); });
+      });
+      res.querySelectorAll("[data-fb-s]").forEach(row=>{
+        const sv = fS[Number(row.getAttribute("data-fb-s"))];
+        row.addEventListener("click", ()=> irAServicio(sv));
+      });
+    }
+    // un servicio: se vuelve a la ficha con esa sección abierta y la fila marcada
+    function irAServicio(sv){
+      limpiar(false);
+      const sec = String(sv.seccion||"Servicios").trim() || "Servicios";
+      const card = Array.from(ficha.querySelectorAll("#svcLista .svc-card")).find(c=> normSec(c.getAttribute("data-sec")) === normSec(sec));
+      if(!card) return;
+      card.classList.add("abierta");
+      const fila = Array.from(card.querySelectorAll(".svc-fila")).find(fl=>
+        (fl.querySelector(".b")||{}).textContent === String(sv.clave||"") && (fl.querySelector(".h")||{}).textContent === String(sv.valor||""));
+      const foco = fila || card;
+      if(fila){ fila.classList.add("fb-destacada"); setTimeout(()=> fila.classList.remove("fb-destacada"), 2200); }
+      setTimeout(()=>{ try{ foco.scrollIntoView({ block:"center", behavior:"smooth" }); }catch(e){} }, 30);
+    }
+    function limpiar(enfocar){ inp.value = ""; pintar(); if(enfocar !== false) inp.focus(); }
+    inp.addEventListener("input", pintar);
+    inp.addEventListener("keydown", (e)=>{ if(e.key === "Escape"){ e.preventDefault(); e.stopPropagation(); limpiar(); } });
+    x.addEventListener("click", ()=> limpiar());
   }
   function normSec(s){ return String(s||"").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,""); }
   function textoCompartirFicha(inst){
