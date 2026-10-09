@@ -2723,7 +2723,7 @@
       const lFont = feed ? 30 : 32, lLinea = feed ? 40 : 44;
       ctx.fillStyle = TINTA;
       ctx.font = "500 "+lFont+"px 'Work Sans',sans-serif";
-      ctx.textAlign = "left";
+      ctx.textAlign = "center";
       const lineasLugar = [];
       puntos.forEach(p=> envolver(ctx, p, W - SAFE*2 - 40, 2).forEach(l=> lineasLugar.push(l)));
       const maxLugar = Math.max(0, Math.min(8, Math.floor((pieTop - y) / lLinea) + 1));
@@ -2733,7 +2733,7 @@
         while(ctx.measureText(ult + "…").width > W - SAFE*2 - 40 && ult.length > 4) ult = ult.slice(0,-1);
         lugarVis[lugarVis.length-1] = ult.trim() + "…";
       }
-      lugarVis.forEach((l,i)=> ctx.fillText(l, SAFE + 20, y + i*lLinea));
+      lugarVis.forEach((l,i)=> ctx.fillText(l, W/2, y + i*lLinea)); // centrado como el resto del flyer
       // pie
       ctx.textAlign = "center";
       ctx.fillStyle = VERDE;
