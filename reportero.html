@@ -3963,8 +3963,15 @@
   const URL_FONTE = "https://fonte.city/";
   function urlDe(n, tipo){
     const t = tipo || (n && n.__tipo) || "n";
-    if(t === "f" || t === "fecha" || t === "i"){
-      const iid = n && (n.institucion_id || (t === "i" ? n.id : null));
+    // Fecha: link propio (?f=<id de institucion_fechas>) que abre esa fecha en la app.
+    // Si no hay id (pieza sin guardar), queda la ficha de la institución.
+    if(t === "f" || t === "fecha"){
+      if(n && n.id) return URL_FONTE + "?f=" + encodeURIComponent(n.id);
+      const iid = n && n.institucion_id;
+      return iid ? URL_FONTE + "?i=" + encodeURIComponent(iid) : URL_FONTE;
+    }
+    if(t === "i"){
+      const iid = n && (n.institucion_id || n.id);
       return iid ? URL_FONTE + "?i=" + encodeURIComponent(iid) : URL_FONTE;
     }
     if(!n || !n.id) return URL_FONTE;

@@ -860,6 +860,38 @@
   .pto{ font-family:var(--sans); font-size:.8rem; color:var(--ink); padding:8px 0; border-top:1px solid var(--line); }
   .pto.oculta{ display:none; }
 
+  /* ===== compartir desde la ficha: fechas, servicios, la ficha ===== */
+  .inst-fecha-row.con-share{ grid-template-columns:48px 1fr auto; }
+  .inst-fecha-row.con-share .inst-fecha-tx{ cursor:pointer; }
+  .fecha-share{ font-family:var(--sans); font-size:.7rem; font-weight:700; color:var(--instc); background:none;
+    border:.5px solid color-mix(in srgb,var(--instc) 55%,var(--line)); border-radius:999px; padding:7px 11px; white-space:nowrap; cursor:pointer; }
+  .inst-fecha-row.resaltada{ background:color-mix(in srgb,var(--instc) 9%,transparent); box-shadow:inset 3px 0 0 var(--instc); padding-left:8px; border-radius:2px; }
+  .svc-share{ display:block; margin:6px 0 8px auto; font-family:var(--sans); font-size:.68rem; font-weight:700; color:var(--instc);
+    background:none; border:0; padding:4px 0; cursor:pointer; }
+  #sheetFecha.sheet2.pagina{ z-index:282 !important; }
+  #sheetCompartirFecha.sheet2.pagina{ z-index:284 !important; }
+  .cmp-dims{ display:flex; gap:6px; margin:14px 0 10px; }
+  .cmp-dims button{ flex:1; font-family:var(--sans); font-size:.74rem; font-weight:700; padding:8px; border-radius:999px;
+    border:1px solid var(--line-strong); background:none; color:var(--ink-soft); cursor:pointer; }
+  .cmp-dims button.on{ background:var(--ink); color:var(--paper); border-color:var(--ink); }
+  .cmp-prev{ display:flex; justify-content:center; align-items:center; min-height:200px; background:var(--paper-2); border-radius:6px; padding:14px; }
+  .cmp-prev img{ max-width:100%; max-height:470px; box-shadow:0 6px 18px rgba(0,0,0,.18); border-radius:3px; }
+  .cmp-prev .cargando{ font-family:var(--sans); font-size:.8rem; color:var(--ink-faint); }
+  .cmp-lbl{ font-family:var(--sans); font-size:.6rem; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-faint); margin:16px 0 6px; }
+  .cmp-txt{ font-family:var(--sans); font-size:.8rem; line-height:1.45; color:var(--ink); white-space:pre-wrap; background:var(--surface);
+    border:.5px solid var(--line-strong); border-radius:6px; padding:10px 12px; }
+  .cmp-link{ font-family:var(--mono); font-size:.74rem; color:var(--inst,var(--barrio)); margin-top:6px; word-break:break-all; }
+  .cmp-nota{ font-family:var(--sans); font-size:.7rem; color:var(--ink-faint); line-height:1.4; }
+  .fe-dia{ display:grid; grid-template-columns:auto 1fr; gap:16px; align-items:center; margin:2px 0 14px; }
+  .fe-cal{ text-align:center; border:1px solid var(--inst); border-radius:4px; overflow:hidden; width:86px; }
+  .fe-cal .w{ background:var(--inst); color:#fff; font-family:var(--sans); font-size:.58rem; font-weight:800; letter-spacing:.12em; padding:4px 0; }
+  .fe-cal .d{ font-family:var(--serif); font-weight:700; font-size:2.6rem; line-height:1; color:var(--inst); padding:6px 0 0; letter-spacing:-.04em; }
+  .fe-cal .m{ font-family:var(--sans); font-size:.6rem; font-weight:800; letter-spacing:.14em; color:var(--ink-faint); padding:2px 0 7px; }
+  .fe-cd{ display:inline-block; font-family:var(--sans); font-size:.62rem; font-weight:800; letter-spacing:.1em; color:var(--inst); background:color-mix(in srgb,var(--inst) 10%,transparent); border-radius:999px; padding:4px 9px; }
+  .fe-cd.pasada{ color:var(--ink-faint); background:var(--paper-3); }
+  .fe-full{ font-family:var(--sans); font-size:.86rem; font-weight:600; color:var(--ink); margin-top:6px; }
+  .fe-datos{ border-top:.5px solid var(--line-strong); margin:4px 0 16px; }
+  .fe-datos div{ display:grid; grid-template-columns:22px 1fr; gap:8px; font-family:var(--sans); font-size:.92rem; color:var(--ink); padding:10px 0; border-bottom:.5px solid var(--line); }
   .date-share{ margin-top:10px; width:100%; font-family:var(--sans); font-size:.78rem; font-weight:700;
     padding:9px; border:1px solid var(--ink); background:none; color:var(--ink); border-radius:8px; }
   .ficha-sec{ margin-top:18px; }
@@ -1399,6 +1431,20 @@
 <div class="sheet2 pagina" id="sheetInstitucion">
   <div class="sheet2-top"><span class="b"></span><button class="close" id="closeInstitucion">Cerrar ✕</button></div>
   <div class="sheet2-body" id="institucionBody"></div>
+</div>
+
+<!-- sheet: una fecha institucional (lo que abre fonte.city/?f=<id>) -->
+<div class="backdrop" id="backdropFecha"></div>
+<div class="sheet2 pagina" id="sheetFecha">
+  <div class="sheet2-top"><span class="b"></span><button class="close" id="closeFecha">Cerrar ✕</button></div>
+  <div class="sheet2-body" id="fechaBody"></div>
+</div>
+
+<!-- sheet: compartir una fecha (flyer oficial + texto + link) -->
+<div class="backdrop" id="backdropCompartirFecha"></div>
+<div class="sheet2 pagina" id="sheetCompartirFecha">
+  <div class="sheet2-top"><span class="b"></span><button class="close" id="closeCompartirFecha">Cerrar ✕</button></div>
+  <div class="sheet2-body" id="compartirFechaBody"></div>
 </div>
 
 <!-- sheet: próximas fechas (agenda agregada) -->
@@ -2489,8 +2535,19 @@
     let iCuerpo = -1;
     if(n.__tipo === "o") partes.push("🏷️ ESPACIO DE UN COMERCIO", "");
     else if(n.__tipo === "c") partes.push("📢 COMUNICADO OFICIAL", "Fonte no reescribe este texto.", "");
+    else if(n.__tipo === "f") partes.push("📅 FECHA · " + (n.fuente_etiqueta || "Institución"), "");
     partes.push(n.titulo || "");
     const resumen = n.resumen_corto || n.resumen_extendido || "";
+    // Fecha: mismo texto que el reportero (día, hora, lugares) y el link propio ?f=<id>
+    if(n.__tipo === "f"){
+      const datos = [];
+      if(n.fecha_iso) datos.push(etiquetaFechaIso(n.fecha_iso));
+      if(n.horario) datos.push("🕐 " + n.horario);
+      String(n.lugar_puntos || "").split(/\n+/).map(s=>s.trim()).filter(Boolean).forEach(l=> datos.push("📍 " + l));
+      if(datos.length){ partes.push("", datos.join("\n")); iCuerpo = partes.length - 1; }
+      partes.push("", "👉 Ver en Fonte: " + urlDe(n, "f"));
+      return captionConTope(partes, iCuerpo);
+    }
     if(n.__tipo === "c"){
       if(resumen){ partes.push("", resumen); iCuerpo = partes.length - 1; }
     } else if(resumen){
@@ -2574,6 +2631,132 @@
   }
   async function generarPlaca(n){
     await fuentesListas();
+
+    // Fecha institucional: flyer oficial (día grande + datos + sello). Un solo diseño, dos tamaños:
+    // historia 1080x1920 (texto fuera de los ~250px de arriba y de abajo, que tapan las barras de IG)
+    // y feed 1080x1350 (4:5). "Fonte" chiquito en el pie.
+    // (Copia del flyer de reportero.html: el que se comparte desde la app es el mismo flyer oficial.)
+    if(n.__tipo === "f"){
+      const feed = n.__dim === "feed";
+      const W = 1080, H = feed ? 1350 : 1920;
+      const SAFE = 100; // margen a los costados
+      const TOP = feed ? 64 : 250, BOT = feed ? 50 : 250;
+      const cnv = document.createElement("canvas");
+      cnv.width = W; cnv.height = H;
+      const ctx = cnv.getContext("2d");
+      const TINTA = "#1A1814", PAPEL = "#F4F0E6";
+      const instObj = (INSTITUCIONES||[]).find(x=>String(x.id)===String(n.institucion_id||"")) || null;
+      const VERDE = n.color || colorDeInst(n.institucion_id, n.fuente_etiqueta);
+      const VERDE2 = oscurecerHex(VERDE, 0.72);
+      ctx.fillStyle = PAPEL; ctx.fillRect(0,0,W,H);
+      const inst = (n.fuente_etiqueta || (instObj&&instObj.nombre) || "Institución").trim();
+      const sigla = n.sello || selloDeInst(n.institucion_id, inst);
+      // banner institución
+      const banY = TOP;
+      const banH = 92;
+      const banCy = banY + banH/2;
+      ctx.font = "600 32px 'Work Sans',sans-serif";
+      const instW = Math.min(W - SAFE*2 - 40, Math.max(420, ctx.measureText(inst).width + 160));
+      const banX = (W - instW) / 2;
+      ctx.fillStyle = VERDE;
+      ctx.beginPath(); ctx.roundRect(banX, banY, instW, banH, 20); ctx.fill();
+      ctx.beginPath(); ctx.arc(banX + 46, banCy, 28, 0, Math.PI*2); ctx.fillStyle = "#163828"; ctx.fill();
+      ctx.strokeStyle = "#F4F0E6"; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(banX + 46, banCy, 26, 0, Math.PI*2); ctx.stroke();
+      const logoUrl = (instObj && instObj.foto_url) || "";
+      const lim = logoUrl ? await cargarImagen(logoUrl, 4000) : null;
+      if(lim){
+        ctx.save();
+        ctx.beginPath(); ctx.arc(banX + 46, banCy, 26, 0, Math.PI*2); ctx.clip();
+        ctx.drawImage(lim, banX + 20, banCy - 26, 52, 52);
+        ctx.restore();
+      } else {
+        ctx.fillStyle = "#F4F0E6"; ctx.font = "700 22px 'Fraunces',Georgia,serif";
+        ctx.textAlign = "center"; ctx.fillText(sigla, banX + 46, banCy + 8);
+      }
+      ctx.textAlign = "left";
+      ctx.fillStyle = tintaSobre(VERDE);
+      ctx.font = "700 32px 'Work Sans',sans-serif";
+      const nom = inst.length > 28 ? inst.slice(0,27)+"…" : inst;
+      ctx.fillText(nom, banX + 88, banCy + 12);
+      // día grande
+      const pf = partesFechaFlyer(n.fecha_iso);
+      ctx.textAlign = "center";
+      ctx.fillStyle = VERDE2; ctx.font = "700 "+(feed ? 32 : 34)+"px 'Work Sans',sans-serif";
+      ctx.fillText(pf.weekday, W/2, banY + banH + (feed ? 66 : 84));
+      ctx.fillStyle = VERDE;
+      ctx.font = "700 "+(feed ? 170 : 200)+"px 'Fraunces',Georgia,serif";
+      const diaY = banY + banH + (feed ? 232 : 282);
+      ctx.fillText(pf.dia, W/2, diaY);
+      ctx.fillStyle = VERDE2; ctx.font = "700 "+(feed ? 36 : 40)+"px 'Work Sans',sans-serif";
+      ctx.fillText(pf.mes, W/2, diaY + (feed ? 58 : 68));
+      const divY = diaY + (feed ? 100 : 116);
+      ctx.strokeStyle = VERDE2; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(W/2-90, divY); ctx.lineTo(W/2-12, divY); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(W/2+12, divY); ctx.lineTo(W/2+90, divY); ctx.stroke();
+      ctx.fillStyle = VERDE2; ctx.font = "20px serif";
+      ctx.fillText("✦", W/2, divY + 6);
+      // título
+      ctx.fillStyle = TINTA;
+      const tFont = feed ? 52 : 56, tLinea = feed ? 62 : 68;
+      ctx.font = "700 "+tFont+"px 'Fraunces',Georgia,serif";
+      const tit = envolver(ctx, n.titulo || "", W - SAFE*2 - 40, 3);
+      let y = divY + (feed ? 72 : 80);
+      tit.forEach((l)=>{ ctx.fillText(l, W/2, y); y += tLinea; });
+      // pie, de abajo hacia arriba: Fonte → link → Fecha oficial → ✦ → sigla
+      const fonteY = H - BOT;
+      const linkY = fonteY - (feed ? 48 : 70);
+      const rotY = linkY - (feed ? 44 : 50);
+      const sepY = rotY - (feed ? 52 : 70);
+      const sigFont = feed ? 80 : 100;
+      const sigY = sepY - 40;
+      const pieTop = sigY - Math.round(sigFont*0.75) - 24; // techo del bloque de pie
+      // horario + lugares, sin invadir el pie
+      y += feed ? 4 : 24;
+      if(n.horario){
+        ctx.fillStyle = VERDE;
+        ctx.font = "700 "+(feed ? 34 : 36)+"px 'Work Sans',sans-serif";
+        ctx.fillText(n.horario, W/2, y);
+        y += feed ? 52 : 56;
+      }
+      const puntos = String(n.lugar_puntos || "").split(/\n+/).map(s=>s.trim()).filter(Boolean);
+      const lFont = feed ? 30 : 32, lLinea = feed ? 40 : 44;
+      ctx.fillStyle = TINTA;
+      ctx.font = "500 "+lFont+"px 'Work Sans',sans-serif";
+      ctx.textAlign = "left";
+      const lineasLugar = [];
+      puntos.forEach(p=> envolver(ctx, p, W - SAFE*2 - 40, 2).forEach(l=> lineasLugar.push(l)));
+      const maxLugar = Math.max(0, Math.min(8, Math.floor((pieTop - y) / lLinea) + 1));
+      const lugarVis = lineasLugar.slice(0, maxLugar);
+      if(lineasLugar.length > maxLugar && lugarVis.length){
+        let ult = lugarVis[lugarVis.length-1].replace(/…$/,"");
+        while(ctx.measureText(ult + "…").width > W - SAFE*2 - 40 && ult.length > 4) ult = ult.slice(0,-1);
+        lugarVis[lugarVis.length-1] = ult.trim() + "…";
+      }
+      lugarVis.forEach((l,i)=> ctx.fillText(l, SAFE + 20, y + i*lLinea));
+      // pie
+      ctx.textAlign = "center";
+      ctx.fillStyle = VERDE;
+      ctx.font = "700 "+sigFont+"px 'Fraunces',Georgia,serif";
+      ctx.fillText(sigla, W/2, sigY);
+      ctx.strokeStyle = VERDE2; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(W/2-70, sepY); ctx.lineTo(W/2-14, sepY); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(W/2+14, sepY); ctx.lineTo(W/2+70, sepY); ctx.stroke();
+      ctx.font = "20px serif"; ctx.fillText("✦", W/2, sepY + 6);
+      ctx.fillStyle = TINTA;
+      ctx.font = "600 "+(feed ? 26 : 28)+"px 'Work Sans',sans-serif";
+      ctx.fillText("Fecha oficial", W/2, rotY);
+      const link = urlDe(n, "f").replace(/^https?:\/\//,"");
+      ctx.fillStyle = VERDE2;
+      ctx.font = "500 24px 'Work Sans',sans-serif";
+      ctx.fillText(link, W/2, linkY);
+      // marca Fonte chiquita en el pie
+      ctx.fillStyle = VERDE2;
+      ctx.font = "600 22px 'Work Sans',sans-serif";
+      ctx.fillText("Fonte", W/2, fonteY);
+      ctx.textAlign = "left";
+      return new Promise(res=> cnv.toBlob(res, "image/jpeg", 0.92));
+    }
 
     // Comunicado: UNA sola placa oficial, igual que en la app (index). Sin picker de diseños.
     // Dos tamaños del mismo diseño: historia 1080x1920 y feed 1080x1350 (4:5, lo que IG acepta en el feed).
@@ -3417,7 +3600,8 @@
     id = String(id||"");
     if(id.indexOf("fecha-")===0){
       const item = lista.find(x=>String(x.id)===id);
-      if(item && item.institucion_id) abrirInstitucion(item.institucion_id);
+      if(item && item._fecha) abrirFecha(item._fecha);
+      else if(item && item.institucion_id) abrirInstitucion(item.institucion_id);
       return;
     }
     abrirComunicado(id);
@@ -3675,6 +3859,41 @@
   }
   let INSTITUCIONES = [];
   let FECHAS_INST = [];
+  // Del reportero: "domingo 11 de octubre" y las partes del flyer (DOMINGO / 11 / OCTUBRE).
+  function etiquetaFechaIso(iso){
+    const [y,m,d] = String(iso||"").split("-").map(Number);
+    if(!y || !m || !d) return String(iso||"");
+    const dt = new Date(y, m-1, d);
+    const dias = ["domingo","lunes","martes","miércoles","jueves","viernes","sábado"];
+    const meses = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+    return dias[dt.getDay()] + " " + d + " de " + meses[m-1];
+  }
+  function partesFechaFlyer(iso){
+    const [y,m,d] = String(iso||"").split("-").map(Number);
+    if(!y || !m || !d) return { dia:"—", weekday:"", mes:"", etiqueta:String(iso||"") };
+    const dt = new Date(y, m-1, d);
+    const dias = ["DOMINGO","LUNES","MARTES","MIÉRCOLES","JUEVES","VIERNES","SÁBADO"];
+    const meses = ["ENERO","FEBRERO","MARZO","ABRIL","MAYO","JUNIO","JULIO","AGOSTO","SEPTIEMBRE","OCTUBRE","NOVIEMBRE","DICIEMBRE"];
+    return { dia:String(d), weekday:dias[dt.getDay()], mes:meses[m-1], etiqueta:etiquetaFechaIso(iso) };
+  }
+  // Una fecha de institucion_fechas como pieza para compartir (misma forma que en el reportero).
+  function piezaDeFecha(f, dim){
+    const inst = (INSTITUCIONES||[]).find(x=>String(x.id)===String(f.institucion_id)) || null;
+    const nombreInst = (inst && inst.nombre) || "";
+    const n = {
+      id:f.id, __tipo:"f",
+      titulo:f.titulo || "Fecha",
+      fecha_iso:f.fecha || "",
+      horario:f.horario || "",
+      lugar_puntos:f.lugar || "",
+      institucion_id:f.institucion_id || null,
+      color: colorDeInst(f.institucion_id, nombreInst),
+      sello: selloDeInst(f.institucion_id, nombreInst),
+      fuente_etiqueta: nombreInst,
+    };
+    if(dim === "feed") n.__dim = "feed";
+    return n;
+  }
   function fmtFecha(iso){
     if(!iso) return "";
     const [y,m,d] = iso.split("-");
@@ -3851,8 +4070,12 @@
     maps: '<svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>',
     avis: '<svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>',
     reloj: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
+    compartir: '<svg viewBox="0 0 24 24"><path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7"/><path d="M16 6l-4-4-4 4"/><path d="M12 2v13"/></svg>',
   };
-  function abrirInstitucion(id){
+  // opts.resaltar = id de una fecha (viene de la hoja de la fecha); opts.seccion = nombre de una
+  // sección de servicios (enlace ?i=…&s=…): se abre y se lleva a la vista.
+  function abrirInstitucion(id, opts){
+    opts = opts || {};
     navAlFrente("sheetInstitucion");
     const inst = INSTITUCIONES.find(x=>String(x.id)===String(id));
     if(!inst) return;
@@ -3893,6 +4116,7 @@
     if(wa) qaItems.push('<a class="qa-btn" href="https://wa.me/'+esc(wa)+'" target="_blank" rel="noopener" aria-label="WhatsApp">'+QA_SVG.wa+'<span class="lbl">WhatsApp</span></a>');
     if(maps) qaItems.push('<a class="qa-btn" href="'+esc(maps)+'" target="_blank" rel="noopener" aria-label="Cómo llegar">'+QA_SVG.maps+'<span class="lbl">Cómo llegar</span></a>');
     qaItems.push('<button type="button" class="'+(sigue?"on":"")+'" id="btnSeguirInst" data-id="'+esc(inst.id)+'" aria-label="Avisarme">'+QA_SVG.avis+'<span class="lbl">'+(sigue?"Avisado":"Avisarme")+'</span></button>');
+    qaItems.push('<button type="button" id="btnCompartirFicha" aria-label="Compartir">'+QA_SVG.compartir+'<span class="lbl">Compartir</span></button>');
     // grid de 4: si faltan, dejar huecos solo a la izquierda de Avisarme no; mejor ajustar columnas
     const nQa = qaItems.length;
     html += '<div class="inst-qa" style="grid-template-columns:repeat('+nQa+',1fr)">'+qaItems.join("")+'</div>';
@@ -3919,17 +4143,19 @@
         const fm = fmtFecha(f.fecha);
         const lugarParts = String(f.lugar||"").split(/\n+/).map(s=>s.trim()).filter(Boolean);
         const sub = [lugarParts.join(" · "), f.horario].filter(Boolean).join(" · ");
-        html += '<div class="inst-fecha-row">'
+        html += '<div class="inst-fecha-row con-share'+(String(opts.resaltar||"")===String(f.id)?' resaltada':'')+'" id="fecha-'+esc(f.id)+'" data-fecha-id="'+esc(f.id)+'">'
           + '<div class="inst-fecha-block"><div class="d">'+fm.d+'</div><div class="m">'+esc(fm.m)+'</div></div>'
           + '<div class="inst-fecha-tx"><div class="t">'+esc(f.titulo||"Fecha")+'</div>'
           + (sub ? '<div class="s">'+esc(sub)+'</div>' : '')
-          + '</div></div>';
+          + '</div>'
+          + '<button type="button" class="fecha-share" data-fecha-share="'+esc(f.id)+'">↗ Compartir</button></div>';
       });
       html += '</div>';
     }
 
     // Servicios (ocultar si no hay)
     let servicios = [];
+    const porSecFicha = {}, ordenSecFicha = [];
     try{
       const raw = inst.servicios;
       if(typeof raw === "string") servicios = JSON.parse(raw||"[]");
@@ -3943,18 +4169,21 @@
         if(!porSec[sec]){ porSec[sec] = []; ordenSec.push(sec); }
         porSec[sec].push(s);
       });
+      Object.assign(porSecFicha, porSec); ordenSecFicha.push(...ordenSec);
       html += '<div class="inst-sec" id="serviciosFicha"><div class="inst-sec-head"><span class="t">Servicios</span><span class="ln"></span></div>';
       html += '<input class="svc-search" id="svcBuscar" type="search" placeholder="Buscá tu barrio o un servicio…" autocomplete="off">';
       html += '<div id="svcLista">';
       ordenSec.forEach((sec, iSec)=>{
         const n = porSec[sec].length;
-        html += '<div class="svc-tabla svc-card'+(iSec===0?" abierta":"")+'" data-sec-i="'+iSec+'">'
+        const abrirSec = opts.seccion ? normSec(opts.seccion) === normSec(sec) : iSec===0;
+        html += '<div class="svc-tabla svc-card'+(abrirSec?" abierta":"")+'" data-sec-i="'+iSec+'" data-sec="'+esc(sec)+'">'
           + '<button type="button" class="svc-card-head"><span class="nom">'+esc(sec)+'</span><span class="cant">'+n+(n===1?" barrio":" barrios")+'</span><span class="fle">⌄</span></button>'
           + '<div class="svc-card-body">';
         porSec[sec].forEach(s=>{
           html += '<div class="svc-fila svc-fila-t" data-q="'+esc(((s.clave||"")+" "+(s.valor||"")+" "+sec).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,""))+'">'
             + '<span class="b">'+esc(s.clave||"")+'</span><span class="h">'+esc(s.valor||"")+'</span></div>';
         });
+        html += '<button type="button" class="svc-share" data-svc-share="'+iSec+'">↗ Compartir horarios</button>';
         html += '</div></div>';
       });
       html += '</div></div>';
@@ -4008,6 +4237,22 @@
     document.querySelectorAll("#svcLista .svc-card-head").forEach(cab=>{
       cab.addEventListener("click", ()=>{ cab.closest(".svc-card").classList.toggle("abierta"); });
     });
+    // Compartir: cada fecha (flyer oficial), cada sección de servicios y la ficha (texto + link)
+    document.querySelectorAll("#institucionBody .inst-fecha-row[data-fecha-id]").forEach(row=>{
+      const f = fechas.find(x=>String(x.id)===row.getAttribute("data-fecha-id"));
+      if(!f) return;
+      row.querySelector(".inst-fecha-tx").addEventListener("click", ()=> abrirFecha(f));
+      row.querySelector("[data-fecha-share]").addEventListener("click", (e)=>{ e.stopPropagation(); abrirCompartirFecha(f); });
+    });
+    document.querySelectorAll("#svcLista [data-svc-share]").forEach(b=>{
+      b.addEventListener("click", (e)=>{
+        e.stopPropagation();
+        const sec = ordenSecFicha[Number(b.getAttribute("data-svc-share"))];
+        if(sec) compartirSoloTexto(inst.nombre + " · " + sec, textoCompartirServicio(inst, sec, porSecFicha[sec]||[]), e.currentTarget);
+      });
+    });
+    const btnCF = document.getElementById("btnCompartirFicha");
+    if(btnCF) btnCF.addEventListener("click", (e)=> compartirSoloTexto(inst.nombre, textoCompartirFicha(inst), e.currentTarget));
     const svcBuscar = document.getElementById("svcBuscar");
     if(svcBuscar){
       svcBuscar.addEventListener("input", ()=>{
@@ -4029,7 +4274,153 @@
 
     document.getElementById("backdropInstitucion").classList.add("show");
     document.getElementById("sheetInstitucion").classList.add("show");
+    // llevar a la vista lo pedido (fecha resaltada o sección de servicios del enlace)
+    const foco = opts.resaltar ? document.getElementById("fecha-" + opts.resaltar)
+      : (opts.seccion ? document.querySelector("#svcLista .svc-card.abierta") : null);
+    if(foco) setTimeout(()=>{ try{ foco.scrollIntoView({ block:"center" }); }catch(e){} }, 60);
   }
+  function normSec(s){ return String(s||"").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,""); }
+  function textoCompartirFicha(inst){
+    const partes = ["🏛️ " + (inst.nombre || "Institución") + " · Quitilipi", "Página oficial en Fonte: avisos, fechas y servicios."];
+    const dir = String(inst.direccion||"").trim(), tel = String(inst.telefono||"").trim(), hor = String(inst.horario||"").trim();
+    const datos = [];
+    if(dir) datos.push("📍 " + dir);
+    if(hor) datos.push("🕐 " + hor);
+    if(tel) datos.push("📞 " + tel);
+    if(datos.length) partes.push("", datos.join("\n"));
+    partes.push("", "👉 " + urlDe({ id: inst.id }, "i"));
+    return partes.join("\n");
+  }
+  function textoCompartirServicio(inst, sec, filas){
+    return ["🗓️ " + sec + " · " + (inst.nombre || ""), ""]
+      .concat((filas||[]).map(s=> "• " + (s.clave||"") + ": " + (s.valor||"")))
+      .concat(["", "👉 Todos los horarios en Fonte: " + urlDe({ id: inst.id }, "i") + "&s=" + encodeURIComponent(sec)])
+      .join("\n");
+  }
+  // Compartir solo texto (la ficha, una sección de servicios): menú del celular o, en la compu, copiar.
+  async function compartirSoloTexto(titulo, texto, btn){
+    if(esCompu() || !navigator.share){
+      const ok = await copiarTexto(texto);
+      if(ok) toastFonte("Texto copiado ✓ Pegalo donde quieras");
+      else mostrarAlternativaCompartir(null, texto, "Copiá el texto para compartirlo");
+      return;
+    }
+    try{ await navigator.share({ title: titulo || "Fonte", text: texto }); }
+    catch(err){ if(!(err && err.name === "AbortError")) mostrarAlternativaCompartir(null, texto); }
+  }
+
+  // ================= FECHAS: hoja propia (?f=<id>) y compartir con el flyer oficial =================
+  let fechaAbierta = null;
+  function instDeFecha(f){ return (INSTITUCIONES||[]).find(x=>String(x.id)===String(f && f.institucion_id)) || null; }
+  function fechaPasada(f){ return !!(f && f.fecha) && difDiasIso(hoyBA(), f.fecha) < 0; }
+  function abrirFecha(f){
+    if(!f) return;
+    navAlFrente("sheetFecha");
+    fechaAbierta = f;
+    try{
+      const v = JSON.parse(localStorage.getItem("fonte_fechas_vistas")||"[]");
+      if(f.id && !v.includes(String(f.id))){ v.push(String(f.id)); localStorage.setItem("fonte_fechas_vistas", JSON.stringify(v.slice(-80))); }
+    }catch(e){}
+    const inst = instDeFecha(f) || {};
+    const n = piezaDeFecha(f);
+    const pf = partesFechaFlyer(f.fecha);
+    const pasada = fechaPasada(f);
+    const cd = pasada ? null : diasHasta(f.fecha);
+    const logo = urlSegura(inst.foto_url);
+    const puntos = String(f.lugar||"").split(/\n+/).map(x=>x.trim()).filter(Boolean);
+    const sh = document.getElementById("sheetFecha");
+    sh.style.setProperty("--inst", n.color);
+    let h = '<div class="com-marca">Fonte directa · Fecha oficial</div><div class="com-regla"></div>'
+      + '<div class="com-head"><div class="com-chip" style="color:'+esc(n.color)+'"><span class="verif-badge" style="background:'+esc(n.color)+';width:14px;height:14px"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span>'+esc(inst.nombre||"Institución")+'</span></div></div>'
+      + '<div class="fe-dia"><div class="fe-cal"><div class="w">'+esc(pf.weekday)+'</div><div class="d">'+esc(pf.dia)+'</div><div class="m">'+esc(pf.mes)+'</div></div>'
+      + '<div>'+(pasada ? '<span class="fe-cd pasada">YA PASÓ</span>' : (cd ? '<span class="fe-cd">'+esc(cd)+'</span>' : ''))
+      + '<div class="fe-full">'+esc(etiquetaFechaIso(f.fecha))+'</div></div></div>'
+      + '<h3 class="com-tit">'+esc(f.titulo||"Fecha")+'</h3>'
+      + '<div class="fe-datos">'+(f.horario ? '<div><span>🕐</span><span>'+esc(f.horario)+'</span></div>' : '')
+      + puntos.map(x=>'<div><span>📍</span><span>'+esc(x)+'</span></div>').join("") + '</div>';
+    if(pasada){
+      h += '<p class="com-cuerpo" style="color:var(--ink-soft)">Esta fecha ya pasó. En la página de la institución están las próximas.</p>';
+    } else {
+      h += '<div class="com-acts"><button class="com-share" id="fechaCompartirBtn">↗ Compartir</button><button class="com-share" id="fechaGuardarBtn" style="border-color:var(--line-strong);color:var(--ink-soft)">↓ Guardar imagen</button></div>';
+    }
+    if(inst.id) h += '<a class="com-ficha" style="display:inline-flex" id="fechaFichaLink">Ver página de '+esc(articuloInst(inst.nombre))+' ↗</a>';
+    h += '<div class="com-sello"><span class="sg" style="'+(logo ? "background-image:url('"+esc(logo)+"');background-size:cover;background-position:center;background-color:"+esc(n.color) : "background:"+esc(n.color))+'">'+(logo?"":esc(n.sello))+'</span>'
+      + '<div class="tx">'+esc(inst.nombre||"Institución")+'<small>Fecha oficial</small></div></div>'
+      + '<div class="com-link">'+esc(urlDe(n, "f").replace(/^https?:\/\//,""))+'</div>';
+    document.getElementById("fechaBody").innerHTML = h;
+    if(!pasada){
+      setTimeout(()=>{ if(fechaAbierta === f) prepararPlaca(piezaDeFecha(f)); }, 450); // listo para Guardar
+      document.getElementById("fechaCompartirBtn").addEventListener("click", ()=> abrirCompartirFecha(f));
+      document.getElementById("fechaGuardarBtn").addEventListener("click", (e)=> guardarFlyerFecha(piezaDeFecha(f), e.currentTarget));
+    }
+    const fl = document.getElementById("fechaFichaLink");
+    if(fl) fl.addEventListener("click", (e)=>{ e.preventDefault(); abrirInstitucion(f.institucion_id, { resaltar: f.id }); }); // igual que "Ver página" en un comunicado
+    document.getElementById("sheetFecha").scrollTop = 0;
+    document.getElementById("backdropFecha").classList.add("show");
+    document.getElementById("sheetFecha").classList.add("show");
+  }
+  function articuloInst(nombre){
+    const nm = String(nombre||"").trim();
+    if(!nm) return "la institución";
+    return (/^(hospital|centro|club|registro|juzgado|cic|concejo)/i.test(nm) ? "el " : "la ") + nm;
+  }
+  function cerrarFecha(){
+    document.getElementById("backdropFecha").classList.remove("show");
+    document.getElementById("sheetFecha").classList.remove("show");
+  }
+  async function guardarFlyerFecha(n, btn){
+    const orig = btn ? btn.textContent : "";
+    if(btn) btn.textContent = "Preparando…";
+    try{
+      const blob = await prepararPlaca(n).p;
+      if(!blob) throw new Error("sin flyer");
+      descargarBlob(blob, "fonte-fecha.jpg");
+      if(btn) btn.textContent = "Guardada ✓";
+    }catch(err){ if(btn) btn.textContent = "No se pudo guardar"; }
+    if(btn) setTimeout(()=> btn.textContent = orig, 1600);
+  }
+  // Hoja "Compartir fecha": el flyer oficial (historia o publicación) ya armado, el texto y el link.
+  // Al abrirla se arma la imagen; así "Compartir" abre el menú del celular apenas se toca.
+  let compartirFechaActual = null;
+  async function abrirCompartirFecha(f, dim){
+    if(!f) return;
+    navAlFrente("sheetCompartirFecha");
+    const n = piezaDeFecha(f, dim);
+    compartirFechaActual = n;
+    const sh = document.getElementById("sheetCompartirFecha");
+    sh.style.setProperty("--inst", n.color);
+    const texto = textoCompartir(n, "f");
+    document.getElementById("compartirFechaBody").innerHTML = '<div class="com-marca">Compartir fecha</div><div class="com-regla"></div>'
+      + '<div class="cmp-dims"><button type="button" data-d="historia" class="'+(n.__dim!=="feed"?"on":"")+'">Historia 9:16</button><button type="button" data-d="feed" class="'+(n.__dim==="feed"?"on":"")+'">Publicación 4:5</button></div>'
+      + '<div class="cmp-prev" id="cmpPrev"><div class="cargando">Armando el flyer…</div></div>'
+      + '<div class="cmp-lbl">Texto que acompaña</div><div class="cmp-txt">'+esc(texto)+'</div>'
+      + '<div class="cmp-lbl">Enlace</div><div class="cmp-link">'+esc(urlDe(n, "f").replace(/^https?:\/\//,""))+'</div>'
+      + '<div class="com-acts" style="margin-top:16px"><button class="com-share" id="cmpCompartirBtn">↗ Compartir</button><button class="com-share" id="cmpGuardarBtn" style="border-color:var(--line-strong);color:var(--ink-soft)">↓ Guardar imagen</button></div>'
+      + '<div class="cmp-nota">En el celular, “Compartir” abre el menú (WhatsApp, Instagram, Facebook…) con este flyer y este texto. Es el mismo flyer oficial que arma la institución.</div>';
+    sh.querySelectorAll(".cmp-dims button").forEach(b=> b.addEventListener("click", ()=> abrirCompartirFecha(f, b.getAttribute("data-d"))));
+    document.getElementById("cmpCompartirBtn").addEventListener("click", (e)=> compartirConPlaca(n, texto, e.currentTarget));
+    document.getElementById("cmpGuardarBtn").addEventListener("click", (e)=> guardarFlyerFecha(n, e.currentTarget));
+    document.getElementById("backdropCompartirFecha").classList.add("show");
+    sh.classList.add("show");
+    const blob = await prepararPlaca(n).p;
+    if(compartirFechaActual !== n) return;   // se cambió de tamaño mientras se armaba
+    const prev = document.getElementById("cmpPrev");
+    if(!prev) return;
+    if(blob){
+      const url = URL.createObjectURL(blob);
+      prev.innerHTML = '<img id="cmpImg" alt="Flyer de la fecha" src="'+url+'">';
+    } else {
+      prev.innerHTML = '<div class="cargando">No se pudo armar la imagen. El texto y el link se comparten igual.</div>';
+    }
+  }
+  function cerrarCompartirFecha(){
+    document.getElementById("backdropCompartirFecha").classList.remove("show");
+    document.getElementById("sheetCompartirFecha").classList.remove("show");
+  }
+  document.getElementById("closeFecha").addEventListener("click", cerrarFecha);
+  document.getElementById("backdropFecha").addEventListener("click", cerrarFecha);
+  document.getElementById("closeCompartirFecha").addEventListener("click", cerrarCompartirFecha);
+  document.getElementById("backdropCompartirFecha").addEventListener("click", cerrarCompartirFecha);
   function cerrarInstitucion(){
     document.getElementById("backdropInstitucion").classList.remove("show");
     document.getElementById("sheetInstitucion").classList.remove("show");
@@ -4042,7 +4433,7 @@
     const html = FECHAS_INST.map(f=>{
       const inst = INSTITUCIONES.find(x=>String(x.id)===String(f.institucion_id)) || {};
       const fm = fmtFecha(f.fecha);
-      return '<a class="ag-row" data-inst-id="'+esc(f.institucion_id)+'">'
+      return '<a class="ag-row" data-inst-id="'+esc(f.institucion_id)+'" data-fecha-id="'+esc(f.id)+'">'
         + '<div class="ag-date"><div class="d">'+fm.d+'</div><div class="m">'+fm.m+'</div></div>'
         + '<div class="ag-tx"><div class="inst">'+(ICONS_INST[inst.tipo]||"📍")+' '+esc(inst.nombre||"")+'</div><div class="t">'+esc(f.titulo)+'</div>'
         + (f.lugar||f.horario ? '<div class="l">'+esc(f.lugar||"")+(f.horario?" · "+esc(f.horario):"")+'</div>' : '') + '</div>'
@@ -4050,7 +4441,10 @@
     }).join("");
     document.getElementById("fechasBody").innerHTML = html || '<p class="foot-note">No hay fechas próximas cargadas.</p>';
     document.querySelectorAll("#fechasBody .ag-row").forEach(el=>{
-      el.addEventListener("click", ()=>{ abrirInstitucion(el.getAttribute("data-inst-id")); });
+      el.addEventListener("click", ()=>{
+        const f = (FECHAS_INST||[]).find(x=>String(x.id)===el.getAttribute("data-fecha-id"));
+        if(f) abrirFecha(f); else abrirInstitucion(el.getAttribute("data-inst-id"));
+      });
     });
     document.getElementById("backdropFechas").classList.add("show");
     document.getElementById("sheetFechas").classList.add("show");
@@ -4763,13 +5157,14 @@
   });
 
   // ================= ABRIR DESDE UN ENLACE COMPARTIDO =================
-  // fonte.city/?n=<id> abre esa nota; ?c=<id> un comunicado; ?a=<id> un aviso; ?o=<id> una oferta; ?i=<id> una ficha de institución.
+  // fonte.city/?n=<id> abre esa nota; ?c=<id> un comunicado; ?a=<id> un aviso; ?o=<id> una oferta; ?i=<id> una ficha de institución
+  // (con &s=<sección> abre esa sección de servicios); ?f=<id> una fecha institucional.
   function paramsDeEnlace(){
     try{ return new URLSearchParams(location.search); }catch(e){ return new URLSearchParams(); }
   }
   function vieneDeCompartir(){
     const p = paramsDeEnlace();
-    return !!(p.get("n") || p.get("c") || p.get("a") || p.get("o") || p.get("i"));
+    return !!(p.get("n") || p.get("c") || p.get("a") || p.get("o") || p.get("i") || p.get("f"));
   }
   // Trae UNA fila por id (enlaces viejos que ya no están entre lo que baja la app).
   // Devuelve la fila; null si no existe o ya no es pública; undefined si falló la conexión.
@@ -4791,8 +5186,8 @@
   // a que termine de cargar todo). final = última pasada, con todo ya cargado.
   async function abrirDesdeEnlace(final){
     const p = paramsDeEnlace();
-    const nid = p.get("n"), cid = p.get("c"), aid = p.get("a"), oid = p.get("o"), iid = p.get("i");
-    if(!nid && !cid && !aid && !oid && !iid) return null;
+    const nid = p.get("n"), cid = p.get("c"), aid = p.get("a"), oid = p.get("o"), iid = p.get("i"), fid = p.get("f");
+    if(!nid && !cid && !aid && !oid && !iid && !fid) return null;
     const esta = (lista, id)=> (lista||[]).some(x=>String(x.id)===String(id));
     if(nid){
       if(!esta(NOTICIAS, nid)){
@@ -4826,8 +5221,18 @@
       return "no";
     }
     if(iid){
-      if(esta(INSTITUCIONES, iid)){ abrirInstitucion(iid); return "ok"; }
+      if(esta(INSTITUCIONES, iid)){ abrirInstitucion(iid, { seccion: p.get("s") || "" }); return "ok"; }
       return final ? "no" : null;
+    }
+    // fecha: primero las próximas ya cargadas; si no está (ya pasó o es vieja), esa fila por id.
+    // Hace falta INSTITUCIONES (nombre, color, sello), así que se espera a la última pasada.
+    if(fid){
+      const f = (FECHAS_INST||[]).find(x=>String(x.id)===String(fid));
+      if(f && (INSTITUCIONES||[]).length){ abrirFecha(f); return "ok"; }
+      if(!final) return null;
+      const fila = await traerFilaPorId("institucion_fechas", fid, "&activa=eq.true");
+      if(fila){ abrirFecha(fila); return "ok"; }
+      return "no";
     }
     return null;
   }
@@ -4976,6 +5381,8 @@
         sheetComunicado:  { cerrar: raw("cerrarComunicado") },
         sheetInstitucion: { cerrar: raw("cerrarInstitucion") },
         sheetFechas:      { cerrar: raw("cerrarFechas") },
+        sheetFecha:       { cerrar: raw("cerrarFecha") },
+        sheetCompartirFecha: { cerrar: raw("cerrarCompartirFecha") },
         sheetForm:        { cerrar: raw("cerrarForm") },
         sheetTemas:       { cerrar: raw("cerrarTemas") },
         sheetBuscar:      { cerrar: raw("cerrarBuscar") },
@@ -4997,6 +5404,7 @@
       closeSheet:"sheet", backdrop:"sheet", closeAporte:"sheetAporte", backdropAporte:"sheetAporte",
       closeOferta:"sheetOferta", backdropOferta:"sheetOferta", closeComunicado:"sheetComunicado", backdropComunicado:"sheetComunicado",
       closeInstitucion:"sheetInstitucion", backdropInstitucion:"sheetInstitucion", closeFechas:"sheetFechas", backdropFechas:"sheetFechas",
+      closeFecha:"sheetFecha", backdropFecha:"sheetFecha", closeCompartirFecha:"sheetCompartirFecha", backdropCompartirFecha:"sheetCompartirFecha",
       closeForm:"sheetForm", backdropForm:"sheetForm", closeTemas:"sheetTemas", backdropTemas:"sheetTemas",
       closeBuscar:"sheetBuscar", backdropBuscar:"sheetBuscar", closeMios:"sheetMios", backdropMios:"sheetMios",
       closeOficiales:"sheetOficiales", backdropOficiales:"sheetOficiales", closeVecinos:"sheetVecinos", backdropVecinos:"sheetVecinos",
