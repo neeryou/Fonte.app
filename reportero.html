@@ -4196,273 +4196,253 @@
     return lum > 0.62 ? "#1A1814" : "#F4F0E6";
   }
 
+  // ================= PLACA OFICIAL (comunicado y fecha) =================
+  // Membrete arriba (logo o sello en el color de la institución, nombre completo en hasta 2 líneas,
+  // ✓ COMUNICADO / FECHA OFICIAL), franja URGENTE con vigencia, fecha de publicación, texto grande
+  // (la foto se achica antes de cortar texto; un solo corte "Sigue en Fonte →"), colores claros
+  // oscurecidos hasta contraste AA 4,5:1 para el texto, tarjeta CUÁNDO / DÓNDE en la fecha y pie
+  // común con link legible + "Texto de la institución · publicado en Fonte".
+  // Historia 1080x1920 (lo importante fuera de los 250 px de arriba y abajo) y feed 1080x1350.
+  const placaOficial = (function(){
+  const PAPEL = "#F4F0E6", TINTA = "#1A1814", SUAVE = "#5E584D", ROJO = "#B3261E";
+  function lumi(hex){
+    const h = String(hex||"#000").replace("#",""); const n = parseInt(h.slice(0,6),16);
+    const c = [(n>>16)&255,(n>>8)&255,n&255].map(v=>{ v/=255; return v<=0.03928 ? v/12.92 : Math.pow((v+0.055)/1.055,2.4); });
+    return 0.2126*c[0]+0.7152*c[1]+0.0722*c[2];
+  }
+  function contraste(a,b){ const x=lumi(a), y=lumi(b); return (Math.max(x,y)+0.05)/(Math.min(x,y)+0.05); }
+  // color de la institución apto para TEXTO sobre el papel (WCAG AA 4.5:1): si es claro, se oscurece
+  function tintaDe(color){ let c = color || "#5C5A54"; let i = 0; while(contraste(c, PAPEL) < 4.5 && i++ < 20) c = oscurecerHex(c, 0.86); return c; }
+  function mezcla(hex, f){ // hex mezclado con el papel (f = cuánto color)
+    const a = parseInt(String(hex).replace("#","").slice(0,6),16), b = parseInt(PAPEL.slice(1),16);
+    const m = (s)=> Math.round(((a>>s)&255)*f + ((b>>s)&255)*(1-f));
+    return "#" + [16,8,0].map(s=> m(s).toString(16).padStart(2,"0")).join("");
+  }
+  function check(ctx, x, y, r, color){ // círculo con tilde (verificada)
+    ctx.save(); ctx.fillStyle = color; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle = tintaSobre(color); ctx.lineWidth = r*0.28; ctx.lineCap = "round"; ctx.lineJoin = "round";
+    ctx.beginPath(); ctx.moveTo(x - r*0.45, y + r*0.02); ctx.lineTo(x - r*0.1, y + r*0.38); ctx.lineTo(x + r*0.48, y - r*0.34); ctx.stroke(); ctx.restore();
+  }
+  function ajustar(ctx, texto, ancho, maxL, tam, peso, fam){ // el tamaño más grande que entra sin cortar
+    for(const t of tam){ ctx.font = peso+" "+t+"px "+fam; const l = envolver(ctx, texto, ancho, maxL);
+      if(!l.length || !/…$/.test(l[l.length-1]) || t === tam[tam.length-1]) return { l, t }; }
+  }
+  // "viernes 9 de octubre de 2026" en hora de Buenos Aires
+  const fechaLarga = (ms)=>{ const t = new Date(ms); if(isNaN(t.getTime())) return "";
+    const [yy,mm,dd] = fechaBA(t).split("-").map(Number);
+    const dias=["domingo","lunes","martes","miércoles","jueves","viernes","sábado"], m=["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+    return dias[new Date(Date.UTC(yy, mm-1, dd)).getUTCDay()]+" "+dd+" de "+m[mm-1]+" de "+yy; };
+
+  // ---------- membrete: logo/sello + nombre completo (2 líneas) + ✓ etiqueta oficial ----------
+  async function membrete(ctx, W, SAFE, y, o){
+    const R = o.feed ? 54 : 62, cx = SAFE + R, cy = y + R;
+    ctx.fillStyle = o.color; ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI*2); ctx.fill();
+    const lim = o.logo ? await cargarImagen(o.logo, 4000) : null;
+    if(lim){
+      ctx.save(); ctx.beginPath(); ctx.arc(cx, cy, R-5, 0, Math.PI*2); ctx.clip();
+      const s = Math.max((2*R)/lim.width, (2*R)/lim.height); ctx.drawImage(lim, cx - lim.width*s/2, cy - lim.height*s/2, lim.width*s, lim.height*s); ctx.restore();
+    } else {
+      ctx.fillStyle = tintaSobre(o.color); ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.font = "700 "+Math.round(R*(o.sigla.length > 2 ? 0.62 : 0.8))+"px 'Fraunces',Georgia,serif";
+      ctx.fillText(o.sigla, cx, cy + 2); ctx.textBaseline = "alphabetic";
+    }
+    const tx = SAFE + 2*R + 30, ancho = W - SAFE - tx;
+    const a = ajustar(ctx, o.inst, ancho, 2, o.feed ? [40,36,32] : [44,40,34], "700", "'Work Sans',sans-serif");
+    const lh = Math.round(a.t*1.18), etH = 30, bloque = a.l.length*lh + 12 + etH;
+    let ty = cy - bloque/2 + a.t*0.82;
+    ctx.textAlign = "left"; ctx.fillStyle = TINTA; ctx.font = "700 "+a.t+"px 'Work Sans',sans-serif";
+    a.l.forEach(l=>{ ctx.fillText(l, tx, ty); ty += lh; });
+    const ey = ty - lh + 12 + etH*0.85 - 4;
+    check(ctx, tx + 13, ey - 9, 13, o.tinta);
+    ctx.fillStyle = o.tinta; ctx.font = "700 "+(o.feed ? 23 : 25)+"px 'Work Sans',sans-serif";
+    try{ ctx.letterSpacing = "2px"; }catch(e){}
+    ctx.fillText(o.etiqueta, tx + 36, ey);
+    try{ ctx.letterSpacing = "0px"; }catch(e){}
+    const ry = y + 2*R + (o.feed ? 30 : 36);
+    ctx.fillStyle = o.color; ctx.fillRect(SAFE, ry, W - 2*SAFE, 5);
+    return ry + 5;
+  }
+  // ---------- pie común: link legible + "texto de la institución · Fonte" ----------
+  function pie(ctx, W, H, SAFE, BOT, o){
+    const baseFonte = H - BOT, linkY = baseFonte - (o.feed ? 54 : 62), etY = linkY - (o.feed ? 40 : 44);
+    const ry = etY - (o.feed ? 44 : 50);
+    ctx.fillStyle = "rgba(26,24,20,.18)"; ctx.fillRect(SAFE, ry, W - 2*SAFE, 2);
+    ctx.textAlign = "center";
+    ctx.fillStyle = SUAVE; ctx.font = "600 "+(o.feed ? 22 : 24)+"px 'Work Sans',sans-serif";
+    try{ ctx.letterSpacing = "2px"; }catch(e){}
+    ctx.fillText("MÁS INFORMACIÓN Y PARA COMPARTIR", W/2, etY);
+    try{ ctx.letterSpacing = "0px"; }catch(e){}
+    ctx.fillStyle = o.tinta;
+    // el link es una sola "palabra": se elige el tamaño más grande que entra en el ancho seguro
+    let tl = o.feed ? 30 : 32;
+    ctx.font = "600 "+tl+"px 'Work Sans',sans-serif";
+    while(ctx.measureText(o.link).width > W - 2*SAFE && tl > 18){ tl--; ctx.font = "600 "+tl+"px 'Work Sans',sans-serif"; }
+    ctx.fillText(o.link, W/2, linkY);
+    // marca Fonte chica: "F." + texto
+    ctx.font = "500 "+(o.feed ? 21 : 23)+"px 'Work Sans',sans-serif"; ctx.fillStyle = SUAVE;
+    const txt = o.nota, wT = ctx.measureText(txt).width, x0 = W/2 - (wT + 44)/2;
+    ctx.fillStyle = TINTA; ctx.beginPath(); ctx.roundRect(x0, baseFonte - 26, 32, 32, 7); ctx.fill();
+    ctx.fillStyle = PAPEL; ctx.font = "700 22px 'Fraunces',Georgia,serif"; ctx.textAlign = "center"; ctx.fillText("F", x0 + 14, baseFonte - 3);
+    ctx.fillStyle = "#D7262E"; ctx.beginPath(); ctx.arc(x0 + 24, baseFonte - 4, 3.2, 0, Math.PI*2); ctx.fill();
+    ctx.textAlign = "left"; ctx.fillStyle = SUAVE; ctx.font = "500 "+(o.feed ? 21 : 23)+"px 'Work Sans',sans-serif";
+    ctx.fillText(txt, x0 + 44, baseFonte);
+    return ry; // techo del pie
+  }
+  function datosInst(n, nombre){
+    const nm = String(nombre||"").trim().toLowerCase();
+    const io = (INST_ADMIN||[]).find(x=>String(x.id)===String(n.institucion_id||""))
+      || (nm ? (INST_ADMIN||[]).find(x=>(x.nombre||"").trim().toLowerCase()===nm) : null) || null;
+    const inst = (nombre || (io&&io.nombre) || "Institución").trim();
+    const color = n.color || colorDeInst(n.institucion_id, inst);
+    return { io, inst, color, tinta: tintaDe(color), sigla: n.sello || selloDeInst(n.institucion_id, inst), logo: (io && io.foto_url) || "" };
+  }
+
+  return async function(n){
+    const feed = n.__dim === "feed", W = 1080, H = feed ? 1350 : 1920, SAFE = 96;
+    const TOP = feed ? 60 : 250, BOT = feed ? 54 : 250;
+    const cnv = document.createElement("canvas"); cnv.width = W; cnv.height = H;
+    const ctx = cnv.getContext("2d"); ctx.fillStyle = PAPEL; ctx.fillRect(0,0,W,H);
+
+    if(n.__tipo === "c"){
+      const d = datosInst(n, n.lugar || n.fuente_etiqueta);
+      let y = await membrete(ctx, W, SAFE, TOP, { feed, color:d.color, tinta:d.tinta, inst:d.inst, sigla:d.sigla, logo:d.logo, etiqueta:"COMUNICADO OFICIAL" });
+      const techoPie = pie(ctx, W, H, SAFE, BOT, { feed, tinta:d.tinta, link:urlDe(n,"c").replace(/^https?:\/\//,""), nota:"Texto de la institución · publicado en Fonte" });
+      // franja URGENTE con vigencia (se dibuja arriba del bloque, ya centrado)
+      const franja = ()=>{
+        const bh = feed ? 66 : 76;
+        ctx.fillStyle = ROJO; ctx.beginPath(); ctx.roundRect(SAFE, y, W-2*SAFE, bh, 12); ctx.fill();
+        ctx.fillStyle = "#FFFFFF"; ctx.textAlign = "left"; ctx.font = "800 "+(feed?32:36)+"px 'Work Sans',sans-serif";
+        try{ ctx.letterSpacing = "3px"; }catch(e){}
+        // triángulo de alerta
+        const ax = SAFE + 30, ay = y + bh/2;
+        ctx.beginPath(); ctx.moveTo(ax, ay-17); ctx.lineTo(ax+19, ay+15); ctx.lineTo(ax-19, ay+15); ctx.closePath(); ctx.fill();
+        ctx.fillStyle = ROJO; ctx.font = "800 22px 'Work Sans',sans-serif"; ctx.textAlign = "center"; ctx.fillText("!", ax, ay + 12);
+        ctx.fillStyle = "#FFFFFF"; ctx.textAlign = "left"; ctx.font = "800 "+(feed?32:36)+"px 'Work Sans',sans-serif";
+        ctx.fillText("URGENTE", SAFE + 66, ay + 12);
+        try{ ctx.letterSpacing = "0px"; }catch(e){}
+        if(n.vigencia){ ctx.textAlign = "right"; ctx.font = "600 "+(feed?26:28)+"px 'Work Sans',sans-serif"; ctx.fillText(n.vigencia, W - SAFE - 26, ay + 10); }
+        y += bh + (feed ? 26 : 32);
+      };
+      // medir el contenido para centrarlo
+      const hBand = n.urgente ? (feed ? 66 + 26 : 76 + 32) : 0;
+      const fl = n.publicado_at ? fechaLarga(n.publicado_at) : "";
+      const fecha = fl ? "Quitilipi, " + fl : "";
+      const tit = ajustar(ctx, n.titulo||"", W-2*SAFE, feed ? 3 : 4, feed ? [70,62,56] : [82,74,66], "700", "'Fraunces',Georgia,serif");
+      const tL = Math.round(tit.t*1.12);
+      const bF = feed ? 37 : 41, bL = feed ? 52 : 58;
+      ctx.font = "500 "+bF+"px 'Work Sans',sans-serif";
+      const parrafos = String(n.resumen_corto||"").replace(/\s*(Fecha|Horario|Lugar):\s*/gi,"\n$1: ").split(/\n+/).flatMap(p=>p.split(/\s*[·•]\s*/)).map(s=>s.trim()).filter(Boolean);
+      const lineas = []; parrafos.forEach((p,i)=>{ envolver(ctx, p, W-2*SAFE, 30).forEach((l,j)=> lineas.push({ l, sep: i>0 && j===0 })); });
+      const im = (n.imagen_url) ? await cargarImagen(n.imagen_url, 7000) : null;
+      const top0 = y + (feed ? 44 : 56);
+      const hFecha = fecha ? (feed ? 44 : 52) : 0;
+      const hTit = tit.l.length*tL;
+      const disponible = techoPie - (feed ? 34 : 44) - top0;
+      const FOTO_MIN = im ? (feed ? 210 : 280) : 0, FOTO_MAX = im ? (feed ? 330 : 560) : 0; // el texto manda: la foto se achica antes de cortar texto
+      const GAP = Math.round(tit.t*0.35 + bF*0.3 + 14);
+      let cabenL = Math.floor((disponible - hBand - hFecha - hTit - GAP - (im ? FOTO_MIN + 32 : 0)) / bL);
+      let vis = lineas.slice(0, Math.max(0, cabenL));
+      const cortado = vis.length < lineas.length;
+      if(cortado && vis.length > 1){ vis = vis.slice(0, -1); }
+      const sepExtra = vis.filter(v=>v.sep).length * 14;
+      const usado = hBand + hFecha + hTit + GAP + vis.length*bL + sepExtra + (cortado ? bL : 0);
+      const FOTO = im ? Math.min(FOTO_MAX, Math.max(FOTO_MIN, disponible - usado - 32)) : 0;
+      const hTodo = hBand + hFecha + hTit + GAP + vis.length*bL + sepExtra + (cortado ? bL : 0) + (FOTO ? FOTO + 32 : 0);
+      y = top0 + Math.max(0, (disponible - hTodo) * (feed ? 0.35 : 0.3)); // historia: sin hueco vacío abajo
+      if(n.urgente) franja();
+      ctx.textAlign = "left";
+      if(fecha){ ctx.fillStyle = SUAVE; ctx.font = "500 "+(feed?26:29)+"px 'Work Sans',sans-serif"; ctx.fillText(fecha, SAFE, y + (feed?20:24)); y += hFecha; }
+      ctx.fillStyle = d.tinta; ctx.font = "700 "+tit.t+"px 'Fraunces',Georgia,serif";
+      y += tit.t*0.86; tit.l.forEach(l=>{ ctx.fillText(l, SAFE, y); y += tL; }); y += GAP - tL + bF*0.95;
+      ctx.fillStyle = TINTA; ctx.font = "500 "+bF+"px 'Work Sans',sans-serif";
+      vis.forEach(v=>{ if(v.sep) y += 14; ctx.fillText(v.l, SAFE, y); y += bL; });
+      if(cortado){ ctx.fillStyle = d.tinta; ctx.font = "700 "+(bF-4)+"px 'Work Sans',sans-serif"; ctx.fillText("Sigue en Fonte →", SAFE, y); y += bL; }
+      if(im){
+        const cy0 = y - bF + 20, ch = Math.min(FOTO, techoPie - 34 - cy0);
+        ctx.save(); ctx.beginPath(); ctx.roundRect(SAFE, cy0, W-2*SAFE, ch, 14); ctx.clip();
+        const s = Math.max((W-2*SAFE)/im.width, ch/im.height); ctx.drawImage(im, SAFE+((W-2*SAFE)-im.width*s)/2, cy0+(ch-im.height*s)/2, im.width*s, im.height*s); ctx.restore();
+      }
+      return new Promise(res=> cnv.toBlob(res, "image/jpeg", 0.92));
+    }
+
+    if(n.__tipo === "f"){
+      const d = datosInst(n, n.fuente_etiqueta);
+      let y = await membrete(ctx, W, SAFE, TOP, { feed, color:d.color, tinta:d.tinta, inst:d.inst, sigla:d.sigla, logo:d.logo, etiqueta:"FECHA OFICIAL" });
+      const techoPie = pie(ctx, W, H, SAFE, BOT, { feed, tinta:d.tinta, link:urlDe(n,"f").replace(/^https?:\/\//,""), nota:"Dato de la institución · publicado en Fonte" });
+      const pf = partesFechaFlyer(n.fecha_iso);
+      const top0 = y + (feed ? 40 : 56);
+      const disponible = techoPie - (feed ? 30 : 44) - top0;
+      const lugares = String(n.lugar_puntos||"").split(/\n+/).map(s=>s.trim()).filter(Boolean);
+      const diaTxt = pf.etiqueta ? pf.etiqueta.charAt(0).toUpperCase()+pf.etiqueta.slice(1) : "";
+      // probar de más grande a más chico (calendario y datos) hasta que entre TODO; si no, se corta con "…"
+      const pruebas = [];
+      for(const escala of (feed ? [1, 0.84, 0.7] : [1, 0.9])) for(const vF of (feed ? [34, 31, 28] : [38, 35, 32])) pruebas.push({ esc:escala, vF });
+      let L = null;
+      for(const pr of pruebas){
+        const calW = Math.round((feed ? 270 : 320)*pr.esc), calBand = Math.round((feed ? 58 : 66)*pr.esc), calH = Math.round((feed ? 250 : 300)*pr.esc);
+        const tit = ajustar(ctx, n.titulo||"", W-2*SAFE, 3, feed ? [58,52,46] : [66,60,52], "700", "'Fraunces',Georgia,serif");
+        const tL = Math.round(tit.t*1.14), vF = pr.vF, vL = Math.round(vF*1.36), lbF = feed ? 21 : 23, pad = feed ? 28 : 36, iw = W - 2*SAFE - 2*pad - 54;
+        ctx.font = "600 "+vF+"px 'Work Sans',sans-serif";
+        const lC = envolver(ctx, diaTxt, iw, 2).map(l=>({ l, ic:"" })); if(lC.length) lC[0].ic = "cal";
+        if(n.horario) envolver(ctx, n.horario, iw, 2).forEach((l,j)=> lC.push({ l, ic: j ? "" : "reloj" }));
+        ctx.font = "500 "+(vF-2)+"px 'Work Sans',sans-serif";
+        const lD = []; lugares.forEach((pt)=> envolver(ctx, pt, iw, 2).forEach((l,j)=> lD.push({ l, ic: j ? "" : "pin" })));
+        const gT = feed ? 34 : 50;
+        const fijo = calH + gT + tit.l.length*tL + (feed ? 24 : 36);
+        const cardFijo = pad*2 + (lbF+12) + lC.length*vL + (lugares.length ? 20 + lbF + 12 : 0);
+        L = { calW, calBand, calH, tit, tL, vF, vL, lbF, pad, iw, lC, lD, gT, fijo, cardFijo, esc:pr.esc };
+        if(fijo + cardFijo + lD.length*vL <= disponible) break;
+      }
+      const { calW, calBand, calH, tit, tL, vF, vL, lbF, pad, lC, gT, fijo, cardFijo } = L;
+      let lD = L.lD;
+      const caben = Math.max(1, Math.floor((disponible - fijo - cardFijo) / vL));
+      if(lD.length > caben){ lD = lD.slice(0, caben); const u = lD[lD.length-1]; u.l = u.l.replace(/…$/,"") + "…"; }
+      const cardH = cardFijo + (lugares.length ? lD.length*vL : 0);
+      y = top0 + (feed ? Math.max(0, (disponible - fijo - cardH) * 0.5) : Math.max(0, (disponible - fijo - cardH) * 0.35));
+      // calendario (mismo que la pantalla de la fecha en la web)
+      const cx = (W - calW)/2;
+      ctx.fillStyle = "#FFFDF8"; ctx.beginPath(); ctx.roundRect(cx, y, calW, calH, 18); ctx.fill();
+      ctx.save(); ctx.beginPath(); ctx.roundRect(cx, y, calW, calH, 18); ctx.clip();
+      ctx.fillStyle = d.color; ctx.fillRect(cx, y, calW, calBand); ctx.restore();
+      ctx.strokeStyle = d.color; ctx.lineWidth = 4; ctx.beginPath(); ctx.roundRect(cx, y, calW, calH, 18); ctx.stroke();
+      ctx.textAlign = "center"; ctx.fillStyle = tintaSobre(d.color); ctx.font = "800 "+Math.round((feed?26:30)*L.esc)+"px 'Work Sans',sans-serif";
+      try{ ctx.letterSpacing = "3px"; }catch(e){}
+      ctx.fillText(pf.weekday, W/2, y + calBand/2 + Math.round((feed?10:11)*L.esc));
+      ctx.fillStyle = d.tinta; ctx.font = "700 "+Math.round((feed?132:160)*L.esc)+"px 'Fraunces',Georgia,serif"; try{ ctx.letterSpacing = "0px"; }catch(e){}
+      ctx.fillText(pf.dia, W/2, y + calBand + Math.round((feed?128:156)*L.esc));
+      ctx.font = "700 "+Math.round((feed?26:30)*L.esc)+"px 'Work Sans',sans-serif"; try{ ctx.letterSpacing = "4px"; }catch(e){}
+      ctx.fillStyle = SUAVE; ctx.fillText(pf.mes, W/2, y + calH - Math.round((feed?22:26)*L.esc)); try{ ctx.letterSpacing = "0px"; }catch(e){}
+      y += calH + gT;
+      ctx.fillStyle = TINTA; ctx.font = "700 "+tit.t+"px 'Fraunces',Georgia,serif";
+      y += tit.t*0.8; tit.l.forEach(l=>{ ctx.fillText(l, W/2, y); y += tL; }); y += (feed ? 24 : 36) - tL + tit.t*0.2;
+      // tarjeta
+      ctx.fillStyle = mezcla(d.color, 0.09); ctx.beginPath(); ctx.roundRect(SAFE, y, W-2*SAFE, cardH, 20); ctx.fill();
+      ctx.fillStyle = d.color; ctx.fillRect(SAFE, y + 20, 6, cardH - 40);
+      let yy = y + pad + lbF;
+      const ix = SAFE + pad + 54;
+      const etiq = (t, yv)=>{ ctx.textAlign = "left"; ctx.fillStyle = d.tinta; ctx.font = "800 "+lbF+"px 'Work Sans',sans-serif"; try{ ctx.letterSpacing = "3px"; }catch(e){} ctx.fillText(t, ix, yv); try{ ctx.letterSpacing = "0px"; }catch(e){} };
+      // reloj
+      const reloj = (x, yv)=>{ ctx.strokeStyle = d.tinta; ctx.lineWidth = 3.5; ctx.beginPath(); ctx.arc(x, yv, 15, 0, Math.PI*2); ctx.stroke(); ctx.beginPath(); ctx.moveTo(x, yv-8); ctx.lineTo(x, yv); ctx.lineTo(x+7, yv+5); ctx.stroke(); };
+      const pin = (x, yv)=>{ ctx.fillStyle = d.tinta; ctx.beginPath(); ctx.arc(x, yv-6, 12, Math.PI, 0); ctx.quadraticCurveTo(x+12, yv+4, x, yv+16); ctx.quadraticCurveTo(x-12, yv+4, x-12, yv-6); ctx.fill(); ctx.fillStyle = mezcla(d.color, 0.09); ctx.beginPath(); ctx.arc(x, yv-6, 4.5, 0, Math.PI*2); ctx.fill(); };
+      const cal = (x, yv)=>{ ctx.strokeStyle = d.tinta; ctx.lineWidth = 3.5; ctx.beginPath(); ctx.roundRect(x-14, yv-12, 28, 26, 4); ctx.stroke(); ctx.fillStyle = d.tinta; ctx.fillRect(x-14, yv-12, 28, 8); };
+      const icono = (ic, yv)=>{ const x = SAFE + pad + 18, yc = yv - vF*0.36; if(ic==="cal") cal(x, yc); else if(ic==="reloj") reloj(x, yc); else if(ic==="pin") pin(x, yc); };
+      etiq("CUÁNDO", yy); yy += 12 + vL - 8;
+      lC.forEach(v=>{ icono(v.ic, yy); ctx.fillStyle = TINTA; ctx.textAlign = "left"; ctx.font = "600 "+vF+"px 'Work Sans',sans-serif"; ctx.fillText(v.l, ix, yy); yy += vL; });
+      if(lugares.length){
+        yy += 20 - vL + lbF + 8; etiq(lugares.length > 1 ? "DÓNDE · " + lugares.length + " LUGARES" : "DÓNDE", yy); yy += 12 + vL - 8;
+        lD.forEach(v=>{ icono(v.ic, yy); ctx.fillStyle = TINTA; ctx.font = "500 "+(vF-2)+"px 'Work Sans',sans-serif"; ctx.textAlign = "left"; ctx.fillText(v.l, ix, yy); yy += vL; });
+      }
+      return new Promise(res=> cnv.toBlob(res, "image/jpeg", 0.92));
+    }
+    return null;
+  };
+  })();
+
   async function generarPlaca(n){
     await fuentesListas();
 
-    // Fecha institucional: flyer oficial (día grande + datos + sello). Un solo diseño, dos tamaños:
-    // historia 1080x1920 (texto fuera de los ~250px de arriba y de abajo, que tapan las barras de IG)
-    // y feed 1080x1350 (4:5). "Fonte" chiquito en el pie.
-    if(n.__tipo === "f"){
-      const feed = n.__dim === "feed";
-      const W = 1080, H = feed ? 1350 : 1920;
-      const SAFE = 100; // margen a los costados
-      const TOP = feed ? 64 : 250, BOT = feed ? 50 : 250;
-      const cnv = document.createElement("canvas");
-      cnv.width = W; cnv.height = H;
-      const ctx = cnv.getContext("2d");
-      const TINTA = "#1A1814", PAPEL = "#F4F0E6";
-      const instObj = (INST_ADMIN||[]).find(x=>String(x.id)===String(n.institucion_id||"")) || null;
-      const VERDE = n.color || colorDeInst(n.institucion_id, n.fuente_etiqueta);
-      const VERDE2 = oscurecerHex(VERDE, 0.72);
-      ctx.fillStyle = PAPEL; ctx.fillRect(0,0,W,H);
-      const inst = (n.fuente_etiqueta || (instObj&&instObj.nombre) || "Institución").trim();
-      const sigla = n.sello || selloDeInst(n.institucion_id, inst);
-      // banner institución
-      const banY = TOP;
-      const banH = 92;
-      const banCy = banY + banH/2;
-      ctx.font = "600 32px 'Work Sans',sans-serif";
-      const instW = Math.min(W - SAFE*2 - 40, Math.max(420, ctx.measureText(inst).width + 160));
-      const banX = (W - instW) / 2;
-      ctx.fillStyle = VERDE;
-      ctx.beginPath(); ctx.roundRect(banX, banY, instW, banH, 20); ctx.fill();
-      ctx.beginPath(); ctx.arc(banX + 46, banCy, 28, 0, Math.PI*2); ctx.fillStyle = "#163828"; ctx.fill();
-      ctx.strokeStyle = "#F4F0E6"; ctx.lineWidth = 3;
-      ctx.beginPath(); ctx.arc(banX + 46, banCy, 26, 0, Math.PI*2); ctx.stroke();
-      const logoUrl = (instObj && instObj.foto_url) || "";
-      const lim = logoUrl ? await cargarImagen(logoUrl, 4000) : null;
-      if(lim){
-        ctx.save();
-        ctx.beginPath(); ctx.arc(banX + 46, banCy, 26, 0, Math.PI*2); ctx.clip();
-        ctx.drawImage(lim, banX + 20, banCy - 26, 52, 52);
-        ctx.restore();
-      } else {
-        ctx.fillStyle = "#F4F0E6"; ctx.font = "700 22px 'Fraunces',Georgia,serif";
-        ctx.textAlign = "center"; ctx.fillText(sigla, banX + 46, banCy + 8);
-      }
-      ctx.textAlign = "left";
-      ctx.fillStyle = tintaSobre(VERDE);
-      ctx.font = "700 32px 'Work Sans',sans-serif";
-      const nom = inst.length > 28 ? inst.slice(0,27)+"…" : inst;
-      ctx.fillText(nom, banX + 88, banCy + 12);
-      // día grande
-      const pf = partesFechaFlyer(n.fecha_iso);
-      ctx.textAlign = "center";
-      ctx.fillStyle = VERDE2; ctx.font = "700 "+(feed ? 32 : 34)+"px 'Work Sans',sans-serif";
-      ctx.fillText(pf.weekday, W/2, banY + banH + (feed ? 66 : 84));
-      ctx.fillStyle = VERDE;
-      ctx.font = "700 "+(feed ? 170 : 200)+"px 'Fraunces',Georgia,serif";
-      const diaY = banY + banH + (feed ? 232 : 282);
-      ctx.fillText(pf.dia, W/2, diaY);
-      ctx.fillStyle = VERDE2; ctx.font = "700 "+(feed ? 36 : 40)+"px 'Work Sans',sans-serif";
-      ctx.fillText(pf.mes, W/2, diaY + (feed ? 58 : 68));
-      const divY = diaY + (feed ? 100 : 116);
-      ctx.strokeStyle = VERDE2; ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.moveTo(W/2-90, divY); ctx.lineTo(W/2-12, divY); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(W/2+12, divY); ctx.lineTo(W/2+90, divY); ctx.stroke();
-      ctx.fillStyle = VERDE2; ctx.font = "20px serif";
-      ctx.fillText("✦", W/2, divY + 6);
-      // título
-      ctx.fillStyle = TINTA;
-      const tFont = feed ? 52 : 56, tLinea = feed ? 62 : 68;
-      ctx.font = "700 "+tFont+"px 'Fraunces',Georgia,serif";
-      const tit = envolver(ctx, n.titulo || "", W - SAFE*2 - 40, 3);
-      let y = divY + (feed ? 72 : 80);
-      tit.forEach((l)=>{ ctx.fillText(l, W/2, y); y += tLinea; });
-      // pie, de abajo hacia arriba: Fonte → link → Fecha oficial → ✦ → sigla
-      const fonteY = H - BOT;
-      const linkY = fonteY - (feed ? 48 : 70);
-      const rotY = linkY - (feed ? 44 : 50);
-      const sepY = rotY - (feed ? 52 : 70);
-      const sigFont = feed ? 80 : 100;
-      const sigY = sepY - 40;
-      const pieTop = sigY - Math.round(sigFont*0.75) - 24; // techo del bloque de pie
-      // horario + lugares, sin invadir el pie
-      y += feed ? 4 : 24;
-      if(n.horario){
-        ctx.fillStyle = VERDE;
-        ctx.font = "700 "+(feed ? 34 : 36)+"px 'Work Sans',sans-serif";
-        ctx.fillText(n.horario, W/2, y);
-        y += feed ? 52 : 56;
-      }
-      const puntos = String(n.lugar_puntos || "").split(/\n+/).map(s=>s.trim()).filter(Boolean);
-      const lFont = feed ? 30 : 32, lLinea = feed ? 40 : 44;
-      ctx.fillStyle = TINTA;
-      ctx.font = "500 "+lFont+"px 'Work Sans',sans-serif";
-      ctx.textAlign = "center";
-      const lineasLugar = [];
-      puntos.forEach(p=> envolver(ctx, p, W - SAFE*2 - 40, 2).forEach(l=> lineasLugar.push(l)));
-      const maxLugar = Math.max(0, Math.min(8, Math.floor((pieTop - y) / lLinea) + 1));
-      const lugarVis = lineasLugar.slice(0, maxLugar);
-      if(lineasLugar.length > maxLugar && lugarVis.length){
-        let ult = lugarVis[lugarVis.length-1].replace(/…$/,"");
-        while(ctx.measureText(ult + "…").width > W - SAFE*2 - 40 && ult.length > 4) ult = ult.slice(0,-1);
-        lugarVis[lugarVis.length-1] = ult.trim() + "…";
-      }
-      lugarVis.forEach((l,i)=> ctx.fillText(l, W/2, y + i*lLinea)); // centrado como el resto del flyer
-      // pie
-      ctx.textAlign = "center";
-      ctx.fillStyle = VERDE;
-      ctx.font = "700 "+sigFont+"px 'Fraunces',Georgia,serif";
-      ctx.fillText(sigla, W/2, sigY);
-      ctx.strokeStyle = VERDE2; ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.moveTo(W/2-70, sepY); ctx.lineTo(W/2-14, sepY); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(W/2+14, sepY); ctx.lineTo(W/2+70, sepY); ctx.stroke();
-      ctx.font = "20px serif"; ctx.fillText("✦", W/2, sepY + 6);
-      ctx.fillStyle = TINTA;
-      ctx.font = "600 "+(feed ? 26 : 28)+"px 'Work Sans',sans-serif";
-      ctx.fillText("Fecha oficial", W/2, rotY);
-      const link = urlDe(n, "f").replace(/^https?:\/\//,"");
-      ctx.fillStyle = VERDE2;
-      ctx.font = "500 24px 'Work Sans',sans-serif";
-      ctx.fillText(link, W/2, linkY);
-      // marca Fonte chiquita en el pie
-      ctx.fillStyle = VERDE2;
-      ctx.font = "600 22px 'Work Sans',sans-serif";
-      ctx.fillText("Fonte", W/2, fonteY);
-      ctx.textAlign = "left";
-      return new Promise(res=> cnv.toBlob(res, "image/jpeg", 0.92));
-    }
-
-    // Comunicado: UNA sola placa oficial, igual que en la app (index). Sin picker de diseños.
-    // Dos tamaños del mismo diseño: historia 1080x1920 y feed 1080x1350 (4:5, lo que IG acepta en el feed).
-    // En historia el texto clave queda fuera de los ~250px de arriba y de abajo (barras de IG / WhatsApp).
-    if(n.__tipo === "c"){
-      const feed = n.__dim === "feed";
-      const W = 1080, H = feed ? 1350 : 1920;
-      const TOP = feed ? 70 : 250, BOT = feed ? 60 : 250;
-      const cnv = document.createElement("canvas");
-      cnv.width = W; cnv.height = H;
-      const ctx = cnv.getContext("2d");
-      const TINTA = "#1A1814", PAPEL = "#F4F0E6";
-      const instObj = (INST_ADMIN||[]).find(x=>String(x.id)===String(n.institucion_id||""))
-        || (INST_ADMIN||[]).find(x=>(x.nombre||"").trim().toLowerCase()===String(n.lugar||n.fuente_etiqueta||"").trim().toLowerCase())
-        || null;
-      const VERDE = n.color || colorDeInst(n.institucion_id, n.lugar || n.fuente_etiqueta);
-      const VERDE2 = oscurecerHex(VERDE, 0.72);
-      ctx.fillStyle = PAPEL; ctx.fillRect(0,0,W,H);
-      const inst = (n.lugar || n.fuente_etiqueta || (instObj&&instObj.nombre) || "Institución").trim();
-      const sigla = n.sello || selloDeInst(n.institucion_id, inst);
-      // banner de la institución
-      const banY = TOP, banH = 92, banCy = banY + banH/2;
-      ctx.font = "600 32px 'Work Sans',sans-serif";
-      const instW = Math.min(W-200, Math.max(420, ctx.measureText(inst).width + 160));
-      const banX = (W - instW) / 2;
-      ctx.fillStyle = VERDE;
-      ctx.beginPath(); ctx.roundRect(banX, banY, instW, banH, 20); ctx.fill();
-      ctx.beginPath(); ctx.arc(banX + 46, banCy, 28, 0, Math.PI*2); ctx.fillStyle = "#163828"; ctx.fill();
-      ctx.strokeStyle = "#F4F0E6"; ctx.lineWidth = 3;
-      ctx.beginPath(); ctx.arc(banX + 46, banCy, 26, 0, Math.PI*2); ctx.stroke();
-      const logoUrl = (instObj && instObj.foto_url) || "";
-      const lim = logoUrl ? await cargarImagen(logoUrl, 4000) : null;
-      if(lim){
-        ctx.save();
-        ctx.beginPath(); ctx.arc(banX + 46, banCy, 26, 0, Math.PI*2); ctx.clip();
-        ctx.drawImage(lim, banX + 20, banCy - 26, 52, 52);
-        ctx.restore();
-      } else {
-        ctx.fillStyle = "#F4F0E6"; ctx.font = "700 22px 'Fraunces',Georgia,serif";
-        ctx.textAlign = "center"; ctx.fillText(sigla, banX + 46, banCy + 8);
-      }
-      ctx.textAlign = "left";
-      ctx.fillStyle = tintaSobre(VERDE);
-      ctx.font = "700 32px 'Work Sans',sans-serif";
-      const nom = inst.length > 28 ? inst.slice(0,27)+"…" : inst;
-      ctx.fillText(nom, banX + 88, banCy + 12);
-      // ✦ divisor + título
-      const divY = banY + banH + 58;
-      ctx.strokeStyle = VERDE2; ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.moveTo(W/2-90, divY); ctx.lineTo(W/2-12, divY); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(W/2+12, divY); ctx.lineTo(W/2+90, divY); ctx.stroke();
-      ctx.fillStyle = VERDE2; ctx.font = "20px serif"; ctx.textAlign = "center";
-      ctx.fillText("✦", W/2, divY + 6);
-      const tFont = feed ? 62 : 72, tLinea = feed ? 74 : 84;
-      ctx.fillStyle = VERDE;
-      ctx.font = "700 "+tFont+"px 'Fraunces',Georgia,serif";
-      const tit = envolver(ctx, n.titulo || "", W-200, feed ? 3 : 4);
-      let y = divY + (feed ? 96 : 110);
-      tit.forEach((l)=>{ ctx.fillText(l, W/2, y); y += tLinea; });
-      y -= tLinea; // y = base de la última línea del título
-      const RG = feed ? 50 : 60; // raya debajo del título
-      ctx.strokeStyle = VERDE2; ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.moveTo(120, y+RG); ctx.lineTo(W-120, y+RG); ctx.stroke();
-      // pie, de abajo hacia arriba: link → "Comunicado oficial" → ✦ → sigla
-      const linkY = H - BOT;
-      const rotY = linkY - (feed ? 50 : 60);
-      const sepY = rotY - (feed ? 58 : 70);
-      const sigFont = feed ? 100 : 130;
-      const sigY = sepY - 40;
-      const pieTop = sigY - Math.round(sigFont*0.75) - 44; // nada del cuerpo ni la foto pasa de acá
-      // cuerpo: tantas líneas como entren antes del pie; si no entra todo, termina en "…"
-      const bFont = feed ? 32 : 34, bLinea = feed ? 44 : 46;
-      const cuerpo = (n.resumen_corto || "").trim();
-      ctx.fillStyle = TINTA;
-      ctx.font = "500 "+bFont+"px 'Work Sans',sans-serif";
-      ctx.textAlign = "left";
-      function puntosDe(txt){
-        return txt
-          .replace(/\s*Fecha:\s*/gi, "\n")
-          .replace(/\s*Horario:\s*/gi, "\n")
-          .replace(/\s*Lugar:\s*/gi, "\n")
-          .split(/\n+/)
-          .flatMap(p=> p.split(/\s*[·•]\s*/))
-          .map(p=>p.trim())
-          .filter(Boolean);
-      }
-      const lineas = [];
-      puntosDe(cuerpo).forEach(p=>{
-        envolver(ctx, p, W-240, 3).forEach(l=> lineas.push(l));
-      });
-      const b0 = y + RG + (feed ? 62 : 70);
-      const fotoOf = n.imagen_url || ((n.fotos||[])[0]) || "";
-      const im = fotoOf ? await cargarImagen(fotoOf, 7000) : null;
-      const FOTO_MIN = feed ? 240 : 300; // con foto, el texto se corta antes para que la foto entre
-      const techoTexto = im ? pieTop - FOTO_MIN - 34 : pieTop;
-      const entran = Math.max(0, Math.floor((techoTexto - b0) / bLinea) + 1);
-      const visibles = lineas.slice(0, entran);
-      if(lineas.length > entran && visibles.length){
-        let ult = visibles[visibles.length-1].replace(/…$/,"");
-        while(ctx.measureText(ult + "…").width > W-240 && ult.length > 4) ult = ult.slice(0,-1);
-        visibles[visibles.length-1] = ult.trim() + "…";
-      }
-      visibles.forEach((l,i)=> ctx.fillText(l, 120, b0 + i*bLinea));
-      // foto (si hay) entre el texto y el pie
-      {
-        if(im){
-          const cajaY = (visibles.length ? b0 + (visibles.length-1)*bLinea + 34 : b0 - 30);
-          const cajaH = Math.min(feed ? 300 : 380, pieTop - cajaY);
-          if(cajaH > 140){
-            const cajaW = W - 240;
-            const cajaX = 120;
-            ctx.save();
-            ctx.beginPath(); ctx.roundRect(cajaX, cajaY, cajaW, cajaH, 8); ctx.clip();
-            const s = Math.max(cajaW/im.width, cajaH/im.height);
-            const dw = im.width*s, dh = im.height*s;
-            ctx.drawImage(im, cajaX+(cajaW-dw)/2, cajaY+(cajaH-dh)/2, dw, dh);
-            ctx.restore();
-            ctx.strokeStyle = VERDE2; ctx.lineWidth = 2;
-            ctx.beginPath(); ctx.roundRect(cajaX, cajaY, cajaW, cajaH, 8); ctx.stroke();
-          }
-        }
-      }
-      ctx.textAlign = "center";
-      ctx.fillStyle = VERDE;
-      ctx.font = "700 "+sigFont+"px 'Fraunces',Georgia,serif";
-      ctx.fillText(sigla, W/2, sigY);
-      ctx.strokeStyle = VERDE2; ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.moveTo(W/2-70, sepY); ctx.lineTo(W/2-14, sepY); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(W/2+14, sepY); ctx.lineTo(W/2+70, sepY); ctx.stroke();
-      ctx.font = "20px serif"; ctx.fillText("✦", W/2, sepY + 6);
-      ctx.fillStyle = TINTA;
-      ctx.font = "600 "+(feed ? 26 : 28)+"px 'Work Sans',sans-serif";
-      ctx.fillText("Comunicado oficial", W/2, rotY);
-      const link = urlDe(n, "c").replace(/^https?:\/\//,"");
-      ctx.fillStyle = VERDE2;
-      ctx.font = "500 "+(feed ? 24 : 26)+"px 'Work Sans',sans-serif";
-      ctx.fillText(link, W/2, linkY);
-      ctx.textAlign = "left";
-      return new Promise(res=> cnv.toBlob(res, "image/jpeg", 0.92));
-    }
+    // Comunicado y fecha institucional: placa oficial (ver placaOficial).
+    if(n.__tipo === "f" || n.__tipo === "c") return placaOficial(n);
 
     const urgente = !!n.urgente;
     const lista = (typeof fotosDeNota === "function") ? fotosDeNota(n) : (n.imagen_url ? [n.imagen_url] : []);
@@ -4700,7 +4680,11 @@
         institucion_id:o.institucion_id || null,
         color:o.color || colorDeInst(o.institucion_id, o.institucion),
         sello:o.sello || selloDeInst(o.institucion_id, o.institucion),
-        urgente:!!o.urgente,
+        // urgente solo mientras está vigente: un urgente vencido no sale con la franja roja
+        urgente:!!o.urgente && comVigente(o),
+        vigencia:(o.urgente && comVigente(o) && venceDeCom(o) != null) ? "Hasta " + cuandoCorto(venceDeCom(o)) : "",
+        vence_at:o.vence_at || null,
+        publicado_at:o.published_at || o.created_at || null,
         imagen_url:o.imagen_url || null,
         fuente_etiqueta:o.institucion || "",
       };
@@ -4721,6 +4705,7 @@
         fecha_iso:o.fecha || "",
         horario:o.horario || "",
         lugar_puntos:o.lugar || "",
+        publicado_at:o.created_at || null,
         institucion_id:o.institucion_id || null,
         color: colorDeInst(o.institucion_id, nombreInst),
         sello: selloDeInst(o.institucion_id, nombreInst),
