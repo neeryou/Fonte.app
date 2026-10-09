@@ -892,6 +892,10 @@
   .fe-full{ font-family:var(--sans); font-size:.86rem; font-weight:600; color:var(--ink); margin-top:6px; }
   .fe-datos{ border-top:.5px solid var(--line-strong); margin:4px 0 16px; }
   .fe-datos div{ display:grid; grid-template-columns:22px 1fr; gap:8px; font-family:var(--sans); font-size:.92rem; color:var(--ink); padding:10px 0; border-bottom:.5px solid var(--line); }
+  /* ?…&compartir=1 (botón «Compartir» del bot de WhatsApp): el botón Compartir late un momento */
+  @keyframes ctaPulso{ 0%,100%{ box-shadow:0 0 0 0 rgba(26,24,20,0); } 50%{ box-shadow:0 0 0 7px rgba(26,24,20,.16); } }
+  .cta-pulso{ animation:ctaPulso 1s ease-in-out 3; }
+  @media (prefers-reduced-motion: reduce){ .cta-pulso{ animation:none; outline:2px solid currentColor; outline-offset:3px; } }
   .date-share{ margin-top:10px; width:100%; font-family:var(--sans); font-size:.78rem; font-weight:700;
     padding:9px; border:1px solid var(--ink); background:none; color:var(--ink); border-radius:8px; }
   .ficha-sec{ margin-top:18px; }
@@ -5236,6 +5240,19 @@
     }
     return null;
   }
+  // Viene del botón «Compartir» del bot: lleva a la vista el botón Compartir de lo que se abrió
+  // (fecha, comunicado o ficha) y lo hace latir. No comparte solo: eso necesita que la persona toque.
+  function resaltarCompartir(){
+    setTimeout(()=>{
+      const b = ["fechaCompartirBtn","comunicadoCompartirBtn","btnCompartirFicha"]
+        .map(id=> document.getElementById(id))
+        .find(x=>{ const hoja = x && x.closest('[id^="sheet"]'); return !!(hoja && hoja.classList.contains("show")); });
+      if(!b) return;
+      try{ b.scrollIntoView({ block:"center", behavior:"smooth" }); }catch(e){}
+      b.classList.add("cta-pulso");
+      setTimeout(()=> b.classList.remove("cta-pulso"), 3400);
+    }, 650);
+  }
   let enlaceResuelto = false;
   let enlaceEnCurso = null;
   function intentarEnlace(final){
@@ -5246,6 +5263,7 @@
       enlaceEnCurso = null;
       if(!r) return;
       enlaceResuelto = true;
+      if(r === "ok" && paramsDeEnlace().get("compartir") === "1") resaltarCompartir();
       try{ history.replaceState(history.state, "", location.pathname); }catch(e){}
       if(r === "no") toastFonte("Esta publicación ya no está disponible");
     }, ()=>{ enlaceEnCurso = null; });
