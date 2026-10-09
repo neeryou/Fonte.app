@@ -114,6 +114,8 @@
   /* Pedido de ayuda del bot de WhatsApp + edición rápida del borrador */
   .task.ayuda{ border-color:#C9822B; box-shadow:0 0 0 1px rgba(201,130,43,.25); }
   .task .tag-ayuda{ display:inline-block; font-family:var(--sans); font-size:.64rem; font-weight:800; color:#8A4B0F; background:#FBEBD3; border-radius:99px; padding:2px 8px; margin-bottom:5px; }
+  .task .mejorado-orig{ margin-top:6px; font-family:var(--sans); font-size:.72rem; color:var(--ink-soft); }
+  .task .mejorado-orig summary{ cursor:pointer; }
   .task .ayuda-orig{ font-family:var(--sans); font-size:.72rem; color:var(--ink-soft); background:var(--paper-2, #f4f0e6); border-radius:7px; padding:8px 9px; margin-top:6px; white-space:pre-wrap; word-break:break-word; }
   .task .ayuda-foto{ display:block; max-width:100%; max-height:200px; border-radius:7px; margin-top:6px; border:1px solid var(--line); }
   .task .bot-edit{ display:flex; flex-direction:column; gap:6px; margin-top:10px; }
@@ -3567,6 +3569,12 @@
     const p = (b && b.payload) || {};
     return p.necesita_ayuda === true || p.necesita_ayuda === "true";
   }
+  // ✨ "Mejorar texto" del bot: el oficial eligió la versión ordenada por Fonte; acá se ve lo que escribió él.
+  function mejoradoBot(b){
+    const p = (b && b.payload) || {};
+    if(!(p.mejorado === true || p.mejorado === "true")) return "";
+    return [p.titulo_original, p.texto_original || p.lugar_original].filter(x=>x!=null && String(x).trim()).map(String).join("\n");
+  }
   function htmlBorradorBot(b){
     const p = (b && b.payload) || {};
     const ayuda = pidioAyudaBot(b);
@@ -3600,6 +3608,7 @@
       + '<div class="s">'+escA([inst, origenBot(b), b.created_at ? tiempoRel(b.created_at) : ""].filter(Boolean).join(" · "))+'</div>'
       + (corto ? '<div class="s">'+escA(corto)+'</div>' : '')
       + (ayuda && p.ayuda_texto ? '<div class="ayuda-orig"><b>Lo que mandó:</b>\n'+escA(String(p.ayuda_texto))+'</div>' : '')
+      + (mejoradoBot(b) ? '<details class="mejorado-orig"><summary>✨ Texto mejorado por Fonte · ver original</summary><div class="ayuda-orig">'+escA(mejoradoBot(b))+'</div></details>' : '')
       + (fotoAyuda ? '<a href="'+escA(fotoAyuda)+'" target="_blank" rel="noopener"><img class="ayuda-foto" src="'+escA(fotoAyuda)+'" alt="Foto que mandó el oficial"></a>' : '')
       + '<div class="bot-edit hide" data-bot-edit></div>'
       + '<div class="bot-acts"><button type="button" class="btn-aprobar" data-bot-ok>Publicar</button>'
