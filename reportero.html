@@ -4371,34 +4371,53 @@
       const techoPie = pie(ctx, W, H, SAFE, BOT, { feed, tinta:d.tinta, link:urlDe(n,"f").replace(/^https?:\/\//,""), nota:"Dato de la institución · publicado en Fonte" });
       const pf = partesFechaFlyer(n.fecha_iso);
       const top0 = y + (feed ? 40 : 56);
-      const disponible = techoPie - (feed ? 30 : 44) - top0;
+      const disponible = techoPie - (feed ? 30 : 44) - top0; // alto libre entre el membrete y el pie (ya fuera de las franjas seguras)
       const lugares = String(n.lugar_puntos||"").split(/\n+/).map(s=>s.trim()).filter(Boolean);
       const diaTxt = pf.etiqueta ? pf.etiqueta.charAt(0).toUpperCase()+pf.etiqueta.slice(1) : "";
-      // probar de más grande a más chico (calendario y datos) hasta que entre TODO; si no, se corta con "…"
-      const pruebas = [];
-      for(const escala of (feed ? [1, 0.84, 0.7] : [1, 0.9])) for(const vF of (feed ? [34, 31, 28] : [38, 35, 32])) pruebas.push({ esc:escala, vF });
+      const tit = ajustar(ctx, n.titulo||"", W-2*SAFE, 3, feed ? [58,52,46] : [66,60,52], "700", "'Fraunces',Georgia,serif");
+      const tL = Math.round(tit.t*1.14), gTit = feed ? 24 : 36;
+      const vF = feed ? 34 : 38, vC = Math.round(vF*1.32);          // CUÁNDO: tamaño fijo
+      const lbF = feed ? 21 : 23, pad = feed ? 28 : 36, iw = W - 2*SAFE - 2*pad - 54;
+      const gapP = feed ? 6 : 8;                                     // aire entre un lugar y el siguiente
+      ctx.font = "600 "+vF+"px 'Work Sans',sans-serif";
+      const lC = envolver(ctx, diaTxt, iw, 4).map(l=>({ l, ic:"" })); if(lC.length) lC[0].ic = "cal";
+      if(n.horario) envolver(ctx, n.horario, iw, 4).forEach((l,j)=> lC.push({ l, ic: j ? "" : "reloj" }));
+      // cada lugar se envuelve completo (nunca se corta un lugar a la mitad con "…")
+      const armarLugares = (vD)=>{ ctx.font = "500 "+vD+"px 'Work Sans',sans-serif";
+        return lugares.map(pt=> envolver(ctx, pt, iw, 20)); };
+      const altoCard = (bloques, vD, mas)=>{
+        const vL = Math.round(vD*1.32);
+        let h = pad*2 + (lbF + 14) + lC.length*vC;
+        if(lugares.length){
+          h += 18 + lbF + 14;
+          bloques.forEach((b,i)=>{ h += (i ? gapP : 0) + b.length*vL; });
+          if(mas) h += gapP + vL;
+        }
+        return h;
+      };
+      const altoTotal = (esc, cardH)=> Math.round((feed ? 250 : 300)*esc) + (feed ? 34 : 50) + tit.l.length*tL + gTit + cardH;
+      // 1) usar el espacio libre; 2) achicar un poco el calendario; 3) achicar la letra de la lista hasta un mínimo legible
+      const ESCALAS = feed ? [1, 0.84, 0.72] : [1, 0.88, 0.76, 0.68];
+      const vMax = vF - 2, vMin = feed ? 26 : 28;
+      const pruebas = ESCALAS.map(e=>({ esc:e, vD:vMax }));
+      for(let v = vMax - 2; v >= vMin; v -= 2) pruebas.push({ esc:ESCALAS[ESCALAS.length-1], vD:v });
+      if(pruebas[pruebas.length-1].vD !== vMin) pruebas.push({ esc:ESCALAS[ESCALAS.length-1], vD:vMin });
       let L = null;
       for(const pr of pruebas){
-        const calW = Math.round((feed ? 270 : 320)*pr.esc), calBand = Math.round((feed ? 58 : 66)*pr.esc), calH = Math.round((feed ? 250 : 300)*pr.esc);
-        const tit = ajustar(ctx, n.titulo||"", W-2*SAFE, 3, feed ? [58,52,46] : [66,60,52], "700", "'Fraunces',Georgia,serif");
-        const tL = Math.round(tit.t*1.14), vF = pr.vF, vL = Math.round(vF*1.36), lbF = feed ? 21 : 23, pad = feed ? 28 : 36, iw = W - 2*SAFE - 2*pad - 54;
-        ctx.font = "600 "+vF+"px 'Work Sans',sans-serif";
-        const lC = envolver(ctx, diaTxt, iw, 2).map(l=>({ l, ic:"" })); if(lC.length) lC[0].ic = "cal";
-        if(n.horario) envolver(ctx, n.horario, iw, 2).forEach((l,j)=> lC.push({ l, ic: j ? "" : "reloj" }));
-        ctx.font = "500 "+(vF-2)+"px 'Work Sans',sans-serif";
-        const lD = []; lugares.forEach((pt)=> envolver(ctx, pt, iw, 2).forEach((l,j)=> lD.push({ l, ic: j ? "" : "pin" })));
-        const gT = feed ? 34 : 50;
-        const fijo = calH + gT + tit.l.length*tL + (feed ? 24 : 36);
-        const cardFijo = pad*2 + (lbF+12) + lC.length*vL + (lugares.length ? 20 + lbF + 12 : 0);
-        L = { calW, calBand, calH, tit, tL, vF, vL, lbF, pad, iw, lC, lD, gT, fijo, cardFijo, esc:pr.esc };
-        if(fijo + cardFijo + lD.length*vL <= disponible) break;
+        const bloques = armarLugares(pr.vD), cardH = altoCard(bloques, pr.vD, 0);
+        L = { esc:pr.esc, vD:pr.vD, bloques, mas:0, cardH };
+        if(altoTotal(pr.esc, cardH) <= disponible) break;
       }
-      const { calW, calBand, calH, tit, tL, vF, vL, lbF, pad, lC, gT, fijo, cardFijo } = L;
-      let lD = L.lD;
-      const caben = Math.max(1, Math.floor((disponible - fijo - cardFijo) / vL));
-      if(lD.length > caben){ lD = lD.slice(0, caben); const u = lD[lD.length-1]; u.l = u.l.replace(/…$/,"") + "…"; }
-      const cardH = cardFijo + (lugares.length ? lD.length*vL : 0);
-      y = top0 + (feed ? Math.max(0, (disponible - fijo - cardH) * 0.5) : Math.max(0, (disponible - fijo - cardH) * 0.35));
+      // 4) si ni así entra: los lugares completos que entren + "y N lugares más · ver en Fonte"
+      if(altoTotal(L.esc, L.cardH) > disponible && L.bloques.length > 1){
+        let k = L.bloques.length - 1;
+        while(k > 1 && altoTotal(L.esc, altoCard(L.bloques.slice(0,k), L.vD, 1)) > disponible) k--;
+        L.mas = L.bloques.length - k; L.bloques = L.bloques.slice(0, k); L.cardH = altoCard(L.bloques, L.vD, 1);
+      }
+      const calW = Math.round((feed ? 270 : 320)*L.esc), calBand = Math.round((feed ? 58 : 66)*L.esc), calH = Math.round((feed ? 250 : 300)*L.esc);
+      const gT = feed ? 34 : 50, cardH = L.cardH, vD = L.vD, vL = Math.round(vD*1.32);
+      const total = altoTotal(L.esc, cardH);
+      y = top0 + Math.max(0, (disponible - total) * (feed ? 0.5 : 0.35));
       // calendario (mismo que la pantalla de la fecha en la web)
       const cx = (W - calW)/2;
       ctx.fillStyle = "#FFFDF8"; ctx.beginPath(); ctx.roundRect(cx, y, calW, calH, 18); ctx.fill();
@@ -4413,24 +4432,34 @@
       ctx.font = "700 "+Math.round((feed?26:30)*L.esc)+"px 'Work Sans',sans-serif"; try{ ctx.letterSpacing = "4px"; }catch(e){}
       ctx.fillStyle = SUAVE; ctx.fillText(pf.mes, W/2, y + calH - Math.round((feed?22:26)*L.esc)); try{ ctx.letterSpacing = "0px"; }catch(e){}
       y += calH + gT;
+      // título (cada línea en su renglón de alto tL)
       ctx.fillStyle = TINTA; ctx.font = "700 "+tit.t+"px 'Fraunces',Georgia,serif";
-      y += tit.t*0.8; tit.l.forEach(l=>{ ctx.fillText(l, W/2, y); y += tL; }); y += (feed ? 24 : 36) - tL + tit.t*0.2;
-      // tarjeta
+      tit.l.forEach((l,i)=> ctx.fillText(l, W/2, y + i*tL + tL/2 + tit.t*0.34));
+      y += tit.l.length*tL + gTit;
+      // tarjeta CUÁNDO / DÓNDE (se dibuja con las mismas medidas que se usaron para calcular el alto)
       ctx.fillStyle = mezcla(d.color, 0.09); ctx.beginPath(); ctx.roundRect(SAFE, y, W-2*SAFE, cardH, 20); ctx.fill();
       ctx.fillStyle = d.color; ctx.fillRect(SAFE, y + 20, 6, cardH - 40);
-      let yy = y + pad + lbF;
-      const ix = SAFE + pad + 54;
-      const etiq = (t, yv)=>{ ctx.textAlign = "left"; ctx.fillStyle = d.tinta; ctx.font = "800 "+lbF+"px 'Work Sans',sans-serif"; try{ ctx.letterSpacing = "3px"; }catch(e){} ctx.fillText(t, ix, yv); try{ ctx.letterSpacing = "0px"; }catch(e){} };
-      // reloj
+      const ix = SAFE + pad + 54, icx = SAFE + pad + 18;
+      const etiq = (t, top)=>{ ctx.textAlign = "left"; ctx.fillStyle = d.tinta; ctx.font = "800 "+lbF+"px 'Work Sans',sans-serif"; try{ ctx.letterSpacing = "3px"; }catch(e){} ctx.fillText(t, ix, top + lbF*0.85); try{ ctx.letterSpacing = "0px"; }catch(e){} };
       const reloj = (x, yv)=>{ ctx.strokeStyle = d.tinta; ctx.lineWidth = 3.5; ctx.beginPath(); ctx.arc(x, yv, 15, 0, Math.PI*2); ctx.stroke(); ctx.beginPath(); ctx.moveTo(x, yv-8); ctx.lineTo(x, yv); ctx.lineTo(x+7, yv+5); ctx.stroke(); };
       const pin = (x, yv)=>{ ctx.fillStyle = d.tinta; ctx.beginPath(); ctx.arc(x, yv-6, 12, Math.PI, 0); ctx.quadraticCurveTo(x+12, yv+4, x, yv+16); ctx.quadraticCurveTo(x-12, yv+4, x-12, yv-6); ctx.fill(); ctx.fillStyle = mezcla(d.color, 0.09); ctx.beginPath(); ctx.arc(x, yv-6, 4.5, 0, Math.PI*2); ctx.fill(); };
       const cal = (x, yv)=>{ ctx.strokeStyle = d.tinta; ctx.lineWidth = 3.5; ctx.beginPath(); ctx.roundRect(x-14, yv-12, 28, 26, 4); ctx.stroke(); ctx.fillStyle = d.tinta; ctx.fillRect(x-14, yv-12, 28, 8); };
-      const icono = (ic, yv)=>{ const x = SAFE + pad + 18, yc = yv - vF*0.36; if(ic==="cal") cal(x, yc); else if(ic==="reloj") reloj(x, yc); else if(ic==="pin") pin(x, yc); };
-      etiq("CUÁNDO", yy); yy += 12 + vL - 8;
-      lC.forEach(v=>{ icono(v.ic, yy); ctx.fillStyle = TINTA; ctx.textAlign = "left"; ctx.font = "600 "+vF+"px 'Work Sans',sans-serif"; ctx.fillText(v.l, ix, yy); yy += vL; });
+      const icono = (ic, yc)=>{ if(ic==="cal") cal(icx, yc); else if(ic==="reloj") reloj(icx, yc); else if(ic==="pin") pin(icx, yc); };
+      let yy = y + pad;
+      etiq("CUÁNDO", yy); yy += lbF + 14;
+      lC.forEach(v=>{ const base = yy + vC/2 + vF*0.34; icono(v.ic, base - vF*0.36); ctx.fillStyle = TINTA; ctx.textAlign = "left"; ctx.font = "600 "+vF+"px 'Work Sans',sans-serif"; ctx.fillText(v.l, ix, base); yy += vC; });
       if(lugares.length){
-        yy += 20 - vL + lbF + 8; etiq(lugares.length > 1 ? "DÓNDE · " + lugares.length + " LUGARES" : "DÓNDE", yy); yy += 12 + vL - 8;
-        lD.forEach(v=>{ icono(v.ic, yy); ctx.fillStyle = TINTA; ctx.font = "500 "+(vF-2)+"px 'Work Sans',sans-serif"; ctx.textAlign = "left"; ctx.fillText(v.l, ix, yy); yy += vL; });
+        yy += 18; etiq(lugares.length > 1 ? "DÓNDE · " + lugares.length + " LUGARES" : "DÓNDE", yy); yy += lbF + 14;
+        L.bloques.forEach((bl, i)=>{
+          if(i) yy += gapP;
+          bl.forEach((l, j)=>{ const base = yy + vL/2 + vD*0.34; if(!j) icono("pin", base - vD*0.36);
+            ctx.fillStyle = TINTA; ctx.textAlign = "left"; ctx.font = "500 "+vD+"px 'Work Sans',sans-serif"; ctx.fillText(l, ix, base); yy += vL; });
+        });
+        if(L.mas){
+          yy += gapP; const base = yy + vL/2 + vD*0.34;
+          ctx.fillStyle = d.tinta; ctx.textAlign = "left"; ctx.font = "700 "+vD+"px 'Work Sans',sans-serif";
+          ctx.fillText("y " + L.mas + (L.mas === 1 ? " lugar más" : " lugares más") + " · ver en Fonte", ix, base); yy += vL;
+        }
       }
       return new Promise(res=> cnv.toBlob(res, "image/jpeg", 0.92));
     }
