@@ -663,6 +663,12 @@
         Si querés que se vea acá adentro, subilo a YouTube como “no listado”.
       </div>
 
+      <div class="field-label" style="margin-top:14px">Fecha de publicación del original (opcional)</div>
+      <input class="inp" type="datetime-local" id="fechaPubOriginal" style="padding:9px">
+      <div style="font-family:var(--sans);font-size:.7rem;color:var(--ink-faint);margin:-8px 0 14px;line-height:1.45">
+        Día y hora en que se publicó el posteo original (hora de Argentina). Sirve para que Fonte convierta “hoy”, “ayer” o “este jueves” en la fecha concreta.
+      </div>
+
       <button class="btn-gen" id="genBtn">✨ Generar con Fonte</button>
       <button class="btn-gen hide" id="leerImgBtn" style="background:var(--int);margin-top:8px">🔍 Leer la imagen y armar la nota</button>
       <div id="leerImgAyuda" class="hide" style="font-family:var(--sans);font-size:.7rem;color:var(--ink-faint);margin-top:6px;line-height:1.45">
@@ -673,6 +679,7 @@
 
     <div class="card hide" id="previewCard">
       <div class="preview-head"><span class="badge">Editar nota</span><span id="pvMedia" style="font-family:var(--sans);font-size:.7rem;color:var(--ink-soft)"></span></div>
+      <div id="pvAlertas" class="hide" role="alert" style="background:#FFF4D6;border:1px solid #E0A526;border-left:5px solid #D48A00;color:#6B4A00;border-radius:8px;padding:10px 12px;margin:10px 0 12px;font-family:var(--sans);font-size:.8rem;line-height:1.45"></div>
       <div class="pv-field" id="bloqueFotosNota" style="margin-bottom:14px">
         <div class="field-label">Fotos</div>
         <div class="foto-preview" id="fotoPreview"></div>
@@ -1388,11 +1395,14 @@
     borradorEditandoId = null;
     setModoBorradorUI(false);
 
+    const fechaPubEl = document.getElementById("fechaPubOriginal");
+    const fechaPub = fechaPubEl ? fechaPubEl.value.trim() : "";
+    mostrarAlertasBorrador([]);
     try{
       const res = await fetch(FUNCION_GENERAR, {
         method: "POST",
         headers: { "content-type": "application/json", "Authorization": "Bearer " + sesion.access_token },
-        body: JSON.stringify({ texto, fuente_etiqueta: fuenteElegida, imagen_url: imagen }),
+        body: JSON.stringify(Object.assign({ texto, fuente_etiqueta: fuenteElegida, imagen_url: imagen }, fechaPub ? { fechaPublicacion: fechaPub } : {})),
       });
       const data = await res.json();
       if(!res.ok || !data.ok){
@@ -1426,6 +1436,7 @@
       if(imagenDetectada) avisos.push("📷 foto encontrada");
       if(videoDetectado) avisos.push("🎬 video encontrado");
       document.getElementById("pvMedia").textContent = avisos.join(" · ");
+      mostrarAlertasBorrador(b.alertas);
       setModoBorradorUI(false);
       document.getElementById("previewCard").classList.remove("hide");
       document.getElementById("btnVistaPrevia").classList.remove("hide");
@@ -1441,6 +1452,16 @@
       btn.innerHTML = etiquetaOriginal;
       btn.disabled = false;
     }
+  }
+  // Alertas que devuelve Fonte (ej. "Revisar fecha: ..."). Solo avisan, no bloquean.
+  function mostrarAlertasBorrador(alertas){
+    const el = document.getElementById("pvAlertas");
+    if(!el) return;
+    const lista = Array.isArray(alertas) ? alertas.filter(a => typeof a === "string" && a.trim()) : [];
+    if(!lista.length){ el.innerHTML = ""; el.classList.add("hide"); return; }
+    el.innerHTML = '<b>⚠ Revisar fecha</b><ul style="margin:6px 0 0 18px;padding:0">'
+      + lista.map(a => '<li>' + escA(a) + '</li>').join("") + '</ul>';
+    el.classList.remove("hide");
   }
   document.getElementById("genBtn").addEventListener("click", ()=> generarNota({ conImagen:false }));
   document.getElementById("leerImgBtn").addEventListener("click", ()=> generarNota({ conImagen:true }));
@@ -1524,6 +1545,7 @@
     borradorTerminos = null;
     extendidoOriginal = "";
     borradorEditandoId = null;
+    mostrarAlertasBorrador([]);
     setModoBorradorUI(false);
   }
   function setModoBorradorUI(editando){
@@ -1649,6 +1671,7 @@
   async function abrirBorradorEnPreview(n){
     if(!n) return;
     borradorEditandoId = n.id;
+    mostrarAlertasBorrador([]);
     document.getElementById("pvTitulo").value = n.titulo || "";
     document.getElementById("pvCorto").value = n.resumen_corto || "";
     document.getElementById("pvExtendido").value = n.resumen_extendido || "";
