@@ -523,6 +523,35 @@
   .audio-ctrl .a-fill{ height:100%; width:0%; background:var(--ciudad); border-radius:999px; transition:width .4s linear; }
   .audio-ctrl .a-time{ font-family:var(--mono); font-size:.64rem; color:var(--ink-faint); margin-top:5px; text-align:center; }
 
+  /* ===== lector de nota (variante A) ===== */
+  .sheet-body .s-src{ justify-content:space-between; flex-wrap:nowrap; border-bottom:0; padding-bottom:0; margin:2px 0 12px; }
+  .s-src .fuente-tag{ background:none; color:var(--ink-soft); font-size:.8rem; font-weight:500; letter-spacing:0; text-transform:none; padding:0; border-radius:0; display:inline; }
+  .s-src .fuente-tag b{ color:var(--ink); font-weight:700; }
+  [data-tema="oscuro"] .s-src .fuente-tag{ background:none; color:var(--ink-soft); }
+  .s-src .share-btn{ flex:0 0 auto; font-size:.78rem; color:var(--ink); background:var(--paper); padding:7px 13px; }
+  .s-src #s-urg:empty{ display:none; }
+  .s-lede-a{ font-size:1.13rem; line-height:1.55; margin:2px 0 16px; }
+  .s-chips{ display:flex; flex-wrap:wrap; gap:8px; margin:0 0 20px; }
+  .s-chip{ font-family:var(--sans); font-size:.8rem; line-height:1.3; color:var(--ink-soft); background:var(--paper); border:1px solid var(--line); border-radius:8px; padding:6px 10px; }
+  .s-chip b{ font-family:var(--serif); font-size:1rem; font-weight:700; color:var(--ink); margin-right:4px; }
+  .sheet-body .subhead{ font-family:var(--serif); font-size:1.2rem; font-weight:700; line-height:1.25; text-transform:none; letter-spacing:0; color:var(--ink); margin:26px 0 8px; }
+  .sheet-body .s-p{ line-height:1.65; margin-bottom:16px; }
+  .s-fin{ border-top:1px solid var(--line); margin-top:26px; padding-top:14px; display:flex; flex-direction:column; gap:12px; }
+  .s-fin-fuente{ display:flex; justify-content:space-between; align-items:center; gap:10px; font-family:var(--sans); font-size:.8rem; color:var(--ink-soft); }
+  .s-fin-fuente b{ color:var(--ink); }
+  .s-fin .verorig{ background:none; color:var(--ink); padding:0; border-radius:0; text-decoration:underline; text-underline-offset:3px; white-space:nowrap; flex:0 0 auto; }
+  .s-fin-share{ font-family:var(--sans); font-size:.92rem; font-weight:800; background:var(--ink); color:var(--paper); border:0; border-radius:10px; padding:13px; width:100%; }
+  .sheet-body .audio-ctrl{ display:inline-flex; gap:8px; margin:0 0 14px; padding:5px 13px 5px 5px; border-radius:999px; max-width:100%; }
+  .sheet-body .audio-ctrl .a-play{ width:28px; height:28px; font-size:.7rem; }
+  .sheet-body .audio-ctrl .a-mid{ flex:0 1 auto; }
+  .sheet-body .audio-ctrl .a-time{ font-family:var(--sans); font-size:.78rem; font-weight:700; color:var(--ink); margin:0; text-align:left; white-space:nowrap; }
+  .sheet-body .audio-ctrl .a-track, .sheet-body .audio-ctrl .a-salto{ display:none; }
+  .sheet-body .audio-ctrl.sonando{ display:flex; border-radius:11px; padding:6px 10px 6px 6px; }
+  .sheet-body .audio-ctrl.sonando .a-salto{ display:block; padding:6px 9px; }
+  .sheet-body .audio-ctrl.sonando .a-mid{ flex:1; }
+  .sheet-body .audio-ctrl.sonando .a-track{ display:block; margin-bottom:4px; }
+  .sheet-body .audio-ctrl.sonando .a-time{ font-family:var(--mono); font-weight:400; font-size:.64rem; color:var(--ink-faint); text-align:center; }
+
   /* ===== foto a pantalla completa ===== */
   .lightbox{ position:fixed; inset:0; z-index:400; background:#0C0B08; display:none;
     align-items:center; justify-content:center; }
@@ -1373,18 +1402,20 @@
       <button class="a-salto" id="audioMenos" aria-label="Retroceder 10 segundos">↺ 10s</button>
       <div class="a-mid">
         <div class="a-track"><div class="a-fill" id="audioBarra"></div></div>
-        <div class="a-time" id="audioTiempo">0:00 / 0:00</div>
+        <div class="a-time" id="audioTiempo">Escuchar</div>
       </div>
       <button class="a-salto" id="audioMas" aria-label="Adelantar 10 segundos">10s ↻</button>
     </div>
     <div class="ph-img s-hero" id="s-hero"></div>
     <div id="s-video" style="display:none;margin-bottom:16px;border-radius:6px;overflow:hidden;aspect-ratio:16/9;"></div>
-    <div style="font-family:var(--sans);font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--ink-faint);margin-bottom:8px">Resumen de Fonte</div>
     <div id="s-body"></div>
     <div id="s-galeria" style="display:none"></div>
     <div class="dato-extra" id="s-dato" style="display:none"></div>
     <a class="accion-btn" id="s-accion" target="_blank" rel="noopener" style="display:none"></a>
-    <a class="verorig" id="s-orig" target="_blank" rel="noopener">Ver original ↗</a>
+    <div class="s-fin">
+      <div class="s-fin-fuente"><span id="s-fin-txt"></span><a class="verorig" id="s-orig" target="_blank" rel="noopener">Ver original ↗</a></div>
+      <button class="s-fin-share" id="shareBtnFin" type="button">↗ Compartir esta nota</button>
+    </div>
     <div class="rel-block" id="relBlock"></div>
   </div>
 </div>
@@ -2315,7 +2346,13 @@
     document.getElementById("s-kicker").style.setProperty("--w", colorDe(n.onda));
     document.getElementById("s-place").textContent = nombreDe(n.onda) + (n.lugar ? " · " + n.lugar : "");
     document.getElementById("s-title").textContent = n.titulo || "";
-    document.getElementById("s-src").textContent = [n.fuente_etiqueta, tiempoDesde(fechaNota(n))].filter(Boolean).join(" · ");
+    {
+      const fte = nombreFuente(n);
+      const cuando = tiempoDesde(fechaNota(n));
+      document.getElementById("s-src").innerHTML = (fte ? 'Fuente: <b>' + esc(fte) + '</b>' : '') + (fte && cuando ? ' · ' : '') + esc(cuando || "");
+      const fin = document.getElementById("s-fin-txt");
+      if(fin) fin.innerHTML = fte ? 'Publicado primero por <b>' + esc(fte) + '</b>' : 'Fonte · Quitilipi';
+    }
     document.getElementById("s-urg").innerHTML = n.urgente ? '<span class="why urg">⚡ Urgente</span>' : '';
     const heroEl = document.getElementById("s-hero");
     const videoEl = document.getElementById("s-video");
@@ -2362,9 +2399,10 @@
     const body = document.getElementById("s-body");
     const est = n.resumen_estructurado;
     if(est && est.lede){
-      let h = '<p class="s-p s-lede">'+conGlosario(est.lede, n.terminos)+'</p>';
-      if(est.datos && est.datos.length){
-        h += '<div class="data-box">'+est.datos.slice(0,3).map(d=>'<div class="data-item"><div class="data-num">'+esc(d.numero)+'</div><div class="data-lbl">'+esc(d.etiqueta||"")+'</div></div>').join("")+'</div>';
+      let h = '<p class="s-p s-lede-a">'+conGlosario(est.lede, n.terminos)+'</p>';
+      const datos = (est.datos||[]).filter(d=> d && String(d.numero||"").trim());
+      if(datos.length){
+        h += '<div class="s-chips">'+datos.slice(0,3).map(d=>'<span class="s-chip"><b>'+esc(d.numero)+'</b>'+esc(d.etiqueta||"")+'</span>').join("")+'</div>';
       }
       (est.subtitulos||[]).forEach(s=>{
         h += '<div class="subhead">'+esc(s.titulo)+'</div><p class="s-p">'+conGlosario(s.texto||"", n.terminos)+'</p>';
@@ -2402,7 +2440,7 @@
     } else { accEl.style.display = "none"; accEl.removeAttribute("href"); }
 
     const orig = document.getElementById("s-orig");
-    if(urlSegura(n.url_original)){ orig.href = urlSegura(n.url_original); orig.style.display="inline-flex"; }
+    if(urlSegura(n.url_original)){ orig.href = urlSegura(n.url_original); orig.style.display=""; }
     else { orig.style.display="none"; }
 
     // relacionadas: reales, misma onda o categoría, sin inventar nada
@@ -2433,72 +2471,180 @@
   document.getElementById("closeSheet").addEventListener("click", cerrar);
   document.getElementById("backdrop").addEventListener("click", cerrar);
 
+  // Nombre de la fuente para mostrar ("vía X" → "X").
+  function nombreFuente(n){
+    return String((n && n.fuente_etiqueta) || "").replace(/^\s*v[ií]a\s+/i, "").trim();
+  }
+
   // ---- Escuchar: voz del navegador, con tiempo y saltos de 10 segundos ----
-  // La voz no permite "saltar" de verdad, así que partimos el texto en oraciones
-  // y avanzamos o retrocedemos de a oraciones hasta cubrir esos 10 segundos.
-  const AUDIO = { partes: [], i: 0, sonando: false, seg: 0, total: 0, reloj: null };
-  const PALABRAS_POR_SEG = 2.6;   // ritmo aproximado de lectura
+  // Lee lo mismo que se ve en pantalla (título + bajada + cada subtítulo con su texto).
+  // El texto se parte en tramos de ~200 caracteres (cortando en oraciones o comas)
+  // para que la voz no haga pausas raras ni se corte en Chrome con textos largos.
+  const AUDIO = { partes: [], i: 0, sonando: false, seg: 0, total: 0, reloj: null, gen: 0 };
+  const CHARS_POR_SEG = 15;        // ritmo aproximado de lectura en voz alta
+  const CLAVE_VOZ = "fonte_voz";
 
+  function vocesEs(){
+    if(!("speechSynthesis" in window)) return [];
+    return (window.speechSynthesis.getVoices() || []).filter(v => /^es([-_]|$)/i.test(v.lang || ""));
+  }
+  function puntajeVoz(v){
+    const n = String(v.name || "");
+    let p = 0;
+    if(/(natural|neural|premium|enhanced|mejorad|online)/i.test(n)) p += 8;
+    if(/google/i.test(n)) p += 6;
+    if(/(compact|espeak|e-speak|robot)/i.test(n)) p -= 10;
+    if(!v.localService) p += 2;
+    if(/AR/i.test(v.lang)) p += 3;                         // rioplatense suma, pero no le gana a la calidad
+    else if(/(US|MX|419|CL|UY|CO)/i.test(v.lang)) p += 2;
+    else if(/ES/i.test(v.lang)) p += 0;
+    if(v.default) p += 1;
+    return p;
+  }
   function mejorVoz(){
-    if(!("speechSynthesis" in window)) return null;
-    const voces = window.speechSynthesis.getVoices() || [];
-    const es = voces.filter(v => /^es/i.test(v.lang));
+    const es = vocesEs();
     if(!es.length) return null;
-    // preferimos voces naturales de Google/Microsoft, y acento rioplatense
-    const puntaje = (v)=>{
-      let p = 0;
-      if(/AR/i.test(v.lang)) p += 5;
-      else if(/(MX|US|CL|UY)/i.test(v.lang)) p += 3;
-      if(/google/i.test(v.name)) p += 4;
-      if(/(natural|neural|online|premium)/i.test(v.name)) p += 4;
-      if(!v.localService) p += 2;
-      return p;
-    };
-    return es.sort((a,b)=> puntaje(b) - puntaje(a))[0] || es[0];
+    let guardada = "";
+    try{ guardada = localStorage.getItem(CLAVE_VOZ) || ""; }catch(e){}
+    if(guardada){
+      const g = es.find(v => v.voiceURI === guardada || v.name === guardada);
+      if(g) return g;
+    }
+    return es.slice().sort((a,b)=> puntajeVoz(b) - puntajeVoz(a))[0];
   }
-  if("speechSynthesis" in window){
-    window.speechSynthesis.onvoiceschanged = ()=>{};   // fuerza la carga en Chrome
+  function recordarVoz(v){ try{ if(v) localStorage.setItem(CLAVE_VOZ, v.voiceURI || v.name); }catch(e){} }
+  // Las voces cargan de forma asíncrona (Chrome/Android): esperamos hasta ~1,5 s.
+  function esperarVoces(){
+    return new Promise(res=>{
+      if(!("speechSynthesis" in window)) return res([]);
+      if(vocesEs().length) return res(vocesEs());
+      let listo = false;
+      const fin = ()=>{ if(listo) return; listo = true; res(vocesEs()); };
+      try{ window.speechSynthesis.addEventListener("voiceschanged", fin, { once:true }); }catch(e){}
+      window.speechSynthesis.getVoices();
+      setTimeout(fin, 1500);
+    });
   }
+  if("speechSynthesis" in window){ try{ window.speechSynthesis.getVoices(); }catch(e){} }
 
-  function segundosDe(txt){
-    return Math.max(1, Math.round((txt.trim().split(/\s+/).length) / PALABRAS_POR_SEG));
+  const UNIDADES = ["cero","uno","dos","tres","cuatro","cinco","seis","siete","ocho","nueve"];
+  // Arregla lo que la voz lee mal: iniciales, horas, $, Nº, siglas con puntos, km, etc.
+  function textoParaVoz(t){
+    let x = " " + String(t || "") + " ";
+    x = x.replace(/[«»“”"]/g, "");
+    x = x.replace(/\b(US\$|U\$S|USD)\s?(\d[\d.,]*)/gi, "$2 dólares");
+    x = x.replace(/\$\s?(\d[\d.,]*)(\s?(millones|mil|millón))?/gi, (m, n, _s, u)=> n + (u ? " " + u : "") + " pesos");
+    x = x.replace(/\b(\d{1,2}):(\d{2})(?:\s*(?:hs|h|horas)\b\.?)?/g, (m, h, mi)=> mi === "00" ? h + " horas" : h + " y " + (mi[0] === "0" ? UNIDADES[+mi[1]] : mi));
+    x = x.replace(/\b(\d{1,2})\s?(hs|h)\b\.?/g, "$1 horas ");
+    x = x.replace(/\b(N[º°o]\.?|n[º°]\.?)\s?(\d)/g, "número $2");
+    x = x.replace(/(\d)\s?km\b/gi, "$1 kilómetros");
+    x = x.replace(/\bB[º°]\s?/g, "barrio ");
+    x = x.replace(/\bDr\.\s/g, "doctor ").replace(/\bDra\.\s/g, "doctora ").replace(/\bSr\.\s/g, "señor ").replace(/\bSra\.\s/g, "señora ").replace(/\bAv\.\s/g, "avenida ");
+    // Iniciales "J. R. C." → "J R C" (si no, cada punto parece un fin de oración)
+    x = x.replace(/\b((?:[A-ZÁÉÍÓÚÑ]\.\s?){2,})/g, (m)=> m.replace(/\./g, "").replace(/\s+/g, " ").trim() + " ");
+    x = x.replace(/\s+/g, " ").replace(/\s+([,;:.])/g, "$1");
+    return x.trim();
   }
+  // Texto que se ve en pantalla.
+  function textoEnPantalla(n){
+    if(!n) return "";
+    const est = n.resumen_estructurado;
+    const partes = [n.titulo || ""];
+    if(est && est.lede){
+      partes.push(est.lede);
+      (est.subtitulos || []).forEach(s=>{
+        if(s && s.titulo) partes.push(s.titulo);
+        if(s && s.texto) partes.push(s.texto);
+      });
+      if(est.cita && est.cita.texto) partes.push(est.cita.texto + (est.cita.quien ? ", dijo " + est.cita.quien : ""));
+    } else {
+      partes.push(n.resumen_extendido || n.resumen_corto || "");
+    }
+    return partes.map(p=> String(p).trim()).filter(Boolean).map(p=> /[.!?…:]$/.test(p) ? p : p + ".").join(" ");
+  }
+  function tramos(texto, max){
+    max = max || 200;
+    const oraciones = texto.split(/(?<=[.!?…])\s+/).filter(t=> t.trim());
+    const out = [];
+    let cur = "";
+    const empujar = (t)=>{ t = t.trim(); if(t) out.push(t); };
+    oraciones.forEach(o=>{
+      if(o.length > max){
+        // oración larga: cortar en comas/punto y coma
+        empujar(cur); cur = "";
+        let buf = "";
+        o.split(/(?<=[,;:])\s+/).forEach(pz=>{
+          if((buf + " " + pz).length > max && buf){ empujar(buf); buf = pz; }
+          else buf = buf ? buf + " " + pz : pz;
+        });
+        cur = buf;
+      } else if((cur + " " + o).length > max && cur){ empujar(cur); cur = o; }
+      else cur = cur ? cur + " " + o : o;
+    });
+    empujar(cur);
+    return out;
+  }
+  function segundosDe(txt){ return Math.max(1, Math.round(txt.length / CHARS_POR_SEG)); }
   function mmss(s){
     s = Math.max(0, Math.round(s));
     return Math.floor(s/60) + ":" + String(s%60).padStart(2,"0");
   }
+  function etiquetaAudio(n){
+    const seg = segundosDe(textoParaVoz(textoEnPantalla(n)));
+    const min = Math.max(1, Math.round(seg / 60));
+    return "Escuchar · aprox. " + min + " min";
+  }
   function pintarAudio(){
     const t = document.getElementById("audioTiempo");
-    if(t) t.textContent = mmss(AUDIO.seg) + " / " + mmss(AUDIO.total);
+    const ctrl = document.getElementById("audioCtrl");
+    if(t){
+      if(ctrl && ctrl.classList.contains("sonando")) t.textContent = mmss(AUDIO.seg) + " / " + mmss(AUDIO.total);
+      else t.textContent = notaAbierta ? etiquetaAudio(notaAbierta) : "Escuchar";
+    }
     const barra = document.getElementById("audioBarra");
     if(barra) barra.style.width = AUDIO.total ? Math.min(100, AUDIO.seg / AUDIO.total * 100) + "%" : "0%";
   }
   function pararAudio(){
+    AUDIO.gen++;
     if("speechSynthesis" in window) window.speechSynthesis.cancel();
     clearInterval(AUDIO.reloj);
     AUDIO.sonando = false;
     const btn = document.getElementById("listenBtn");
-    if(btn){ btn.textContent = "▶"; btn.classList.remove("on"); }
+    if(btn){ btn.textContent = "▶"; btn.classList.remove("on"); btn.setAttribute("aria-label", "Escuchar la nota"); }
+    const ctrl = document.getElementById("audioCtrl");
+    if(ctrl) ctrl.classList.remove("sonando");
+    pintarAudio();
   }
   function decirDesde(i){
-    if(!("speechSynthesis" in window)) return;
+    if(!("speechSynthesis" in window) || !AUDIO.partes.length) return;
+    const gen = ++AUDIO.gen;
     window.speechSynthesis.cancel();
     AUDIO.i = Math.max(0, Math.min(i, AUDIO.partes.length - 1));
     AUDIO.seg = AUDIO.partes.slice(0, AUDIO.i).reduce((a,p)=> a + p.seg, 0);
-    pintarAudio();
     const voz = mejorVoz();
+    let fallos = 0;
     const hablar = (k)=>{
-      if(k >= AUDIO.partes.length){ pararAudio(); AUDIO.seg = AUDIO.total; pintarAudio(); return; }
+      if(gen !== AUDIO.gen) return;
+      if(k >= AUDIO.partes.length){ pararAudio(); AUDIO.seg = 0; pintarAudio(); return; }
       AUDIO.i = k;
+      AUDIO.seg = AUDIO.partes.slice(0, k).reduce((a,p)=> a + p.seg, 0);
+      pintarAudio();
       const u = new SpeechSynthesisUtterance(AUDIO.partes[k].txt);
       u.lang = (voz && voz.lang) || "es-AR";
       if(voz) u.voice = voz;
-      u.rate = 1.0; u.pitch = 1.02;    // un poco más natural que el valor por defecto
-      u.onend = ()=>{ if(AUDIO.sonando) hablar(k + 1); };
-      u.onerror = ()=> pararAudio();
+      u.rate = 0.95; u.pitch = 1.0;
+      u.onend = ()=>{ if(gen === AUDIO.gen && AUDIO.sonando){ fallos = 0; hablar(k + 1); } };
+      u.onerror = (ev)=>{
+        if(gen !== AUDIO.gen) return;                          // lo cortamos nosotros (saltar/parar)
+        const err = ev && ev.error;
+        if(err === "interrupted" || err === "canceled") return;
+        // un tramo que falla no corta todo: se saltea (hasta 3 seguidos)
+        if(++fallos <= 3 && AUDIO.sonando) hablar(k + 1); else pararAudio();
+      };
       window.speechSynthesis.speak(u);
     };
     AUDIO.sonando = true;
+    if(voz) recordarVoz(voz);
     hablar(AUDIO.i);
     clearInterval(AUDIO.reloj);
     AUDIO.reloj = setInterval(()=>{
@@ -2508,30 +2654,33 @@
     }, 1000);
   }
   function saltarAudio(segundos){
-    if(!AUDIO.partes.length) return;
-    let objetivo = Math.max(0, Math.min(AUDIO.total, AUDIO.seg + segundos));
-    let acum = 0, idx = 0;
+    if(!AUDIO.partes.length || !AUDIO.sonando) return;
+    const objetivo = Math.max(0, Math.min(AUDIO.total, AUDIO.seg + segundos));
+    let acum = 0, idx = AUDIO.partes.length - 1;
     for(let k = 0; k < AUDIO.partes.length; k++){
       if(acum + AUDIO.partes[k].seg > objetivo){ idx = k; break; }
       acum += AUDIO.partes[k].seg;
-      idx = k;
     }
     decirDesde(idx);
   }
-  document.getElementById("listenBtn").addEventListener("click", ()=>{
+  document.getElementById("listenBtn").addEventListener("click", async ()=>{
     if(!notaAbierta || !("speechSynthesis" in window)) return;
     const btn = document.getElementById("listenBtn");
     if(AUDIO.sonando){ pararAudio(); return; }
-    const texto = (notaAbierta.titulo||"") + ". " + (notaAbierta.resumen_extendido || notaAbierta.resumen_corto || "");
-    AUDIO.partes = texto.split(/(?<=[.!?])\s+/).filter(t=>t.trim().length)
-      .map(t=>({ txt:t.trim(), seg: segundosDe(t) }));
+    const nota = notaAbierta;
+    AUDIO.partes = tramos(textoParaVoz(textoEnPantalla(nota)), 200).map(t=>({ txt:t, seg: segundosDe(t) }));
     AUDIO.total = AUDIO.partes.reduce((a,p)=> a + p.seg, 0);
     if(!AUDIO.partes.length) return;
-    btn.textContent = "■"; btn.classList.add("on");
+    btn.textContent = "■"; btn.classList.add("on"); btn.setAttribute("aria-label", "Parar");
+    document.getElementById("audioCtrl").classList.add("sonando");
+    // En iOS speak() tiene que salir del toque: si ya hay voces, se habla sin esperar.
+    if(!vocesEs().length) await esperarVoces();
+    if(notaAbierta !== nota) return;
     decirDesde(0);
   });
   document.getElementById("audioMenos").addEventListener("click", ()=> saltarAudio(-10));
   document.getElementById("audioMas").addEventListener("click", ()=> saltarAudio(10));
+  if(typeof window !== "undefined") window.__fonteVoz = { textoParaVoz, textoEnPantalla, tramos, puntajeVoz, etiquetaAudio };
 
   // ---- Compartir: genera una placa para historias + texto con el link de Fonte ----
   // Dominio fijo: lo compartido siempre apunta a fonte.city, aunque estés
@@ -3251,6 +3400,10 @@
   }
 
   document.getElementById("shareBtn").addEventListener("click", (e)=>{
+    if(!notaAbierta) return;
+    compartirConPlaca(notaAbierta, textoCompartir(notaAbierta, "n"), e.currentTarget);
+  });
+  document.getElementById("shareBtnFin").addEventListener("click", (e)=>{
     if(!notaAbierta) return;
     compartirConPlaca(notaAbierta, textoCompartir(notaAbierta, "n"), e.currentTarget);
   });
