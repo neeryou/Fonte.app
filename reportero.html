@@ -2745,7 +2745,14 @@
         if(err) err.classList.add("hide");
         if(!clave || !valor){ toast("Completá el barrio/ítem y el horario o dato."); return; }
         if(!activa){ toast("Primero creá un servicio con «+ Nuevo servicio» (ej: Recolección)."); return; }
-        const next = servicios.concat([{ seccion: activa, clave, valor }]);
+        // Si ya existe ese barrio/ítem en la sección, se actualiza en el lugar (no se duplica).
+        const ns = normServicio(activa), nc = normServicio(clave, true);
+        const pos = servicios.findIndex(s=> normServicio((s && s.seccion) || "Servicios") === ns && normServicio(s && s.clave, true) === nc);
+        const previo = pos >= 0 ? String(servicios[pos].valor || "") : null;
+        if(pos >= 0 && normServicio(previo) === normServicio(valor)){ toast("«" + servicios[pos].clave + "» ya tenía ese dato. No cambié nada."); return; }
+        const next = pos >= 0
+          ? servicios.map((s, i)=> i === pos ? Object.assign({}, s, { valor }) : s)
+          : servicios.concat([{ seccion: activa, clave, valor }]);
         btnAgregar.disabled = true;
         const { data: row, error } = await sb.from("instituciones").update({ servicios: next }).eq("id", institucionId).select("id,servicios").maybeSingle();
         btnAgregar.disabled = false;
@@ -2766,7 +2773,7 @@
           }
           return;
         }
-        toast("Agregado ✓");
+        toast(pos >= 0 ? "Actualizado ✓ «" + servicios[pos].clave + "»: antes " + previo + " → ahora " + valor : "Agregado ✓");
         if(inst) inst.servicios = row.servicios || next;
         cargarServiciosDe(institucionId, panel, inst || { servicios: row.servicios || next }, activa);
       };
@@ -2775,6 +2782,16 @@
       const inputValor = panel.querySelector('.fila-agregar [name="valor"]');
       if(inputValor) inputValor.addEventListener("keydown", (e)=>{ if(e.key === "Enter"){ e.preventDefault(); hacerAlta(); } });
     }
+  }
+
+  // Misma regla que fonte_privado.norm_servicio (SQL) y normServicio (bot): sin mayúsculas, tildes,
+  // espacios/puntuación de más, y en la clave sin «Barrio »/«B° » adelante.
+  function normServicio(t, esClave){
+    const de = "áàäâãéèëêíìïîóòöôõúùüûñç", a = "aaaaaeeeeiiiiooooouuuunc";
+    let x = String(t == null ? "" : t).toLowerCase().split("").map(c=>{ const i = de.indexOf(c); return i < 0 ? c : a[i]; }).join("");
+    x = x.replace(/[\s.,;:]+/g, " ").trim();
+    if(esClave) x = x.replace(/^(barrio\s+|b[°º]\s*)/, "").trim();
+    return x;
   }
 
   async function revisarFechasVencidas(){
@@ -3656,6 +3673,15 @@
         const { data: nuevoId, error } = await sb.rpc("confirmar_bot_borrador", { borrador: id });
         if(error){ toast("No se pudo publicar: " + error.message); ok.disabled = false; if(no) no.disabled = false; return; }
         toast("Publicado en Fonte ✓");
+        if(b && b.tipo === "servicio"){
+          // confirmar_bot_borrador deja el resultado en payload.merge (solo lectura acá)
+          sb.from("bot_borradores").select("payload").eq("id", id).maybeSingle().then(({ data })=>{
+            const m = data && data.payload && data.payload.merge;
+            if(!m) return;
+            const a = Number(m.n_actualizados || 0), g = Number(m.n_agregados || 0);
+            toast("Publicado ✓ " + (a || g ? [a ? "actualizados " + a : "", g ? "agregados " + g : ""].filter(Boolean).join(" · ") : "sin cambios (ya estaba igual)"));
+          }, ()=>{});
+        }
         if(b && typeof b.origen === "string" && b.origen.indexOf("wa:") === 0){
           avisarOficialBot(b, nuevoId).catch(err=> console.warn("aviso WA", err));
         }
