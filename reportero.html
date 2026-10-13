@@ -700,6 +700,7 @@
       <div id="posibleDescarteTag" class="hide" style="display:inline-block;background:#F5D547;color:#3A2F00;font-family:var(--sans);font-size:.72rem;font-weight:800;padding:4px 10px;border-radius:999px;margin-bottom:10px"></div>
       <div class="pv-field" style="margin-bottom:12px">
         <div class="field-label">Posible descarte (opcional)</div>
+        <div class="dz-chips" id="pdChips"></div>
         <input class="inp" id="pvPosibleDescarte" placeholder="Ej: participación sin logro, seguimiento">
       </div>
       <div class="pv-field" style="margin-bottom:12px">
@@ -1331,6 +1332,7 @@
 
   function toast(msg){
     const t = document.getElementById("toast"); t.textContent = msg; t.classList.add("show");
+    if(typeof dzToastTimer!=="undefined" && dzToastTimer){ clearTimeout(dzToastTimer); dzToastTimer = null; }
     setTimeout(()=>t.classList.remove("show"), 2400);
   }
 
@@ -1511,14 +1513,92 @@
   }
   document.getElementById("genBtn").addEventListener("click", ()=> generarNota({ conImagen:false }));
   document.getElementById("pvPosibleDescarte").addEventListener("input", pintarPosibleDescarteTag);
+  pintarChipsPosible();
   document.getElementById("leerImgBtn").addEventListener("click", ()=> generarNota({ conImagen:true }));
 
   // Descartar: nunca borra. Si hay un borrador de la base abierto, lo marca como descartado
   // (queda en Archivo › Descartadas); si es una nota sin guardar, solo limpia el formulario.
-  function pedirMotivoDescarte(){
-    const m = prompt("¿Descartar este borrador? Motivo en una palabra (opcional):", "");
-    if(m === null) return null;
-    return (m.trim().split(/\s+/)[0] || "").slice(0, 40) || "";
+  // ---- Motivos con un toque + hoja de descarte + Deshacer ----
+  function MOTIVOS(){ return ["Repetida","Sin logro","Seguimiento","Vieja"]; }
+  (function(){
+    const st = document.createElement("style");
+    st.textContent = ".dz-chips{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 8px}"
+      + ".dz-chip{font-family:var(--sans);font-size:.74rem;font-weight:700;padding:6px 12px;border-radius:999px;border:1px solid var(--rule,#ccc);background:var(--paper,#fff);color:var(--ink,#222);cursor:pointer}"
+      + ".dz-chip.on{background:#F5D547;border-color:#C9A800;color:#3A2F00}"
+      + ".dz-x{position:absolute;top:6px;right:6px;width:28px;height:28px;border-radius:50%;border:1px solid var(--rule,#ccc);background:var(--paper,#fff);color:#B23A2E;font-size:.9rem;font-weight:800;line-height:1;cursor:pointer;z-index:2}"
+      + "#dzBack{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9998;display:none}"
+      + "#dzSheet{position:fixed;left:0;right:0;bottom:0;max-width:560px;margin:0 auto;background:var(--paper,#fff);border-radius:16px 16px 0 0;padding:18px 16px 22px;z-index:9999;display:none;box-shadow:0 -6px 24px rgba(0,0,0,.2)}"
+      + "#dzSheet h3{margin:0 0 4px;font-family:var(--serif,serif);font-size:1.15rem}"
+      + "#dzSheet .dz-t{font-family:var(--sans);font-size:.8rem;color:var(--ink-faint,#777);margin:0 0 10px}"
+      + "#dzSheet .dz-n{font-family:var(--sans);font-size:.72rem;color:var(--ink-faint,#777);margin:10px 0}"
+      + "#dzSheet .dz-b{display:flex;gap:8px}#dzSheet .dz-b button{flex:1;padding:12px;border-radius:10px;font-family:var(--sans);font-weight:800;font-size:.9rem;cursor:pointer}"
+      + "#dzOk{background:#B23A2E;color:#fff;border:0}#dzNo{background:var(--paper,#fff);border:1px solid var(--rule,#ccc);color:var(--ink,#222)}"
+      + "#toast .dz-u{margin-left:10px;background:none;border:0;color:#F5D547;font-weight:800;text-decoration:underline;cursor:pointer;font:inherit}";
+    document.head.appendChild(st);
+    const back = document.createElement("div"); back.id = "dzBack";
+    const sh = document.createElement("div"); sh.id = "dzSheet";
+    sh.innerHTML = '<h3>¿Descartar este borrador?</h3><p class="dz-t" id="dzTit"></p>'
+      + '<div class="field-label">Motivo (opcional)</div><div class="dz-chips" id="dzChips"></div>'
+      + '<input class="inp hide" id="dzOtro" maxlength="40" placeholder="Escribí el motivo">'
+      + '<p class="dz-n">No se borra: queda en Archivo › Descartadas.</p>'
+      + '<div class="dz-b"><button type="button" id="dzNo">Cancelar</button><button type="button" id="dzOk">Descartar</button></div>';
+    document.body.appendChild(back); document.body.appendChild(sh);
+  })();
+  function pintarChips(cont, valor, onPick){
+    const v = (valor||"").trim().toLowerCase();
+    const esOtra = !!v && !MOTIVOS().some(m=>m.toLowerCase()===v);
+    cont.innerHTML = MOTIVOS().concat(["Otra…"]).map(m=>{
+      const on = m==="Otra…" ? esOtra : m.toLowerCase()===v;
+      return '<button type="button" class="dz-chip'+(on?" on":"")+'" data-m="'+m+'">'+m+'</button>';
+    }).join("");
+    cont.querySelectorAll(".dz-chip").forEach(b=> b.addEventListener("click", ()=> onPick(b.getAttribute("data-m"))));
+  }
+  function pintarChipsPosible(){
+    const el = document.getElementById("pvPosibleDescarte"), c = document.getElementById("pdChips");
+    if(!el || !c) return;
+    pintarChips(c, el.value, m=>{
+      if(m === "Otra…"){ if(MOTIVOS().includes(el.value.trim())) el.value = ""; el.focus(); }
+      else el.value = (el.value.trim()===m) ? "" : m;
+      pintarPosibleDescarteTag();
+    });
+  }
+  // Abre la hoja; resuelve con el motivo ("" si ninguno) o null si cancela.
+  function pedirMotivoDescarte(titulo){
+    return new Promise(res=>{
+      const back = document.getElementById("dzBack"), sh = document.getElementById("dzSheet");
+      const otro = document.getElementById("dzOtro"), chips = document.getElementById("dzChips");
+      let sel = ""; otro.value = ""; otro.classList.add("hide");
+      document.getElementById("dzTit").textContent = titulo || "";
+      const pint = ()=> pintarChips(chips, sel==="Otra…" ? (otro.value||"x") : sel, m=>{
+        if(m === "Otra…"){ sel = "Otra…"; otro.classList.remove("hide"); otro.focus(); }
+        else { sel = (sel===m) ? "" : m; otro.classList.add("hide"); }
+        pint();
+      });
+      pint();
+      back.style.display = sh.style.display = "block";
+      const fin = v=>{ back.style.display = sh.style.display = "none";
+        document.getElementById("dzOk").onclick = document.getElementById("dzNo").onclick = back.onclick = null; res(v); };
+      document.getElementById("dzNo").onclick = back.onclick = ()=> fin(null);
+      document.getElementById("dzOk").onclick = ()=> fin(((sel==="Otra…" ? otro.value : sel)||"").trim().slice(0,40));
+    });
+  }
+  async function deshacerDescarte(id){
+    const { error } = await sb.from("noticias")
+      .update({ descartada: false, descartada_at: null, descartado_motivo: null })
+      .eq("id", id).eq("publicada", false);
+    if(error){ toast("No se pudo deshacer: " + error.message); return; }
+    toast("Borrador recuperado ✓");
+    cargarBorradores();
+    cargarPublicadoHoy();
+  }
+  var dzToastTimer = null;
+  function toastDescartada(id, motivo){
+    const t = document.getElementById("toast");
+    t.textContent = "Descartada" + (motivo ? " · " + motivo : "") + " · ";
+    const b = document.createElement("button"); b.type = "button"; b.className = "dz-u"; b.textContent = "Deshacer";
+    b.addEventListener("click", ()=>{ clearTimeout(dzToastTimer); t.classList.remove("show"); deshacerDescarte(id); });
+    t.appendChild(b); t.classList.add("show");
+    clearTimeout(dzToastTimer); dzToastTimer = setTimeout(()=>t.classList.remove("show"), 6000);
   }
   async function marcarNotaDescartada(id, motivo){
     const { error } = await sb.from("noticias")
@@ -1530,10 +1610,11 @@
   }
   document.getElementById("discBtn").addEventListener("click", async ()=>{
     if(!borradorEditandoId){ limpiarFormularioNota(); return; }
-    const motivo = pedirMotivoDescarte(); if(motivo === null) return;
-    const error = await marcarNotaDescartada(borradorEditandoId, motivo);
+    const id = borradorEditandoId;
+    const motivo = await pedirMotivoDescarte((document.getElementById("pvTitulo")||{}).value); if(motivo === null) return;
+    const error = await marcarNotaDescartada(id, motivo);
     if(error){ toast("No se pudo descartar: " + error.message); return; }
-    toast("Borrador descartado");
+    toastDescartada(id, motivo);
     limpiarFormularioNota();
     cargarBorradores();
     cargarPublicadoHoy();
@@ -1573,6 +1654,7 @@
     return { posible_descarte: (el && el.value.trim()) || null };
   }
   function pintarPosibleDescarteTag(){
+    if(document.getElementById("dzSheet")) pintarChipsPosible();
     const el = document.getElementById("pvPosibleDescarte"), tag = document.getElementById("posibleDescarteTag");
     if(!tag) return; const v = el ? el.value.trim() : "";
     tag.textContent = v ? ("⚠ Posible descarte: " + v) : ""; tag.classList.toggle("hide", !v);
@@ -1969,7 +2051,8 @@
     const NOMBRE_ONDA = { barrio:"Barrio", ciudad:"Ciudad", region:"Región", pais:"Argentina", mundo:"Mundo" };
     const NOMBRE_CAT = { local:"Local", economia:"Economía", cripto:"Cripto", geopolitica:"Geopolítica", tecnologia:"Tecnología", desastres:"Desastres", deportes:"Deportes", espectaculos:"Espectáculos", politica:"Política", religion:"Religión", policiales:"Policiales", obras:"Obras", educacion:"Educación", otros:"Otros" };
     cont.innerHTML = data.map(n =>
-      '<div class="today-item" data-id="'+escA(n.id)+'" style="cursor:pointer">'
+      '<div class="today-item" data-id="'+escA(n.id)+'" style="cursor:pointer;position:relative;padding-right:40px">'
+      + '<button type="button" class="dz-x" data-x="'+escA(n.id)+'" aria-label="Descartar borrador">✕</button>'
       + '<span class="st">'+(NOMBRE_ONDA[n.onda]||n.onda||"Nota")+(n.categoria?(" · "+(NOMBRE_CAT[n.categoria]||n.categoria)):"")+'</span>'
       + '<span class="h">'+escA(n.titulo||"(sin título)")+'</span>'
       + (n.posible_descarte ? '<span style="display:inline-block;background:#F5D547;color:#3A2F00;font-family:var(--sans);font-size:.62rem;font-weight:800;padding:2px 8px;border-radius:999px;margin-top:4px">⚠ Posible descarte: '+escA(n.posible_descarte)+'</span>' : '')
@@ -1984,6 +2067,22 @@
       el.addEventListener("click", ()=>{
         const n = data.find(x=>String(x.id)===String(el.getAttribute("data-id")));
         if(n) abrirBorradorEnPreview(n);
+      });
+    });
+    cont.querySelectorAll(".dz-x").forEach(b=>{
+      b.addEventListener("click", async ev=>{
+        ev.stopPropagation(); ev.preventDefault();
+        const id = b.getAttribute("data-x");
+        const n = data.find(x=>String(x.id)===String(id));
+        const motivo = await pedirMotivoDescarte(n && n.titulo); if(motivo === null) return;
+        b.disabled = true;
+        const error = await marcarNotaDescartada(n ? n.id : id, motivo);
+        b.disabled = false;
+        if(error){ toast("No se pudo descartar: " + error.message); return; }
+        if(n && String(borradorEditandoId)===String(n.id)) limpiarFormularioNota();
+        toastDescartada(n ? n.id : id, motivo);
+        cargarBorradores();
+        cargarPublicadoHoy();
       });
     });
   }
@@ -5481,12 +5580,12 @@
     if(!borradorEditandoId) return;
     const btn = document.getElementById("descartarBorradorBtn");
     const id = borradorEditandoId;
-    const motivo = pedirMotivoDescarte(); if(motivo === null) return;
+    const motivo = await pedirMotivoDescarte((document.getElementById("pvTitulo")||{}).value); if(motivo === null) return;
     btn.disabled = true;
     const error = await marcarNotaDescartada(id, motivo);
     btn.disabled = false;
     if(error){ toast("No se pudo descartar: " + error.message); return; }
-    toast("Borrador descartado");
+    toastDescartada(id, motivo);
     limpiarFormularioNota();
     cargarBorradores();
     cargarPublicadoHoy();
