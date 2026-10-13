@@ -590,20 +590,20 @@
   .prev-thumb{ width:56px; height:56px; border-radius:8px; object-fit:cover; border:1px solid var(--line); }
 
   /* ===== invitación a instalar ===== */
-  .instalar{ display:none; position:fixed; left:12px; right:12px; bottom:calc(78px + env(safe-area-inset-bottom)); z-index:160;
-    background:var(--ink); color:var(--paper); border-radius:15px; padding:14px 15px;
-    box-shadow:0 10px 30px rgba(0,0,0,.32); align-items:center; gap:12px; }
+  /* tarjeta chica dentro del feed (desde la 2ª visita): nunca flota ni tapa noticias */
+  .instalar{ display:none; position:static; margin:14px 0 6px; background:var(--paper); color:var(--ink);
+    border:1px solid var(--line-strong, var(--line)); border-radius:12px; padding:9px 11px; align-items:center; gap:10px; }
   .instalar.show{ display:flex; }
-  .instalar .ico{ width:42px; height:42px; border-radius:11px; background:var(--terracota); flex:0 0 auto;
-    display:flex; align-items:center; justify-content:center; font-family:var(--slab); font-size:1.25rem; color:#fff; }
+  .instalar .ico{ width:30px; height:30px; border-radius:8px; background:var(--terracota); flex:0 0 auto;
+    display:flex; align-items:center; justify-content:center; font-family:var(--slab); font-size:.95rem; color:#fff; }
   .instalar .tx{ flex:1; min-width:0; }
-  .instalar .t{ font-family:var(--sans); font-weight:700; font-size:.85rem; }
-  .instalar .s{ font-family:var(--sans); font-size:.71rem; opacity:.78; margin-top:2px; line-height:1.35; }
-  .instalar .ok{ font-family:var(--sans); font-weight:700; font-size:.76rem; color:#fff; background:var(--terracota);
-    border:0; padding:10px 15px; border-radius:9px; flex:0 0 auto; }
-  .instalar .no{ background:none; border:0; color:var(--paper); opacity:.5; font-size:1rem; padding:2px 4px; flex:0 0 auto; }
-  .instalar .pasos{ font-family:var(--sans); font-size:.73rem; line-height:1.6; }
-  .instalar .pasos b{ color:#fff; }
+  .instalar .t{ font-family:var(--sans); font-weight:700; font-size:.8rem; }
+  .instalar .s{ font-family:var(--sans); font-size:.7rem; color:var(--ink-faint); margin-top:1px; line-height:1.3; }
+  .instalar .ok{ font-family:var(--sans); font-weight:700; font-size:.74rem; color:var(--paper); background:var(--ink);
+    border:0; padding:7px 13px; border-radius:999px; flex:0 0 auto; }
+  .instalar .no{ background:none; border:0; color:var(--ink-faint); font-size:.95rem; padding:2px 4px; flex:0 0 auto; }
+  .instalar .pasos{ font-family:var(--sans); font-size:.73rem; line-height:1.55; color:var(--ink-soft); }
+  .instalar .pasos b{ color:var(--ink); }
 
   /* ===== Avisos de hoy en Inicio: dos bloques paralelos (Oficial / Vecinos), estilo diario ===== */
   .avh{ --avh-c:var(--region); }
@@ -1609,7 +1609,7 @@
   <span class="ico">F</span>
   <div class="tx">
     <div class="t">Tené Fonte en tu celular</div>
-    <div class="s">Se instala como app. Entrás de una y recibís los avisos.</div>
+    <div class="s">Entrás de una y recibís los avisos.</div>
   </div>
   <button class="ok" id="instalarBtn">Instalar</button>
   <button class="no" id="instalarNo">✕</button>
@@ -1911,6 +1911,38 @@
   // consulta aparte, sin repetir). Lo usan Más noticias, abrir(), relacionadas, buscador y enlaces.
   // NOTICIAS_LOCALES = solo Quitilipi (barrio/ciudad), últimos 7 días o al menos 15: la pestaña Ciudad.
   let NOTICIAS = [];
+  // ---- Fuentes: un solo nombre por medio ----
+  // "vía Facebook FM SOL Y LUNA", "vía FM SOL Y LUNA" y "vía FM Sol y Luna" son la misma fuente.
+  // Misma regla en reportero.html y en fonte-recolector (si se cambia acá, cambiarla allá).
+  const ALIAS_FUENTE = {
+    "fmsolyluna": "FM Sol y Luna",
+    "norbertotitovillalba": "Norberto Tito Villalba",
+    "quitilipiinfoo": "Quitilipi Infoo",
+    "amchaco": "AM Chaco",
+    "nachecquitilipichaco": "Ñachec Quitilipi Chaco",
+    "infodiarialarealidad": "Infodiaria La Realidad"
+  };
+  function claveFuente(t){
+    return String(t || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "");
+  }
+  // Nombre limpio, sin "vía". "Facebook vecinal" queda igual (es la fuente genérica).
+  function nombreFuenteCanon(etiqueta){
+    let x = String(etiqueta || "").replace(/\s+/g, " ").trim().replace(/^v[ií]a\s+/i, "");
+    if(!/^facebook\s+vecinal$/i.test(x)) x = x.replace(/^(facebook|fb|instagram)\s+/i, "");
+    return ALIAS_FUENTE[claveFuente(x)] || x;
+  }
+  // Etiqueta guardada/mostrada: solo se toca si es una fuente ("vía …"); "Aviso de un vecino",
+  // nombres de instituciones o negocios quedan como vinieron.
+  function etiquetaFuente(etiqueta){
+    const t = String(etiqueta || "").trim();
+    if(!/^v[ií]a\s+/i.test(t)) return etiqueta;
+    const n = nombreFuenteCanon(t);
+    return n ? "vía " + n : etiqueta;
+  }
+  function unificarFuentes(lista){
+    (lista || []).forEach(n=>{ if(n && n.fuente_etiqueta) n.fuente_etiqueta = etiquetaFuente(n.fuente_etiqueta); });
+    return lista;
+  }
   let NOTICIAS_LOCALES = null; // null = la consulta local falló → Ciudad usa las locales de NOTICIAS
   const DIAS_LOCALES = 7, MIN_LOCALES = 15, LIMITE_LOCALES = 40;
   let catActiva = "todo";
@@ -1965,7 +1997,7 @@
         NOTICIAS_LOCALES = null;
       }
       const ids = new Set(generales.map(n => String(n.id)));
-      NOTICIAS = generales.concat((NOTICIAS_LOCALES || []).filter(n => !ids.has(String(n.id))));
+      NOTICIAS = unificarFuentes(generales.concat((NOTICIAS_LOCALES || []).filter(n => !ids.has(String(n.id)))));
       render();
     renderCiudad();
     if(typeof intentarEnlace === "function") intentarEnlace();
@@ -2040,6 +2072,7 @@
     // mismo bloque que arma "Más noticias" (Primera plana + zonas), pero sin el
     // riel "Cerca tuyo": acá ya estás viendo solo lo local, no hace falta.
     cont.innerHTML = htmlPrimeraPlanaYZonas(ordenadas, conOndas, { conCercaTuyo:false });
+    colocarInstalar();
 
     const yaLeidas = getLeidos();
     cont.querySelectorAll(".article[data-id]").forEach(el=>{
@@ -2311,6 +2344,7 @@
     const html = htmlPrimeraPlanaYZonas(ordenadas, conNoticias, { conCercaTuyo:true });
 
     feed.innerHTML = html;
+    colocarInstalar();
 
     // marca visual de lo ya leído (el orden ya las manda abajo; esto lo hace visible)
     const yaLeidas = getLeidos();
@@ -2473,7 +2507,7 @@
 
   // Nombre de la fuente para mostrar ("vía X" → "X").
   function nombreFuente(n){
-    return String((n && n.fuente_etiqueta) || "").replace(/^\s*v[ií]a\s+/i, "").trim();
+    return nombreFuenteCanon((n && n.fuente_etiqueta) || "");
   }
 
   // ---- Escuchar: voz del navegador, con tiempo y saltos de 10 segundos ----
@@ -2879,14 +2913,14 @@
     ctx.textAlign = "center";
     ctx.fillStyle = SUAVE; ctx.font = "600 "+(o.feed ? 22 : 24)+"px 'Work Sans',sans-serif";
     try{ ctx.letterSpacing = "2px"; }catch(e){}
-    ctx.fillText("MÁS INFORMACIÓN Y PARA COMPARTIR", W/2, etY);
+    ctx.fillText("MÁS INFORMACIÓN EN", W/2, etY);
     try{ ctx.letterSpacing = "0px"; }catch(e){}
     ctx.fillStyle = o.tinta;
     // el link es una sola "palabra": se elige el tamaño más grande que entra en el ancho seguro
     let tl = o.feed ? 30 : 32;
     ctx.font = "600 "+tl+"px 'Work Sans',sans-serif";
-    while(ctx.measureText(o.link).width > W - 2*SAFE && tl > 18){ tl--; ctx.font = "600 "+tl+"px 'Work Sans',sans-serif"; }
-    ctx.fillText(o.link, W/2, linkY);
+    ctx.font = "700 "+tl+"px 'Work Sans',sans-serif";
+    ctx.fillText("fonte.city", W/2, linkY); // marca corta: el link real va en el texto del mensaje
     // marca Fonte chica: "F." + texto
     ctx.font = "500 "+(o.feed ? 21 : 23)+"px 'Work Sans',sans-serif"; ctx.fillStyle = SUAVE;
     const txt = o.nota, wT = ctx.measureText(txt).width, x0 = W/2 - (wT + 44)/2;
@@ -3273,8 +3307,8 @@
       ctx.fillText(fuente, W - SAFE, etY); ctx.textAlign = "left";
     }
     let tlk = feed ? 30 : 34; F("600", tlk);
-    while(ctx.measureText(link).width > W - 2*SAFE && tlk > 18){ tlk--; F("600", tlk); }
-    ctx.fillStyle = TXT; ctx.fillText(link, SAFE, baseLink);
+    F("700", tlk);
+    ctx.fillStyle = TXT; ctx.fillText("fonte.city", SAFE, baseLink); // marca corta: el link real va en el texto del mensaje
     try{ window.__placaNotaModo = { pedido, modo, foto: img ? img.width + "x" + img.height : "" }; }catch(e){}
     return new Promise(res=> cnv.toBlob(res, "image/jpeg", 0.9));
   }
@@ -5356,26 +5390,52 @@
     if(window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true) return true;
     try{ return localStorage.getItem("fonte_ya_instalada") === "1"; }catch(e){ return false; }
   }
+  // Visitas: se cuenta una por sesión. La invitación sale recién desde la 2ª.
+  const VISITA_N = (function(){
+    try{
+      let n = parseInt(localStorage.getItem("fonte_visitas_n") || "0", 10) || 0;
+      if(sessionStorage.getItem("fonte_visita_contada") !== "1"){
+        n++; localStorage.setItem("fonte_visitas_n", String(n)); sessionStorage.setItem("fonte_visita_contada", "1");
+      }
+      return n;
+    }catch(e){ return 1; }
+  })();
   function bannerOculto(){
-    // Solo se esconde por lo que dure esta sesión: si vuelve a entrar sin
-    // haberla instalado, la invitación aparece de nuevo.
-    try{ return sessionStorage.getItem("fonte_instalar_oculto") === "1"; }catch(e){ return false; }
+    // ✕ se recuerda (30 días); "Instalar" no aceptado, 14 días.
+    try{
+      const hasta = parseInt(localStorage.getItem("fonte_instalar_oculto_hasta") || "0", 10) || 0;
+      return Date.now() < hasta || sessionStorage.getItem("fonte_instalar_oculto") === "1";
+    }catch(e){ return false; }
+  }
+  // La tarjeta va dentro del feed visible de Ciudad, debajo de la Primera plana.
+  // Guardamos el nodo: cuando el feed se vuelve a dibujar (innerHTML) lo reinsertamos.
+  function nodoInstalar(){ return window.__nodoInstalar || (window.__nodoInstalar = document.getElementById("instalarBanner")); }
+  function colocarInstalar(){
+    const ib = nodoInstalar();
+    if(!ib || !ib.classList.contains("show")) return;
+    const cont = document.getElementById("feedCiudad") || document.getElementById("feed");
+    if(!cont) return;
+    const pp = cont.querySelector("#pp");
+    if(pp && pp.parentNode){ if(pp.nextSibling !== ib) pp.parentNode.insertBefore(ib, pp.nextSibling); }
+    else if(ib.parentNode !== cont) cont.appendChild(ib);
   }
   function mostrarInstalar(){
-    if(yaInstalada() || bannerOculto()) return;
+    if(VISITA_N < 2 || yaInstalada() || bannerOculto()) return;
     if(typeof vieneDeCompartir === "function" && vieneDeCompartir()) return;
-    if(enlaceResuelto && document.getElementById("sheet") && document.getElementById("sheet").classList.contains("show")) return;
-    setTimeout(()=>{
-      if(document.getElementById("sheet") && document.getElementById("sheet").classList.contains("show")) return;
-      document.getElementById("instalarBanner").classList.add("show");
-    }, 4000);
+    const ib = nodoInstalar();
+    if(!ib || ib.classList.contains("show")) return;
+    ib.classList.add("show");
+    colocarInstalar();
   }
   function cerrarInstalar(dias){
-    document.getElementById("instalarBanner").classList.remove("show");
+    nodoInstalar().classList.remove("show");
     if(dias > 100){   // la instaló: no hace falta volver a ofrecerlo nunca
       try{ localStorage.setItem("fonte_ya_instalada", "1"); }catch(e){}
     }
-    try{ sessionStorage.setItem("fonte_instalar_oculto", "1"); }catch(e){}
+    try{
+      sessionStorage.setItem("fonte_instalar_oculto", "1");
+      localStorage.setItem("fonte_instalar_oculto_hasta", String(Date.now() + dias * 864e5));
+    }catch(e){}
   }
   // Chrome/Android: guardamos el pedido nativo para dispararlo con nuestro botón
   window.addEventListener("beforeinstallprompt", (e)=>{
@@ -5383,7 +5443,7 @@
     promptInstalar = e;
     mostrarInstalar();
   });
-  document.getElementById("instalarNo").addEventListener("click", ()=> cerrarInstalar(14));
+  document.getElementById("instalarNo").addEventListener("click", ()=> cerrarInstalar(30));
   document.getElementById("instalarBtn").addEventListener("click", async ()=>{
     if(promptInstalar){
       promptInstalar.prompt();
@@ -5397,7 +5457,7 @@
     }
     // iPhone y navegadores sin pedido nativo: explicamos cómo hacerlo a mano
     const esIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
-    const b = document.getElementById("instalarBanner");
+    const b = nodoInstalar();
     b.innerHTML = esIOS
       ? '<div class="tx"><div class="t">Para instalarla en tu iPhone</div>'
         + '<div class="pasos">1. Tocá el botón <b>Compartir</b> abajo (el cuadradito con la flecha).<br>'
@@ -5407,7 +5467,7 @@
         + '<div class="pasos">1. Tocá el menú <b>⋮</b> arriba a la derecha.<br>'
         + '2. Elegí <b>“Instalar app”</b> o <b>“Agregar a pantalla de inicio”</b>.</div></div>'
         + '<button class="no" id="instalarNo2">✕</button>';
-    document.getElementById("instalarNo2").addEventListener("click", ()=> cerrarInstalar(14));
+    document.getElementById("instalarNo2").addEventListener("click", ()=> cerrarInstalar(30));
   });
   // Si no llega el evento nativo (iPhone), igual ofrecemos la ayuda manual
   setTimeout(()=>{ if(!promptInstalar) mostrarInstalar(); }, 1200);
@@ -5612,6 +5672,7 @@
   }
   async function traerNotaPorId(id){
     const n = await traerFilaPorId("noticias", id, "&publicada=eq.true");
+    if(n && n.fuente_etiqueta) n.fuente_etiqueta = etiquetaFuente(n.fuente_etiqueta);
     if(n && !(NOTICIAS||[]).some(x=>String(x.id)===String(n.id))) NOTICIAS = [n].concat(NOTICIAS||[]);
     return n;
   }

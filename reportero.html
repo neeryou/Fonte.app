@@ -1047,6 +1047,34 @@
   const loginView = document.getElementById("loginView");
   const consoleView = document.getElementById("consoleView");
   let sesion = null;
+  // ---- Fuentes: un solo nombre por medio ----
+  // "vía Facebook FM SOL Y LUNA", "vía FM SOL Y LUNA" y "vía FM Sol y Luna" son la misma fuente.
+  // Misma regla en reportero.html y en fonte-recolector (si se cambia acá, cambiarla allá).
+  const ALIAS_FUENTE = {
+    "fmsolyluna": "FM Sol y Luna",
+    "norbertotitovillalba": "Norberto Tito Villalba",
+    "quitilipiinfoo": "Quitilipi Infoo",
+    "amchaco": "AM Chaco",
+    "nachecquitilipichaco": "Ñachec Quitilipi Chaco",
+    "infodiarialarealidad": "Infodiaria La Realidad"
+  };
+  function claveFuente(t){
+    return String(t || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "");
+  }
+  // Nombre limpio, sin "vía". "Facebook vecinal" queda igual (es la fuente genérica).
+  function nombreFuenteCanon(etiqueta){
+    let x = String(etiqueta || "").replace(/\s+/g, " ").trim().replace(/^v[ií]a\s+/i, "");
+    if(!/^facebook\s+vecinal$/i.test(x)) x = x.replace(/^(facebook|fb|instagram)\s+/i, "");
+    return ALIAS_FUENTE[claveFuente(x)] || x;
+  }
+  // Etiqueta guardada/mostrada: solo se toca si es una fuente ("vía …"); "Aviso de un vecino",
+  // nombres de instituciones o negocios quedan como vinieron.
+  function etiquetaFuente(etiqueta){
+    const t = String(etiqueta || "").trim();
+    if(!/^v[ií]a\s+/i.test(t)) return etiqueta;
+    const n = nombreFuenteCanon(t);
+    return n ? "vía " + n : etiqueta;
+  }
   let fuenteElegida = "Facebook vecinal";
   let imagenDetectada = null;
   let videoDetectado = null;
@@ -1493,7 +1521,7 @@
       onda: document.getElementById("pvOnda").value,
       lugar: document.getElementById("pvLugar").value.trim(),
       urgente: document.getElementById("pvUrgente").checked,
-      fuente_etiqueta: /^vía\s+/i.test(fuenteTxt) ? fuenteTxt : ("vía " + fuenteTxt),
+      fuente_etiqueta: "vía " + (nombreFuenteCanon(fuenteTxt) || fuenteTxt),
       url_original: document.getElementById("srcLink").value.trim() || null,
       imagen_url: fotoPropiaUrl || imagenDetectada || null,
       fotos: fotosPropias.length ? fotosPropias : null,
@@ -4321,14 +4349,14 @@
     ctx.textAlign = "center";
     ctx.fillStyle = SUAVE; ctx.font = "600 "+(o.feed ? 22 : 24)+"px 'Work Sans',sans-serif";
     try{ ctx.letterSpacing = "2px"; }catch(e){}
-    ctx.fillText("MÁS INFORMACIÓN Y PARA COMPARTIR", W/2, etY);
+    ctx.fillText("MÁS INFORMACIÓN EN", W/2, etY);
     try{ ctx.letterSpacing = "0px"; }catch(e){}
     ctx.fillStyle = o.tinta;
     // el link es una sola "palabra": se elige el tamaño más grande que entra en el ancho seguro
     let tl = o.feed ? 30 : 32;
     ctx.font = "600 "+tl+"px 'Work Sans',sans-serif";
-    while(ctx.measureText(o.link).width > W - 2*SAFE && tl > 18){ tl--; ctx.font = "600 "+tl+"px 'Work Sans',sans-serif"; }
-    ctx.fillText(o.link, W/2, linkY);
+    ctx.font = "700 "+tl+"px 'Work Sans',sans-serif";
+    ctx.fillText("fonte.city", W/2, linkY); // marca corta: el link real va en el texto del mensaje
     // marca Fonte chica: "F." + texto
     ctx.font = "500 "+(o.feed ? 21 : 23)+"px 'Work Sans',sans-serif"; ctx.fillStyle = SUAVE;
     const txt = o.nota, wT = ctx.measureText(txt).width, x0 = W/2 - (wT + 44)/2;
@@ -4715,8 +4743,8 @@
       ctx.fillText(fuente, W - SAFE, etY); ctx.textAlign = "left";
     }
     let tlk = feed ? 30 : 34; F("600", tlk);
-    while(ctx.measureText(link).width > W - 2*SAFE && tlk > 18){ tlk--; F("600", tlk); }
-    ctx.fillStyle = TXT; ctx.fillText(link, SAFE, baseLink);
+    F("700", tlk);
+    ctx.fillStyle = TXT; ctx.fillText("fonte.city", SAFE, baseLink); // marca corta: el link real va en el texto del mensaje
     try{ window.__placaNotaModo = { pedido, modo, foto: img ? img.width + "x" + img.height : "" }; }catch(e){}
     return new Promise(res=> cnv.toBlob(res, "image/jpeg", 0.9));
   }
