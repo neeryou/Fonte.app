@@ -255,6 +255,10 @@
     box-shadow:0 3px 8px rgba(30,28,22,.16); transition:transform .28s ease, opacity .28s ease; }
   .refresh-btn.hide{ transform:translateY(70px); opacity:0; pointer-events:none; }
   [data-tema="oscuro"] .refresh-btn{ background:#2A251C; color:#F5F1E6; box-shadow:0 3px 8px rgba(0,0,0,.4); }
+  /* dentro de la barra de pestañas (fija arriba), a la derecha de los puntitos: no tapa ninguna nota */
+  .tabs-main .refresh-btn{ position:absolute; right:18px; bottom:3px; z-index:2; padding:4px 10px; font-size:.6rem;
+    box-shadow:none; }
+  .tabs-main .refresh-btn.hide{ transform:none; opacity:1; pointer-events:auto; }
   body{ padding-bottom:calc(155px + env(safe-area-inset-bottom)); }
 
   .pp, .zone, #feed, #feedCiudad, .pp-grid, .zgrid, .zlist{ max-width:100%; }
@@ -1332,6 +1336,7 @@
     <span class="dot on" id="dotCiudad"></span>
     <span class="dot" id="dotMas"></span>
   </div>
+  <button class="refresh-btn" id="refreshBtn" aria-label="Actualizar noticias">↻ Actualizar</button>
 </nav>
 
 <div class="riel-marco" id="rielMarco">
@@ -1399,7 +1404,6 @@
 </footer>
 
 <button class="fab" id="fabAportar">+ Aviso de vecinos</button>
-<button class="refresh-btn" id="refreshBtn">↻ Actualizar</button>
 
 <div class="backdrop" id="backdrop"></div>
 <div class="sheet" id="sheet">
@@ -1845,7 +1849,39 @@
     });
     return out;
   }
-  const bgDe = (n) => urlSegura(n.imagen_url) ? "background-image:url('"+esc(urlSegura(n.imagen_url))+"');background-size:cover;background-position:center;" : "background:"+gradDe(n.id)+";";
+  // Miniaturas: las fotos de Storage de Fonte se piden achicadas (render/image); las de afuera, tal cual.
+  const miniDe = (u) => /\.supabase\.co\/storage\/v1\/object\/public\//.test(u) && !/\.gif(\?|$)/i.test(u)
+    ? u.replace("/storage/v1/object/public/", "/storage/v1/render/image/public/") + (u.includes("?") ? "&" : "?") + "width=640&quality=70"
+    : u;
+  // Las fotos de las tarjetas se cargan recién cuando están por entrar en pantalla (--lzbg);
+  // la de la nota principal (eager) se pide al toque y con prioridad alta.
+  const bgDe = (n, eager) => {
+    const u = urlSegura(n.imagen_url);
+    if(!u) return "background:"+gradDe(n.id)+";";
+    const m = esc(miniDe(u));
+    if(eager){
+      try{ if(!document.querySelector('link[data-lcp="'+m+'"]')){ const l=document.createElement("link"); l.rel="preload"; l.as="image"; l.href=miniDe(u); l.setAttribute("fetchpriority","high"); l.setAttribute("data-lcp", m); document.head.appendChild(l); } }catch(e){}
+      return "background-image:url('"+m+"');background-size:cover;background-position:center;";
+    }
+    return "--lzbg:url('"+m+"');background:"+gradDe(n.id)+";background-size:cover;background-position:center;";
+  };
+  (function(){
+    const io = ("IntersectionObserver" in window) ? new IntersectionObserver((ents)=>{
+      ents.forEach(e=>{ if(e.isIntersecting){ cargarBg(e.target); io.unobserve(e.target); } });
+    }, { rootMargin:"300px 0px" }) : null;
+    function cargarBg(el){
+      const v = el.style.getPropertyValue("--lzbg");
+      if(v){ el.style.backgroundImage = v; el.style.removeProperty("--lzbg"); }
+    }
+    function escanear(root){
+      (root.querySelectorAll ? root.querySelectorAll('[style*="--lzbg"]') : []).forEach(el=>{ if(io) io.observe(el); else cargarBg(el); });
+    }
+    new MutationObserver(ms=>{ ms.forEach(m=>{
+      if(m.type==="attributes"){ if(m.target.style && m.target.style.getPropertyValue("--lzbg")){ if(io) io.observe(m.target); else cargarBg(m.target); } }
+      else m.addedNodes.forEach(nd=>{ if(nd.nodeType===1){ escanear(nd); if(nd.style && nd.style.getPropertyValue("--lzbg")){ if(io) io.observe(nd); else cargarBg(nd); } } });
+    }); }).observe(document.documentElement, { childList:true, subtree:true, attributes:true, attributeFilter:["style"] });
+    document.addEventListener("DOMContentLoaded", ()=> escanear(document));
+  })();
   const tiempoDesde = (iso) => {
     if(!iso) return "";
     const diffMin = Math.round((Date.now() - new Date(iso).getTime())/60000);
@@ -1984,6 +2020,37 @@
     return h >>> 0;
   }
 
+  // Columnas livianas para la portada: sin resumen_extendido, resumen_estructurado,
+  // terminos ni texto_original (el 70% del peso). Al abrir una nota se pide la fila completa.
+  const COLS_LISTA = "id,titulo,resumen_corto,categoria,lugar,onda,distancia_km,urgente,fuente_id,fuente_etiqueta,url_original,imagen_url,origen,created_at,published_at,video_url,fotos,dato_extra,accion_etiqueta,accion_url,estilo_placa,fecha_original,portada_estado,portada_confirmada,fotos_origen,_cita:resumen_estructurado->cita,_datos:resumen_estructurado->datos,_act:resumen_estructurado->actualizaciones";
+  function aLiviana(n){
+    n.__lite = true;
+    n._est = (n._cita || n._datos || n._act) ? { cita:n._cita||null, datos:n._datos||null, actualizaciones:n._act||null } : null;
+    delete n._cita; delete n._datos; delete n._act;
+    return n;
+  }
+  const NOTA_COMPLETA = {};
+  async function completarNota(n){
+    if(!n || !n.__lite) return n;
+    const k = String(n.id);
+    if(!NOTA_COMPLETA[k]){
+      NOTA_COMPLETA[k] = (async ()=>{
+        const ctl = ("AbortController" in window) ? new AbortController() : null;
+        const t = setTimeout(()=>{ if(ctl) ctl.abort(); }, 6000);
+        try{
+          const r = await fetch(SUPABASE_URL + "/rest/v1/noticias?select=resumen_extendido,resumen_estructurado,terminos&id=eq." + encodeURIComponent(n.id) + "&limit=1",
+            { headers:{ "apikey": SUPABASE_KEY, "Authorization": "Bearer " + SUPABASE_KEY }, signal: ctl ? ctl.signal : undefined });
+          if(!r.ok) throw new Error("HTTP " + r.status);
+          const f = (await r.json())[0];
+          return f || null;
+        } finally { clearTimeout(t); }
+      })().catch(e=>{ delete NOTA_COMPLETA[k]; return null; });
+    }
+    const f = await NOTA_COMPLETA[k];
+    if(f){ Object.assign(n, f); n.__lite = false; }
+    return n;
+  }
+
   async function cargar(silencioso){
     if(!silencioso){
       document.getElementById("feed").innerHTML = '<div class="state"><div class="spinner"></div><div class="big">Cargando noticias…</div></div>';
@@ -1991,17 +2058,18 @@
     try{
       const hdr = { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + SUPABASE_KEY };
       const url = SUPABASE_URL + "/rest/v1/noticias"
-        + "?select=*&publicada=eq.true&order=created_at.desc&limit=90";
+        + "?select=" + COLS_LISTA + "&publicada=eq.true&order=created_at.desc&limit=90";
       // Las locales van aparte: con ~30 notas por día de país/mundo/región, entre las últimas 90
       // entraban solo ~2,5 días de Quitilipi (unas 12 notas).
       const urlLoc = SUPABASE_URL + "/rest/v1/noticias"
-        + "?select=*&publicada=eq.true&onda=in.(barrio,ciudad)&order=created_at.desc&limit=" + LIMITE_LOCALES;
+        + "?select=" + COLS_LISTA + "&publicada=eq.true&onda=in.(barrio,ciudad)&order=created_at.desc&limit=" + LIMITE_LOCALES;
       const [res, locales] = await Promise.all([
         fetch(url, { headers: hdr }),
         fetch(urlLoc, { headers: hdr }).then(r => r.ok ? r.json() : null).catch(() => null)
       ]);
       if(!res.ok){ throw new Error("HTTP " + res.status); }
-      const generales = await res.json();
+      const generales = (await res.json()).map(aLiviana);
+      if(Array.isArray(locales)) locales.forEach(aLiviana);
       if(Array.isArray(locales)){
         const porFecha = locales.slice().sort((a,b)=> msNota(b) - msNota(a));
         const corte = Date.now() - DIAS_LOCALES*86400000;
@@ -2135,7 +2203,7 @@
     html += '<div class="pp-center">';
     const leadLugar = lead.lugar ? esc(lead.lugar) : nombreDe(lead.onda);
     html += '<a class="article lead" data-id="'+esc(lead.id)+'" style="--w:'+colorDe(lead.onda)+'">'
-      + '<div class="ph-img" style="'+bgDe(lead)+'"></div>'
+      + '<div class="ph-img" style="'+bgDe(lead,true)+'"></div>'
       + '<span class="kicker"><span class="dot"></span>'+leadLugar+'</span>'
       + '<h2 class="h">'+esc(lead.titulo)+'</h2>'
       + (lead.resumen_corto?'<p class="dek">'+esc(lead.resumen_corto)+'</p>':'')
@@ -2214,7 +2282,7 @@
         const tiempo = (esReciente ? '<span class="pulse-dot"></span>' : '') + tiempoDesde(fechaNota(n));
         // cada 4 ítems, uno "respira" con foto para romper el ritmo apilado
         const destacada = (i % 4 === 3);
-        const est = n.resumen_estructurado;
+        const est = n.resumen_estructurado || n._est;
         let especial = "";
         if(est && est.cita && est.cita.texto){
           especial = '<a class="article li" data-id="'+esc(n.id)+'" style="--ac:'+color+'">'
@@ -2317,8 +2385,8 @@
       band.classList.add("show");
       band.querySelector(".band-list").innerHTML = urgentes.map((n,idx)=>{
         const lugar = n.lugar ? esc(n.lugar) : nombreDe(n.onda);
-        const actualizaciones = (idx === 0 && n.resumen_estructurado && Array.isArray(n.resumen_estructurado.actualizaciones))
-          ? n.resumen_estructurado.actualizaciones : null;
+        const actualizaciones = (idx === 0 && (n.resumen_estructurado || n._est) && Array.isArray((n.resumen_estructurado || n._est).actualizaciones))
+          ? (n.resumen_estructurado || n._est).actualizaciones : null;
         const timelineHtml = (actualizaciones && actualizaciones.length)
           ? '<div class="u-timeline">' + actualizaciones.map((a,i)=>
               '<div class="u-tl-item'+(i===0?'':' old')+'"><div class="u-tl-hour">'+esc(a.hora||"")+'</div><div class="u-tl-txt">'+esc(a.texto||"")+'</div></div>'
@@ -2381,9 +2449,14 @@
 
   let notaAbierta = null;
 
-  function abrir(id){
+  async function abrir(id){
+    const n0 = NOTICIAS.find(x=>String(x.id)===String(id));
+    if(n0 && n0.__lite){
+      document.body.style.cursor = "progress";
+      try{ await completarNota(n0); } finally { document.body.style.cursor = ""; }
+    }
     navAlFrente("sheet");
-    const n = NOTICIAS.find(x=>String(x.id)===String(id));
+    const n = n0;
     if(!n) return;
     marcarLeido(n.id);
     document.querySelectorAll('.article[data-id="'+String(n.id).replace(/"/g,'')+'"]').forEach(el=> el.classList.add("leida"));
@@ -2424,14 +2497,14 @@
       // como imagen al compartir, así que nunca puede quedar oculta en un carrusel.
       if(listaN.length){
         heroEl.setAttribute("style", "display:block;margin-bottom:16px;aspect-ratio:auto;overflow:visible;background:none");
-        heroEl.innerHTML = '<img src="'+esc(urlSegura(listaN[0]))+'" alt="" '
+        heroEl.innerHTML = '<img src="'+esc(urlSegura(listaN[0]))+'" alt="" fetchpriority="high" decoding="async" '
           + 'style="width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:10px;cursor:zoom-in">';
         // precarga en caché de compartir (CORS) mientras leés la nota
         try{ cargarImagen(listaN[0], 8000); }catch(e){}
       } else {
         heroEl.innerHTML = "";
         heroEl.style.display = "block";
-        heroEl.setAttribute("style", "aspect-ratio:16/9;" + bgDe(n));
+        heroEl.setAttribute("style", "aspect-ratio:16/9;" + bgDe(n,true));
       }
       // el resto de las fotos (si hay más de una) va deslizable debajo del resumen,
       // no arriba — arriba solo va la portada.
@@ -4483,7 +4556,7 @@
     // cabecera
     html += '<div class="inst-fachada">';
     if(inst.foto_url){
-      html += '<div class="inst-logo"><img src="'+esc(urlSegura(inst.foto_url))+'" alt=""></div>';
+      html += '<div class="inst-logo"><img src="'+esc(urlSegura(inst.foto_url))+'" alt="" loading="lazy" decoding="async"></div>';
     } else {
       html += '<div class="inst-logo txt" style="background:'+colInst+'">'+esc(selloInst)+'</div>';
     }
@@ -4581,7 +4654,7 @@
         if(largo) html += '<button type="button" class="svc-vermas">Ver los '+n+' barrios ⌄</button>';
         html += '</div>';
         notaSec.forEach(s=>{ html += '<div class="svc-nota"><b>ℹ️ Importante</b> '+esc(s.valor||"")+'</div>'; });
-        if(imgSec) html += '<a class="svc-img" href="'+esc(imgSec.valor)+'" target="_blank" rel="noopener"><img src="'+esc(imgSec.valor)+'" alt="Cronograma original" loading="lazy"><span><b>Ver cronograma original</b><small>Imagen enviada por la institución</small></span></a>';
+        if(imgSec) html += '<a class="svc-img" href="'+esc(imgSec.valor)+'" target="_blank" rel="noopener"><img src="'+esc(imgSec.valor)+'" alt="Cronograma original" loading="lazy" decoding="async"><span><b>Ver cronograma original</b><small>Imagen enviada por la institución</small></span></a>';
         html += '<button type="button" class="svc-share" data-svc-share="'+iSec+'">↗ Compartir horarios</button>';
         html += '</div></div>';
       });
@@ -5596,7 +5669,7 @@
     if(lista.length === 1) return '<img src="'+esc(urlSegura(lista[0]))+'" style="width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:10px;margin-bottom:14px;cursor:zoom-in" alt="">';
     const id = "gal" + Math.random().toString(36).slice(2,8);
     return '<div class="galeria"><div class="gal-row" id="'+id+'">'
-      + lista.map(u=>'<img src="'+esc(urlSegura(u))+'" alt="">').join("")
+      + lista.map(u=>'<img src="'+esc(urlSegura(u))+'" alt="" loading="lazy" decoding="async">').join("")
       + '</div>'
       + '<button class="gal-nav prev" type="button" aria-label="Foto anterior">‹</button>'
       + '<button class="gal-nav next" type="button" aria-label="Foto siguiente">›</button>'

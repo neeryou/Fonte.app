@@ -601,6 +601,7 @@
         <button class="f" data-f="comunicado">Comunicados</button>
         <button class="f" data-f="oferta">Ofertas</button>
         <button class="f" data-f="aporte">Avisos de vecinos</button>
+        <button class="f" data-f="descartadas">Descartadas</button>
       </div>
       <div id="archLista" class="arch-lista"><p class="vacio-txt">Cargando…</p></div>
     </div>
@@ -695,6 +696,11 @@
           <option value="archivo">Foto de archivo sugerida</option>
           <option value="falta">Falta portada</option>
         </select>
+      </div>
+      <div id="posibleDescarteTag" class="hide" style="display:inline-block;background:#F5D547;color:#3A2F00;font-family:var(--sans);font-size:.72rem;font-weight:800;padding:4px 10px;border-radius:999px;margin-bottom:10px"></div>
+      <div class="pv-field" style="margin-bottom:12px">
+        <div class="field-label">Posible descarte (opcional)</div>
+        <input class="inp" id="pvPosibleDescarte" placeholder="Ej: participación sin logro, seguimiento">
       </div>
       <div class="pv-field" style="margin-bottom:12px">
         <div class="field-label">Título<span class="auto">auto</span></div>
@@ -1504,12 +1510,33 @@
     el.classList.remove("hide");
   }
   document.getElementById("genBtn").addEventListener("click", ()=> generarNota({ conImagen:false }));
+  document.getElementById("pvPosibleDescarte").addEventListener("input", pintarPosibleDescarteTag);
   document.getElementById("leerImgBtn").addEventListener("click", ()=> generarNota({ conImagen:true }));
 
-  document.getElementById("discBtn").addEventListener("click", ()=>{
-    // Solo limpia el formulario local; si era un borrador de la base, no lo borra
-    // (para eso está "Descartar borrador").
+  // Descartar: nunca borra. Si hay un borrador de la base abierto, lo marca como descartado
+  // (queda en Archivo › Descartadas); si es una nota sin guardar, solo limpia el formulario.
+  function pedirMotivoDescarte(){
+    const m = prompt("¿Descartar este borrador? Motivo en una palabra (opcional):", "");
+    if(m === null) return null;
+    return (m.trim().split(/\s+/)[0] || "").slice(0, 40) || "";
+  }
+  async function marcarNotaDescartada(id, motivo){
+    const { error } = await sb.from("noticias")
+      .update({ descartada: true, descartada_at: new Date().toISOString(), descartado_motivo: motivo || null })
+      .eq("id", id).eq("publicada", false);
+    if(error && /descartad/i.test((error.message||"")+" "+(error.details||"")+" "+(error.hint||"")))
+      return { message: "falta correr supabase-descartes.sql" };
+    return error;
+  }
+  document.getElementById("discBtn").addEventListener("click", async ()=>{
+    if(!borradorEditandoId){ limpiarFormularioNota(); return; }
+    const motivo = pedirMotivoDescarte(); if(motivo === null) return;
+    const error = await marcarNotaDescartada(borradorEditandoId, motivo);
+    if(error){ toast("No se pudo descartar: " + error.message); return; }
+    toast("Borrador descartado");
     limpiarFormularioNota();
+    cargarBorradores();
+    cargarPublicadoHoy();
   });
 
 
@@ -1541,7 +1568,26 @@
     return { fecha_original: fechaLocalAIso(f?f.value:""), texto_original: (t&&t.value.trim())||null };
   }
   // Guarda con fecha/texto original; si la base todavía no tiene esas columnas, reintenta sin ellas.
+  function campoPosibleDescarte(){
+    const el = document.getElementById("pvPosibleDescarte");
+    return { posible_descarte: (el && el.value.trim()) || null };
+  }
+  function pintarPosibleDescarteTag(){
+    const el = document.getElementById("pvPosibleDescarte"), tag = document.getElementById("posibleDescarteTag");
+    if(!tag) return; const v = el ? el.value.trim() : "";
+    tag.textContent = v ? ("⚠ Posible descarte: " + v) : ""; tag.classList.toggle("hide", !v);
+  }
+  // Agrega posible_descarte; si la base todavía no tiene la columna, reintenta sin ella.
   async function guardarNotaConOriginal(op, registro){
+    const r0 = await guardarNotaConOriginalBase(reg=> op(Object.assign({}, reg, campoPosibleDescarte())), registro);
+    if(r0.error && /posible_descarte/i.test((r0.error.message||"")+" "+(r0.error.details||"")+" "+(r0.error.hint||""))){
+      const r1 = await guardarNotaConOriginalBase(op, registro);
+      if(!r1.error) setTimeout(()=>toast("Falta correr supabase-descartes.sql"), 1800);
+      return r1;
+    }
+    return r0;
+  }
+  async function guardarNotaConOriginalBase(op, registro){
     let r = await op(Object.assign({}, registro, camposOriginalBorrador(), camposPortada()));
     if(r.error && /portada_estado|portada_confirmada|fotos_origen/i.test((r.error.message||"")+" "+(r.error.details||"")+" "+(r.error.hint||""))){
       r = await op(Object.assign({}, registro, camposOriginalBorrador()));
@@ -1588,6 +1634,7 @@
     document.getElementById("btnVistaPrevia").classList.add("hide");
     document.getElementById("rawInput").value = "";
     { const f=document.getElementById("fechaPubOriginal"); if(f) f.value = ""; }
+    { const pd=document.getElementById("pvPosibleDescarte"); if(pd) pd.value = ""; pintarPosibleDescarteTag(); }
     document.getElementById("fotoPropia").value = "";
     fotosPropias = [];
     fotoPropiaUrl = null;
@@ -1846,6 +1893,7 @@
     videoDetectado = n.video_url || null;
     { const f=document.getElementById("fechaPubOriginal"); if(f) f.value = isoAFechaLocal(n.fecha_original || n.fecha_publicacion || n.fechaPublicacion || n.fecha_post || ""); }
     document.getElementById("rawInput").value = n.texto_original || "";
+    { const pd=document.getElementById("pvPosibleDescarte"); if(pd) pd.value = n.posible_descarte || ""; pintarPosibleDescarteTag(); }
     aplicarFuenteEnChips(n.fuente_etiqueta);
     aplicarAccionEnChips(n.accion_etiqueta, n.accion_url);
     aplicarPlacaEnChips(n.estilo_placa || "auto");
@@ -1901,11 +1949,12 @@
     const cont = document.getElementById("borradoresList");
     const cnt = document.getElementById("borradoresCount");
     if(!cont) return;
-    const { data, error } = await sb.from("noticias")
+    let { data, error } = await sb.from("noticias")
       .select("*")
       .eq("publicada", false)
       .order("created_at", { ascending: false })
       .limit(50);
+    if(data) data = data.filter(x=>!x.descartada);
     if(error){
       cont.innerHTML = '<p style="font-family:var(--sans);font-size:.78rem;color:var(--ink-faint)">No se pudieron cargar los borradores.</p>';
       if(cnt) cnt.textContent = "";
@@ -1923,6 +1972,7 @@
       '<div class="today-item" data-id="'+escA(n.id)+'" style="cursor:pointer">'
       + '<span class="st">'+(NOMBRE_ONDA[n.onda]||n.onda||"Nota")+(n.categoria?(" · "+(NOMBRE_CAT[n.categoria]||n.categoria)):"")+'</span>'
       + '<span class="h">'+escA(n.titulo||"(sin título)")+'</span>'
+      + (n.posible_descarte ? '<span style="display:inline-block;background:#F5D547;color:#3A2F00;font-family:var(--sans);font-size:.62rem;font-weight:800;padding:2px 8px;border-radius:999px;margin-top:4px">⚠ Posible descarte: '+escA(n.posible_descarte)+'</span>' : '')
       + '<span style="display:block;font-family:var(--sans);font-size:.66rem;color:var(--ink-faint);margin-top:3px">'
       + (n.created_at ? tiempoRel(n.created_at) : "")
       + (n.origen ? (" · " + escA(n.origen)) : "")
@@ -3689,7 +3739,7 @@
       sb.from("noticias").select("*").eq("creada_por", sesion.user.id).eq("publicada",true).gte("created_at", inicioHoy.toISOString()).order("created_at",{ascending:false}),
       // Lo que cargó el bot: notas en borrador y la bandeja bot_borradores (avisos, fechas…).
       // Si la tabla todavía no existe en la base, vuelve con error y simplemente no se muestra.
-      sb.from("noticias").select("id,created_at").eq("publicada",false).eq("origen","bot"),
+      sb.from("noticias").select("*").eq("publicada",false).eq("origen","bot").then(r=>({ data:(r.data||[]).filter(x=>!x.descartada), error:r.error })),
       sb.from("bot_borradores").select("id,tipo,institucion_id,payload,origen,created_at,instituciones(nombre)").eq("estado","pendiente").order("created_at",{ascending:true}).limit(20),
     ]);
 
@@ -4139,6 +4189,7 @@
     // Nota: acá van TODAS las notas (no solo las que publicó este reportero), porque el
     // Archivo también sirve para encontrar y compartir lo que aparece en "Más noticias"
     // aunque lo haya cargado otra persona.
+    if(filtroArch === "descartadas"){ return cargarDescartadas(); }
     const [n, o, c, a] = await Promise.all([
       sb.from("noticias").select("*").eq("publicada",true).order("created_at",{ascending:false}).limit(200)
         .then(async r=>{
@@ -4154,14 +4205,37 @@
       sb.from("aportes").select("*").in("estado",["revisado","resuelto"]).order("created_at",{ascending:false}).limit(40),
     ]);
     ARCHIVO = []
-      .concat((n.data||[]).map(x=>({o:x,tipo:"nota"})))
+      .concat((n.data||[]).filter(x=>!x.descartada).map(x=>({o:x,tipo:"nota"})))
       .concat((o.data||[]).map(x=>({o:x,tipo:"oferta"})))
       .concat((c.data||[]).map(x=>({o:x,tipo:"comunicado"})))
       .concat((a.data||[]).map(x=>({o:x,tipo:"aporte"})))
       .sort((x,y)=> new Date(y.o.published_at||y.o.created_at||0) - new Date(x.o.published_at||x.o.created_at||0));
     pintarArchivo();
   }
+  // Solo lectura: título, fecha de descarte y motivo.
+  let DESCARTADAS = [];
+  async function cargarDescartadas(){
+    const cont = document.getElementById("archLista");
+    const { data, error } = await sb.from("noticias").select("id,titulo,descartada_at,descartado_motivo,posible_descarte,origen")
+      .eq("descartada", true).order("descartada_at",{ascending:false}).limit(200);
+    if(error){ cont.innerHTML = '<p class="vacio-txt">No se pudieron cargar las descartadas' + (/descartad/i.test(error.message||"") ? " (falta correr supabase-descartes.sql)" : "") + '.</p>'; return; }
+    DESCARTADAS = data || [];
+    pintarDescartadas();
+  }
+  function pintarDescartadas(){
+    const cont = document.getElementById("archLista");
+    const q = (document.getElementById("archBuscar").value||"").toLowerCase().trim();
+    const lista = DESCARTADAS.filter(d=> !q || [d.titulo, d.descartado_motivo, d.posible_descarte].join(" ").toLowerCase().includes(q));
+    const fmt = iso => iso ? new Date(iso).toLocaleString("es-AR",{ timeZone:"America/Argentina/Buenos_Aires", day:"2-digit", month:"2-digit", year:"numeric", hour:"2-digit", minute:"2-digit" }) : "";
+    cont.innerHTML = lista.length ? lista.map(d=>
+      '<div class="today-item" style="cursor:default">'
+      + '<span class="h">'+escA(d.titulo||"(sin título)")+'</span>'
+      + '<span style="display:block;font-family:var(--sans);font-size:.66rem;color:var(--ink-faint);margin-top:3px">Descartada '+escA(fmt(d.descartada_at))
+      + ' · Motivo: <b>'+escA(d.descartado_motivo||"—")+'</b>'+(d.origen?(" · "+escA(d.origen)):"")+'</span>'
+      + '</div>').join("") : '<p class="vacio-txt">No hay notas descartadas.</p>';
+  }
   function pintarArchivo(){
+    if(filtroArch === "descartadas"){ return pintarDescartadas(); }
     const cont = document.getElementById("archLista");
     const q = (document.getElementById("archBuscar").value||"").toLowerCase().trim();
     const lista = ARCHIVO.filter(it=>{
@@ -4182,8 +4256,9 @@
     b.addEventListener("click", ()=>{
       document.querySelectorAll("#archFiltros .f").forEach(x=>x.classList.remove("on"));
       b.classList.add("on");
+      const antes = filtroArch;
       filtroArch = b.getAttribute("data-f");
-      pintarArchivo();
+      if(filtroArch === "descartadas" || antes === "descartadas") cargarArchivo(); else pintarArchivo();
     });
   });
 
@@ -5404,11 +5479,11 @@
   });
   document.getElementById("descartarBorradorBtn").addEventListener("click", async ()=>{
     if(!borradorEditandoId) return;
-    if(!confirm("¿Descartar este borrador? Se borra de la base y no se puede deshacer.")) return;
     const btn = document.getElementById("descartarBorradorBtn");
-    btn.disabled = true;
     const id = borradorEditandoId;
-    const { error } = await sb.from("noticias").delete().eq("id", id);
+    const motivo = pedirMotivoDescarte(); if(motivo === null) return;
+    btn.disabled = true;
+    const error = await marcarNotaDescartada(id, motivo);
     btn.disabled = false;
     if(error){ toast("No se pudo descartar: " + error.message); return; }
     toast("Borrador descartado");
