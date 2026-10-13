@@ -2723,10 +2723,12 @@
       const entradas = porSec[activa] || [];
       panelActivoHtml = '<div class="panel-activo">'
         + '<div class="titulo-svc">'+escA(activa)+'</div>'
-        + '<div class="cant">'+entradas.length+(entradas.length===1?' barrio/ítem cargado':' barrios/ítems cargados')+'</div>'
+        + '<div class="cant">'+entradas.filter(s=>!s.tipo).length+(entradas.filter(s=>!s.tipo).length===1?' barrio/ítem cargado':' barrios/ítems cargados')+'</div>'
         + entradas.map(s=>
             '<div class="fila-existente" data-svc-i="'+servicios.indexOf(s)+'">'
-            + '<div><div class="t">'+escA(s.clave||"")+'</div><div class="v">'+escA(s.valor||"")+'</div></div>'
+            + (s.tipo === "imagen" && /^https:\/\//.test(String(s.valor||""))
+                ? '<div style="display:flex;gap:9px;align-items:center"><a href="'+escA(s.valor)+'" target="_blank" rel="noopener"><img src="'+escA(s.valor)+'" alt="" style="width:40px;height:52px;object-fit:cover;object-position:top;border-radius:4px"></a><div><div class="t">'+escA(s.clave||"")+'</div><div class="v">Imagen original (se ve en la ficha)</div></div></div>'
+                : '<div><div class="t">'+(s.tipo === "nota" ? "ℹ️ " : "")+escA(s.clave||"")+'</div><div class="v">'+escA(s.valor||"")+'</div></div>')
             + '<button type="button" class="quitar btn-trash" aria-label="Borrar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M9 7V5h6v2M8 7l1 13h6l1-13"/></svg></button></div>'
           ).join("")
         + '<div class="fila-agregar">'

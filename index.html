@@ -1126,6 +1126,20 @@
     font-family:var(--mono); font-size:.68rem; font-weight:600; letter-spacing:.02em;
     color:var(--instc); text-transform:uppercase;
   }
+  .svc-fila .bw{ display:flex; flex-direction:column; gap:2px; min-width:0; flex:1; }
+  .svc-fila .d{ font-family:var(--sans); font-size:.7rem; color:var(--ink-faint); line-height:1.3; }
+  .inst-ficha .svc-fila .h{ white-space:normal; max-width:46%; line-height:1.35; }
+  .svc-card-body-in.corta .svc-extra{ display:none; }
+  .svc-vermas{ display:block; width:100%; margin:4px 0 2px; padding:9px 0; font-family:var(--sans); font-size:.74rem; font-weight:700;
+    color:var(--instc); background:none; border:.5px dashed var(--line-strong); border-radius:6px; cursor:pointer; }
+  .svc-nota{ margin:8px 0 4px; padding:9px 11px; font-family:var(--sans); font-size:.74rem; line-height:1.4; color:var(--ink-soft);
+    background:color-mix(in srgb, var(--inst, #1f6b3a) 7%, transparent); border-left:3px solid var(--instc, #1f6b3a); border-radius:4px; }
+  .svc-nota b{ color:var(--ink); }
+  .svc-img{ display:flex; align-items:center; gap:11px; margin:8px 0 4px; padding:7px; border:.5px solid var(--line-strong); border-radius:8px; text-decoration:none; color:var(--ink); }
+  .svc-img img{ width:58px; height:76px; object-fit:cover; object-position:top; border-radius:4px; flex:0 0 auto; background:var(--line); }
+  .svc-img span{ display:flex; flex-direction:column; gap:2px; font-family:var(--sans); font-size:.78rem; }
+  .svc-img b{ color:var(--instc); }
+  .svc-img small{ font-size:.68rem; color:var(--ink-faint); }
   .aten-list{ border-top:.5px solid var(--line); }
   .aten-item{
     display:grid; grid-template-columns:22px 1fr; gap:10px; align-items:start;
@@ -4549,15 +4563,25 @@
       html += '<div class="inst-sec" id="serviciosFicha"><div class="inst-sec-head"><span class="t">Servicios</span><span class="ln"></span></div>';
       html += '<div id="svcLista">';
       ordenSec.forEach((sec, iSec)=>{
-        const n = porSec[sec].length;
+        const filasSec = porSec[sec].filter(s=> !s.tipo);
+        const notaSec = porSec[sec].filter(s=> s.tipo === "nota");
+        const imgSec = porSec[sec].filter(s=> s.tipo === "imagen" && /^https:\/\//.test(String(s.valor||""))).slice(-1)[0];
+        const n = filasSec.length;
+        const largo = n > SVC_VISIBLES + 2;
         const abrirSec = opts.seccion ? normSec(opts.seccion) === normSec(sec) : iSec===0;
         html += '<div class="svc-tabla svc-card'+(abrirSec?" abierta":"")+'" data-sec-i="'+iSec+'" data-sec="'+esc(sec)+'">'
-          + '<button type="button" class="svc-card-head"><span class="nom">'+esc(sec)+'</span><span class="cant">'+n+(n===1?" barrio":" barrios")+'</span><span class="fle">⌄</span></button>'
+          + '<button type="button" class="svc-card-head"><span class="nom">'+esc(sec)+'</span><span class="cant">'+(n ? n+(n===1?" barrio":" barrios") : "")+'</span><span class="fle">⌄</span></button>'
           + '<div class="svc-card-body">';
-        porSec[sec].forEach(s=>{
-          html += '<div class="svc-fila svc-fila-t" data-q="'+esc(((s.clave||"")+" "+(s.valor||"")+" "+sec).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,""))+'">'
-            + '<span class="b">'+esc(s.clave||"")+'</span><span class="h">'+esc(s.valor||"")+'</span></div>';
+        html += '<div class="svc-card-body-in'+(largo?" corta":"")+'">';
+        filasSec.forEach((s, k)=>{
+          const pv = partirValorSvc(s.valor);
+          html += '<div class="svc-fila svc-fila-t'+(largo && k >= SVC_VISIBLES ? " svc-extra" : "")+'" data-q="'+esc(((s.clave||"")+" "+(s.valor||"")+" "+sec).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,""))+'" data-clave="'+esc(s.clave||"")+'" data-valor="'+esc(s.valor||"")+'">'
+            + '<span class="bw"><span class="b">'+esc(s.clave||"")+'</span>'+(pv.detalle?'<span class="d">'+esc(pv.detalle)+'</span>':'')+'</span><span class="h">'+esc(pv.horario)+'</span></div>';
         });
+        if(largo) html += '<button type="button" class="svc-vermas">Ver los '+n+' barrios ⌄</button>';
+        html += '</div>';
+        notaSec.forEach(s=>{ html += '<div class="svc-nota"><b>ℹ️ Importante</b> '+esc(s.valor||"")+'</div>'; });
+        if(imgSec) html += '<a class="svc-img" href="'+esc(imgSec.valor)+'" target="_blank" rel="noopener"><img src="'+esc(imgSec.valor)+'" alt="Cronograma original" loading="lazy"><span><b>Ver cronograma original</b><small>Imagen enviada por la institución</small></span></a>';
         html += '<button type="button" class="svc-share" data-svc-share="'+iSec+'">↗ Compartir horarios</button>';
         html += '</div></div>';
       });
@@ -4608,6 +4632,9 @@
         const cid = el.getAttribute("data-com-id");
         if(cid) abrirComunicado(cid);
       });
+    });
+    document.querySelectorAll("#svcLista .svc-vermas").forEach(b=>{
+      b.addEventListener("click", ()=>{ b.closest(".svc-card-body-in").classList.remove("corta"); b.remove(); });
     });
     document.querySelectorAll("#svcLista .svc-card-head").forEach(cab=>{
       cab.addEventListener("click", ()=>{ cab.closest(".svc-card").classList.toggle("abierta"); });
@@ -4672,7 +4699,7 @@
       if(!buscando){ res.innerHTML = ""; return; }
       fF = (fechas||[]).filter(f=> normBusq([f.titulo, f.lugar, f.horario].join(" ")).includes(q));
       fA = (avisos||[]).filter(c=> normBusq([c.titulo, c.texto].join(" ")).includes(q));
-      fS = (servicios||[]).filter(sv=> normBusq([sv.seccion, sv.clave, sv.valor].join(" ")).includes(q));
+      fS = (servicios||[]).filter(sv=> sv.tipo !== "imagen").filter(sv=> normBusq([sv.seccion, sv.clave, sv.valor].join(" ")).includes(q));
       const total = fF.length + fA.length + fS.length;
       if(!total){
         res.innerHTML = '<div class="fb-vacio"><div class="t">No encontré nada con «'+esc(crudo)+'»</div>'
@@ -4709,7 +4736,8 @@
         h += '<div class="inst-sec">'+cab("Servicios", fS.length);
         fS.forEach((sv, i)=>{
           h += '<div class="fb-svc" data-fb-s="'+i+'"><div class="sec">'+resaltarBusq(sv.seccion||"Servicios", q)+'</div>'
-            + '<div class="svc-fila svc-fila-t"><span class="b">'+resaltarBusq(sv.clave||"", q)+'</span><span class="h">'+resaltarBusq(sv.valor||"", q)+'</span></div></div>';
+            + (sv.tipo === "nota" ? '<div class="svc-nota">'+resaltarBusq(sv.valor||"", q)+'</div></div>'
+              : (()=>{ const pv = partirValorSvc(sv.valor); return '<div class="svc-fila svc-fila-t"><span class="bw"><span class="b">'+resaltarBusq(sv.clave||"", q)+'</span>'+(pv.detalle?'<span class="d">'+resaltarBusq(pv.detalle, q)+'</span>':'')+'</span><span class="h">'+resaltarBusq(pv.horario, q)+'</span></div></div>'; })());
         });
         h += '</div>';
       }
@@ -4736,7 +4764,8 @@
       if(!card) return;
       card.classList.add("abierta");
       const fila = Array.from(card.querySelectorAll(".svc-fila")).find(fl=>
-        (fl.querySelector(".b")||{}).textContent === String(sv.clave||"") && (fl.querySelector(".h")||{}).textContent === String(sv.valor||""));
+        fl.getAttribute("data-clave") === String(sv.clave||"") && fl.getAttribute("data-valor") === String(sv.valor||""));
+      if(fila && fila.classList.contains("svc-extra")){ const cu = card.querySelector(".svc-card-body-in"); if(cu) cu.classList.remove("corta"); const vm = card.querySelector(".svc-vermas"); if(vm) vm.remove(); }
       const foco = fila || card;
       if(fila){ fila.classList.add("fb-destacada"); setTimeout(()=> fila.classList.remove("fb-destacada"), 2200); }
       setTimeout(()=>{ try{ foco.scrollIntoView({ block:"center", behavior:"smooth" }); }catch(e){} }, 30);
@@ -4758,9 +4787,19 @@
     partes.push("", "👉 " + urlDe({ id: inst.id }, "i"));
     return partes.join("\n");
   }
+  // Servicios: «Mar y jue 7 h · calle Santa Fe de San Luis a Irigoyen» → horario a la derecha, tramo debajo del barrio.
+  const SVC_VISIBLES = 10;
+  function partirValorSvc(v){
+    const partes = String(v||"").split(/\s+·\s+/).map(t=>t.trim()).filter(Boolean);
+    const esHor = t=> /^(lun|mar|mi[eé]|jue|vie|s[aá]b|dom|todos|de lunes|\d)/i.test(t) || /\b\d{1,2}([:.]\d{2})?\s*(h|hs)\b/i.test(t);
+    const hor = partes.filter(esHor), det = partes.filter(t=> !esHor(t));
+    if(!hor.length) return { horario: String(v||""), detalle: "" };
+    return { horario: hor.join(" · "), detalle: det.join(" · ") };
+  }
   function textoCompartirServicio(inst, sec, filas){
     return ["🗓️ " + sec + " · " + (inst.nombre || ""), ""]
-      .concat((filas||[]).map(s=> "• " + (s.clave||"") + ": " + (s.valor||"")))
+      .concat((filas||[]).filter(s=> !s.tipo).map(s=> "• " + (s.clave||"") + ": " + (s.valor||"")))
+      .concat((filas||[]).filter(s=> s.tipo === "nota").map(s=> "\nℹ️ " + (s.valor||"")))
       .concat(["", "👉 Todos los horarios en Fonte: " + urlDe({ id: inst.id }, "i") + "&s=" + encodeURIComponent(sec)])
       .join("\n");
   }
