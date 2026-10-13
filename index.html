@@ -560,7 +560,7 @@
   .lightbox{ position:fixed; inset:0; z-index:400; background:#0C0B08; display:none;
     align-items:center; justify-content:center; }
   .lightbox.show{ display:flex; }
-  .lightbox img{ max-width:100%; max-height:100%; object-fit:contain; }
+  .lightbox img{ width:100%; height:100%; object-fit:contain; }
   .lightbox .cerrar{ position:absolute; top:calc(14px + env(safe-area-inset-top)); right:14px;
     background:rgba(255,255,255,.15); border:0; color:#fff; font-family:var(--sans); font-size:.8rem; font-weight:700;
     padding:9px 15px; border-radius:999px; backdrop-filter:blur(6px); }
@@ -1300,6 +1300,22 @@
     box-shadow:0 6px 16px color-mix(in srgb,var(--terracota) 45%,transparent); border:3px solid var(--paper); }
   .bn-item.center .ic-circle .ic{ width:20px; height:20px; }
   .bn-item.center span:last-child{ margin-top:1px; color:var(--ink-soft); }
+
+  /* ===== MAQUETA ESCRITORIO (solo >=1024px; el celular no cambia) ===== */
+  @media (min-width:1024px){
+    .ticker{ max-width:calc(var(--wrap) - 36px); margin:0 auto; border-left:.5px solid var(--line-strong); border-right:.5px solid var(--line-strong); }
+    .tabs-main{ padding-left:max(18px, calc((100vw - var(--wrap)) / 2 + 18px)); padding-right:max(18px, calc((100vw - var(--wrap)) / 2 + 18px)); }
+    .tabs-in{ max-width:520px; margin:0 auto; }
+    .tabs-main .refresh-btn{ right:max(18px, calc((100vw - var(--wrap)) / 2 + 18px)); bottom:auto; top:50%; transform:translateY(-50%); }
+    .riel-marco{ max-width:var(--wrap); margin:0 auto; }
+    .bottom-nav{ left:50%; right:auto; transform:translateX(-50%); width:520px; bottom:14px; border:1px solid var(--line-strong);
+      border-radius:22px; box-shadow:0 8px 26px rgba(30,28,22,.16); padding:6px 10px 6px; }
+    body{ padding-bottom:110px; }
+    .sheet, .sheet2{ max-width:720px; }
+    .sheet:not(.show){ transform:translateY(110vh); }
+    .sheet{ height:auto; top:4vh; bottom:4vh; border-radius:18px; }
+    .sheet2.pagina{ width:720px; max-width:720px; left:50%; right:auto; margin-left:-360px; top:3vh; bottom:3vh; height:auto; border-radius:18px; box-shadow:0 14px 44px rgba(30,28,22,.25); }
+  }
 </style>
 </head>
 <body>
@@ -1849,6 +1865,8 @@
     });
     return out;
   }
+  // BBC manda miniaturas de 240px: pedimos 976 para la nota/visor y 480 para tarjetas.
+  const fotoGrande = (u, w) => (typeof u === "string") ? u.replace(/(ichef\.bbci\.co\.uk\/ace\/(?:standard|ws))\/\d+\//, "$1/"+(w||976)+"/") : u;
   // Miniaturas: las fotos de Storage de Fonte se piden achicadas (render/image); las de afuera, tal cual.
   const miniDe = (u) => /\.supabase\.co\/storage\/v1\/object\/public\//.test(u) && !/\.gif(\?|$)/i.test(u)
     ? u.replace("/storage/v1/object/public/", "/storage/v1/render/image/public/") + (u.includes("?") ? "&" : "?") + "width=640&quality=70"
@@ -1858,9 +1876,9 @@
   const bgDe = (n, eager) => {
     const u = urlSegura(n.imagen_url);
     if(!u) return "background:"+gradDe(n.id)+";";
-    const m = esc(miniDe(u));
+    const m = esc(miniDe(fotoGrande(u, 480)));
     if(eager){
-      try{ if(!document.querySelector('link[data-lcp="'+m+'"]')){ const l=document.createElement("link"); l.rel="preload"; l.as="image"; l.href=miniDe(u); l.setAttribute("fetchpriority","high"); l.setAttribute("data-lcp", m); document.head.appendChild(l); } }catch(e){}
+      try{ if(!document.querySelector('link[data-lcp="'+m+'"]')){ const l=document.createElement("link"); l.rel="preload"; l.as="image"; l.href=miniDe(fotoGrande(u, 480)); l.setAttribute("fetchpriority","high"); l.setAttribute("data-lcp", m); document.head.appendChild(l); } }catch(e){}
       return "background-image:url('"+m+"');background-size:cover;background-position:center;";
     }
     return "--lzbg:url('"+m+"');background:"+gradDe(n.id)+";background-size:cover;background-position:center;";
@@ -2233,7 +2251,9 @@
     // ===== ONDAS densas debajo =====
     const leidos = getLeidos();
     const seed = semillaRotativa();
-    let contadorDatos = 0; // para que el "dato destacado" salga salteado, no en cada nota que tenga cifras
+    // Bloques especiales (cita, número grande, foto) espaciados por posición: nunca dos seguidos
+    // (mín. 2 ítems normales entre especiales); número grande cada ≥6 ítems, máx. 2 por zona y 3 en total.
+    let bigTotal = 0;
     // con volumen suficiente, reservamos 2 notas para un cierre en mosaico ("también pasó hoy")
     // tampoco se repite lo que ya está en "Últimas"
     const yaArriba = (n)=> idsPP.has(String(n.id)) || idsRecientes.has(String(n.id));
@@ -2273,6 +2293,7 @@
       if(miniMosaico.length){ html += tplMosaicRow(miniMosaico); }
       html += '<div class="zlist">';
       let pendientePar = null;
+      let normalesDesdeEsp = 99, itemsDesdeBig = 99, bigZona = 0;
       restoZona.forEach((n, i)=>{
         const lugar = n.lugar ? esc(n.lugar) : o.nombre;
         const fav = favoritos.includes(n.categoria) ? ' <span class="why int" style="margin-left:5px">★</span>' : '';
@@ -2282,14 +2303,16 @@
         const tiempo = (esReciente ? '<span class="pulse-dot"></span>' : '') + tiempoDesde(fechaNota(n));
         // cada 4 ítems, uno "respira" con foto para romper el ritmo apilado
         const destacada = (i % 4 === 3);
+        const puedeEsp = normalesDesdeEsp >= 2;
         const est = n.resumen_estructurado || n._est;
         let especial = "";
-        if(est && est.cita && est.cita.texto){
+        if(puedeEsp && est && est.cita && est.cita.texto){
           especial = '<a class="article li" data-id="'+esc(n.id)+'" style="--ac:'+color+'">'
             + '<h4 class="h">'+esc(n.titulo)+'</h4>'
             + '<blockquote class="li-quote">“'+esc(est.cita.texto)+'”<span class="li-quote-who">— '+esc(est.cita.quien||"")+'</span></blockquote>'
             + '<div class="meta-row">'+catTag+fav+'<span class="src">'+lugar+'</span><span class="src">'+tiempo+'</span></div></a>';
-        } else if(est && est.datos && est.datos[0] && est.datos[0].numero && (contadorDatos++ % 3 === 0)){
+        } else if(est && est.datos && est.datos[0] && est.datos[0].numero && puedeEsp && itemsDesdeBig >= 6 && bigZona < 2 && bigTotal < 3){
+          bigZona++; bigTotal++; itemsDesdeBig = -1;
           const d = est.datos[0];
           const catPlain = n.categoria ? esc(CAT_NOMBRE[n.categoria]||n.categoria) : '';
           const metaPlain = [catPlain, lugar].filter(Boolean).join(' · ');
@@ -2299,7 +2322,7 @@
             + '<h4 class="h">'+esc(n.titulo)+'</h4>'
             + (metaPlain ? '<div class="databig-meta">'+metaPlain+'</div>' : '')
             + '</a>';
-        } else if(destacada){
+        } else if(puedeEsp && destacada){
           especial = '<a class="article li feat" data-id="'+esc(n.id)+'" style="--ac:'+color+'">'
             + '<div class="ph-img" style="'+bgDe(n)+'"></div>'
             + '<h4 class="h">'+esc(n.titulo)+'</h4>'
@@ -2307,11 +2330,14 @@
             + '<div class="meta-row">'+catTag+fav+'<span class="src">'+lugar+'</span><span class="src">'+tiempo+'</span></div></a>';
         }
 
+        itemsDesdeBig++;
         if(especial){
+          normalesDesdeEsp = 0;
           // si había un ítem esperando pareja, lo saco solo antes de meter el especial
           if(pendientePar){ html += tplLiSingle(pendientePar); pendientePar = null; }
           html += especial;
         } else {
+          normalesDesdeEsp++;
           const item = { id:n.id, titulo:n.titulo, catTag, fav, lugar, tiempo, color, mini: miniFoto(n, 56) };
           if(pendientePar){ html += tplLiPair(pendientePar, item); pendientePar = null; }
           else { pendientePar = item; }
@@ -2323,7 +2349,7 @@
 
     // ===== cierre en mosaico (deslizable al costado) =====
     if(paraMosaico.length >= 2){
-      html += '<div class="mosaic-label">También pasó hoy</div>' + tplMosaicRow(paraMosaico);
+      html += '<div class="mosaic-label">Para ponerse al día</div>' + tplMosaicRow(paraMosaico);
     }
 
     return html;
@@ -2497,10 +2523,10 @@
       // como imagen al compartir, así que nunca puede quedar oculta en un carrusel.
       if(listaN.length){
         heroEl.setAttribute("style", "display:block;margin-bottom:16px;aspect-ratio:auto;overflow:visible;background:none");
-        heroEl.innerHTML = '<img src="'+esc(urlSegura(listaN[0]))+'" alt="" fetchpriority="high" decoding="async" '
+        heroEl.innerHTML = '<img src="'+esc(fotoGrande(urlSegura(listaN[0])))+'" alt="" fetchpriority="high" decoding="async" '
           + 'style="width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:10px;cursor:zoom-in">';
         // precarga en caché de compartir (CORS) mientras leés la nota
-        try{ cargarImagen(listaN[0], 8000); }catch(e){}
+        try{ cargarImagen(fotoGrande(listaN[0]), 8000); }catch(e){}
       } else {
         heroEl.innerHTML = "";
         heroEl.style.display = "block";
@@ -3063,7 +3089,7 @@
       ctx.font = "500 "+bF+"px 'Work Sans',sans-serif";
       const parrafos = String(n.resumen_corto||"").replace(/\s*(Fecha|Horario|Lugar):\s*/gi,"\n$1: ").split(/\n+/).flatMap(p=>p.split(/\s*[·•]\s*/)).map(s=>s.trim()).filter(Boolean);
       const lineas = []; parrafos.forEach((p,i)=>{ envolver(ctx, p, W-2*SAFE, 30).forEach((l,j)=> lineas.push({ l, sep: i>0 && j===0 })); });
-      const im = (n.imagen_url) ? await cargarImagen(n.imagen_url, 7000) : null;
+      const im = (n.imagen_url) ? await cargarImagen(fotoGrande(n.imagen_url), 7000) : null;
       const top0 = y + (feed ? 44 : 56);
       const hFecha = fecha ? (feed ? 44 : 52) : 0;
       const hTit = tit.l.length*tL;
@@ -5734,7 +5760,7 @@
   // ================= FOTO A PANTALLA COMPLETA =================
   function abrirFoto(src){
     navAlFrente("lightbox");
-    document.getElementById("lightboxImg").src = src;
+    document.getElementById("lightboxImg").src = fotoGrande(src);
     document.getElementById("lightbox").classList.add("show");
   }
   function cerrarFoto(){

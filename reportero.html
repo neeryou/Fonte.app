@@ -1516,8 +1516,6 @@
   pintarChipsPosible();
   document.getElementById("leerImgBtn").addEventListener("click", ()=> generarNota({ conImagen:true }));
 
-  // Descartar: nunca borra. Si hay un borrador de la base abierto, lo marca como descartado
-  // (queda en Archivo › Descartadas); si es una nota sin guardar, solo limpia el formulario.
   // ---- Motivos con un toque + hoja de descarte + Deshacer ----
   function MOTIVOS(){ return ["Repetida","Sin logro","Seguimiento","Vieja"]; }
   (function(){
@@ -1608,16 +1606,10 @@
       return { message: "falta correr supabase-descartes.sql" };
     return error;
   }
-  document.getElementById("discBtn").addEventListener("click", async ()=>{
-    if(!borradorEditandoId){ limpiarFormularioNota(); return; }
-    const id = borradorEditandoId;
-    const motivo = await pedirMotivoDescarte((document.getElementById("pvTitulo")||{}).value); if(motivo === null) return;
-    const error = await marcarNotaDescartada(id, motivo);
-    if(error){ toast("No se pudo descartar: " + error.message); return; }
-    toastDescartada(id, motivo);
+  document.getElementById("discBtn").addEventListener("click", ()=>{
+    // Solo limpia el formulario local; si era un borrador de la base, no lo borra
+    // (para eso está "Descartar borrador").
     limpiarFormularioNota();
-    cargarBorradores();
-    cargarPublicadoHoy();
   });
 
 
