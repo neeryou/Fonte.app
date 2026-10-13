@@ -1176,6 +1176,7 @@
           const { data } = sb.storage.from("notas-fotos").getPublicUrl(nombre);
           fotosPropias.push(data.publicUrl);
           FOTOS_ORIGEN[data.publicUrl] = "posteo"; portadaConfirmada = true; portadaEstadoManual = null;
+          if(sinPortada){ sinPortada = false; fotosPropias.unshift(fotosPropias.pop()); }
         }
       }catch(err){ /* si falla una, seguimos con las demás */ }
     }
@@ -1520,7 +1521,18 @@
   }
   // timestamptz de la base -> "YYYY-MM-DDTHH:MM" en hora de Argentina
   function isoAFechaLocal(iso){
-    if(!iso) return ""; const d=new Date(iso); if(isNaN(d)) return "";
+    if(!iso) return "";
+    iso = String(iso).trim();
+    // Solo fecha ("2026-10-03"): sin hora, no correr de día por el huso
+    let m = /^(\d{4}-\d{2}-\d{2})$/.exec(iso);
+    if(m) return m[1] + "T00:00";
+    // "03/10/2026 16:40" (día/mes/año, hora de Argentina)
+    m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:[ T,]+(\d{1,2}):(\d{2}))?/.exec(iso);
+    if(m){ const z=n=>String(n).padStart(2,"0"); return m[3]+"-"+z(m[2])+"-"+z(m[1])+"T"+z(m[4]||0)+":"+(m[5]||"00"); }
+    // Fecha y hora SIN huso: se toma como hora de Argentina
+    m = /^(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2})(:\d{2}(\.\d+)?)?$/.exec(iso);
+    if(m) return m[1] + "T" + m[2];
+    const d=new Date(iso.replace(" ", "T").replace(/([+-]\d{2})$/, "$1:00")); if(isNaN(d)) return "";
     const a=new Date(d.getTime()-3*3600*1000), z=n=>String(n).padStart(2,"0");
     return a.getUTCFullYear()+"-"+z(a.getUTCMonth()+1)+"-"+z(a.getUTCDate())+"T"+z(a.getUTCHours())+":"+z(a.getUTCMinutes());
   }
@@ -1564,7 +1576,7 @@
       urgente: document.getElementById("pvUrgente").checked,
       fuente_etiqueta: "vía " + (nombreFuenteCanon(fuenteTxt) || fuenteTxt),
       url_original: document.getElementById("srcLink").value.trim() || null,
-      imagen_url: fotoPropiaUrl || imagenDetectada || null,
+      imagen_url: sinPortada ? null : (fotoPropiaUrl || imagenDetectada || null),
       fotos: fotosPropias.length ? fotosPropias : null,
       video_url: (document.getElementById("videoUrl").value.trim() || videoDetectado || null),
       publicada: publicada,
@@ -1581,7 +1593,7 @@
     fotoPropiaUrl = null;
     imagenDetectada = null;
     videoDetectado = null;
-    FOTOS_ORIGEN = {}; portadaConfirmada = false; portadaEstadoManual = null;
+    FOTOS_ORIGEN = {}; portadaConfirmada = false; portadaEstadoManual = null; sinPortada = false;
     document.getElementById("fotoPreview").innerHTML = "";
     document.getElementById("fotoPreview").style.display = "none";
     if(typeof setFotoEstado === "function") setFotoEstado("");
@@ -1644,14 +1656,15 @@
       sincronizarPortadaEstado();
       return;
     }
+    if(sinPortada){ fotoPropiaUrl = null; imagenDetectada = null; }
     prev.style.display = "flex";
     prev.style.flexWrap = "wrap";
     prev.style.gap = "8px";
     prev.style.aspectRatio = "auto";
     prev.innerHTML = lista.map((u,i)=>
-      '<div class="fp-thumb'+(i===0?' is-portada':'')+'">'
-      + '<img data-i="'+i+'" src="'+escA(u)+'" alt="" title="'+(i===0?'Portada':'Tocar para usar de portada')+'">'
-      + (i===0 ? '<span class="fp-badge">Portada</span>' : '')
+      '<div class="fp-thumb'+(i===0&&!sinPortada?' is-portada':'')+'">'
+      + '<img data-i="'+i+'" src="'+escA(u)+'" alt="" title="'+(i===0&&!sinPortada?'Portada':'Tocar para usar de portada')+'">'
+      + (i===0&&!sinPortada ? '<span class="fp-badge">Portada</span>' : '')
       + '<button type="button" class="fp-origen" data-orig="'+i+'" style="position:absolute;left:4px;bottom:4px;font:700 .58rem var(--sans);border:0;border-radius:4px;padding:2px 5px;cursor:pointer;'
       + (origenFoto(u)==="archivo" ? 'background:#FFE08A;color:#6B4A00' : 'background:#DDF1E1;color:#1E5B2E') + '">'
       + (origenFoto(u)==="archivo" ? 'de archivo' : 'del posteo') + '</button>'
@@ -1659,11 +1672,17 @@
       + '</div>'
     ).join("")
       + '<div class="estado-fotos" style="font-family:var(--sans);font-size:.68rem;color:var(--ink-faint);width:100%;margin-top:4px">'
-      + (lista.length===1
+      + (sinPortada
+          ? '<b>Sin portada</b> — ' + (lista.length===1 ? "la foto queda" : "las fotos quedan") + ' solo como adicional. Tocá una para usarla de portada.'
+          : '<button type="button" id="btnQuitarPortada" class="srcchip" style="margin:0 6px 4px 0;font-size:.66rem">Quitar de portada</button>')
+      + (sinPortada ? '' : lista.length===1
           ? "1 foto — es la portada. Tocá ✕ para quitarla."
           : lista.length + " fotos — tocá una para elegir la portada · ✕ para quitar")
       + (lista.length >= MAX_FOTOS_NOTA ? " · máximo " + MAX_FOTOS_NOTA : "")
       + '</div>';
+    { const q = document.getElementById("btnQuitarPortada");
+      if(q) q.addEventListener("click", (e)=>{ e.preventDefault(); e.stopPropagation();
+        sinPortada = true; portadaEstadoManual = "falta"; portadaConfirmada = false; mostrarFotosEnPreview(fotosPropias); }); }
     prev.querySelectorAll("[data-orig]").forEach(b=>{
       b.addEventListener("click", (e)=>{
         e.preventDefault(); e.stopPropagation();
@@ -1677,7 +1696,8 @@
       img.addEventListener("click", ()=>{
         const i = parseInt(img.getAttribute("data-i"),10);
         if(isNaN(i) || i < 0 || i >= fotosPropias.length) return;
-        if(i === 0) return;
+        if(sinPortada){ sinPortada = false; portadaEstadoManual = null; }
+        else if(i === 0) return;
         const elegida = fotosPropias.splice(i,1)[0];
         fotosPropias.unshift(elegida);
         fotoPropiaUrl = fotosPropias[0] || null;
@@ -1706,9 +1726,11 @@
   // noticias.portada_confirmada (bool) y noticias.fotos_origen (jsonb {url:'posteo'|'archivo'}).
   let FOTOS_ORIGEN = {};
   let portadaConfirmada = false;
-  let portadaEstadoManual = null;   // si la reportera eligió a mano en el select
+  let portadaEstadoManual = null;
+  let sinPortada = false;   // portada_estado 'falta': las fotos quedan solo como adicionales, imagen_url = null   // si la reportera eligió a mano en el select
   function origenFoto(u){ return FOTOS_ORIGEN[u] === "archivo" ? "archivo" : "posteo"; }
   function portadaEstadoActual(){
+    if(sinPortada) return "falta";
     const portada = (fotosPropias && fotosPropias[0]) || imagenDetectada || null;
     if(!portada) return "falta";
     if(portadaEstadoManual) return portadaEstadoManual;
@@ -1752,6 +1774,7 @@
     const e = n && n.portada_estado;
     portadaEstadoManual = (e === "archivo" || e === "falta" || e === "posteo") ? e : null;
     portadaConfirmada = !!(n && n.portada_confirmada);
+    sinPortada = (e === "falta");
   }
   function aplicarFuenteEnChips(etiqueta){
     let raw = (etiqueta || "").toString().trim();
@@ -1821,7 +1844,7 @@
     document.getElementById("srcLink").value = n.url_original || "";
     document.getElementById("videoUrl").value = n.video_url || "";
     videoDetectado = n.video_url || null;
-    { const f=document.getElementById("fechaPubOriginal"); if(f) f.value = isoAFechaLocal(n.fecha_original); }
+    { const f=document.getElementById("fechaPubOriginal"); if(f) f.value = isoAFechaLocal(n.fecha_original || n.fecha_publicacion || n.fechaPublicacion || n.fecha_post || ""); }
     document.getElementById("rawInput").value = n.texto_original || "";
     aplicarFuenteEnChips(n.fuente_etiqueta);
     aplicarAccionEnChips(n.accion_etiqueta, n.accion_url);
@@ -5287,7 +5310,7 @@
       accion_etiqueta: (typeof accionEtiqueta === "function" ? accionEtiqueta() : ""),
       accion_url: (document.getElementById("accionUrl")||{}).value || "",
       lugar: (document.getElementById("pvLugar")||{}).value || "Quitilipi",
-      fotos, imagen_url: fotos[0] || null,
+      fotos: (typeof sinPortada !== "undefined" && sinPortada) ? [] : fotos, imagen_url: (typeof sinPortada !== "undefined" && sinPortada) ? null : (fotos[0] || null),
       video_url: (document.getElementById("videoUrl")||{}).value || "",
       fuente_etiqueta: (typeof fuenteElegida !== "undefined" ? fuenteElegida : ""),
     };
@@ -5341,7 +5364,10 @@
     else toast("Generá la nota con Fonte antes de publicar.");
   });
   document.getElementById("portadaEstado").addEventListener("change", (e)=>{
-    portadaEstadoManual = e.target.value; portadaConfirmada = false; sincronizarPortadaEstado();
+    portadaEstadoManual = e.target.value; portadaConfirmada = false;
+    sinPortada = (e.target.value === "falta");
+    if(!sinPortada && fotosPropias.length){ fotoPropiaUrl = fotosPropias[0]; imagenDetectada = fotoPropiaUrl; }
+    mostrarFotosEnPreview(fotosPropias);
   });
   document.getElementById("portadaConfirmo").addEventListener("change", (e)=>{
     portadaConfirmada = !!e.target.checked; sincronizarPortadaEstado();
