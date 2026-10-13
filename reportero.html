@@ -679,12 +679,22 @@
 
     <div class="card hide" id="previewCard">
       <div class="preview-head"><span class="badge">Editar nota</span><span id="pvMedia" style="font-family:var(--sans);font-size:.7rem;color:var(--ink-soft)"></span></div>
+      <div id="portadaAviso" class="hide" role="alert" style="background:#FFF4D6;border:1px solid #E0A526;border-left:5px solid #D48A00;color:#6B4A00;border-radius:8px;padding:10px 12px;margin:10px 0 12px;font-family:var(--sans);font-size:.8rem;line-height:1.45">
+        <div id="portadaAvisoTxt" style="font-weight:700"></div>
+        <label style="display:flex;align-items:center;gap:8px;margin-top:8px;cursor:pointer"><input type="checkbox" id="portadaConfirmo" style="width:16px;height:16px"> Confirmo la portada</label>
+      </div>
       <div id="pvAlertas" class="hide" role="alert" style="background:#FFF4D6;border:1px solid #E0A526;border-left:5px solid #D48A00;color:#6B4A00;border-radius:8px;padding:10px 12px;margin:10px 0 12px;font-family:var(--sans);font-size:.8rem;line-height:1.45"></div>
       <div class="pv-field" id="bloqueFotosNota" style="margin-bottom:14px">
         <div class="field-label">Fotos</div>
         <div class="foto-preview" id="fotoPreview"></div>
         <button type="button" class="srcchip" id="btnAgregarFoto" style="margin-top:8px">＋ Agregar foto</button>
-        <div style="font-family:var(--sans);font-size:.66rem;color:var(--ink-faint);margin-top:6px;line-height:1.35">Tocá una foto para elegir la portada · ✕ para quitarla.</div>
+        <div style="font-family:var(--sans);font-size:.66rem;color:var(--ink-faint);margin-top:6px;line-height:1.35">Tocá una foto para elegir la portada · ✕ para quitarla · tocá la etiqueta para cambiar "del posteo" / "de archivo".</div>
+        <div class="field-label" style="margin-top:10px">Estado de portada</div>
+        <select class="inp" id="portadaEstado" style="padding:8px">
+          <option value="posteo">Foto del posteo</option>
+          <option value="archivo">Foto de archivo sugerida</option>
+          <option value="falta">Falta portada</option>
+        </select>
       </div>
       <div class="pv-field" style="margin-bottom:12px">
         <div class="field-label">Título<span class="auto">auto</span></div>
@@ -1165,6 +1175,7 @@
         if(!error){
           const { data } = sb.storage.from("notas-fotos").getPublicUrl(nombre);
           fotosPropias.push(data.publicUrl);
+          FOTOS_ORIGEN[data.publicUrl] = "posteo"; portadaConfirmada = true; portadaEstadoManual = null;
         }
       }catch(err){ /* si falla una, seguimos con las demás */ }
     }
@@ -1519,7 +1530,11 @@
   }
   // Guarda con fecha/texto original; si la base todavía no tiene esas columnas, reintenta sin ellas.
   async function guardarNotaConOriginal(op, registro){
-    let r = await op(Object.assign({}, registro, camposOriginalBorrador()));
+    let r = await op(Object.assign({}, registro, camposOriginalBorrador(), camposPortada()));
+    if(r.error && /portada_estado|portada_confirmada|fotos_origen/i.test((r.error.message||"")+" "+(r.error.details||"")+" "+(r.error.hint||""))){
+      r = await op(Object.assign({}, registro, camposOriginalBorrador()));
+      if(!r.error) setTimeout(()=>toast("Falta correr supabase-portada-estado.sql"), 1800);
+    }
     if(r.error && /fecha_original|texto_original/i.test((r.error.message||"")+" "+(r.error.details||"")+" "+(r.error.hint||""))){
       r = await op(registro);
       if(!r.error) setTimeout(()=>toast("Falta correr supabase-fecha-original.sql"), 1800);
@@ -1566,6 +1581,7 @@
     fotoPropiaUrl = null;
     imagenDetectada = null;
     videoDetectado = null;
+    FOTOS_ORIGEN = {}; portadaConfirmada = false; portadaEstadoManual = null;
     document.getElementById("fotoPreview").innerHTML = "";
     document.getElementById("fotoPreview").style.display = "none";
     if(typeof setFotoEstado === "function") setFotoEstado("");
@@ -1602,6 +1618,7 @@
     borradorEditandoId = null;
     mostrarAlertasBorrador([]);
     setModoBorradorUI(false);
+    sincronizarPortadaEstado();
   }
   function setModoBorradorUI(editando){
     const pub = document.getElementById("pubBtn");
@@ -1624,6 +1641,7 @@
       fotoPropiaUrl = null;
       document.getElementById("leerImgBtn").classList.add("hide");
       document.getElementById("leerImgAyuda").classList.add("hide");
+      sincronizarPortadaEstado();
       return;
     }
     prev.style.display = "flex";
@@ -1634,6 +1652,9 @@
       '<div class="fp-thumb'+(i===0?' is-portada':'')+'">'
       + '<img data-i="'+i+'" src="'+escA(u)+'" alt="" title="'+(i===0?'Portada':'Tocar para usar de portada')+'">'
       + (i===0 ? '<span class="fp-badge">Portada</span>' : '')
+      + '<button type="button" class="fp-origen" data-orig="'+i+'" style="position:absolute;left:4px;bottom:4px;font:700 .58rem var(--sans);border:0;border-radius:4px;padding:2px 5px;cursor:pointer;'
+      + (origenFoto(u)==="archivo" ? 'background:#FFE08A;color:#6B4A00' : 'background:#DDF1E1;color:#1E5B2E') + '">'
+      + (origenFoto(u)==="archivo" ? 'de archivo' : 'del posteo') + '</button>'
       + '<button type="button" class="fp-quitar" data-del="'+i+'" title="Quitar" aria-label="Quitar">✕</button>'
       + '</div>'
     ).join("")
@@ -1643,6 +1664,15 @@
           : lista.length + " fotos — tocá una para elegir la portada · ✕ para quitar")
       + (lista.length >= MAX_FOTOS_NOTA ? " · máximo " + MAX_FOTOS_NOTA : "")
       + '</div>';
+    prev.querySelectorAll("[data-orig]").forEach(b=>{
+      b.addEventListener("click", (e)=>{
+        e.preventDefault(); e.stopPropagation();
+        const u = fotosPropias[parseInt(b.getAttribute("data-orig"),10)];
+        if(!u) return;
+        FOTOS_ORIGEN[u] = origenFoto(u)==="archivo" ? "posteo" : "archivo";
+        mostrarFotosEnPreview(fotosPropias);
+      });
+    });
     prev.querySelectorAll("img[data-i]").forEach(img=>{
       img.addEventListener("click", ()=>{
         const i = parseInt(img.getAttribute("data-i"),10);
@@ -1669,6 +1699,59 @@
         mostrarFotosEnPreview(fotosPropias);
       });
     });
+    sincronizarPortadaEstado();
+  }
+  // ===== Estado de portada (del posteo / de archivo / falta) =====
+  // Se guarda en noticias.portada_estado ('posteo'|'archivo'|'falta'),
+  // noticias.portada_confirmada (bool) y noticias.fotos_origen (jsonb {url:'posteo'|'archivo'}).
+  let FOTOS_ORIGEN = {};
+  let portadaConfirmada = false;
+  let portadaEstadoManual = null;   // si la reportera eligió a mano en el select
+  function origenFoto(u){ return FOTOS_ORIGEN[u] === "archivo" ? "archivo" : "posteo"; }
+  function portadaEstadoActual(){
+    const portada = (fotosPropias && fotosPropias[0]) || imagenDetectada || null;
+    if(!portada) return "falta";
+    if(portadaEstadoManual) return portadaEstadoManual;
+    return origenFoto(portada);
+  }
+  function sincronizarPortadaEstado(){
+    const sel = document.getElementById("portadaEstado");
+    const est = portadaEstadoActual();
+    if(sel) sel.value = est;
+    const aviso = document.getElementById("portadaAviso");
+    const bloquea = (est !== "posteo") && !portadaConfirmada;
+    if(aviso){
+      aviso.classList.toggle("hide", est === "posteo" || !borradorEditandoId);
+      document.getElementById("portadaAvisoTxt").textContent = est === "falta"
+        ? "📷 Falta portada: subí una foto adecuada o confirmá que sale sin foto."
+        : "📷 La portada es una foto de archivo sugerida: revisá que sea adecuada o cambiala.";
+      const cb = document.getElementById("portadaConfirmo"); if(cb) cb.checked = !!portadaConfirmada;
+    }
+    const editando = !!borradorEditandoId;
+    ["pubBtn","btnPublicarBarra"].forEach(id=>{
+      const b = document.getElementById(id); if(!b) return;
+      const off = editando && bloquea;
+      b.dataset.portadaBloq = off ? "1" : "";
+      b.style.opacity = off ? ".45" : "";
+      b.title = off ? "Confirmá o cambiá la portada antes de publicar" : "";
+    });
+  }
+  function portadaBloqueaPublicar(){
+    return !!borradorEditandoId && portadaEstadoActual() !== "posteo" && !portadaConfirmada;
+  }
+  function camposPortada(){
+    const o = {}; (fotosPropias||[]).forEach(u=>{ o[u] = origenFoto(u); });
+    return { portada_estado: portadaEstadoActual(), portada_confirmada: !!portadaConfirmada, fotos_origen: o };
+  }
+  function cargarPortadaDesdeNota(n){
+    FOTOS_ORIGEN = {};
+    let fo = n && n.fotos_origen;
+    if(typeof fo === "string"){ try{ fo = JSON.parse(fo); }catch(e){ fo = null; } }
+    if(Array.isArray(fo)) fo.forEach(x=>{ if(x && x.url) FOTOS_ORIGEN[x.url] = x.origen === "archivo" ? "archivo" : "posteo"; });
+    else if(fo && typeof fo === "object") Object.keys(fo).forEach(u=>{ FOTOS_ORIGEN[u] = fo[u] === "archivo" ? "archivo" : "posteo"; });
+    const e = n && n.portada_estado;
+    portadaEstadoManual = (e === "archivo" || e === "falta" || e === "posteo") ? e : null;
+    portadaConfirmada = !!(n && n.portada_confirmada);
   }
   function aplicarFuenteEnChips(etiqueta){
     let raw = (etiqueta || "").toString().trim();
@@ -1759,6 +1842,7 @@
     }
     extendidoOriginal = document.getElementById("pvExtendido").value;
     const fotos = (typeof fotosDeNota === "function") ? fotosDeNota(n) : [];
+    cargarPortadaDesdeNota(n);
     fotosPropias = fotos.slice();
     fotoPropiaUrl = fotosPropias[0] || null;
     imagenDetectada = n.imagen_url || fotoPropiaUrl || null;
@@ -1773,6 +1857,7 @@
     if(n.video_url) avisos.push("🎬 video");
     document.getElementById("pvMedia").textContent = avisos.join(" · ") || "Borrador";
     setModoBorradorUI(true);
+    sincronizarPortadaEstado();
     document.getElementById("previewCard").classList.remove("hide");
     document.getElementById("btnVistaPrevia").classList.remove("hide");
     if(typeof actualizarBtnAbrirSrcLink === "function") actualizarBtnAbrirSrcLink();
@@ -1833,6 +1918,11 @@
   document.getElementById("pubBtn").addEventListener("click", async ()=>{
     const btn = document.getElementById("pubBtn");
     const labelPub = borradorEditandoId ? "Publicar borrador" : "Publicar en Fonte";
+    if(portadaBloqueaPublicar()){
+      toast("Revisá la portada: confirmala o cambiala antes de publicar.");
+      const av = document.getElementById("portadaAviso"); if(av) av.scrollIntoView({ behavior:"smooth", block:"center" });
+      return;
+    }
     btn.textContent = "Publicando...";
     btn.disabled = true;
     const registro = armarRegistroNota({ publicada: true });
@@ -1872,7 +1962,7 @@
       .select("*")
       .eq("creada_por", sesion.user.id)
       .eq("publicada", true)
-      .gte("created_at", inicioHoy.toISOString())
+      .or("created_at.gte." + inicioHoy.toISOString() + ",published_at.gte." + inicioHoy.toISOString())
       .order("created_at", { ascending: false });
     const cont = document.getElementById("todayList");
     if(error || !data || !data.length){
@@ -4027,7 +4117,15 @@
     // Archivo también sirve para encontrar y compartir lo que aparece en "Más noticias"
     // aunque lo haya cargado otra persona.
     const [n, o, c, a] = await Promise.all([
-      sb.from("noticias").select("*").eq("publicada",true).order("created_at",{ascending:false}).limit(200),
+      sb.from("noticias").select("*").eq("publicada",true).order("created_at",{ascending:false}).limit(200)
+        .then(async r=>{
+          // También las del reportero/bot ordenadas por published_at: si una nota vieja se
+          // republica (published_at nuevo) tiene que aparecer acá, igual que en el sitio.
+          const x = await sb.from("noticias").select("*").eq("publicada",true).neq("origen","rss")
+            .not("published_at","is",null).order("published_at",{ascending:false}).limit(100);
+          const vistos = new Set((r.data||[]).map(o=>o.id));
+          return { data: (r.data||[]).concat((x.data||[]).filter(o=>!vistos.has(o.id))), error: r.error };
+        }),
       sb.from("ofertas").select("*").eq("activa",true).order("created_at",{ascending:false}),
       sb.from("comunicados").select("*").order("created_at",{ascending:false}).limit(40),
       sb.from("aportes").select("*").in("estado",["revisado","resuelto"]).order("created_at",{ascending:false}).limit(40),
@@ -4037,7 +4135,7 @@
       .concat((o.data||[]).map(x=>({o:x,tipo:"oferta"})))
       .concat((c.data||[]).map(x=>({o:x,tipo:"comunicado"})))
       .concat((a.data||[]).map(x=>({o:x,tipo:"aporte"})))
-      .sort((x,y)=> new Date(y.o.created_at||0) - new Date(x.o.created_at||0));
+      .sort((x,y)=> new Date(y.o.published_at||y.o.created_at||0) - new Date(x.o.published_at||x.o.created_at||0));
     pintarArchivo();
   }
   function pintarArchivo(){
@@ -5241,6 +5339,12 @@
     const real = document.getElementById("pubBtn");
     if(real) real.click();
     else toast("Generá la nota con Fonte antes de publicar.");
+  });
+  document.getElementById("portadaEstado").addEventListener("change", (e)=>{
+    portadaEstadoManual = e.target.value; portadaConfirmada = false; sincronizarPortadaEstado();
+  });
+  document.getElementById("portadaConfirmo").addEventListener("change", (e)=>{
+    portadaConfirmada = !!e.target.checked; sincronizarPortadaEstado();
   });
   document.getElementById("guardarBorradorBtn").addEventListener("click", async ()=>{
     if(borradorEditandoId) return;
