@@ -1501,6 +1501,32 @@
   });
 
 
+  // ---- Fecha de publicación original + texto original del borrador ----
+  // datetime-local (hora de Quitilipi, UTC-3 fijo) -> ISO con -03:00
+  function fechaLocalAIso(v){
+    v=(v||"").trim(); const m=/^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2})(:\d{2})?/.exec(v);
+    return m ? (m[1]+"T"+m[2]+(m[3]||":00")+"-03:00") : null;
+  }
+  // timestamptz de la base -> "YYYY-MM-DDTHH:MM" en hora de Argentina
+  function isoAFechaLocal(iso){
+    if(!iso) return ""; const d=new Date(iso); if(isNaN(d)) return "";
+    const a=new Date(d.getTime()-3*3600*1000), z=n=>String(n).padStart(2,"0");
+    return a.getUTCFullYear()+"-"+z(a.getUTCMonth()+1)+"-"+z(a.getUTCDate())+"T"+z(a.getUTCHours())+":"+z(a.getUTCMinutes());
+  }
+  function camposOriginalBorrador(){
+    const f=document.getElementById("fechaPubOriginal"), t=document.getElementById("rawInput");
+    return { fecha_original: fechaLocalAIso(f?f.value:""), texto_original: (t&&t.value.trim())||null };
+  }
+  // Guarda con fecha/texto original; si la base todavía no tiene esas columnas, reintenta sin ellas.
+  async function guardarNotaConOriginal(op, registro){
+    let r = await op(Object.assign({}, registro, camposOriginalBorrador()));
+    if(r.error && /fecha_original|texto_original/i.test((r.error.message||"")+" "+(r.error.details||"")+" "+(r.error.hint||""))){
+      r = await op(registro);
+      if(!r.error) setTimeout(()=>toast("Falta correr supabase-fecha-original.sql"), 1800);
+    }
+    return r;
+  }
+
   function armarRegistroNota(opts){
     opts = opts || {};
     const publicada = !!opts.publicada;
@@ -1534,6 +1560,7 @@
     document.getElementById("previewCard").classList.add("hide");
     document.getElementById("btnVistaPrevia").classList.add("hide");
     document.getElementById("rawInput").value = "";
+    { const f=document.getElementById("fechaPubOriginal"); if(f) f.value = ""; }
     document.getElementById("fotoPropia").value = "";
     fotosPropias = [];
     fotoPropiaUrl = null;
@@ -1711,6 +1738,8 @@
     document.getElementById("srcLink").value = n.url_original || "";
     document.getElementById("videoUrl").value = n.video_url || "";
     videoDetectado = n.video_url || null;
+    { const f=document.getElementById("fechaPubOriginal"); if(f) f.value = isoAFechaLocal(n.fecha_original); }
+    document.getElementById("rawInput").value = n.texto_original || "";
     aplicarFuenteEnChips(n.fuente_etiqueta);
     aplicarAccionEnChips(n.accion_etiqueta, n.accion_url);
     aplicarPlacaEnChips(n.estilo_placa || "auto");
@@ -5220,7 +5249,7 @@
     const registro = armarRegistroNota({ publicada: false });
     registro.origen = "reportero";
     registro.creada_por = sesion.user.id;
-    const { error } = await sb.from("noticias").insert(registro);
+    const { error } = await guardarNotaConOriginal(reg=> sb.from("noticias").insert(reg), registro);
     btn.disabled = false; btn.textContent = "Guardar como borrador";
     if(error){ toast("No se pudo guardar: " + error.message); return; }
     toast("Guardado como borrador ✓");
@@ -5233,7 +5262,7 @@
     const btn = document.getElementById("guardarBorradorEditBtn");
     btn.disabled = true; btn.textContent = "Guardando…";
     const registro = armarRegistroNota({ publicada: false });
-    const { error } = await sb.from("noticias").update(registro).eq("id", borradorEditandoId);
+    const { error } = await guardarNotaConOriginal(reg=> sb.from("noticias").update(reg).eq("id", borradorEditandoId), registro);
     btn.disabled = false; btn.textContent = "Guardar borrador";
     if(error){ toast("No se pudo guardar: " + error.message); return; }
     toast("Borrador actualizado ✓");
