@@ -1343,6 +1343,7 @@
 #svcLista .svc-card-head{ padding:13px 0; }
 .svc-oculta{ display:none!important; }
 .svc-card.filtrando .svc-vermas{ display:none!important; }
+  .li-pair-item.foto .mini{ display:block; width:100% !important; height:auto !important; aspect-ratio:16/10; border-radius:9px; margin-bottom:6px; }
 </style>
 </head>
 <body>
@@ -2145,9 +2146,9 @@
   function tplLiPair(a,b){
     return '<div class="li li-pair" style="--ac:'+a.color+'">'
       + '<div class="li-pair-grid">'
-      + '<a class="article li-pair-item" data-id="'+esc(a.id)+'"><h4 class="h">'+esc(a.titulo)+'</h4><div class="meta-row">'+a.catTag+a.fav+'<span class="src">'+a.lugar+'</span></div></a>'
+      + '<a class="article li-pair-item'+(a.mini?' foto':'')+'" data-id="'+esc(a.id)+'">'+(a.mini||'')+'<h4 class="h">'+esc(a.titulo)+'</h4><div class="meta-row">'+a.catTag+a.fav+'<span class="src">'+a.lugar+'</span></div></a>'
       + '<div class="li-pair-divider"></div>'
-      + '<a class="article li-pair-item" data-id="'+esc(b.id)+'"><h4 class="h">'+esc(b.titulo)+'</h4><div class="meta-row">'+b.catTag+b.fav+'<span class="src">'+b.lugar+'</span></div></a>'
+      + '<a class="article li-pair-item'+(b.mini?' foto':'')+'" data-id="'+esc(b.id)+'">'+(b.mini||'')+'<h4 class="h">'+esc(b.titulo)+'</h4><div class="meta-row">'+b.catTag+b.fav+'<span class="src">'+b.lugar+'</span></div></a>'
       + '</div></div>';
   }
 
@@ -5775,7 +5776,7 @@
     const fotos = fotosDe(n);
     if(!fotos.length) return "";
     const extra = fotos.length > 1 ? '<span class="pf">📷 '+fotos.length+'</span>' : '';
-    return '<span class="mini" style="width:'+tam+'px;height:'+tam+'px;background-image:url(\''+esc(urlSegura(fotos[0]))+'\')">'+extra+'</span>';
+    return '<span class="mini" style="width:'+tam+'px;height:'+tam+'px;--lzbg:url(\''+esc(miniDe(fotoGrande(urlSegura(fotos[0]),480)))+'\')">'+extra+'</span>';
   }
   function htmlGaleria(lista){
     if(!lista.length) return "";
