@@ -2485,6 +2485,7 @@
     const n = n0;
     if(!n) return;
     marcarLeido(n.id);
+    registrarEvento("vista", n.__tipo === "c" ? "c" : "n", n.id);
     document.querySelectorAll('.article[data-id="'+String(n.id).replace(/"/g,'')+'"]').forEach(el=> el.classList.add("leida"));
     notaAbierta = n;
     // la placa para compartir se arma ya (sin trabar la animación), así el botón sale al toque
@@ -2791,6 +2792,7 @@
       window.speechSynthesis.speak(u);
     };
     AUDIO.sonando = true;
+    if(notaAbierta && AUDIO.i === 0) registrarEvento("audio", "n", notaAbierta.id);
     if(voz) recordarVoz(voz);
     hablar(AUDIO.i);
     clearInterval(AUDIO.reloj);
@@ -3516,6 +3518,7 @@
   // Toque en "Compartir": celular → menú de compartir con la placa ya lista;
   // compu → baja la imagen y copia el texto. Si algo falla (que no sea "cancelar"), plan B.
   async function compartirConPlaca(n, texto, btn){
+    if(n && (!n.__tipo || n.__tipo === "n" || n.__tipo === "c")) registrarEvento("compartir", n.__tipo === "c" ? "c" : "n", n.id, esCompu() ? "descarga" : "nativo");
     const orig = btn ? btn.textContent : "";
     const e = prepararPlaca(n);
     let blob = e.blob;
@@ -4190,6 +4193,7 @@
     const c = fila || COMUNICADOS.find(x=>String(x.id)===String(id));
     if(!c) return;
     comunicadoAbierto = c;
+    registrarEvento("vista", "c", c.id);
     setTimeout(()=>{ if(comunicadoAbierto === c) prepararPlaca(piezaDelComunicado(c)); }, 450);
     marcarComunicadoVisto(id);
     if(typeof pintarInstituciones === "function") pintarInstituciones();
@@ -5409,6 +5413,44 @@
       avisoDebug("→ ERROR de red: " + (e && e.message ? e.message : e));
     }
   }
+  // ================= ESTADÍSTICAS POR NOTA (vista · compartir · audio) =================
+  // Anónimo: solo el id al azar del dispositivo. No cuenta al equipo (fonte_staff /
+  // fonte_interno) ni a robots. El servidor deja una vista por dispositivo y nota cada 24 h.
+  function esRobot(){
+    try{
+      const ua = navigator.userAgent || "";
+      if(navigator.webdriver) return true;
+      if(/bot|crawl|spider|slurp|preview|facebookexternalhit|whatsapp\/|headless|phantom|puppeteer|playwright|selenium|lighthouse/i.test(ua)) return true;
+      if(!navigator.languages || navigator.languages.length === 0) return true;
+    }catch(e){}
+    return false;
+  }
+  const EVENTOS_ENVIADOS = new Set();
+  function idMetricas(){
+    const d = getDispositivoId();
+    if(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(d)) return d;
+    let m = localStorage.getItem("fonte_metricas_id");
+    if(!m){
+      m = "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, c=>{ const r = Math.random()*16|0; return (c === "x" ? r : (r&3|8)).toString(16); });
+      localStorage.setItem("fonte_metricas_id", m);
+    }
+    return m;
+  }
+  function registrarEvento(tipo, piezaTipo, id, via){
+    try{
+      if(id == null || id === "") return;
+      if(esDispositivoInterno() || esRobot()) return;
+      const clave = tipo + ":" + piezaTipo + ":" + id;
+      if(tipo !== "compartir"){ if(EVENTOS_ENVIADOS.has(clave)) return; EVENTOS_ENVIADOS.add(clave); }
+      fetch(SUPABASE_URL + "/rest/v1/rpc/registrar_evento", {
+        method: "POST", keepalive: true,
+        headers: { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + SUPABASE_KEY, "Content-Type": "application/json" },
+        body: JSON.stringify({ p_visitante: idMetricas(), p_tipo: tipo, p_pieza_tipo: piezaTipo,
+                               p_pieza_id: String(id), p_via: via || "directo" })
+      }).then(r=> avisoDebug("registrarEvento " + clave + " → " + r.status)).catch(()=>{});
+    }catch(e){}
+  }
+
   // ================= ONBOARDING (primera visita) =================
   const ONB = [
     {
@@ -6354,7 +6396,7 @@
   // a cada reportero cuál es). Para sacarlo, ?staff=quitar en ese mismo dispositivo.
   const CLAVE_INTERNA = "quitilipi2026"; // cambiá esto por tu propia clave
   function esDispositivoInterno(){
-    try{ return localStorage.getItem("fonte_interno") === "1"; }catch(e){ return false; }
+    try{ return localStorage.getItem("fonte_interno") === "1" || localStorage.getItem("fonte_staff") === "1"; }catch(e){ return false; }
   }
   function revisarClaveStaff(){
     let p;

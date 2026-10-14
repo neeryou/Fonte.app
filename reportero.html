@@ -47,6 +47,18 @@
   .rep-wrap{ max-width:640px; margin:0 auto; padding:24px 18px 70px; }
   .rep-h{ font-family:var(--serif); font-weight:700; font-size:1.4rem; margin:0 0 4px; }
   .rep-sub{ font-family:var(--sans); font-size:.78rem; color:var(--ink-soft); margin:0 0 20px; }
+  .est-entrar{ display:block; width:100%; text-align:left; margin-top:22px; padding:14px 16px; border-radius:14px;
+    border:1px solid var(--line); background:var(--paper-2); font:inherit; font-weight:700; font-size:15px; cursor:pointer; color:inherit; }
+  .est-entrar span{ display:block; font-weight:400; font-size:13px; opacity:.7; margin-top:2px; }
+  .est-fila{ display:flex; gap:10px; align-items:flex-start; padding:11px 0; border-bottom:1px solid var(--line); }
+  .est-pos{ font-weight:800; min-width:22px; opacity:.55; }
+  .est-tit{ flex:1; min-width:0; font-size:14px; line-height:1.3; }
+  .est-tit small{ display:block; opacity:.6; font-size:12px; margin-top:2px; }
+  .est-nums{ display:flex; gap:6px; flex-wrap:wrap; margin-top:6px; }
+  .est-nums b{ font-size:11.5px; font-weight:600; background:rgba(0,0,0,.05); border-radius:999px; padding:3px 8px; }
+  .est-inst{ background:var(--paper-2); border:1px solid var(--line); border-radius:14px; padding:12px 14px; margin-bottom:8px; }
+  .btn-sec{ display:block; width:100%; padding:12px; border-radius:12px; border:1px solid var(--line); background:transparent; font:inherit; font-weight:600; cursor:pointer; color:inherit; }
+  .est-inst h4{ margin:0 0 6px; font-size:14px; }
   .card{ background:var(--paper-2); border:1px solid var(--line); border-radius:14px; padding:18px; margin-bottom:20px; }
   textarea{ width:100%; font-family:var(--sans); font-size:.9rem; color:var(--ink); background:var(--paper); border:1px solid var(--line-strong); border-radius:8px; padding:11px; line-height:1.5; resize:vertical; min-height:120px; }
   .srcchips{ display:flex; gap:7px; flex-wrap:wrap; margin:12px 0 4px; }
@@ -588,6 +600,24 @@
 
       <div class="sec-lbl">Lo último que publicaste</div>
       <div id="hoyUltimo"></div>
+
+      <button class="est-entrar" id="btnEstadisticas" type="button">📊 Estadísticas <span>Lo más leído y resumen por institución →</span></button>
+    </div>
+
+    <div class="rep-view" id="viewEstadisticas">
+      <h2 class="rep-h">Estadísticas</h2>
+      <p class="rep-sub">Lectores reales: no cuenta al equipo ni a robots. Una vista por persona y por nota cada 24 h.</p>
+      <div class="sec-lbl">Lo más leído</div>
+      <div class="filtros" id="estFiltroDias">
+        <button class="f on" data-d="7">Últimos 7 días</button>
+        <button class="f" data-d="30">Últimos 30 días</button>
+      </div>
+      <div id="estTop"><p class="vacio-txt">Cargando…</p></div>
+      <div class="sec-lbl" style="margin-top:22px">Resumen mensual por institución</div>
+      <select class="inp" id="estMes" style="margin-bottom:10px"></select>
+      <div id="estInst"><p class="vacio-txt">Cargando…</p></div>
+      <button class="btn-sec" id="estCopiar" type="button" style="margin-top:10px">Copiar resumen para enviar</button>
+      <button class="btn-sec" id="estVolver" type="button" style="margin-top:8px">← Volver a Hoy</button>
     </div>
 
     <div class="rep-view" id="viewArchivo">
@@ -1115,7 +1145,7 @@
     {id:"otro_riesgo", label:"Otro riesgo", icon:"⚠️"}
   ];
 
-  const VISTAS = ["viewHoy","viewCargar","viewArchivo","viewAportes","viewOfertas","viewInstituciones"];
+  const VISTAS = ["viewHoy","viewCargar","viewArchivo","viewAportes","viewOfertas","viewInstituciones","viewEstadisticas"];
   function irAVista(v){
     VISTAS.forEach(x=>{
       const el = document.getElementById(x);
@@ -1133,6 +1163,7 @@
     }
     if(v === "viewHoy"){ cargarHoy(); }
     if(v === "viewArchivo"){ cargarArchivo(); }
+    if(v === "viewEstadisticas"){ cargarEstadisticas(); }
     if(v === "viewAportes"){ cargarAportesPendientes(); cargarAvisosPublicados(); }
     if(v === "viewCargar"){ cargarBorradores(); cargarPublicadoHoy(); cargarOfertasAdmin(); cargarComunicadosAdmin(); asegurarInstitucionesSelect(true); }
     if(v === "viewInstituciones"){ mostrarCiudadLista(); cargarInstitucionesAdmin(); }
@@ -1342,6 +1373,7 @@
     const { data } = await sb.auth.getSession();
     sesion = data.session;
     if(sesion){
+      try{ localStorage.setItem("fonte_staff", "1"); }catch(e){}   // este dispositivo no cuenta en las estadísticas
       loginView.classList.add("hide");
       consoleView.classList.remove("hide");
       document.getElementById("userEmail").textContent = sesion.user.email;
@@ -4274,6 +4306,71 @@
       });
     });
   }
+  // ================= ESTADÍSTICAS (solo lectura) =================
+  let EST_DIAS = 7, EST_RESUMEN_TXT = "";
+  const estNum = (x)=> Number(x||0).toLocaleString("es-AR");
+  function estChips(r){
+    return '<div class="est-nums"><b>👁 '+estNum(r.vistas)+' vistas</b><b>👤 '+estNum(r.personas)+' personas</b>'
+      + '<b>↗ '+estNum(r.compartidos)+' compartidos</b><b>🔊 '+estNum(r.audios)+' audios</b></div>';
+  }
+  async function estTitulos(filas){
+    const ids = (t)=> [...new Set(filas.filter(r=>r.pieza_tipo===t).map(r=>r.pieza_id))];
+    const out = {};
+    const nIds = ids("n"), cIds = ids("c");
+    if(nIds.length){ const { data } = await sb.from("noticias").select("id,titulo").in("id", nIds); (data||[]).forEach(x=> out["n:"+x.id] = x.titulo); }
+    if(cIds.length){ const { data } = await sb.from("comunicados").select("id,titulo,institucion").in("id", cIds); (data||[]).forEach(x=> out["c:"+x.id] = x.titulo); }
+    return out;
+  }
+  async function estInstituciones(){
+    const { data } = await sb.from("instituciones").select("id,nombre");
+    const m = {}; (data||[]).forEach(i=> m[String(i.id)] = i.nombre); return m;
+  }
+  async function cargarEstTop(){
+    const caja = document.getElementById("estTop");
+    caja.innerHTML = '<p class="vacio-txt">Cargando…</p>';
+    const { data, error } = await sb.rpc("metricas_top", { p_dias: EST_DIAS, p_limite: 15 });
+    if(error){ caja.innerHTML = '<p class="vacio-txt">No se pudieron cargar. ¿Ya corriste supabase-metricas.sql?</p>'; return; }
+    if(!data || !data.length){ caja.innerHTML = '<p class="vacio-txt">Todavía no hay lecturas en este período.</p>'; return; }
+    const [tit, inst] = await Promise.all([estTitulos(data), estInstituciones()]);
+    caja.innerHTML = data.map((r,i)=>{
+      const t = tit[r.pieza_tipo+":"+r.pieza_id] || "(pieza #"+r.pieza_id+")";
+      const sub = (r.pieza_tipo === "c" ? "Comunicado" : "Nota") + (r.institucion_id && inst[r.institucion_id] ? " · " + inst[r.institucion_id] : "");
+      return '<div class="est-fila"><div class="est-pos">'+(i+1)+'</div><div class="est-tit">'+escA(t)+'<small>'+escA(sub)+'</small>'+estChips(r)+'</div></div>';
+    }).join("");
+  }
+  async function cargarEstInst(){
+    const caja = document.getElementById("estInst"), sel = document.getElementById("estMes");
+    const { data, error } = await sb.from("metricas_institucion_mes").select("*").order("mes", { ascending:false });
+    if(error){ caja.innerHTML = '<p class="vacio-txt">No se pudo cargar.</p>'; return; }
+    const meses = [...new Set((data||[]).map(r=>r.mes))];
+    if(!meses.length){ sel.innerHTML = ""; caja.innerHTML = '<p class="vacio-txt">Todavía no hay lecturas de instituciones.</p>'; EST_RESUMEN_TXT = ""; return; }
+    const elegido = meses.includes(sel.value) ? sel.value : meses[0];
+    const nomMes = (m)=>{ const [y,mm] = m.split("-").map(Number); return new Date(y, mm-1, 15).toLocaleDateString("es-AR", { month:"long", year:"numeric" }); };
+    sel.innerHTML = meses.map(m=> '<option value="'+m+'"'+(m===elegido?' selected':'')+'>'+escA(nomMes(m))+'</option>').join("");
+    const inst = await estInstituciones();
+    const filas = data.filter(r=>r.mes===elegido).sort((a,b)=> b.personas - a.personas);
+    caja.innerHTML = filas.map(r=> '<div class="est-inst"><h4>'+escA(inst[r.institucion_id] || "Institución")+'</h4>'
+      + '<small style="opacity:.65">'+estNum(r.piezas)+' publicaciones leídas</small>'+estChips(r)+'</div>').join("");
+    EST_RESUMEN_TXT = "Fonte · resumen de " + nomMes(elegido) + "\n" + filas.map(r=>
+      "• " + (inst[r.institucion_id] || "Institución") + ": " + estNum(r.personas) + " personas, " + estNum(r.vistas) + " vistas, "
+      + estNum(r.compartidos) + " compartidos, " + estNum(r.audios) + " escucharon el audio (" + estNum(r.piezas) + " publicaciones)").join("\n")
+      + "\nCuenta lectores reales: no incluye al equipo de Fonte ni robots.";
+  }
+  function cargarEstadisticas(){ cargarEstTop(); cargarEstInst(); }
+  document.getElementById("btnEstadisticas").addEventListener("click", ()=> irAVista("viewEstadisticas"));
+  document.getElementById("estVolver").addEventListener("click", ()=> irAVista("viewHoy"));
+  document.getElementById("estMes").addEventListener("change", cargarEstInst);
+  document.getElementById("estFiltroDias").addEventListener("click", (e)=>{
+    const b = e.target.closest("[data-d]"); if(!b) return;
+    EST_DIAS = Number(b.getAttribute("data-d"));
+    document.querySelectorAll("#estFiltroDias .f").forEach(x=> x.classList.toggle("on", x === b));
+    cargarEstTop();
+  });
+  document.getElementById("estCopiar").addEventListener("click", async ()=>{
+    if(!EST_RESUMEN_TXT){ return; }
+    try{ await navigator.clipboard.writeText(EST_RESUMEN_TXT); toast("Resumen copiado ✓"); }catch(e){ prompt("Copiá el resumen:", EST_RESUMEN_TXT); }
+  });
+
   async function cargarArchivo(){
     const cont = document.getElementById("archLista");
     cont.innerHTML = '<p class="vacio-txt">Cargando…</p>';
