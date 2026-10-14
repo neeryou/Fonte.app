@@ -1316,6 +1316,33 @@
     .sheet{ height:auto; top:4vh; bottom:4vh; border-radius:18px; }
     .sheet2.pagina{ width:720px; max-width:720px; left:50%; right:auto; margin-left:-360px; top:3vh; bottom:3vh; height:auto; border-radius:18px; box-shadow:0 14px 44px rgba(30,28,22,.25); }
   }
+/* Propuesta 1: escritorio al 120% (solo >=1024px) */
+@media (min-width:1024px){ body{ zoom:1.2; } }
+/* Propuesta 2: sin huecos en "Tu ciudad" (solo >=760px) */
+@media (min-width:760px){
+  .zgrid{ align-items:start; }
+  .zgrid > .mosaic-grid{ align-self:start; align-items:start; }
+  .zgrid > .mosaic-grid .mosaic-card{ height:auto; }
+  .zgrid > .zlist{ grid-column:1 / -1; display:block; column-count:3; column-gap:26px; column-rule:1px solid var(--line); padding-left:0; border-left:0; margin-top:14px; }
+  .zgrid > .zlist > .li{ break-inside:avoid; display:block; }
+  .zgrid > .zlist > .li.foto{ display:grid; align-items:start; }
+}
+/* Franja Oficial estilo B */
+.inst-home{ border-left:4px solid #1f4e8c; padding-left:12px; background:linear-gradient(90deg,#eaf1fa,transparent 70%); border-radius:0 8px 8px 0; margin-top:8px; }
+.inst-home-bar .mid{ color:#1f4e8c !important; }
+.inst-home-bar .mid::after{ content:'Verificado'; font-size:.55rem; letter-spacing:.06em; background:#1f4e8c; color:#fff; padding:2px 6px; border-radius:99px; margin-left:6px; }
+.inst-home-bar .ln{ background:#1f4e8c; opacity:.4; }
+.inst-home-bar .ch{ color:#1f4e8c !important; }
+/* Servicios: buscador de barrio y secciones cerradas */
+#svcBarrio{ display:flex; gap:8px; align-items:center; border:1px solid var(--line-strong); border-radius:12px; padding:10px 12px; margin:6px 0 10px; background:var(--paper); }
+#svcBarrio input{ border:0; outline:0; background:none; flex:1; font:600 .9rem var(--sans); color:var(--ink); }
+#svcLista .svc-card-head .fle{ font-size:0; transform:none!important; }
+#svcLista .svc-card-head .fle::after{ content:'Ver ›'; font:700 .74rem var(--sans); color:var(--region); }
+#svcLista .svc-card.abierta .svc-card-head .fle::after{ content:'Cerrar ⌃'; }
+#svcLista .svc-card-head .cant::before{ content:'· '; }
+#svcLista .svc-card-head{ padding:13px 0; }
+.svc-oculta{ display:none!important; }
+.svc-card.filtrando .svc-vermas{ display:none!important; }
 </style>
 </head>
 <body>
@@ -4664,6 +4691,7 @@
       });
       Object.assign(porSecFicha, porSec); ordenSecFicha.push(...ordenSec);
       html += '<div class="inst-sec" id="serviciosFicha"><div class="inst-sec-head"><span class="t">Servicios</span><span class="ln"></span></div>';
+      html += '<label id="svcBarrio">🔎<input id="svcBarrioIn" type="search" autocomplete="off" placeholder="Buscá tu barrio (ej. Centro)" aria-label="Buscá tu barrio"></label>';
       html += '<div id="svcLista">';
       ordenSec.forEach((sec, iSec)=>{
         const filasSec = porSec[sec].filter(s=> !s.tipo);
@@ -4671,7 +4699,7 @@
         const imgSec = porSec[sec].filter(s=> s.tipo === "imagen" && /^https:\/\//.test(String(s.valor||""))).slice(-1)[0];
         const n = filasSec.length;
         const largo = n > SVC_VISIBLES + 2;
-        const abrirSec = opts.seccion ? normSec(opts.seccion) === normSec(sec) : iSec===0;
+        const abrirSec = opts.seccion ? normSec(opts.seccion) === normSec(sec) : false;
         html += '<div class="svc-tabla svc-card'+(abrirSec?" abierta":"")+'" data-sec-i="'+iSec+'" data-sec="'+esc(sec)+'">'
           + '<button type="button" class="svc-card-head"><span class="nom">'+esc(sec)+'</span><span class="cant">'+(n ? n+(n===1?" barrio":" barrios") : "")+'</span><span class="fle">⌄</span></button>'
           + '<div class="svc-card-body">';
@@ -4742,6 +4770,23 @@
     document.querySelectorAll("#svcLista .svc-card-head").forEach(cab=>{
       cab.addEventListener("click", ()=>{ cab.closest(".svc-card").classList.toggle("abierta"); });
     });
+    const svcIn = document.getElementById("svcBarrioIn");
+    if(svcIn){
+      const cardsSvc = Array.from(document.querySelectorAll("#svcLista .svc-card"));
+      const normB = t=> String(t||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+      svcIn.addEventListener("input", ()=>{
+        const q = normB(svcIn.value.trim());
+        cardsSvc.forEach(c=>{
+          let hit = 0;
+          c.querySelectorAll(".svc-fila").forEach(f=>{ const m = !q || normB(f.dataset.clave).includes(q); f.classList.toggle("svc-oculta", !m); if(m) hit++; });
+          c.classList.toggle("filtrando", !!q);
+          const bi = c.querySelector(".svc-card-body-in");
+          if(bi){ if(q){ if(bi.classList.contains("corta")) bi.dataset.c = "1"; bi.classList.remove("corta"); } else if(bi.dataset.c) bi.classList.add("corta"); }
+          c.classList.toggle("abierta", !!q && hit>0);
+          c.classList.toggle("svc-oculta", !!q && hit===0);
+        });
+      });
+    }
     // Compartir: cada fecha (flyer oficial), cada sección de servicios y la ficha (texto + link)
     document.querySelectorAll("#institucionBody .inst-fecha-row[data-fecha-id]").forEach(row=>{
       const f = fechas.find(x=>String(x.id)===row.getAttribute("data-fecha-id"));
