@@ -1327,6 +1327,52 @@
   .zgrid > .zlist > .li{ break-inside:avoid; display:block; }
   .zgrid > .zlist > .li.foto{ display:grid; align-items:start; }
 }
+/* ===== Hoy en Quitilipi: clima + farmacia de turno ===== */
+.tick-hoy{ cursor:pointer; }
+.tick-hoy:focus-visible{ outline:2px solid var(--ink); outline-offset:-2px; }
+.tick.farm{ flex:1 1 0; min-width:0; background:color-mix(in srgb,#1F7A55 11%,var(--paper-3)); border-left:3px solid #1F7A55; }
+.tick.farm .lbl{ color:#1F7A55; font-weight:600; }
+[data-tema="oscuro"] .tick.farm .lbl{ color:#5FBF82; }
+.tick.farm .lbl, .tick.farm .val{ overflow:hidden; text-overflow:ellipsis; }
+@media (max-width:520px){ #ticker .tick{ padding:8px 10px; } #ticker .tick.farm .lbl .largo{ display:none; } }
+.tick.farm .val i{ font-style:normal; color:var(--ink-faint); font-weight:500; }
+.tick.farm .val.gris{ color:var(--ink-faint); font-weight:500; }
+#sheetHoy .hoy-body{ overflow-y:auto; padding:12px 0 24px; flex:1; }
+#sheetHoy .seg{ display:flex; margin:0 16px 14px; border:.5px solid var(--line-strong); border-radius:20px; overflow:hidden; }
+#sheetHoy .seg button{ flex:1; padding:8px; font:600 .82rem var(--sans); background:none; border:0; color:var(--ink); cursor:pointer; }
+#sheetHoy .seg button.on{ background:var(--ink); color:var(--paper); }
+#sheetHoy .hoy-sec{ padding:0 16px; margin-bottom:16px; }
+#sheetHoy[data-tab="clima"] .hoy-sec.F, #sheetHoy[data-tab="farmacia"] .hoy-sec.W{ display:none; }
+#sheetHoy .st{ font:600 .55rem var(--mono); letter-spacing:.14em; text-transform:uppercase; color:var(--ink-faint); margin:0 0 7px; }
+#sheetHoy .now{ display:flex; align-items:center; gap:12px; }
+#sheetHoy .now .ic{ font-size:2.4rem; } #sheetHoy .now .t{ font-family:var(--serif); font-size:2.6rem; font-weight:700; }
+#sheetHoy .now .d{ font-size:.85rem; color:var(--ink-soft); line-height:1.45; }
+#sheetHoy .horas{ display:flex; border:.5px solid var(--line); background:var(--surface); margin-top:8px; }
+#sheetHoy .horas div{ flex:1; text-align:center; padding:6px 0; font-family:var(--mono); font-size:.62rem; border-right:.5px solid var(--line); }
+#sheetHoy .horas div:last-child{ border-right:0; }
+#sheetHoy .horas b{ display:block; font-size:.78rem; margin:2px 0; } #sheetHoy .horas .r{ color:var(--region); }
+#sheetHoy .fh{ background:color-mix(in srgb,#1F7A55 11%,var(--paper)); border-left:3px solid #1F7A55; padding:12px; margin-bottom:8px; }
+#sheetHoy .fh .n{ font-family:var(--serif); font-weight:700; font-size:1.15rem; }
+#sheetHoy .fh .a{ font-size:.82rem; color:var(--ink-soft); margin:3px 0 9px; line-height:1.45; }
+#sheetHoy .fbtns{ display:flex; gap:8px; }
+#sheetHoy .fbtns a{ flex:1; text-align:center; padding:9px; border-radius:6px; font-size:.82rem; font-weight:600; background:#1F7A55; color:#fff; text-decoration:none; }
+#sheetHoy .fbtns a.o{ background:none; border:1px solid #1F7A55; color:#1F7A55; }
+[data-tema="oscuro"] #sheetHoy .fbtns a.o{ color:#5FBF82; border-color:#5FBF82; }
+#sheetHoy .wk{ border:.5px solid var(--line); background:var(--surface); }
+#sheetHoy .wk div{ display:flex; gap:8px; justify-content:space-between; padding:8px 10px; border-bottom:.5px solid var(--line); font-size:.8rem; }
+#sheetHoy .wk div:last-child{ border-bottom:0; }
+#sheetHoy .wk .hoy{ background:color-mix(in srgb,#1F7A55 11%,var(--surface)); font-weight:700; }
+#sheetHoy .wk span:first-child{ font-family:var(--mono); font-size:.7rem; width:58px; flex:0 0 58px; color:var(--ink-faint); }
+#sheetHoy .wk span:nth-child(2){ flex:1; } #sheetHoy .wk a{ color:inherit; white-space:nowrap; }
+#sheetHoy .src{ font:500 .58rem var(--mono); color:var(--ink-faint); margin-top:7px; line-height:1.5; }
+#sheetHoy .vacio{ font-size:.85rem; color:var(--ink-soft); padding:12px; border:.5px dashed var(--line-strong); }
+#sheetHoy .sheet-top .x{ background:none; border:0; font-size:1.1rem; color:var(--ink-faint); cursor:pointer; }
+@media (min-width:1024px){
+  #sheetHoy{ max-width:860px; top:7vh; bottom:auto; max-height:86vh; }
+  #sheetHoy .grip, #sheetHoy .seg{ display:none; }
+  #sheetHoy .hoy-body{ display:grid; grid-template-columns:1fr 1fr; gap:0 6px; align-items:start; }
+  #sheetHoy .hoy-sec.W, #sheetHoy .hoy-sec.F{ display:block !important; }
+}
 /* Franja Oficial estilo B */
 .inst-home{ border-left:4px solid #1f4e8c; padding-left:12px; background:linear-gradient(90deg,#eaf1fa,transparent 70%); border-radius:0 8px 8px 0; margin-top:8px; }
 .inst-home-bar .mid{ color:#1f4e8c !important; }
@@ -1364,8 +1410,9 @@
 </div>
 
 <div class="ticker" id="ticker">
-  <div class="tick"><span class="lbl">Quitilipi</span><span class="val" id="tickClima">—</span></div>
-  <div class="tick"><span class="lbl">Sensación</span><span class="val" id="tickSensacion">—</span></div>
+  <div class="tick tick-hoy" role="button" tabindex="0" data-hoy="clima" aria-label="Ver el clima de hoy"><span class="lbl">Quitilipi</span><span class="val" id="tickClima">—</span></div>
+  <div class="tick tick-hoy" role="button" tabindex="0" data-hoy="clima" aria-label="Ver el pronóstico"><span class="lbl">Máx / Mín</span><span class="val" id="tickMaxMin">—</span></div>
+  <div class="tick tick-hoy farm" role="button" tabindex="0" data-hoy="farmacia" aria-label="Ver la farmacia de turno"><span class="lbl">💊 Farmacia<span class="largo"> de turno</span> ›</span><span class="val gris" id="tickFarm">Ver cronograma</span></div>
   <button class="tick notif-btn" id="notifActivar" aria-label="Activar avisos" style="flex:0 0 auto;border:0;border-right:1px solid var(--line);background:none;cursor:pointer;align-items:center;padding:7px 13px;position:relative;font-size:.9rem">🔔<span class="pip" id="notifPip" style="display:none"></span></button>
 
 </div>
@@ -1483,6 +1530,16 @@
 </div>
 
 <!-- sheet: detalle de un aporte -->
+<div class="backdrop" id="backdropHoy"></div>
+<div class="sheet" id="sheetHoy" data-tab="clima" role="dialog" aria-label="Hoy en Quitilipi">
+  <div class="grip"><span></span></div>
+  <div class="sheet-top"><span class="b">Hoy en Quitilipi</span><button class="x" id="closeHoy" aria-label="Cerrar">✕</button></div>
+  <div class="hoy-body">
+    <div class="seg"><button data-tab="clima" class="on">Clima</button><button data-tab="farmacia">Farmacia</button></div>
+    <div class="hoy-sec W" id="hoyClima"><div class="st">Clima · ahora</div><div class="vacio">Cargando el clima…</div></div>
+    <div class="hoy-sec F" id="hoyFarm"><div class="st">💊 Farmacia de turno · ahora</div><div class="vacio">Cargando…</div></div>
+  </div>
+</div>
 <div class="backdrop" id="backdropAporte"></div>
 <div class="sheet2" id="sheetAporte">
   <div class="sheet2-top"><span class="b">Aviso de un vecino</span><button class="close" id="closeAporte">Cerrar ✕</button></div>
@@ -1958,22 +2015,193 @@
 
   // ---- ticker: clima y sensación térmica (Open-Meteo, sin key) ----
   const CLIMA_COD = {0:['Despejado','☀️'],1:['Parcial','⛅'],2:['Parcial','⛅'],3:['Nublado','☁️'],45:['Niebla','🌫️'],48:['Niebla','🌫️'],51:['Llovizna','🌦️'],53:['Llovizna','🌦️'],55:['Llovizna','🌦️'],61:['Lluvia','🌧️'],63:['Lluvia','🌧️'],65:['Lluvia','🌧️'],80:['Chubascos','🌦️'],81:['Chubascos','🌦️'],82:['Chubascos','🌦️'],95:['Tormenta','⛈️'],96:['Tormenta','⛈️'],99:['Tormenta','⛈️']};
+  // Pedido único: el ahora para la franja + horas y días para la hoja "Hoy en Quitilipi".
+  let CLIMA = null;
+  const RUMBO = ["N","NE","E","SE","S","SO","O","NO"];
   fetch("https://api.open-meteo.com/v1/forecast?latitude=-26.8667&longitude=-60.2167"
-      + "&current=temperature_2m,apparent_temperature,weather_code"
-      + "&timezone=America%2FArgentina%2FBuenos_Aires")
+      + "&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m,wind_direction_10m"
+      + "&hourly=temperature_2m,precipitation_probability,weather_code"
+      + "&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max"
+      + "&forecast_days=4&timezone=America%2FArgentina%2FBuenos_Aires")
     .then(r=>r.json()).then(d=>{
-      const c = d.current || {};
+      CLIMA = d || null;
+      const c = (d && d.current) || {};
       const par = CLIMA_COD[c.weather_code] || ['—','🌡️'];
       if(typeof c.temperature_2m === "number"){
         document.getElementById("tickClima").textContent = Math.round(c.temperature_2m) + "° " + par[1] + " " + par[0];
       }
-      const st = c.apparent_temperature;
-      document.getElementById("tickSensacion").textContent =
-        (typeof st === "number") ? (Math.round(st) + "°") : "—";
+      const dd = (d && d.daily) || {};
+      const mx = (dd.temperature_2m_max||[])[0], mn = (dd.temperature_2m_min||[])[0];
+      document.getElementById("tickMaxMin").textContent =
+        (typeof mx === "number" && typeof mn === "number") ? (Math.round(mx) + "° / " + Math.round(mn) + "°") : "—";
+      pintarHoyClima();
     }).catch(()=>{
       document.getElementById("tickClima").textContent = "no disponible";
-      document.getElementById("tickSensacion").textContent = "—";
+      document.getElementById("tickMaxMin").textContent = "—";
+      pintarHoyClima();
     });
+
+  function pintarHoyClima(){
+    const box = document.getElementById("hoyClima");
+    const c = (CLIMA && CLIMA.current) || null;
+    if(!c || typeof c.temperature_2m !== "number"){
+      box.innerHTML = '<div class="st">Clima · ahora</div><div class="vacio">El clima no está disponible ahora. Probá más tarde.</div>';
+      return;
+    }
+    const par = CLIMA_COD[c.weather_code] || ['—','🌡️'];
+    const dd = CLIMA.daily || {}, hh = CLIMA.hourly || {};
+    const r0 = (n)=> typeof n === "number" ? Math.round(n) : null;
+    const mx = r0((dd.temperature_2m_max||[])[0]), mn = r0((dd.temperature_2m_min||[])[0]);
+    const lluviaHoy = r0((dd.precipitation_probability_max||[])[0]);
+    const viento = r0(c.wind_speed_10m);
+    const rumbo = typeof c.wind_direction_10m === "number" ? RUMBO[Math.round(c.wind_direction_10m/45)%8] : "";
+    const lineas = [esc(par[0])];
+    if(r0(c.apparent_temperature) != null) lineas.push("Sensación " + r0(c.apparent_temperature) + "°" + (mx!=null && mn!=null ? " · Máx " + mx + "° / Mín " + mn + "°" : ""));
+    const extra = [];
+    if(lluviaHoy != null) extra.push("Lluvia " + lluviaHoy + "%");
+    if(viento != null) extra.push("Viento " + viento + " km/h " + rumbo);
+    if(extra.length) lineas.push(extra.join(" · "));
+    // Próximas horas: cada 3 h desde la hora actual (horas locales que manda Open-Meteo)
+    const ahoraLocal = (c.time || "").slice(0, 13);
+    const tiempos = hh.time || [];
+    let i0 = tiempos.findIndex(t => t.slice(0, 13) >= ahoraLocal);
+    if(i0 < 0) i0 = 0;
+    let horas = "";
+    for(let k = 0, i = i0 + 1; k < 6 && i < tiempos.length; k++, i += 3){
+      const p = CLIMA_COD[(hh.weather_code||[])[i]] || ['','🌡️'];
+      const pr = r0((hh.precipitation_probability||[])[i]);
+      horas += '<div>' + esc(tiempos[i].slice(11, 13)) + ' h<b>' + (r0((hh.temperature_2m||[])[i]) ?? "—") + '°</b>' + p[1]
+        + (pr != null ? '<br><span class="r">' + pr + '%</span>' : '') + '</div>';
+    }
+    let dias = "";
+    const DS = ["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
+    for(let i = 1; i < (dd.time||[]).length && i <= 3; i++){
+      const p = CLIMA_COD[(dd.weather_code||[])[i]] || ['','🌡️'];
+      const dia = DS[new Date(dd.time[i] + "T12:00:00Z").getUTCDay()];
+      const pr = r0((dd.precipitation_probability_max||[])[i]);
+      dias += '<div>' + dia + '<b>' + (r0(dd.temperature_2m_max[i]) ?? "—") + '°/' + (r0(dd.temperature_2m_min[i]) ?? "—") + '°</b>' + p[1]
+        + (pr != null && pr >= 30 ? '<span class="r"> ' + pr + '%</span>' : '') + '</div>';
+    }
+    box.innerHTML = '<div class="st">Clima · ahora</div>'
+      + '<div class="now"><span class="ic">' + par[1] + '</span><span class="t">' + Math.round(c.temperature_2m) + '°</span><span class="d">' + lineas.join("<br>") + '</span></div>'
+      + (horas ? '<div class="horas">' + horas + '</div>' : '')
+      + (dias ? '<div class="horas" style="margin-top:6px">' + dias + '</div>' : '')
+      + '<div class="src">Fuente: Open-Meteo</div>';
+  }
+
+  // ---- 💊 Farmacia de turno (la carga la encargada por WhatsApp; tabla farmacias_turno) ----
+  // Si la tabla todavía no existe o no hay datos: "Ver cronograma" en gris. Nunca se inventa.
+  let FARM = { ahora: [], semana: null, hora: null, ok: false };
+  let farmTimer = null;
+  async function rpcPublica(nombre){
+    const r = await fetch(SUPABASE_URL + "/rest/v1/rpc/" + nombre, { method: "POST",
+      headers: { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + SUPABASE_KEY, "Content-Type": "application/json" }, body: "{}" });
+    if(!r.ok) throw new Error(nombre + " " + r.status);
+    const j = await r.json();
+    return Array.isArray(j) ? j : [];
+  }
+  const sinFarmacia = (n)=> String(n||"").replace(/^\s*farmacia\s+/i, "").trim() || String(n||"");
+  // "8" (franja) o "8:00" (hoja), hora de Argentina
+  const horaTurno = (iso, conMin)=> { const d = new Date(iso); if(isNaN(d)) return "";
+    const [h, m] = new Intl.DateTimeFormat("en-GB", { timeZone:"America/Argentina/Buenos_Aires", hour:"2-digit", minute:"2-digit", hour12:false }).format(d).split(":");
+    const hh = String(Number(h) % 24); return (conMin || m !== "00") ? hh + ":" + m : hh; };
+  async function cargarFarmacia(){
+    clearTimeout(farmTimer);
+    try{
+      FARM.ahora = await rpcPublica("farmacia_de_turno_ahora");
+      FARM.ok = true;
+    }catch(e){ FARM.ahora = []; FARM.ok = false; }
+    pintarTickFarm();
+    // Cuando termina el turno actual, se vuelve a leer (cambia sola a la hora del turno).
+    const fin = Math.min(...FARM.ahora.map(f => new Date(f.hasta).getTime()).filter(x => !isNaN(x)));
+    if(isFinite(fin)){ const ms = fin - Date.now() + 5000; if(ms > 0 && ms < 26*3600000) farmTimer = setTimeout(()=>{ FARM.semana = null; cargarFarmacia(); }, ms); }
+  }
+  function pintarTickFarm(){
+    const el = document.getElementById("tickFarm");
+    if(!FARM.ahora.length){ el.className = "val gris"; el.textContent = "Ver cronograma"; return; }
+    el.className = "val";
+    const nombres = FARM.ahora.map(f => sinFarmacia(f.farmacia));
+    const hasta = horaTurno(FARM.ahora[0].hasta);
+    el.innerHTML = esc(nombres.slice(0, 2).join(" + ")) + (hasta ? ' <i>· hasta ' + esc(hasta) + ' h</i>' : '');
+    el.parentElement.title = nombres.join(" + ");
+  }
+  const telLink = (t)=> { const d = String(t||"").replace(/[^\d+]/g, ""); return d.length >= 6 ? "tel:" + d : ""; };
+  const mapaLink = (f)=> (typeof f.lat === "number" && typeof f.lng === "number")
+    ? "https://www.google.com/maps/search/?api=1&query=" + f.lat + "," + f.lng
+    : (f.direccion ? "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(f.direccion + ", Quitilipi, Chaco") : "");
+  function diaCorto(iso){ const DS = ["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"]; const d = new Date(iso + "T12:00:00Z"); return isNaN(d) ? esc(iso) : DS[d.getUTCDay()] + " " + d.getUTCDate(); }
+  function pintarHoyFarm(){
+    const box = document.getElementById("hoyFarm");
+    let h = '<div class="st">💊 Farmacia de turno · ahora</div>';
+    if(FARM.ahora.length){
+      for(const f of FARM.ahora){
+        const tel = telLink(f.telefono), mapa = mapaLink(f);
+        const det = [f.direccion ? esc(f.direccion) : "", f.telefono ? "☎ " + esc(f.telefono) : ""].filter(Boolean).join(" · ");
+        const d0 = new Date(f.desde), d1 = new Date(f.hasta);
+        const es24 = Math.abs(d1 - d0 - 86400000) < 60000;
+        const fd = (d)=> new Intl.DateTimeFormat("es-AR", { timeZone:"America/Argentina/Buenos_Aires", weekday:"short", day:"numeric" }).format(d).replace(".", "");
+        h += '<div class="fh"><div class="n">' + esc(f.farmacia) + '</div><div class="a">' + (det || "Sin dirección ni teléfono cargados")
+          + '<br>Turno: ' + esc(fd(d0)) + ' ' + esc(horaTurno(f.desde, true)) + ' → ' + esc(fd(d1)) + ' ' + esc(horaTurno(f.hasta, true)) + (es24 ? ' (24 h)' : '') + '</div>'
+          + ((mapa || tel) ? '<div class="fbtns">' + (mapa ? '<a href="' + urlSegura(mapa) + '" target="_blank" rel="noopener">📍 Cómo llegar</a>' : '')
+            + (tel ? '<a class="o" href="' + esc(tel) + '">📞 Llamar</a>' : '') + '</div>' : '')
+          + '</div>';
+      }
+    } else {
+      h += '<div class="vacio">' + (FARM.ok ? "Todavía no hay un turno cargado para este momento." : "El cronograma de farmacias todavía no está disponible.") + '</div>';
+    }
+    const sem = FARM.semana || [];
+    if(sem.length){
+      const hoyIso = new Intl.DateTimeFormat("en-CA", { timeZone:"America/Argentina/Buenos_Aires" }).format(new Date());
+      const porDia = {};
+      for(const f of sem){ (porDia[f.fecha] = porDia[f.fecha] || []).push(f); }
+      h += '<div class="st" style="margin-top:14px">Turnos de la semana</div><div class="wk">';
+      for(const fecha of Object.keys(porDia).sort()){
+        const fs = porDia[fecha], esHoy = fecha === hoyIso;
+        const nom = fs.map(f => esc(sinFarmacia(f.farmacia))).join(" + ") + (esHoy ? " · HOY" : "");
+        const tel = fs.length === 1 ? (fs[0].telefono ? '<a href="' + esc(telLink(fs[0].telefono) || "#") + '">☎ ' + esc(fs[0].telefono) + '</a>' : '') : fs.length + ' de turno';
+        h += '<div' + (esHoy ? ' class="hoy"' : '') + '><span>' + diaCorto(fecha) + '</span><span>' + nom + '</span><span>' + tel + '</span></div>';
+      }
+      h += '</div>';
+      const hc = FARM.hora ? String(FARM.hora).slice(0, 5).replace(/^0/, "") : "";
+      h += '<div class="src">' + (hc ? 'Cambia a las ' + esc(hc) + ' · ' : '') + 'Cargado vía WhatsApp</div>';
+    }
+    box.innerHTML = h;
+  }
+  async function cargarSemanaFarm(){
+    if(FARM.semana) return;
+    try{ FARM.semana = await rpcPublica("turnos_semana"); }catch(e){ FARM.semana = []; }
+    try{
+      const r = await fetch(SUPABASE_URL + "/rest/v1/farmacias_config?select=hora_cambio&id=eq.1", { headers: { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + SUPABASE_KEY } });
+      const j = r.ok ? await r.json() : [];
+      FARM.hora = (j[0] && j[0].hora_cambio) || null;
+    }catch(e){ FARM.hora = null; }
+  }
+  function tabHoy(t){
+    const sh = document.getElementById("sheetHoy");
+    sh.dataset.tab = t;
+    sh.querySelectorAll(".seg button").forEach(b => b.classList.toggle("on", b.dataset.tab === t));
+  }
+  async function abrirHoy(tab){
+    tabHoy(tab || "clima");
+    pintarHoyClima(); pintarHoyFarm();
+    document.getElementById("backdropHoy").classList.add("show");
+    document.getElementById("sheetHoy").classList.add("show");
+    await cargarSemanaFarm();
+    pintarHoyFarm();
+  }
+  function cerrarHoy(){
+    document.getElementById("backdropHoy").classList.remove("show");
+    document.getElementById("sheetHoy").classList.remove("show");
+  }
+  document.querySelectorAll("#ticker .tick-hoy").forEach(el => {
+    el.addEventListener("click", ()=> abrirHoy(el.dataset.hoy));
+    el.addEventListener("keydown", (e)=>{ if(e.key === "Enter" || e.key === " "){ e.preventDefault(); abrirHoy(el.dataset.hoy); } });
+  });
+  document.querySelectorAll("#sheetHoy .seg button").forEach(b => b.addEventListener("click", ()=> tabHoy(b.dataset.tab)));
+  document.getElementById("closeHoy").addEventListener("click", cerrarHoy);
+  document.getElementById("backdropHoy").addEventListener("click", cerrarHoy);
+  document.addEventListener("keydown", (e)=>{ if(e.key === "Escape" && document.getElementById("sheetHoy").classList.contains("show")) cerrarHoy(); });
+  cargarFarmacia();
 
   // ---- aportes del pueblo ----
   const CAT_APORTE = [
