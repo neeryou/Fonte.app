@@ -5048,6 +5048,7 @@
     else if(pedido === "arriba") modo = usable ? "arriba" : "texto";
     else modo = fondoOk ? "foto" : usable ? "difuso" : "texto";
     const oscuro = modo === "foto" || modo === "difuso" || modo === "urgente";
+    const rojo = modo === "urgente";   // diseño Urgente: fondo rojo siempre (aunque la nota no esté marcada urgente)
     const TXT = oscuro ? "#fff" : TINTA, TXT2 = oscuro ? "rgba(255,255,255,.88)" : SUAVE;
     // desenfoque que anda en todos los celulares: achicar mucho y volver a agrandar
     const difuminar = (x, y, w, h, oscurecer)=>{
@@ -5059,7 +5060,7 @@
       ctx.fillStyle = "rgba(10,9,7,"+oscurecer+")"; ctx.fillRect(x, y, w, h);
     };
 
-    ctx.fillStyle = urg ? ROJO : PAPEL; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = rojo ? ROJO : PAPEL; ctx.fillRect(0, 0, W, H);
     const headH = feed ? 96 : 118;
     let techo = TOP + headH, abajo = false;
     if(modo === "texto"){ ctx.fillStyle = colChip; ctx.fillRect(0, 0, W, feed ? 18 : 24); }
@@ -5135,7 +5136,7 @@
     F("500", feed ? 24 : 28); ctx.fillStyle = TXT2; ctx.fillText(fecha, SAFE, yh + chH + (feed ? 36 : 44));
     ctx.textAlign = "right"; ctx.font = "400 "+(feed ? 34 : 40)+"px 'Alfa Slab One',Georgia,serif"; ctx.fillStyle = TXT;
     ctx.fillText("Fonte", W - SAFE - 20, yh + chH*0.78);
-    ctx.fillStyle = urg ? "#fff" : CORAL; ctx.beginPath(); ctx.arc(W - SAFE - 7, yh + chH*0.78 - (feed ? 24 : 28), feed ? 7 : 8, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = rojo ? "#fff" : CORAL; ctx.beginPath(); ctx.arc(W - SAFE - 7, yh + chH*0.78 - (feed ? 24 : 28), feed ? 7 : 8, 0, Math.PI*2); ctx.fill();
     ctx.textAlign = "left";
 
     // ---- título y bajada ----
