@@ -561,6 +561,20 @@
   .inst-block:active{ border-color:var(--region); background:color-mix(in srgb,var(--region) 6%,var(--paper)); }
   #ciudadDetallePanel{ margin-top:14px; }
   #ciudadDetallePanel .svc-panel, #ciudadDetallePanel .fechas-panel{ margin-top:0; }
+  /* ===== MODO BOT (por dispositivo) ===== */
+  .mb-btn{ font-family:var(--sans); font-size:.62rem; font-weight:700; color:var(--paper); border:1px solid rgba(255,255,255,.3); padding:5px 9px; border-radius:999px; background:transparent; white-space:nowrap; }
+  body.modo-bot .mb-btn{ background:#F5D547; color:#3A2F00; border-color:#F5D547; }
+  .mb-banner{ display:none; position:sticky; top:0; z-index:900; background:#F5D547; color:#3A2F00; border-bottom:2px solid #C9A800; font-family:var(--sans); font-size:.76rem; line-height:1.3; }
+  body.modo-bot .mb-banner{ display:block; }
+  .mb-banner .wrap{ display:flex; align-items:center; gap:10px; padding:9px 18px; }
+  .mb-banner .mb-t{ flex:1; }
+  .mb-banner b{ font-weight:800; letter-spacing:.02em; }
+  .mb-banner button{ font-family:var(--sans); font-size:.7rem; font-weight:800; background:#3A2F00; color:#F5D547; border:0; border-radius:999px; padding:6px 11px; }
+  .arch-item .m .pub-por{ font-weight:700; }
+  .rep-top .row{ gap:8px; } .rep-brand{ flex-shrink:0; } .rep-user{ min-width:0; }
+  #userEmail{ min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .rep-user .mb-btn, .rep-user .logout-btn{ flex-shrink:0; }
+  .arch-item .m .pub-por.bot{ color:#7A5B00; }
 
 </style>
 </head>
@@ -584,7 +598,11 @@
 <div id="consoleView" class="hide">
   <div class="rep-top"><div class="wrap row">
     <div class="rep-brand"><span class="b">Fonte</span><span class="rep-badge">Redacción</span></div>
-    <div class="rep-user"><span id="userEmail"></span><button class="logout-btn" id="logoutBtn">Salir</button></div>
+    <div class="rep-user"><span id="userEmail"></span><button class="mb-btn" id="modoBotBtn" type="button" aria-pressed="false">🤖 Modo bot</button><button class="logout-btn" id="logoutBtn">Salir</button></div>
+  </div></div>
+  <div class="mb-banner" id="modoBotBanner" role="status"><div class="wrap">
+    <span class="mb-t">🤖 <b>MODO BOT ACTIVADO</b> en este dispositivo. Lo que guardes, publiques o descartes queda como hecho por el bot.</span>
+    <button type="button" id="modoBotApagar">Apagar</button>
   </div></div>
 
   <div class="rep-wrap">
@@ -1090,6 +1108,46 @@
 
   const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   try{ localStorage.removeItem("fonte_prueba"); localStorage.removeItem("fonte_prueba_on"); }catch(e){}
+
+  // ---- Modo bot (por dispositivo) ----
+  // El bot de carga usa la misma cuenta que el reportero. Con este interruptor prendido,
+  // guardar / publicar / descartar mandan cargado_por / publicado_por / descartado_por = 'bot'.
+  // NO toca 'origen' (rss/reportero/bot): ese campo decide dónde aparece cada nota.
+  // También se puede prender/apagar abriendo reportero.html?modobot=1 / ?modobot=0.
+  const MODO_BOT_KEY = "fonte_modo_bot";
+  try{
+    const qmb = new URLSearchParams(location.search).get("modobot");
+    if(qmb === "1" || qmb === "0"){
+      localStorage.setItem(MODO_BOT_KEY, qmb);
+      const u = new URL(location.href); u.searchParams.delete("modobot");
+      history.replaceState(null, "", u.pathname + u.search + u.hash);
+    }
+  }catch(e){}
+  function modoBotOn(){ try{ return localStorage.getItem(MODO_BOT_KEY) === "1"; }catch(e){ return false; } }
+  function autoria(){ return modoBotOn() ? "bot" : "reportero"; }
+  function pintarModoBot(){
+    const on = modoBotOn();
+    document.body.classList.toggle("modo-bot", on);
+    const b = document.getElementById("modoBotBtn");
+    if(b){ b.textContent = on ? "🤖 Bot: SÍ" : "🤖 Modo bot"; b.setAttribute("aria-pressed", on ? "true" : "false"); }
+  }
+  function ponerModoBot(on){
+    try{ localStorage.setItem(MODO_BOT_KEY, on ? "1" : "0"); }catch(e){}
+    pintarModoBot();
+    if(typeof toast === "function") toast(on ? "🤖 Modo bot prendido en este dispositivo" : "Modo bot apagado");
+  }
+  document.getElementById("modoBotBtn").addEventListener("click", ()=> ponerModoBot(!modoBotOn()));
+  document.getElementById("modoBotApagar").addEventListener("click", ()=> ponerModoBot(false));
+  pintarModoBot();
+  // Agrega campos de autoría; si la base todavía no tiene la columna, reintenta sin ella.
+  function conAutoria(op, extra){
+    return async (reg)=>{
+      let r = await op(Object.assign({}, reg, extra));
+      const txt = r && r.error ? ((r.error.message||"")+" "+(r.error.details||"")+" "+(r.error.hint||"")) : "";
+      if(r && r.error && /cargado_por|publicado_por/i.test(txt)) r = await op(reg);
+      return r;
+    };
+  }
 
   const loginView = document.getElementById("loginView");
   const consoleView = document.getElementById("consoleView");
@@ -1635,7 +1693,7 @@
     clearTimeout(dzToastTimer); dzToastTimer = setTimeout(()=>t.classList.remove("show"), 6000);
   }
   async function marcarNotaDescartada(id, motivo){
-    const cambios = { descartada: true, descartada_at: new Date().toISOString(), descartado_motivo: motivo || null, descartado_por: "reportero" };
+    const cambios = { descartada: true, descartada_at: new Date().toISOString(), descartado_motivo: motivo || null, descartado_por: autoria() };
     let { error } = await sb.from("noticias").update(cambios).eq("id", id).eq("publicada", false);
     if(error && /descartado_por/i.test((error.message||"")+" "+(error.details||"")+" "+(error.hint||""))){
       // Base sin supabase-autoria.sql: descarta igual, sin la autoría.
@@ -2139,12 +2197,12 @@
       // Sale con la hora de publicación, no la de cuando se armó el borrador
       // (la base también lo fuerza con un trigger, por si el reloj del celu está mal).
       registro.created_at = new Date().toISOString();
-      const r = await sb.from("noticias").update(registro).eq("id", id).select().maybeSingle();
+      const r = await conAutoria(reg=> sb.from("noticias").update(reg).eq("id", id).select().maybeSingle(), { publicado_por: autoria() })(registro);
       error = r.error; publicada = r.data || null;
     } else {
       registro.origen = "reportero";
       registro.creada_por = sesion.user.id;
-      const r = await sb.from("noticias").insert(registro).select().single();
+      const r = await conAutoria(reg=> sb.from("noticias").insert(reg).select().single(), { publicado_por: autoria(), cargado_por: autoria() })(registro);
       error = r.error; publicada = r.data || null;
     }
     btn.textContent = labelPub;
@@ -4247,13 +4305,14 @@
   let filtroArch = "todo";
   function itemArchivo(o, tipo){
     const NOM = { nota:"Nota", oferta:"Oferta", comunicado:"Oficial", aporte:"Aviso" };
-    let titulo = "", meta = "", mini = "", fondo = "";
+    let titulo = "", meta = "", mini = "", fondo = "", pubPor = "";
     if(tipo === "nota"){
       titulo = o.titulo || "";
       const f = fotosDeNota(o);
       fondo = f[0] || "";
       mini = fondo ? "" : "📰";
       meta = (o.lugar||"") + " · " + tiempoRel(o.created_at) + (f.length>1?" · 📷 "+f.length:"") + (o.video_url?" · 🎬":"");
+      if(o.publicado_por === "bot" || o.publicado_por === "reportero") pubPor = o.publicado_por;
     } else if(tipo === "oferta"){
       titulo = o.titulo || "";
       fondo = o.imagen_url || ""; mini = fondo ? "" : "🏷️";
@@ -4271,7 +4330,8 @@
     return '<div class="arch-item" data-tipo="'+tipo+'" data-id="'+escA(o.id)+'">'
       + '<span class="mini" '+estilo+'>'+mini+'</span>'
       + '<div class="tx"><div class="t">'+escA(titulo)+'</div>'
-      + '<div class="m"><span class="bdg '+tipo+'">'+NOM[tipo]+'</span>'+escA(meta)+'</div></div>'
+      + '<div class="m"><span class="bdg '+tipo+'">'+NOM[tipo]+'</span>'+escA(meta)
+      + (pubPor ? ' · <span class="pub-por '+pubPor+'">Publicado por: '+(pubPor==="bot"?"🤖 bot":"reportero")+'</span>' : '')+'</div></div>'
       + '<button type="button" class="arch-del" aria-label="Borrar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M9 7V5h6v2M8 7l1 13h6l1-13"/></svg></button></div>';
   }
   function esNotaReportero(n){
@@ -5671,7 +5731,7 @@
     const registro = armarRegistroNota({ publicada: false });
     registro.origen = "reportero";
     registro.creada_por = sesion.user.id;
-    const { error } = await guardarNotaConOriginal(reg=> sb.from("noticias").insert(reg), registro);
+    const { error } = await guardarNotaConOriginal(conAutoria(reg=> sb.from("noticias").insert(reg), { cargado_por: autoria() }), registro);
     btn.disabled = false; btn.textContent = "Guardar como borrador";
     if(error){ toast("No se pudo guardar: " + error.message); return; }
     toast("Guardado como borrador ✓");
