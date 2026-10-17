@@ -1569,7 +1569,7 @@
     const sh = document.createElement("div"); sh.id = "dzSheet";
     sh.innerHTML = '<h3>¿Descartar este borrador?</h3><p class="dz-t" id="dzTit"></p>'
       + '<div class="field-label">Motivo (opcional)</div><div class="dz-chips" id="dzChips"></div>'
-      + '<input class="inp hide" id="dzOtro" maxlength="40" placeholder="Escribí el motivo">'
+      + '<input class="inp" id="dzOtro" maxlength="120" placeholder="Escribí el motivo o un detalle (opcional)">'
       + '<p class="dz-n">No se borra: queda en Archivo › Descartadas.</p>'
       + '<div class="dz-b"><button type="button" id="dzNo">Cancelar</button><button type="button" id="dzOk">Descartar</button></div>';
     document.body.appendChild(back); document.body.appendChild(sh);
@@ -1597,11 +1597,11 @@
     return new Promise(res=>{
       const back = document.getElementById("dzBack"), sh = document.getElementById("dzSheet");
       const otro = document.getElementById("dzOtro"), chips = document.getElementById("dzChips");
-      let sel = ""; otro.value = ""; otro.classList.add("hide");
+      let sel = ""; otro.value = "";
       document.getElementById("dzTit").textContent = titulo || "";
       const pint = ()=> pintarChips(chips, sel==="Otra…" ? (otro.value||"x") : sel, m=>{
-        if(m === "Otra…"){ sel = "Otra…"; otro.classList.remove("hide"); otro.focus(); }
-        else { sel = (sel===m) ? "" : m; otro.classList.add("hide"); }
+        if(m === "Otra…"){ sel = (sel==="Otra…") ? "" : "Otra…"; otro.focus(); }
+        else { sel = (sel===m) ? "" : m; }
         pint();
       });
       pint();
@@ -1609,7 +1609,11 @@
       const fin = v=>{ back.style.display = sh.style.display = "none";
         document.getElementById("dzOk").onclick = document.getElementById("dzNo").onclick = back.onclick = null; res(v); };
       document.getElementById("dzNo").onclick = back.onclick = ()=> fin(null);
-      document.getElementById("dzOk").onclick = ()=> fin(((sel==="Otra…" ? otro.value : sel)||"").trim().slice(0,40));
+      // Chip + texto libre: "Repetida · ya salió ayer". Solo texto: el texto. Solo chip: el chip.
+      document.getElementById("dzOk").onclick = ()=>{
+        const txt = (otro.value||"").trim(), chip = (sel && sel!=="Otra…") ? sel : "";
+        fin(((chip && txt) ? chip + " · " + txt : (chip || txt)).slice(0,160));
+      };
     });
   }
   async function deshacerDescarte(id){
@@ -1631,9 +1635,13 @@
     clearTimeout(dzToastTimer); dzToastTimer = setTimeout(()=>t.classList.remove("show"), 6000);
   }
   async function marcarNotaDescartada(id, motivo){
-    const { error } = await sb.from("noticias")
-      .update({ descartada: true, descartada_at: new Date().toISOString(), descartado_motivo: motivo || null })
-      .eq("id", id).eq("publicada", false);
+    const cambios = { descartada: true, descartada_at: new Date().toISOString(), descartado_motivo: motivo || null, descartado_por: "reportero" };
+    let { error } = await sb.from("noticias").update(cambios).eq("id", id).eq("publicada", false);
+    if(error && /descartado_por/i.test((error.message||"")+" "+(error.details||"")+" "+(error.hint||""))){
+      // Base sin supabase-autoria.sql: descarta igual, sin la autoría.
+      delete cambios.descartado_por;
+      ({ error } = await sb.from("noticias").update(cambios).eq("id", id).eq("publicada", false));
+    }
     if(error && /descartad/i.test((error.message||"")+" "+(error.details||"")+" "+(error.hint||"")))
       return { message: "falta correr supabase-descartes.sql" };
     return error;
@@ -4400,12 +4408,16 @@
       .sort((x,y)=> new Date(y.o.published_at||y.o.created_at||0) - new Date(x.o.published_at||x.o.created_at||0));
     pintarArchivo();
   }
-  // Solo lectura: título, fecha de descarte y motivo.
-  let DESCARTADAS = [];
+  // Descartadas: título, fecha, motivo, quién descartó (reportero/bot) y botón Recuperar.
+  let DESCARTADAS = [], filtroDesc = "todas";
   async function cargarDescartadas(){
     const cont = document.getElementById("archLista");
-    const { data, error } = await sb.from("noticias").select("id,titulo,descartada_at,descartado_motivo,posible_descarte,origen")
+    const base = "id,titulo,descartada_at,descartado_motivo,posible_descarte,origen";
+    let r = await sb.from("noticias").select(base + ",descartado_por")
       .eq("descartada", true).order("descartada_at",{ascending:false}).limit(200);
+    if(r.error && /descartado_por/i.test(r.error.message||""))
+      r = await sb.from("noticias").select(base).eq("descartada", true).order("descartada_at",{ascending:false}).limit(200);
+    const { data, error } = r;
     if(error){ cont.innerHTML = '<p class="vacio-txt">No se pudieron cargar las descartadas' + (/descartad/i.test(error.message||"") ? " (falta correr supabase-descartes.sql)" : "") + '.</p>'; return; }
     DESCARTADAS = data || [];
     pintarDescartadas();
@@ -4413,14 +4425,28 @@
   function pintarDescartadas(){
     const cont = document.getElementById("archLista");
     const q = (document.getElementById("archBuscar").value||"").toLowerCase().trim();
-    const lista = DESCARTADAS.filter(d=> !q || [d.titulo, d.descartado_motivo, d.posible_descarte].join(" ").toLowerCase().includes(q));
+    const n = { todas: DESCARTADAS.length, bot: DESCARTADAS.filter(d=>d.descartado_por==="bot").length, reportero: DESCARTADAS.filter(d=>d.descartado_por==="reportero").length };
+    const lista = DESCARTADAS.filter(d=> (filtroDesc==="todas" || d.descartado_por===filtroDesc)
+      && (!q || [d.titulo, d.descartado_motivo, d.posible_descarte].join(" ").toLowerCase().includes(q)));
     const fmt = iso => iso ? new Date(iso).toLocaleString("es-AR",{ timeZone:"America/Argentina/Buenos_Aires", day:"2-digit", month:"2-digit", year:"numeric", hour:"2-digit", minute:"2-digit" }) : "";
-    cont.innerHTML = lista.length ? lista.map(d=>
-      '<div class="today-item" style="cursor:default">'
-      + '<span class="h">'+escA(d.titulo||"(sin título)")+'</span>'
-      + '<span style="display:block;font-family:var(--sans);font-size:.66rem;color:var(--ink-faint);margin-top:3px">Descartada '+escA(fmt(d.descartada_at))
-      + ' · Motivo: <b>'+escA(d.descartado_motivo||"—")+'</b>'+(d.origen?(" · "+escA(d.origen)):"")+'</span>'
-      + '</div>').join("") : '<p class="vacio-txt">No hay notas descartadas.</p>';
+    const chip = (k, t)=> '<button type="button" class="dz-chip'+(filtroDesc===k?" on":"")+'" data-fd="'+k+'">'+t+' ('+n[k]+')</button>';
+    const QUIEN = { bot:"🤖 Bot", reportero:"Reportero" };
+    cont.innerHTML = '<div class="dz-chips" id="descFiltros">' + chip("todas","Todas") + chip("bot","Descartadas por el bot") + chip("reportero","Por reportero") + '</div>'
+      + (lista.length ? lista.map(d=>
+      '<div class="today-item" style="cursor:default;display:block">'
+      + '<span class="h" style="display:block">'+escA(d.titulo||"(sin título)")+'</span>'
+      + '<span style="display:block;font-family:var(--sans);font-size:.78rem;margin-top:5px;padding:6px 8px;border-radius:8px;background:#FBF1E9;border-left:3px solid #B23A2E;color:var(--ink)">Motivo: <b>'+escA(d.descartado_motivo||"sin motivo")+'</b></span>'
+      + '<span style="display:block;font-family:var(--sans);font-size:.66rem;color:var(--ink-faint);margin-top:4px">'
+      + (d.descartado_por ? '<b>'+QUIEN[d.descartado_por]+'</b> · ' : '') + 'Descartada '+escA(fmt(d.descartada_at))+(d.origen?(" · "+escA(d.origen)):"")+'</span>'
+      + '<button type="button" class="dz-chip" data-recuperar="'+escA(d.id)+'" style="margin-top:8px">↩ Recuperar a Borradores</button>'
+      + '</div>').join("") : '<p class="vacio-txt">No hay notas descartadas' + (filtroDesc==="todas" ? "" : " con ese filtro") + '.</p>');
+    cont.querySelectorAll("[data-fd]").forEach(b=> b.addEventListener("click", ()=>{ filtroDesc = b.getAttribute("data-fd"); pintarDescartadas(); }));
+    cont.querySelectorAll("[data-recuperar]").forEach(b=> b.addEventListener("click", async ()=>{
+      b.disabled = true; b.textContent = "Recuperando…";
+      // Solo saca la marca de descartada: texto, fotos y todo lo demás quedan igual; sigue sin publicar.
+      await deshacerDescarte(b.getAttribute("data-recuperar"));
+      cargarDescartadas();
+    }));
   }
   function pintarArchivo(){
     if(filtroArch === "descartadas"){ return pintarDescartadas(); }
