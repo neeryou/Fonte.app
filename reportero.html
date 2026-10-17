@@ -1185,6 +1185,7 @@
   let videoDetectado = null;
   let fotoPropiaUrl = null;
   let borradorEditandoId = null;
+  let borradorEditandoCargadoPor = null; // cargado_por del borrador abierto (para Modo bot)
   // resumen_estructurado / terminos: el mismo "extra" que ya traen las notas de Más noticias
   // (lede, datos destacados, subtítulos, cita). No hay campo en el formulario para tocarlo a
   // mano — viaja tal cual lo devuelva Gemini, ya validado, desde el borrador hasta publicar.
@@ -2051,6 +2052,7 @@
   async function abrirBorradorEnPreview(n){
     if(!n) return;
     borradorEditandoId = n.id;
+    borradorEditandoCargadoPor = n.cargado_por || null;
     mostrarAlertasBorrador([]);
     document.getElementById("pvTitulo").value = n.titulo || "";
     document.getElementById("pvCorto").value = n.resumen_corto || "";
@@ -2148,7 +2150,7 @@
       + (n.posible_descarte ? '<span style="display:inline-block;background:#F5D547;color:#3A2F00;font-family:var(--sans);font-size:.62rem;font-weight:800;padding:2px 8px;border-radius:999px;margin-top:4px">⚠ Posible descarte: '+escA(n.posible_descarte)+'</span>' : '')
       + '<span style="display:block;font-family:var(--sans);font-size:.66rem;color:var(--ink-faint);margin-top:3px">'
       + (n.created_at ? tiempoRel(n.created_at) : "")
-      + (n.origen ? (" · " + escA(n.origen)) : "")
+      + (n.cargado_por === "bot" ? " · 🤖 bot" : n.cargado_por === "reportero" ? " · reportero" : (n.origen ? (" · " + escA(n.origen)) : ""))
       + '</span>'
       + '<span style="font-family:var(--sans);font-size:.66rem;color:var(--region);font-weight:700;white-space:nowrap">Revisar ›</span>'
       + '</div>'
@@ -5183,6 +5185,17 @@
       techo = ph + (feed ? 44 : 64) + headH;
     }
 
+    // ---- historia (9:16): franja libre para el sticker de enlace de Business Suite ----
+    // Entre el 28% y el 40% del alto (538–768 px de 1920) no va texto. Sin foto (Solo texto,
+    // Urgente): el encabezado queda justo arriba de la franja y el título arranca debajo.
+    // Con foto: la franja cae sobre la foto y el encabezado + título van debajo de la franja.
+    const FR0 = Math.round(H*0.28), FR1 = Math.round(H*0.40);
+    let yhFijo = null;
+    if(!feed){
+      if(modo === "texto" || modo === "urgente"){ yhFijo = FR0 - headH; techo = Math.max(techo, FR1 + 16); }
+      else techo = Math.max(techo, FR1 + headH);
+    }
+
     // ---- medidas del pie (link propio legible) y de la franja de tipo ----
     const baseLink = H - BOT - (feed ? 8 : 10), etY = baseLink - (feed ? 40 : 46), pieTop = etY - (feed ? 46 : 54);
     const cintaH = cinta ? (feed ? 58 : 66) : 0;
@@ -5203,8 +5216,8 @@
     if(nB > 0 && nB < bl.length){ bl = bl.slice(0, nB); bl[nB-1] = bl[nB-1].replace(/[\s,.;:]*\S*$/, "") + "…"; } else bl = bl.slice(0, nB);
     const altoB = nB ? 30 + nB*bL : 0;
     let yT = abajo ? piso - altoB - altoT + tS : techo + tS;
-    if(!abajo){ const sobra = piso - (techo + altoT + 30 + altoB); yT += Math.max(0, Math.round(sobra*0.42)); }
-    const yh = yT - tS - headH;
+    if(!abajo && yhFijo === null){ const sobra = piso - (techo + altoT + 30 + altoB); yT += Math.max(0, Math.round(sobra*0.42)); }
+    const yh = yhFijo !== null ? yhFijo : yT - tS - headH;
     if(abajo){ // velo fuerte debajo de todo el texto
       const y0 = modo === "difuso" ? yh - 30 : yh - 80, g = ctx.createLinearGradient(0, y0-240, 0, y0);
       g.addColorStop(0, "rgba(10,9,7,0)"); g.addColorStop(1, "rgba(10,9,7,.82)");
@@ -5744,7 +5757,10 @@
     const btn = document.getElementById("guardarBorradorEditBtn");
     btn.disabled = true; btn.textContent = "Guardando…";
     const registro = armarRegistroNota({ publicada: false });
-    const { error } = await guardarNotaConOriginal(reg=> sb.from("noticias").update(reg).eq("id", borradorEditandoId), registro);
+    // Modo bot prendido => queda 'bot'. Apagado => 'reportero' (si el borrador ya tenía
+    // cargado_por); los que cargó el servidor (sin dato) siguen sin dato y muestran su origen.
+    const extraCarga = modoBotOn() ? { cargado_por: "bot" } : (borradorEditandoCargadoPor ? { cargado_por: "reportero" } : {});
+    const { error } = await guardarNotaConOriginal(conAutoria(reg=> sb.from("noticias").update(reg).eq("id", borradorEditandoId), extraCarga), registro);
     btn.disabled = false; btn.textContent = "Guardar borrador";
     if(error){ toast("No se pudo guardar: " + error.message); return; }
     toast("Borrador actualizado ✓");
