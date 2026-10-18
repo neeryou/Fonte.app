@@ -197,6 +197,7 @@
   .edit-box .acciones button{ flex:1; font-family:var(--sans); font-weight:700; font-size:.82rem;
     padding:11px; border-radius:9px; border:0; }
   .btn-guardar{ background:var(--barrio); color:#fff; }
+  .btn-guardar:disabled{ opacity:.45; }
   .btn-cancelar{ background:none; border:1px solid var(--line-strong) !important; color:var(--ink-soft); }
   .recorte{ position:relative; background:#16140F; border-radius:10px; overflow:hidden; touch-action:none; }
   .recorte img{ width:100%; display:block; }
@@ -3682,6 +3683,7 @@
           ? '<button class="compartir" id="btnEditarPortada" style="background:none;border:1px solid var(--line);color:var(--ink);margin-top:8px">🖼️ Cambiar la foto de portada</button>'
           : '')
       + '<div id="editorPortada"></div>'
+      + bloquePieVisor(n, lista)
       + bloqueFormatoCompartir(n, "nota")
       + '<button class="compartir" id="btnCompartirVisor">↗ Compartir en redes</button>'
       + '<button class="compartir" id="btnCopiarTextoVisor" style="background:none;border:1px solid var(--line);color:var(--ink)">📋 Copiar el texto</button>'
@@ -3694,6 +3696,7 @@
     document.getElementById("btnEditarLink").addEventListener("click", ()=> editarLinkNota(n));
     const btnEP = document.getElementById("btnEditarPortada");
     if(btnEP) btnEP.addEventListener("click", ()=> editarPortadaNota(n));
+    engancharPieVisor(n, lista);
     document.getElementById("btnCompartirVisor").addEventListener("click", (e)=> compartirDesdeConsola(n, "nota", e.currentTarget));
     document.getElementById("btnCopiarTextoVisor").addEventListener("click", (e)=> copiarTextoConsola(n, "nota", e.currentTarget));
     document.getElementById("btnCopiarLinkVisor").addEventListener("click", (e)=> copiarLinkConsola(n, "nota", e.currentTarget));
@@ -3736,6 +3739,59 @@
       est.textContent = "✓ Ahora la nota tiene " + todas.length + " fotos.";
       toast("Fotos agregadas ✓");
       cargarPublicadoHoy();
+    });
+  }
+
+  // ===== Pie de la portada en una nota YA publicada =====
+  // Solo guarda fotos_origen._pie (las demás claves de fotos_origen se conservan) y, si la nota
+  // tenía portada_estado = 'falta' y se le pone pie, lo pasa a 'archivo' (con 'falta' el pie no se
+  // muestra ni acá ni en index.html). No toca publicada, fechas, fotos, texto ni autoría.
+  function fotosOrigenObj(fo){
+    if(typeof fo === "string"){ try{ fo = JSON.parse(fo); }catch(e){ fo = null; } }
+    return (fo && typeof fo === "object" && !Array.isArray(fo)) ? Object.assign({}, fo) : {};
+  }
+  function pieTipoGuardado(n, portada){
+    const p = fotosOrigenObj(n && n.fotos_origen)._pie;
+    return (p && portada && p.url === portada && PIE_TXT[p.tipo]) ? p.tipo : "";
+  }
+  function bloquePieVisor(n, lista){
+    if(!lista || !lista[0]) return "";
+    const actual = pieTipoGuardado(n, lista[0]);
+    const op = (v, t)=> '<option value="'+v+'"'+(actual===v?' selected':'')+'>'+t+'</option>';
+    return '<div class="edit-box" id="pieVisorBox">'
+      + '<div class="fl">Pie de la portada</div>'
+      + '<select class="inp" id="pieVisorSel" style="padding:8px;margin-bottom:4px">'
+      + op("", "Sin pie") + op("ilustrativa", "Imagen ilustrativa") + op("captura_video", "Captura del video")
+      + '</select>'
+      + '<div style="font-family:var(--sans);font-size:.66rem;color:var(--ink-faint);line-height:1.35">Texto chico debajo de la portada en la nota publicada. Se guarda solo esto: la nota no se vuelve a publicar.</div>'
+      + '<div class="acciones"><button class="btn-guardar" id="pieVisorGuardar" disabled>Guardar pie</button></div>'
+      + '<div id="pieVisorEstado" style="font-family:var(--sans);font-size:.72rem;color:var(--ink-faint);margin-top:6px"></div>'
+      + '</div>';
+  }
+  function engancharPieVisor(n, lista){
+    const sel = document.getElementById("pieVisorSel"), btn = document.getElementById("pieVisorGuardar");
+    if(!sel || !btn) return;
+    const inicial = sel.value;
+    sel.addEventListener("change", ()=>{ btn.disabled = (sel.value === inicial); });
+    btn.addEventListener("click", async ()=>{
+      const tipo = sel.value, portada = lista[0];
+      const est = document.getElementById("pieVisorEstado");
+      btn.disabled = true; btn.textContent = "Guardando…";
+      // Se relee fotos_origen recién de la base para no pisar nada que haya cambiado en otro lado.
+      const { data: fila, error: e1 } = await sb.from("noticias").select("fotos_origen,portada_estado").eq("id", n.id).maybeSingle();
+      if(e1 || !fila){ est.textContent = "No se pudo leer la nota: " + ((e1 && e1.message) || "no está"); btn.disabled = false; btn.textContent = "Guardar pie"; return; }
+      const fo = fotosOrigenObj(fila.fotos_origen);
+      if(tipo) fo._pie = { url: portada, tipo: tipo }; else delete fo._pie;
+      const upd = { fotos_origen: fo };
+      if(tipo && fila.portada_estado === "falta") upd.portada_estado = "archivo";
+      const { error } = await sb.from("noticias").update(upd).eq("id", n.id);
+      if(error){ est.textContent = "No se pudo guardar: " + error.message; btn.disabled = false; btn.textContent = "Guardar pie"; return; }
+      n.fotos_origen = fo;
+      if(upd.portada_estado) n.portada_estado = upd.portada_estado;
+      toast(tipo ? "Pie guardado: " + PIE_TXT[tipo] + " ✓" : "Pie quitado ✓");
+      if(typeof cargarArchivo === "function") cargarArchivo();
+      if(typeof cargarPublicadoHoy === "function") cargarPublicadoHoy();
+      abrirVisorNota(n); // redibuja: el pie ya se ve debajo de la foto
     });
   }
 
