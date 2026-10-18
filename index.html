@@ -577,6 +577,9 @@
     font-family:var(--sans); font-size:.92rem; font-weight:700; color:#fff; background:var(--ciudad);
     padding:14px 18px; border-radius:11px; text-decoration:none; margin:16px 0 0; }
   .accion-btn::after{ content:"↗"; opacity:.75; }
+  /* "▶ Mirar el video" bajo la portada con pie (en vez del recuadro del video) */
+  .s-mirar-video{ position:relative; z-index:1; background:var(--paper); }
+  .accion-btn.mirar-video{ margin:12px 0 0; }
 
   /* ===== galería de fotos ===== */
   .galeria{ position:relative; margin-bottom:14px; aspect-ratio:auto; overflow:visible; }
@@ -2763,10 +2766,27 @@
     const heroEl = document.getElementById("s-hero");
     const videoEl = document.getElementById("s-video");
     if(n.video_url){
-      heroEl.style.display = "none";
-      videoEl.style.display = "block";
-      videoEl.innerHTML = htmlDeVideo(n.video_url);
-      videoEl.style.aspectRatio = aspectoDeVideo(n.video_url);
+      // Si la portada lleva pie (Imagen ilustrativa / Captura del video): arriba la foto
+      // con su pie y, debajo, solo un botón "▶ Mirar el video" que abre el link original
+      // (sin recuadro ni reproductor). Sin pie, como siempre: solo el video.
+      const listaV = fotosDe(n);
+      const pieV = listaV.length ? pieDePortada(n, listaV[0]) : "";
+      const linkV = pieV ? urlSegura(linkDeVideo(n.video_url)) : "";
+      if(pieV && linkV){
+        heroEl.setAttribute("style", "display:block;margin-bottom:16px;aspect-ratio:auto;overflow:visible;background:none");
+        heroEl.innerHTML = '<img src="'+esc(fotoGrande(urlSegura(listaV[0])))+'" alt="" fetchpriority="high" decoding="async" '
+          + 'style="width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:10px;cursor:zoom-in">'
+          + '<div class="s-mirar-video"><div class="s-pie-portada">'+esc(pieV)+'</div>'
+          + '<a class="accion-btn mirar-video" href="'+esc(linkV)+'" target="_blank" rel="noopener">▶ Mirar el video</a></div>';
+        try{ cargarImagen(fotoGrande(listaV[0]), 8000); }catch(e){}
+        videoEl.style.display = "none";
+        videoEl.innerHTML = "";
+      } else {
+        heroEl.style.display = "none";
+        videoEl.style.display = "block";
+        videoEl.innerHTML = htmlDeVideo(n.video_url);
+        videoEl.style.aspectRatio = aspectoDeVideo(n.video_url);
+      }
     } else {
       videoEl.style.display = "none";
       videoEl.innerHTML = "";
@@ -5961,6 +5981,16 @@
       + 'justify-content:center;font-size:1.25rem;padding-left:4px">▶</span>'
       + '<span style="font-family:var(--sans);font-weight:700;font-size:.88rem;color:var(--ink);text-align:center">Ver el video en '+esc(donde)+'</span>'
       + '<span style="font-family:var(--sans);font-size:.72rem;color:var(--ink-faint);text-align:center">Se abre en '+esc(donde)+' ↗</span></a>';
+  }
+  // Link para abrir el video en su sitio: la URL original; si es un embed, la de verlo.
+  function linkDeVideo(u){
+    if(!u) return "";
+    u = String(u).trim();
+    const yt = idYoutube(u);
+    if(yt) return "https://www.youtube.com/watch?v=" + yt;
+    const fb = u.match(/facebook\.com\/plugins\/video\.php\?(?:.*&)?href=([^&]+)/i);
+    if(fb){ try{ return decodeURIComponent(fb[1]); }catch(e){} }
+    return u;
   }
   function htmlDeVideo(u){
     if(!u) return "";
