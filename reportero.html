@@ -571,6 +571,10 @@
   .mb-banner b{ font-weight:800; letter-spacing:.02em; }
   .mb-banner button{ font-family:var(--sans); font-size:.7rem; font-weight:800; background:#3A2F00; color:#F5D547; border:0; border-radius:999px; padding:6px 11px; }
   .arch-item .m .pub-por{ font-weight:700; }
+  .pie-portada{ font-family:var(--sans); font-size:.68rem; font-style:italic; color:var(--ink-faint); padding:5px 18px 0; text-align:right; }
+  .prev-note .pie-portada{ padding:5px 12px 0; }
+  .arch-item .m .pie-tag{ font-weight:700; color:#6B4A00; }
+  .arch-item .m .pie-tag.sinconf{ color:#A8382C; }
   .rep-top .row{ gap:8px; } .rep-brand{ flex-shrink:0; } .rep-user{ min-width:0; }
   #userEmail{ min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .rep-user .mb-btn, .rep-user .logout-btn{ flex-shrink:0; }
@@ -646,6 +650,7 @@
         <button class="f on" data-f="todo">Todo</button>
         <button class="f" data-f="reportero">Notas reportero</button>
         <button class="f" data-f="mas">Más noticias</button>
+        <button class="f" data-f="ilustrativa">Portada ilustrativa</button>
         <button class="f" data-f="comunicado">Comunicados</button>
         <button class="f" data-f="oferta">Ofertas</button>
         <button class="f" data-f="aporte">Avisos de vecinos</button>
@@ -744,6 +749,15 @@
           <option value="archivo">Foto de archivo sugerida</option>
           <option value="falta">Falta portada</option>
         </select>
+        <div id="portadaPieBloque" class="hide">
+          <div class="field-label" style="margin-top:10px">Pie de la portada</div>
+          <select class="inp" id="portadaPie" style="padding:8px;margin-bottom:4px">
+            <option value="">Sin pie</option>
+            <option value="ilustrativa">Imagen ilustrativa</option>
+            <option value="captura_video">Captura del video</option>
+          </select>
+          <div style="font-family:var(--sans);font-size:.66rem;color:var(--ink-faint);line-height:1.35">Sale como texto chico debajo de la portada en la nota publicada.</div>
+        </div>
       </div>
       <div id="posibleDescarteTag" class="hide" style="display:inline-block;background:#F5D547;color:#3A2F00;font-family:var(--sans);font-size:.72rem;font-weight:800;padding:4px 10px;border-radius:999px;margin-bottom:10px"></div>
       <div class="pv-field" style="margin-bottom:12px">
@@ -1134,6 +1148,7 @@
   function ponerModoBot(on){
     try{ localStorage.setItem(MODO_BOT_KEY, on ? "1" : "0"); }catch(e){}
     pintarModoBot();
+    try{ sincronizarPortadaEstado(); }catch(e){}
     if(typeof toast === "function") toast(on ? "🤖 Modo bot prendido en este dispositivo" : "Modo bot apagado");
   }
   document.getElementById("modoBotBtn").addEventListener("click", ()=> ponerModoBot(!modoBotOn()));
@@ -1813,7 +1828,7 @@
     fotoPropiaUrl = null;
     imagenDetectada = null;
     videoDetectado = null;
-    FOTOS_ORIGEN = {}; portadaConfirmada = false; portadaEstadoManual = null; sinPortada = false;
+    FOTOS_ORIGEN = {}; PORTADA_PIE = null; portadaConfirmada = false; portadaEstadoManual = null; sinPortada = false;
     document.getElementById("fotoPreview").innerHTML = "";
     document.getElementById("fotoPreview").style.display = "none";
     if(typeof setFotoEstado === "function") setFotoEstado("");
@@ -1949,6 +1964,33 @@
   let portadaEstadoManual = null;
   let sinPortada = false;   // portada_estado 'falta': las fotos quedan solo como adicionales, imagen_url = null   // si la reportera eligió a mano en el select
   function origenFoto(u){ return FOTOS_ORIGEN[u] === "archivo" ? "archivo" : "posteo"; }
+  // ===== Pie de portada ("Imagen ilustrativa" / "Captura del video") =====
+  // Se guarda dentro de noticias.fotos_origen como clave "_pie": {url, tipo}. Va atado a la URL
+  // de la portada: si se cambia la foto de portada, el pie deja de aplicar solo.
+  // Sin columna nueva en la base. index.html lo muestra debajo de la portada.
+  const PIE_TXT = { ilustrativa:"Imagen ilustrativa", captura_video:"Captura del video" };
+  let PORTADA_PIE = null;
+  function portadaUrlActual(){
+    if(sinPortada) return null;
+    return (fotosPropias && fotosPropias[0]) || imagenDetectada || null;
+  }
+  function pieActual(){
+    const u = portadaUrlActual();
+    return (u && PORTADA_PIE && PORTADA_PIE.url === u && PIE_TXT[PORTADA_PIE.tipo]) ? PORTADA_PIE.tipo : "";
+  }
+  // Modo bot + portada de archivo + pie "Imagen ilustrativa" o "Captura del video" → se puede publicar sin "Confirmo la portada".
+  function bypassIlustrativa(){
+    return modoBotOn() && portadaEstadoActual() === "archivo" && (pieActual() === "ilustrativa" || pieActual() === "captura_video");
+  }
+  function pieDeNota(n){
+    if(!n) return "";
+    let fo = n.fotos_origen;
+    if(typeof fo === "string"){ try{ fo = JSON.parse(fo); }catch(e){ fo = null; } }
+    const pie = fo && !Array.isArray(fo) && typeof fo === "object" ? fo._pie : null;
+    const lista = fotosDeNota(n);
+    if(!pie || !PIE_TXT[pie.tipo] || !lista[0] || pie.url !== lista[0] || n.portada_estado === "falta") return "";
+    return PIE_TXT[pie.tipo];
+  }
   function portadaEstadoActual(){
     if(sinPortada) return "falta";
     const portada = (fotosPropias && fotosPropias[0]) || imagenDetectada || null;
@@ -1961,12 +2003,18 @@
     const est = portadaEstadoActual();
     if(sel) sel.value = est;
     const aviso = document.getElementById("portadaAviso");
-    const bloquea = (est !== "posteo") && !portadaConfirmada;
+    const bypass = bypassIlustrativa();
+    const bloquea = (est !== "posteo") && !portadaConfirmada && !bypass;
+    { const pb = document.getElementById("portadaPieBloque"), ps = document.getElementById("portadaPie");
+      if(pb) pb.classList.toggle("hide", !portadaUrlActual());
+      if(ps) ps.value = pieActual(); }
     if(aviso){
       aviso.classList.toggle("hide", est === "posteo" || !borradorEditandoId);
       document.getElementById("portadaAvisoTxt").textContent = est === "falta"
         ? "📷 Falta portada: subí una foto adecuada o confirmá que sale sin foto."
-        : "📷 La portada es una foto de archivo sugerida: revisá que sea adecuada o cambiala.";
+        : bypass
+          ? "🤖 Modo bot · portada de archivo marcada como «"+(PIE_TXT[pieActual()]||"Imagen ilustrativa")+"»: se puede publicar sin confirmar. Sale con ese pie debajo de la foto."
+          : "📷 La portada es una foto de archivo sugerida: revisá que sea adecuada o cambiala.";
       const cb = document.getElementById("portadaConfirmo"); if(cb) cb.checked = !!portadaConfirmada;
     }
     const editando = !!borradorEditandoId;
@@ -1979,18 +2027,22 @@
     });
   }
   function portadaBloqueaPublicar(){
-    return !!borradorEditandoId && portadaEstadoActual() !== "posteo" && !portadaConfirmada;
+    return !!borradorEditandoId && portadaEstadoActual() !== "posteo" && !portadaConfirmada && !bypassIlustrativa();
   }
   function camposPortada(){
     const o = {}; (fotosPropias||[]).forEach(u=>{ o[u] = origenFoto(u); });
+    { const t = pieActual(); if(t) o._pie = { url: portadaUrlActual(), tipo: t }; }
     return { portada_estado: portadaEstadoActual(), portada_confirmada: !!portadaConfirmada, fotos_origen: o };
   }
   function cargarPortadaDesdeNota(n){
-    FOTOS_ORIGEN = {};
+    FOTOS_ORIGEN = {}; PORTADA_PIE = null;
     let fo = n && n.fotos_origen;
     if(typeof fo === "string"){ try{ fo = JSON.parse(fo); }catch(e){ fo = null; } }
     if(Array.isArray(fo)) fo.forEach(x=>{ if(x && x.url) FOTOS_ORIGEN[x.url] = x.origen === "archivo" ? "archivo" : "posteo"; });
-    else if(fo && typeof fo === "object") Object.keys(fo).forEach(u=>{ FOTOS_ORIGEN[u] = fo[u] === "archivo" ? "archivo" : "posteo"; });
+    else if(fo && typeof fo === "object"){
+      Object.keys(fo).forEach(u=>{ if(u.charAt(0) !== "_") FOTOS_ORIGEN[u] = fo[u] === "archivo" ? "archivo" : "posteo"; });
+      if(fo._pie && fo._pie.url && PIE_TXT[fo._pie.tipo]) PORTADA_PIE = { url: String(fo._pie.url), tipo: fo._pie.tipo };
+    }
     const e = n && n.portada_estado;
     portadaEstadoManual = (e === "archivo" || e === "falta" || e === "posteo") ? e : null;
     portadaConfirmada = !!(n && n.portada_confirmada);
@@ -3607,6 +3659,7 @@
     if(lista[0]){ try{ cargarImagen(lista[0], 8000); }catch(e){} }
     const fecha = n.created_at ? new Date(n.created_at).toLocaleString("es-AR") : "";
     let h = galeriaVisor(lista);
+    { const pie = pieDeNota(n); if(pie) h += '<div class="pie-portada">'+escA(pie)+'</div>'; }
     h += '<div class="cuerpo">'
       + '<div class="cat">'+escA(n.lugar || "")+(n.urgente?' · ⚡ URGENTE':'')+'</div>'
       + '<h3>'+escA(n.titulo||"")+'</h3>'
@@ -4311,9 +4364,9 @@
     if(["tu_barrio","tu_ciudad","barrio","ciudad","local"].includes(onda)) return "Ciudad";
     return { region:"Región", pais:"Argentina", mundo:"Mundo" }[onda] || "";
   }
-  function itemArchivo(o, tipo, conSeccion){
+  function itemArchivo(o, tipo, conSeccion, conPie){
     const NOM = { nota:"Nota", oferta:"Oferta", comunicado:"Oficial", aporte:"Aviso" };
-    let titulo = "", meta = "", mini = "", fondo = "", pubPor = "";
+    let titulo = "", meta = "", mini = "", fondo = "", pubPor = "", pieTag = "";
     if(tipo === "nota"){
       titulo = o.titulo || "";
       const f = fotosDeNota(o);
@@ -4321,6 +4374,7 @@
       mini = fondo ? "" : "📰";
       meta = ((conSeccion && seccionNota(o)) ? seccionNota(o) + " · " : "") + (o.lugar||"") + " · " + tiempoRel(o.created_at) + (f.length>1?" · 📷 "+f.length:"") + (o.video_url?" · 🎬":"");
       if(o.publicado_por === "bot" || o.publicado_por === "reportero") pubPor = o.publicado_por;
+      if(conPie) pieTag = pieDeNota(o);
     } else if(tipo === "oferta"){
       titulo = o.titulo || "";
       fondo = o.imagen_url || ""; mini = fondo ? "" : "🏷️";
@@ -4339,7 +4393,8 @@
       + '<span class="mini" '+estilo+'>'+mini+'</span>'
       + '<div class="tx"><div class="t">'+escA(titulo)+'</div>'
       + '<div class="m"><span class="bdg '+tipo+'">'+NOM[tipo]+'</span>'+escA(meta)
-      + (pubPor ? ' · <span class="pub-por '+pubPor+'">Publicado por: '+(pubPor==="bot"?"🤖 bot":"reportero")+'</span>' : '')+'</div></div>'
+      + (pubPor ? ' · <span class="pub-por '+pubPor+'">Publicado por: '+(pubPor==="bot"?"🤖 bot":"reportero")+'</span>' : '')
+      + (pieTag ? ' · <span class="pie-tag">🖼️ '+escA(pieTag)+'</span>' + (o.portada_confirmada ? '' : ' · <span class="pie-tag sinconf">portada sin confirmar</span>') : '')+'</div></div>'
       + '<button type="button" class="arch-del" aria-label="Borrar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M9 7V5h6v2M8 7l1 13h6l1-13"/></svg></button></div>';
   }
   function esNotaReportero(n){
@@ -4534,14 +4589,15 @@
     const lista = ARCHIVO.filter(it=>{
       if(filtroArch === "reportero"){ if(it.tipo !== "nota" || it.o.origen === "rss") return false; }
       else if(filtroArch === "mas"){ if(it.tipo !== "nota" || it.o.origen !== "rss") return false; }
+      else if(filtroArch === "ilustrativa"){ if(it.tipo !== "nota" || !pieDeNota(it.o)) return false; }
       else if(filtroArch !== "todo" && it.tipo !== filtroArch) return false;
       if(!q) return true;
       const txt = [it.o.titulo, it.o.negocio, it.o.institucion, it.o.descripcion, it.o.lugar].join(" ").toLowerCase();
       return txt.includes(q);
     });
     cont.innerHTML = lista.length
-      ? lista.map(it=>itemArchivo(it.o, it.tipo, filtroArch === "reportero")).join("")
-      : '<p class="vacio-txt">No hay nada que coincida con la búsqueda.</p>';
+      ? lista.map(it=>itemArchivo(it.o, it.tipo, filtroArch === "reportero" || filtroArch === "ilustrativa", filtroArch === "ilustrativa")).join("")
+      : '<p class="vacio-txt">' + (filtroArch === "ilustrativa" && !q ? 'No hay notas con portada ilustrativa.' : 'No hay nada que coincida con la búsqueda.') + '</p>';
     enganchArchivo(cont, lista);
   }
   document.getElementById("archBuscar").addEventListener("input", pintarArchivo);
@@ -5695,6 +5751,7 @@
     document.getElementById("previaCont").innerHTML =
       '<div class="prev-note">'
       + (foto ? '<div class="im" style="background-image:url(\''+escA(foto)+'\')"></div>' : '')
+      + ((foto && pieActual()) ? '<div class="pie-portada">'+escA(PIE_TXT[pieActual()])+'</div>' : '')
       + '<div class="cu">'
       + '<div class="k">● Tu ciudad · '+escA(n.lugar)+'</div>'
       + '<div class="h">'+escA(n.titulo)+'</div>'
@@ -5740,6 +5797,11 @@
   });
   document.getElementById("portadaConfirmo").addEventListener("change", (e)=>{
     portadaConfirmada = !!e.target.checked; sincronizarPortadaEstado();
+  });
+  document.getElementById("portadaPie").addEventListener("change", (e)=>{
+    const u = portadaUrlActual();
+    PORTADA_PIE = (e.target.value && u) ? { url: u, tipo: e.target.value } : null;
+    sincronizarPortadaEstado();
   });
   document.getElementById("guardarBorradorBtn").addEventListener("click", async ()=>{
     if(borradorEditandoId) return;

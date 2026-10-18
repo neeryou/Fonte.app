@@ -306,6 +306,8 @@
   #s-hero img{ width:100%; height:auto; aspect-ratio:16/9; object-fit:cover; display:block; }
   .s-src{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; padding-bottom:14px; border-bottom:1px solid var(--line); margin-bottom:16px; }
   .s-hero{ margin-bottom:16px; border-radius:6px; }
+  /* pie bajo la portada; z-index + fondo para quedar por encima del degradé de .ph-img::after */
+  .s-pie-portada{ position:relative; z-index:1; background:var(--paper); font-family:var(--sans); font-size:.7rem; font-style:italic; color:var(--ink-faint,#8B8474); text-align:right; margin:0; padding:5px 2px 0; }
   .s-p{ font-size:1.06rem; line-height:1.62; margin:0 0 14px; }
   .verorig{ display:inline-flex; gap:8px; font-family:var(--sans); font-size:.8rem; font-weight:700; color:var(--paper); background:var(--ink); padding:11px 17px; border-radius:8px; border:0; text-decoration:none; }
   .listen-btn, .share-btn{ font-family:var(--sans); font-size:.68rem; font-weight:700; color:var(--ink-soft);
@@ -2781,7 +2783,8 @@
       if(listaN.length){
         heroEl.setAttribute("style", "display:block;margin-bottom:16px;aspect-ratio:auto;overflow:visible;background:none");
         heroEl.innerHTML = '<img src="'+esc(fotoGrande(urlSegura(listaN[0])))+'" alt="" fetchpriority="high" decoding="async" '
-          + 'style="width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:10px;cursor:zoom-in">';
+          + 'style="width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:10px;cursor:zoom-in">'
+          + (pieDePortada(n, listaN[0]) ? '<div class="s-pie-portada">'+esc(pieDePortada(n, listaN[0]))+'</div>' : '');
         // precarga en caché de compartir (CORS) mientras leés la nota
         try{ cargarImagen(fotoGrande(listaN[0]), 8000); }catch(e){}
       } else {
@@ -5979,6 +5982,15 @@
 
 
   // ================= GALERÍA =================
+  // Pie bajo la portada: lo marca reportero.html en fotos_origen._pie = {url, tipo}.
+  // Solo se muestra si sigue siendo la misma foto de portada.
+  function pieDePortada(n, portada){
+    let fo = n && n.fotos_origen;
+    if(typeof fo === "string"){ try{ fo = JSON.parse(fo); }catch(e){ fo = null; } }
+    const p = (fo && typeof fo === "object" && !Array.isArray(fo)) ? fo._pie : null;
+    if(!p || !portada || p.url !== portada || (n && n.portada_estado === "falta")) return "";
+    return ({ ilustrativa:"Imagen ilustrativa", captura_video:"Captura del video" })[p.tipo] || "";
+  }
   function fotosDe(o){
     if(!o) return [];
     // 'fotos' puede volver como arreglo ya interpretado, como texto JSON, o —si la
