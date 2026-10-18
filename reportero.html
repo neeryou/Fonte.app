@@ -651,7 +651,7 @@
         <button class="f" data-f="aporte">Avisos de vecinos</button>
         <button class="f" data-f="descartadas">Descartadas</button>
       </div>
-      <div id="archLista" class="arch-lista"><p class="vacio-txt">Cargando…</p></div>
+      <div id="archLista" class="arch-lista"><p class="vacio-txt">Cargando notas…</p></div>
     </div>
 
     <div class="rep-view" id="viewCargar">
@@ -4305,7 +4305,13 @@
   // ================= ARCHIVO =================
   let ARCHIVO = [];
   let filtroArch = "todo";
-  function itemArchivo(o, tipo){
+  // Sección de la nota según su Onda (solo se muestra en el filtro "Notas reportero").
+  function seccionNota(n){
+    const onda = String(n.onda||"").toLowerCase();
+    if(["tu_barrio","tu_ciudad","barrio","ciudad","local"].includes(onda)) return "Ciudad";
+    return { region:"Región", pais:"Argentina", mundo:"Mundo" }[onda] || "";
+  }
+  function itemArchivo(o, tipo, conSeccion){
     const NOM = { nota:"Nota", oferta:"Oferta", comunicado:"Oficial", aporte:"Aviso" };
     let titulo = "", meta = "", mini = "", fondo = "", pubPor = "";
     if(tipo === "nota"){
@@ -4313,7 +4319,7 @@
       const f = fotosDeNota(o);
       fondo = f[0] || "";
       mini = fondo ? "" : "📰";
-      meta = (o.lugar||"") + " · " + tiempoRel(o.created_at) + (f.length>1?" · 📷 "+f.length:"") + (o.video_url?" · 🎬":"");
+      meta = ((conSeccion && seccionNota(o)) ? seccionNota(o) + " · " : "") + (o.lugar||"") + " · " + tiempoRel(o.created_at) + (f.length>1?" · 📷 "+f.length:"") + (o.video_url?" · 🎬":"");
       if(o.publicado_por === "bot" || o.publicado_por === "reportero") pubPor = o.publicado_por;
     } else if(tipo === "oferta"){
       titulo = o.titulo || "";
@@ -4441,13 +4447,18 @@
     try{ await navigator.clipboard.writeText(EST_RESUMEN_TXT); toast("Resumen copiado ✓"); }catch(e){ prompt("Copiá el resumen:", EST_RESUMEN_TXT); }
   });
 
+  // Mientras carga, la lista muestra "Cargando notas…" (aunque se cambie de filtro o se busque)
+  // y nunca "no hay nada" hasta que termine. ARCH_PEDIDO descarta respuestas viejas.
+  let ARCH_CARGANDO = false, ARCH_PEDIDO = 0;
   async function cargarArchivo(){
     const cont = document.getElementById("archLista");
-    cont.innerHTML = '<p class="vacio-txt">Cargando…</p>';
+    const pedido = ++ARCH_PEDIDO;
+    ARCH_CARGANDO = true;
+    cont.innerHTML = '<p class="vacio-txt">Cargando notas…</p>';
     // Nota: acá van TODAS las notas (no solo las que publicó este reportero), porque el
     // Archivo también sirve para encontrar y compartir lo que aparece en "Más noticias"
     // aunque lo haya cargado otra persona.
-    if(filtroArch === "descartadas"){ return cargarDescartadas(); }
+    if(filtroArch === "descartadas"){ ARCH_CARGANDO = false; return cargarDescartadas(); }
     const [n, o, c, a] = await Promise.all([
       sb.from("noticias").select("*").eq("publicada",true).order("created_at",{ascending:false}).limit(200)
         .then(async r=>{
@@ -4468,6 +4479,8 @@
       .concat((c.data||[]).map(x=>({o:x,tipo:"comunicado"})))
       .concat((a.data||[]).map(x=>({o:x,tipo:"aporte"})))
       .sort((x,y)=> new Date(y.o.published_at||y.o.created_at||0) - new Date(x.o.published_at||x.o.created_at||0));
+    if(pedido !== ARCH_PEDIDO) return; // llegó otra carga más nueva
+    ARCH_CARGANDO = false;
     pintarArchivo();
   }
   // Descartadas: título, fecha, motivo, quién descartó (reportero/bot) y botón Recuperar.
@@ -4479,6 +4492,7 @@
       .eq("descartada", true).order("descartada_at",{ascending:false}).limit(200);
     if(r.error && /descartado_por/i.test(r.error.message||""))
       r = await sb.from("noticias").select(base).eq("descartada", true).order("descartada_at",{ascending:false}).limit(200);
+    if(filtroArch !== "descartadas") return; // se cambió de filtro mientras cargaba
     const { data, error } = r;
     if(error){ cont.innerHTML = '<p class="vacio-txt">No se pudieron cargar las descartadas' + (/descartad/i.test(error.message||"") ? " (falta correr supabase-descartes.sql)" : "") + '.</p>'; return; }
     DESCARTADAS = data || [];
@@ -4513,17 +4527,20 @@
   function pintarArchivo(){
     if(filtroArch === "descartadas"){ return pintarDescartadas(); }
     const cont = document.getElementById("archLista");
+    if(ARCH_CARGANDO){ cont.innerHTML = '<p class="vacio-txt">Cargando notas…</p>'; return; }
     const q = (document.getElementById("archBuscar").value||"").toLowerCase().trim();
+    // "Notas reportero" = todo lo cargado a mano (reportero, Modo bot, bot de WhatsApp), sea de
+    // Ciudad, Región, Argentina o Mundo. "Más noticias" = solo lo del recolector (origen 'rss').
     const lista = ARCHIVO.filter(it=>{
-      if(filtroArch === "reportero"){ if(it.tipo !== "nota" || !esNotaReportero(it.o)) return false; }
-      else if(filtroArch === "mas"){ if(it.tipo !== "nota" || esNotaReportero(it.o)) return false; }
+      if(filtroArch === "reportero"){ if(it.tipo !== "nota" || it.o.origen === "rss") return false; }
+      else if(filtroArch === "mas"){ if(it.tipo !== "nota" || it.o.origen !== "rss") return false; }
       else if(filtroArch !== "todo" && it.tipo !== filtroArch) return false;
       if(!q) return true;
       const txt = [it.o.titulo, it.o.negocio, it.o.institucion, it.o.descripcion, it.o.lugar].join(" ").toLowerCase();
       return txt.includes(q);
     });
     cont.innerHTML = lista.length
-      ? lista.map(it=>itemArchivo(it.o, it.tipo)).join("")
+      ? lista.map(it=>itemArchivo(it.o, it.tipo, filtroArch === "reportero")).join("")
       : '<p class="vacio-txt">No hay nada que coincida con la búsqueda.</p>';
     enganchArchivo(cont, lista);
   }
