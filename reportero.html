@@ -362,22 +362,25 @@
     padding:8px; min-height:0; margin-top:0;
   }
   #fotoPreview.foto-preview:empty{ display:none !important; padding:0; margin:0; }
-  #fotoPreview .fp-thumb{ position:relative; flex:0 0 auto; width:72px; }
-  #fotoPreview .fp-thumb img{
+  #fotoPreview .fp-thumb, #fotosVisor .fp-thumb{ position:relative; flex:0 0 auto; width:72px; }
+  #fotoPreview .fp-thumb img, #fotosVisor .fp-thumb img{
     width:72px; height:72px; border-radius:8px; object-fit:cover; display:block; cursor:pointer;
     border:2px solid var(--line); background:var(--paper-3);
   }
-  #fotoPreview .fp-thumb.is-portada img{ border-color:var(--barrio); }
-  #fotoPreview .fp-badge{
+  #fotoPreview .fp-thumb.is-portada img, #fotosVisor .fp-thumb.is-portada img{ border-color:var(--barrio); }
+  #fotoPreview .fp-badge, #fotosVisor .fp-badge{
     position:absolute; left:4px; bottom:4px; font-family:var(--sans); font-size:.55rem; font-weight:800;
     text-transform:uppercase; letter-spacing:.04em; color:#fff; background:var(--barrio);
     padding:2px 6px; border-radius:999px; pointer-events:none;
   }
-  #fotoPreview .fp-quitar{
+  #fotoPreview .fp-quitar, #fotosVisor .fp-quitar{
     position:absolute; top:-6px; right:-6px; width:22px; height:22px; border-radius:50%;
     background:#A8382C; color:#fff; border:0; font-size:.7rem; line-height:1; font-weight:700;
     display:flex; align-items:center; justify-content:center; padding:0;
   }
+  #fotosVisor{ display:flex; flex-wrap:wrap; gap:8px; padding:8px 6px 4px 0; }
+  #fotosVisor .fp-thumb img{ cursor:default; }
+  #fotosVisor .fp-quitar.es-portada{ background:#B9B2A6; opacity:.7; }
   .logo-box{ display:flex; gap:12px; align-items:flex-start; margin:8px 0 10px; padding:10px; border:1px solid var(--line-strong); border-radius:10px; background:var(--paper); }
   .logo-box.hide{ display:none; }
   .logo-box img{ width:64px; height:64px; object-fit:cover; border-radius:8px; background:var(--paper-3); flex:0 0 auto; }
@@ -3674,7 +3677,10 @@
       + (n.url_original ? '<div class="meta"><a href="'+escA(urlSegura(n.url_original))+'" target="_blank" rel="noopener">Ver la fuente original ↗</a></div>' : '')
       + '<button class="compartir" id="btnEditarLink" style="background:none;border:1px solid var(--line);color:var(--ink);margin-top:8px">🔗 '+(n.url_original?'Cambiar':'Agregar')+' el enlace original</button>'
       + '<div id="editorLinkNota"></div>'
+      + '<button class="compartir" id="btnEditarFuente" style="background:none;border:1px solid var(--line);color:var(--ink);margin-top:8px">🏷️ Cambiar la fuente</button>'
+      + '<div id="editorFuenteNota"></div>'
       + '<div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--line)">'
+      + bloqueQuitarFotosVisor(n, lista)
       + '<div class="field-label">Agregar más fotos a esta nota</div>'
       + '<input class="inp" type="file" id="masFotos" accept="image/*" multiple style="padding:9px">'
       + '<div id="masFotosEstado" style="font-family:var(--sans);font-size:.72rem;color:var(--ink-faint)"></div>'
@@ -3694,6 +3700,8 @@
     abrirVisorHTML(h);
     engancharFormatoCompartir(n, "nota");
     document.getElementById("btnEditarLink").addEventListener("click", ()=> editarLinkNota(n));
+    document.getElementById("btnEditarFuente").addEventListener("click", ()=> editarFuenteNota(n));
+    engancharQuitarFotosVisor(n);
     const btnEP = document.getElementById("btnEditarPortada");
     if(btnEP) btnEP.addEventListener("click", ()=> editarPortadaNota(n));
     engancharPieVisor(n, lista);
@@ -3792,6 +3800,126 @@
       if(typeof cargarArchivo === "function") cargarArchivo();
       if(typeof cargarPublicadoHoy === "function") cargarPublicadoHoy();
       abrirVisorNota(n); // redibuja: el pie ya se ve debajo de la foto
+    });
+  }
+
+  // ===== Quitar una foto de una nota YA publicada =====
+  // Saca solo esa URL de noticias.fotos (y su entrada en fotos_origen, si la tiene; _pie y las
+  // demás claves quedan). La portada es fotos[0] (= imagen_url): esa no se puede quitar desde acá,
+  // primero hay que elegir otra con «Cambiar la foto de portada». No toca imagen_url,
+  // portada_estado, portada_confirmada, publicada, texto ni autoría.
+  function esPortadaVisor(n, lista, u, i){
+    return i === 0 || (!!n.imagen_url && String(n.imagen_url).trim() === u);
+  }
+  function bloqueQuitarFotosVisor(n, lista){
+    if(!lista || lista.length < 2) return "";
+    return '<div class="field-label">Fotos de la nota</div>'
+      + '<div id="fotosVisor">'
+      + lista.map((u,i)=>{
+          const port = esPortadaVisor(n, lista, u, i);
+          return '<div class="fp-thumb'+(port?' is-portada':'')+'">'
+            + '<img src="'+escA(urlSegura(u))+'" alt="">'
+            + (port ? '<span class="fp-badge">Portada</span>' : '')
+            + '<button type="button" class="fp-quitar'+(port?' es-portada':'')+'" data-quitar="'+i+'"'
+            + ' title="'+(port?'Es la portada: no se puede quitar':'Quitar esta foto')+'" aria-label="Quitar">✕</button>'
+            + '</div>';
+        }).join("")
+      + '</div>'
+      + '<div style="font-family:var(--sans);font-size:.66rem;color:var(--ink-faint);line-height:1.35;margin-bottom:10px">✕ para quitar una foto. La portada no se puede quitar: primero elegí otra.</div>';
+  }
+  function engancharQuitarFotosVisor(n){
+    const cont = document.getElementById("fotosVisor");
+    if(!cont) return;
+    const AVISO_PORTADA = "Esta foto es la portada. Primero elegí otra portada con «Cambiar la foto de portada».";
+    cont.querySelectorAll("[data-quitar]").forEach(b=>{
+      b.addEventListener("click", async (e)=>{
+        e.preventDefault(); e.stopPropagation();
+        const lista = fotosDeNota(n);
+        const i = parseInt(b.getAttribute("data-quitar"), 10);
+        const u = lista[i];
+        if(!u) return;
+        if(esPortadaVisor(n, lista, u, i)){ alert(AVISO_PORTADA); return; }
+        if(!confirm("¿Quitar esta foto de la nota?")) return;
+        b.disabled = true;
+        // Se relee de la base para no pisar fotos agregadas o una portada cambiada en otro lado.
+        const { data: fila, error: e1 } = await sb.from("noticias").select("fotos,imagen_url,fotos_origen").eq("id", n.id).maybeSingle();
+        if(e1 || !fila){ toast("No se pudo leer la nota: " + ((e1 && e1.message) || "no está")); b.disabled = false; return; }
+        const actuales = fotosDeNota(fila);
+        const pos = actuales.indexOf(u);
+        if(pos < 0){ toast("Esa foto ya no estaba en la nota"); n.fotos = actuales; abrirVisorNota(n); return; }
+        if(esPortadaVisor(fila, actuales, u, pos)){ alert(AVISO_PORTADA); b.disabled = false; return; }
+        const nuevas = actuales.slice(); nuevas.splice(pos, 1);
+        const upd = { fotos: nuevas };
+        // fotos_origen: solo se saca la entrada de esa foto (si existe); _pie y el resto quedan igual
+        let fo = fila.fotos_origen;
+        if(typeof fo === "string"){ try{ fo = JSON.parse(fo); }catch(err){ fo = null; } }
+        if(Array.isArray(fo)){
+          const fo2 = fo.filter(x => !(x && x.url === u));
+          if(fo2.length !== fo.length) upd.fotos_origen = fo2;
+        } else if(fo && typeof fo === "object" && Object.prototype.hasOwnProperty.call(fo, u)){
+          const fo2 = Object.assign({}, fo); delete fo2[u];
+          upd.fotos_origen = fo2;
+        }
+        const { error } = await sb.from("noticias").update(upd).eq("id", n.id);
+        if(error){ toast("No se pudo guardar: " + error.message); b.disabled = false; return; }
+        n.fotos = nuevas;
+        if("fotos_origen" in upd) n.fotos_origen = upd.fotos_origen;
+        toast("Foto quitada ✓");
+        if(typeof cargarArchivo === "function") cargarArchivo();
+        if(typeof cargarPublicadoHoy === "function") cargarPublicadoHoy();
+        abrirVisorNota(n); // redibuja el carrusel sin esa foto
+      });
+    });
+  }
+
+  // ===== Cambiar la fuente de una nota YA publicada =====
+  // Usa las mismas opciones que al cargar (se leen de los chips #srcChips, incluida "Otra") y
+  // guarda solo fuente_etiqueta, con el mismo formato que la carga ("vía " + nombre normalizado).
+  // No toca url_original (tiene su propio botón) ni nada más de la nota.
+  function editarFuenteNota(n){
+    const cont = document.getElementById("editorFuenteNota");
+    document.getElementById("btnEditarFuente").classList.add("hide");
+    const opciones = Array.from(document.querySelectorAll("#srcChips .srcchip"))
+      .map(c => ({ v: c.getAttribute("data-src"), t: c.textContent.trim() }));
+    let raw = (n.fuente_etiqueta || "").toString().trim().replace(/^v[ií]a\s+/i, "").trim();
+    const fijas = opciones.filter(o => o.v !== "__otra");
+    const hit = fijas.find(o => o.v === raw) || fijas.find(o => o.v === nombreFuenteCanon(raw));
+    let sel = hit ? hit.v : (raw ? "__otra" : (fijas[0] ? fijas[0].v : "__otra"));
+    cont.innerHTML = '<div class="edit-box">'
+      + '<div class="fl">Fuente de la nota</div>'
+      + '<div class="srcchips" id="efChips">'
+      + opciones.map(o => '<button type="button" class="srcchip'+(o.v===sel?' on':'')+'" data-src="'+escA(o.v)+'">'+escA(o.t)+'</button>').join("")
+      + '</div>'
+      + '<input class="inp" id="efOtra" placeholder="Escribí la fuente" value="'+escA(sel==="__otra" ? raw : "")+'" style="margin-top:8px'+(sel==="__otra"?'':';display:none')+'">'
+      + '<div class="acciones"><button class="btn-cancelar" id="efCancelar">Cancelar</button>'
+      + '<button class="btn-guardar" id="efGuardar">Guardar</button></div></div>';
+    const otra = document.getElementById("efOtra");
+    cont.querySelectorAll("#efChips .srcchip").forEach(b=>{
+      b.addEventListener("click", ()=>{
+        cont.querySelectorAll("#efChips .srcchip").forEach(x=>x.classList.remove("on"));
+        b.classList.add("on");
+        sel = b.getAttribute("data-src");
+        otra.style.display = sel === "__otra" ? "block" : "none";
+        if(sel === "__otra") otra.focus();
+      });
+    });
+    document.getElementById("efCancelar").addEventListener("click", ()=>{
+      cont.innerHTML = "";
+      document.getElementById("btnEditarFuente").classList.remove("hide");
+    });
+    document.getElementById("efGuardar").addEventListener("click", async ()=>{
+      const btn = document.getElementById("efGuardar");
+      const txt = (sel === "__otra" ? otra.value : sel).toString().trim();
+      if(!txt){ toast("Escribí la fuente"); otra.focus(); return; }
+      const valor = "vía " + (nombreFuenteCanon(txt) || txt);
+      btn.disabled = true; btn.textContent = "Guardando…";
+      const { error } = await sb.from("noticias").update({ fuente_etiqueta: valor }).eq("id", n.id);
+      if(error){ toast("No se pudo guardar: " + error.message); btn.disabled = false; btn.textContent = "Guardar"; return; }
+      n.fuente_etiqueta = valor;
+      toast("Fuente guardada ✓");
+      if(typeof cargarArchivo === "function") cargarArchivo();
+      if(typeof cargarPublicadoHoy === "function") cargarPublicadoHoy();
+      abrirVisorNota(n); // redibuja: la fuente nueva ya se ve en el pie de datos
     });
   }
 
