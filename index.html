@@ -2774,7 +2774,7 @@
       const linkV = pieV ? urlSegura(linkDeVideo(n.video_url)) : "";
       if(pieV && linkV){
         heroEl.setAttribute("style", "display:block;margin-bottom:16px;aspect-ratio:auto;overflow:visible;background:none");
-        heroEl.innerHTML = '<img src="'+esc(fotoGrande(urlSegura(listaV[0])))+'" alt="" fetchpriority="high" decoding="async" '
+        heroEl.innerHTML = '<img src="'+esc(fotoGrande(urlSegura(listaV[0])))+'" alt="" crossorigin="anonymous" fetchpriority="high" decoding="async" '
           + 'style="width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:10px;cursor:zoom-in">'
           + '<div class="s-mirar-video"><div class="s-pie-portada">'+esc(pieV)+'</div>'
           + '<a class="accion-btn mirar-video" href="'+esc(linkV)+'" target="_blank" rel="noopener">▶ Mirar el video</a></div>';
@@ -2802,7 +2802,7 @@
       // como imagen al compartir, así que nunca puede quedar oculta en un carrusel.
       if(listaN.length){
         heroEl.setAttribute("style", "display:block;margin-bottom:16px;aspect-ratio:auto;overflow:visible;background:none");
-        heroEl.innerHTML = '<img src="'+esc(fotoGrande(urlSegura(listaN[0])))+'" alt="" fetchpriority="high" decoding="async" '
+        heroEl.innerHTML = '<img src="'+esc(fotoGrande(urlSegura(listaN[0])))+'" alt="" crossorigin="anonymous" fetchpriority="high" decoding="async" '
           + 'style="width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:10px;cursor:zoom-in">'
           + (pieDePortada(n, listaN[0]) ? '<div class="s-pie-portada">'+esc(pieDePortada(n, listaN[0]))+'</div>' : '');
         // precarga en caché de compartir (CORS) mientras leés la nota
@@ -3193,14 +3193,40 @@
       return true;
     }catch(e){ return false; }
   }
+  // Fetch+blob evita la caché "sin CORS" del <img> del hero: si la foto ya se
+  // vio en la nota, un Image() con crossOrigin reusa esa respuesta y el canvas
+  // queda contaminado → placa solo texto. cache:"reload" fuerza CORS limpio.
   function cargarImagenUna(url, msTope){
-    return new Promise((fin)=>{
-      const tope = setTimeout(()=>fin(null), msTope || 7000);
-      const img = new Image();
-      img.crossOrigin = "anonymous";
-      img.onload = ()=>{ clearTimeout(tope); fin(probarCanvas(img) ? img : null); };
-      img.onerror = ()=>{ clearTimeout(tope); fin(null); };
-      img.src = url;
+    return new Promise((res)=>{
+      if(!url) return res(null);
+      let listo = false;
+      const fin = (v)=>{ if(listo) return; listo = true; res(v); };
+      const tope = setTimeout(()=> fin(null), msTope || 7000);
+      (async ()=>{
+        try{
+          const r = await fetch(url, { mode:"cors", credentials:"omit", cache:"reload" });
+          if(!r.ok) throw new Error("http");
+          const blob = await r.blob();
+          if(!blob || blob.size < 80) throw new Error("vacio");
+          const obj = URL.createObjectURL(blob);
+          const img = new Image();
+          img.onload = ()=>{
+            clearTimeout(tope);
+            const ok = probarCanvas(img);
+            setTimeout(()=>{ try{ URL.revokeObjectURL(obj); }catch(e){} }, 20000);
+            fin(ok ? img : null);
+          };
+          img.onerror = ()=>{ clearTimeout(tope); try{ URL.revokeObjectURL(obj); }catch(e){} fin(null); };
+          img.src = obj;
+        }catch(e){
+          const img = new Image();
+          img.crossOrigin = "anonymous";
+          img.onload = ()=>{ clearTimeout(tope); fin(probarCanvas(img) ? img : null); };
+          img.onerror = ()=>{ clearTimeout(tope); fin(null); };
+          // cache-buster: evita la respuesta no-CORS guardada por el <img> del hero
+          img.src = url + (url.indexOf("?") >= 0 ? "&" : "?") + "fonte_cors=1";
+        }
+      })();
     });
   }
   async function cargarImagen(src, msTope){
@@ -3209,7 +3235,8 @@
     if(!src) return null;
     if(_imgCache[src]) return _imgCache[src];
     let img = await cargarImagenUna(src, msTope || 7000);
-    if(!img && /^https?:\/\//i.test(src) && !esHostPropio(src) && src.indexOf("wsrv.nl") === -1){
+    // También proxy para hosts propios (Supabase): si el fetch directo falla, no quedarnos sin foto.
+    if(!img && /^https?:\/\//i.test(src) && src.indexOf("wsrv.nl") === -1){
       img = await cargarImagenUna(urlProxyCors(src), msTope || 8000);
     }
     if(img) _imgCache[src] = img;

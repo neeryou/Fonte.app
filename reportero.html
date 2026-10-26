@@ -4923,7 +4923,7 @@
       const tope = setTimeout(()=> fin(null), msTope || 7000);
       (async ()=>{
         try{
-          const r = await fetch(url, { mode:"cors", credentials:"omit" });
+          const r = await fetch(url, { mode:"cors", credentials:"omit", cache:"reload" });
           if(!r.ok) throw new Error("http");
           const blob = await r.blob();
           if(!blob || blob.size < 80) throw new Error("vacio");
@@ -4942,7 +4942,7 @@
           img.crossOrigin = "anonymous";
           img.onload = ()=>{ clearTimeout(tope); fin(probarCanvas(img) ? img : null); };
           img.onerror = ()=>{ clearTimeout(tope); fin(null); };
-          img.src = url;
+          img.src = url + (url.indexOf("?") >= 0 ? "&" : "?") + "fonte_cors=1";
         }
       })();
     });
@@ -4953,7 +4953,7 @@
     if(!src) return null;
     if(_imgCache[src]) return _imgCache[src];
     let img = await cargarImagenUna(src, msTope || 7000);
-    if(!img && /^https?:\/\//i.test(src) && !esHostPropio(src) && src.indexOf("wsrv.nl") === -1){
+    if(!img && /^https?:\/\//i.test(src) && src.indexOf("wsrv.nl") === -1){
       img = await cargarImagenUna(urlProxyCors(src), msTope || 8000);
     }
     if(img) _imgCache[src] = img;
