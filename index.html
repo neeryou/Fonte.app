@@ -2774,7 +2774,7 @@
       const linkV = pieV ? urlSegura(linkDeVideo(n.video_url)) : "";
       if(pieV && linkV){
         heroEl.setAttribute("style", "display:block;margin-bottom:16px;aspect-ratio:auto;overflow:visible;background:none");
-        heroEl.innerHTML = '<img src="'+esc(fotoGrande(urlSegura(listaV[0])))+'" alt="" crossorigin="anonymous" fetchpriority="high" decoding="async" '
+        heroEl.innerHTML = '<img src="'+esc(fotoGrande(urlSegura(listaV[0])))+'" alt="" fetchpriority="high" decoding="async" '
           + 'style="width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:10px;cursor:zoom-in">'
           + '<div class="s-mirar-video"><div class="s-pie-portada">'+esc(pieV)+'</div>'
           + '<a class="accion-btn mirar-video" href="'+esc(linkV)+'" target="_blank" rel="noopener">▶ Mirar el video</a></div>';
@@ -2802,7 +2802,7 @@
       // como imagen al compartir, así que nunca puede quedar oculta en un carrusel.
       if(listaN.length){
         heroEl.setAttribute("style", "display:block;margin-bottom:16px;aspect-ratio:auto;overflow:visible;background:none");
-        heroEl.innerHTML = '<img src="'+esc(fotoGrande(urlSegura(listaN[0])))+'" alt="" crossorigin="anonymous" fetchpriority="high" decoding="async" '
+        heroEl.innerHTML = '<img src="'+esc(fotoGrande(urlSegura(listaN[0])))+'" alt="" fetchpriority="high" decoding="async" '
           + 'style="width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:10px;cursor:zoom-in">'
           + (pieDePortada(n, listaN[0]) ? '<div class="s-pie-portada">'+esc(pieDePortada(n, listaN[0]))+'</div>' : '');
         // precarga en caché de compartir (CORS) mientras leés la nota
