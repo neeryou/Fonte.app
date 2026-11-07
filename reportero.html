@@ -1041,7 +1041,7 @@
         </div>
         <div id="ciudadDetallePanel" class="hide"></div>
         <div class="ciudad-sec">
-          <button type="button" class="btn-mini" id="ciudadOficialesBtn">Oficiales del bot</button>
+          <button type="button" class="btn-mini" id="ciudadOficialesBtn">Números del bot (oficiales y farmacias)</button>
           <button type="button" class="btn-mini" id="ciudadEditarBtn">Editar ficha</button>
           <button type="button" class="btn-mini del" id="ciudadQuitarBtn">Quitar</button>
         </div>
@@ -2999,7 +2999,7 @@
   async function cargarOficialesDe(inst, panel){
     panel.innerHTML = "Cargando…";
     const { data, error } = await sb.from("bot_oficiales")
-      .select("id,nombre,telefono_ult4,activo,created_at")
+      .select("id,nombre,telefono_ult4,activo,created_at,rol")
       .eq("institucion_id", inst.id).eq("activo", true)
       .order("created_at", { ascending:true });
     if(error){
@@ -3014,16 +3014,17 @@
     const filas = (data||[]).map(o=>
       '<div class="fecha-row" data-oficial-id="'+escA(o.id)+'">'
       + '<div><div class="t">'+escA(o.nombre)+'</div>'
-      + '<div class="m">•••• '+escA(o.telefono_ult4||"????")+'</div></div>'
-      + '<div class="acts"><button type="button" class="del" style="padding:4px 8px">✕</button></div></div>'
+      + '<div class="m">'+(o.rol==="farmacias"?'💊 Farmacia':'🏛️ Institución')+' · •••• '+escA(o.telefono_ult4||"????")+'</div></div>'
+      + '<div class="acts"><button type="button" class="edit" data-rol="'+escA(o.rol||"oficial")+'" style="padding:4px 8px" title="Editar">✎</button><button type="button" class="del" style="padding:4px 8px" title="Quitar">✕</button></div></div>'
     ).join("");
     panel.innerHTML =
-      (filas || '<p style="font-family:var(--sans);font-size:.72rem;color:var(--ink-faint);margin:0 0 8px">Todavía no hay oficiales cargados para esta institución.</p>')
+      (filas || '<p style="font-family:var(--sans);font-size:.72rem;color:var(--ink-faint);margin:0 0 8px">Todavía no hay números cargados (institución o farmacia).</p>')
       + '<div class="fecha-add">'
-      + '<input name="nombre" placeholder="Nombre (ej: Elías Gómez)" maxlength="60">'
+      + '<select name="rol" style="flex:1 1 100%"><option value="oficial">🏛️ Institución (avisos, fechas)</option><option value="farmacias">💊 Farmacia (turnos de farmacia)</option></select>'
+      + '<input name="nombre" placeholder="Nombre (ej: Elías Gómez o Farmacia Del Pueblo)" maxlength="60">'
       + '<input name="telefono" placeholder="Celular (ej: 3735 41-2345 o +54 9 …)" inputmode="tel">'
       + '<p style="font-family:var(--sans);font-size:.68rem;color:var(--ink-faint);margin:0;flex:1 1 100%">El número se guarda hasheado: en Fonte solo se ven los últimos 4 dígitos.</p>'
-      + '<button class="btn-mini" style="width:100%;background:var(--barrio);color:#fff;border-color:var(--barrio)" data-add-oficial="1">+ Agregar oficial</button>'
+      + '<button class="btn-mini" style="width:100%;background:var(--barrio);color:#fff;border-color:var(--barrio)" data-add-oficial="1">+ Agregar número</button>'
       + '</div>';
     panel.querySelectorAll(".fecha-row .del").forEach(btn=>{
       btn.addEventListener("click", async ()=>{
@@ -3037,6 +3038,22 @@
         cargarOficialesDe(inst, panel);
       });
     });
+    panel.querySelectorAll(".fecha-row .edit").forEach(btn=>{
+      btn.addEventListener("click", async ()=>{
+        const row = btn.closest(".fecha-row");
+        const id = row.getAttribute("data-oficial-id");
+        const nomAct = (row.querySelector(".t")||{}).textContent || "";
+        const nom = prompt("Nombre:", nomAct);
+        if(nom === null) return;
+        const esFarm = confirm("¿Es una FARMACIA?\n\nAceptar = Farmacia (manda turnos)\nCancelar = Institución");
+        btn.disabled = true;
+        const { error } = await sb.rpc("editar_oficial", { oficial: id, nombre: nom.trim(), rol: esFarm ? "farmacias" : "oficial" });
+        btn.disabled = false;
+        if(error){ toast("No se pudo guardar: " + error.message); return; }
+        toast("Guardado");
+        cargarOficialesDe(inst, panel);
+      });
+    });
     const addBtn = panel.querySelector("[data-add-oficial]");
     if(addBtn) addBtn.addEventListener("click", async ()=>{
       const nombre = (panel.querySelector('[name="nombre"]').value||"").trim();
@@ -3044,11 +3061,11 @@
       if(!nombre || !telefono){ toast("Completá el nombre y el celular."); return; }
       addBtn.disabled = true;
       const { data: r, error } = await sb.rpc("agregar_oficial", {
-        telefono, nombre, institucion: String(inst.id)
+        telefono, nombre, institucion: String(inst.id), rol: (panel.querySelector('[name="rol"]')||{}).value || "oficial"
       });
       addBtn.disabled = false;
       if(error){ toast("No se pudo agregar: " + error.message); return; }
-      toast("Oficial agregado · •••• " + ((r && r.telefono_ult4) || "????"));
+      toast("Número agregado · •••• " + ((r && r.telefono_ult4) || "????"));
       panel.querySelector('[name="nombre"]').value = "";
       panel.querySelector('[name="telefono"]').value = "";
       cargarOficialesDe(inst, panel);
