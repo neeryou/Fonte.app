@@ -2949,14 +2949,34 @@
       const hoy = new Date();
       const y = hoy.getFullYear(), m = String(hoy.getMonth()+1).padStart(2,"0"), d = String(hoy.getDate()).padStart(2,"0");
       const hoyStr = y+"-"+m+"-"+d;
-      const { data: turnos } = await sb.from("farmacias_turno")
-        .select("fecha,farmacia,direccion,telefono")
+      let turnos = null, tituloTurnos = "Turnos cargados (próximos)", avisoPasados = "";
+      const prox = await sb.from("farmacias_turno")
+        .select("fecha,farmacia,direccion,telefono,lote_id")
         .gte("fecha", hoyStr)
         .order("fecha", { ascending:true })
         .limit(10);
+      turnos = prox.data;
+      if(!(turnos && turnos.length)){
+        const ult = await sb.from("farmacias_turno")
+          .select("fecha,farmacia,direccion,telefono,lote_id,created_at")
+          .order("created_at", { ascending:false })
+          .limit(1);
+        const lote = ult.data && ult.data[0] && ult.data[0].lote_id;
+        if(lote){
+          const pas = await sb.from("farmacias_turno")
+            .select("fecha,farmacia,direccion,telefono")
+            .eq("lote_id", lote)
+            .order("fecha", { ascending:true })
+            .limit(14);
+          turnos = pas.data;
+          tituloTurnos = "Últimos turnos cargados (fechas ya pasadas)";
+          avisoPasados = '<p style="font-family:var(--sans);font-size:.68rem;color:#b45309;margin:0 0 8px">Estas fechas ya vencieron: en Fonte no se ven. Hay que cargar el cronograma de esta semana.</p>';
+        }
+      }
       if(turnos && turnos.length){
         turnosHtml = '<div style="margin-top:14px;padding-top:10px;border-top:1px solid var(--line)">'
-          + '<div style="font-family:var(--sans);font-size:.72rem;font-weight:700;margin-bottom:6px">Turnos cargados (próximos)</div>'
+          + '<div style="font-family:var(--sans);font-size:.72rem;font-weight:700;margin-bottom:6px">'+tituloTurnos+'</div>'
+          + avisoPasados
           + turnos.map(t=> '<div class="fecha-row"><div><div class="t">'+escA(t.farmacia||"")+'</div>'
             + '<div class="m">'+escA(t.fecha||"")+(t.direccion ? " · "+escA(t.direccion) : "")
             +(t.telefono ? " · ☎ "+escA(t.telefono) : "")+'</div></div></div>').join("")
