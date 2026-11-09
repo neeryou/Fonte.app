@@ -950,7 +950,7 @@
       <div id="ciudadLista">
       <div id="avisoVencidas" class="hide" style="background:color-mix(in srgb,#B23A2E 10%,var(--paper));border:1px solid color-mix(in srgb,#B23A2E 30%,var(--line));border-radius:10px;padding:12px 14px;margin-bottom:16px;font-family:var(--sans);font-size:.8rem;color:#B23A2E;font-weight:600"></div>
       <h2 class="rep-h">Ciudad</h2>
-      <p class="rep-sub">Tocá una institución → Aviso, Fecha o Servicio.</p>
+      <p class="rep-sub">Tocá una institución → Aviso, Fecha o Servicio. Las farmacias van aparte.</p>
 
       <button class="ciudad-nueva form-toggle" data-form="formInstitucion"><span>+ Nueva institución</span><span class="chev">⌄</span></button>
       <div class="card hide" id="formInstitucion">
@@ -1001,8 +1001,31 @@
         <div class="err-msg hide" id="inErr"></div>
       </div>
 
+      <div class="inst-block" id="ciudadFarmCard" role="button" tabindex="0" style="margin-bottom:10px">
+        <span class="inst-ico">💊</span>
+        <div><div class="h">Farmacias</div>
+        <div class="sub2">Números del bot · turnos de farmacia</div></div>
+        <div class="go-inst">›</div>
+      </div>
       <div class="card" id="institucionesAdminList"><p style="font-family:var(--sans);font-size:.78rem;color:var(--ink-faint)">Cargando…</p></div>
       </div><!-- /ciudadLista -->
+
+      <div id="ciudadFarmacias" class="hide">
+        <div class="ciudad-crumb">
+          <button type="button" id="ciudadFarmVolverBtn">← Ciudad</button>
+          <span class="sep">›</span>
+          <b>💊 Farmacias</b>
+        </div>
+        <div class="fachada" style="margin-bottom:8px">
+          <div class="logo-sq"><span class="f">💊</span></div>
+          <div>
+            <h2 class="pag-nm">Farmacias</h2>
+            <div class="pag-meta">Turnos de farmacia · WhatsApp</div>
+          </div>
+        </div>
+        <p class="ciudad-intro">Acá cargás los números que mandan el cronograma de turnos. No van dentro de una institución.</p>
+        <div id="ciudadFarmPanel" class="card" style="padding:12px 14px">Cargando…</div>
+      </div>
 
       <div id="ciudadDetalle" class="hide">
         <div class="ciudad-crumb">
@@ -1041,7 +1064,7 @@
         </div>
         <div id="ciudadDetallePanel" class="hide"></div>
         <div class="ciudad-sec">
-          <button type="button" class="btn-mini" id="ciudadOficialesBtn">Números del bot (oficiales y farmacias)</button>
+          <button type="button" class="btn-mini" id="ciudadOficialesBtn">Números del bot</button>
           <button type="button" class="btn-mini" id="ciudadEditarBtn">Editar ficha</button>
           <button type="button" class="btn-mini del" id="ciudadQuitarBtn">Quitar</button>
         </div>
@@ -2872,11 +2895,135 @@
     ciudadCargaActual = null;
     const lista = document.getElementById("ciudadLista");
     const det = document.getElementById("ciudadDetalle");
+    const farm = document.getElementById("ciudadFarmacias");
     if(lista) lista.classList.remove("hide");
     if(det) det.classList.add("hide");
+    if(farm) farm.classList.add("hide");
     const panel = document.getElementById("ciudadDetallePanel");
     if(panel){ panel.classList.add("hide"); panel.innerHTML = ""; }
     document.querySelectorAll("#ciudadAcciones .accion").forEach(b=> b.classList.remove("on"));
+  }
+
+  function instAnclaFarmacias(){
+    const lista = INST_ADMIN || [];
+    return lista.find(x => x.tipo === "municipio")
+      || lista.find(x => /municipalidad/i.test(String(x.nombre||"")))
+      || null;
+  }
+
+  function abrirCiudadFarmacias(){
+    ciudadInstActual = null;
+    ciudadCargaActual = null;
+    const lista = document.getElementById("ciudadLista");
+    const det = document.getElementById("ciudadDetalle");
+    const farm = document.getElementById("ciudadFarmacias");
+    if(lista) lista.classList.add("hide");
+    if(det) det.classList.add("hide");
+    if(farm) farm.classList.remove("hide");
+    const panel = document.getElementById("ciudadFarmPanel");
+    if(panel) cargarFarmaciasAdmin(panel);
+    window.scrollTo({ top:0, behavior:"instant" });
+  }
+
+  async function cargarFarmaciasAdmin(panel){
+    if(!panel) return;
+    panel.innerHTML = "Cargando…";
+    const { data, error } = await sb.from("bot_oficiales")
+      .select("id,nombre,telefono_ult4,activo,created_at,rol,institucion_id")
+      .eq("rol", "farmacias").eq("activo", true)
+      .order("created_at", { ascending:true });
+    if(error){
+      panel.innerHTML = '<p style="font-family:var(--sans);font-size:.78rem;color:var(--ink-faint)">No se pudo cargar: '
+        + escA(error.message) + "</p>";
+      return;
+    }
+    const filas = (data||[]).map(o=>
+      '<div class="fecha-row" data-oficial-id="'+escA(o.id)+'">'
+      + '<div><div class="t">'+escA(o.nombre)+'</div>'
+      + '<div class="m">💊 Farmacia · •••• '+escA(o.telefono_ult4||"????")+'</div></div>'
+      + '<div class="acts"><button type="button" class="edit" style="padding:4px 8px" title="Editar nombre">✎</button>'
+      + '<button type="button" class="del" style="padding:4px 8px" title="Quitar">✕</button></div></div>'
+    ).join("");
+    let turnosHtml = "";
+    try{
+      const hoy = new Date();
+      const y = hoy.getFullYear(), m = String(hoy.getMonth()+1).padStart(2,"0"), d = String(hoy.getDate()).padStart(2,"0");
+      const hoyStr = y+"-"+m+"-"+d;
+      const { data: turnos } = await sb.from("farmacias_turno")
+        .select("fecha,farmacia,direccion,telefono")
+        .gte("fecha", hoyStr)
+        .order("fecha", { ascending:true })
+        .limit(10);
+      if(turnos && turnos.length){
+        turnosHtml = '<div style="margin-top:14px;padding-top:10px;border-top:1px solid var(--line)">'
+          + '<div style="font-family:var(--sans);font-size:.72rem;font-weight:700;margin-bottom:6px">Turnos cargados (próximos)</div>'
+          + turnos.map(t=> '<div class="fecha-row"><div><div class="t">'+escA(t.farmacia||"")+'</div>'
+            + '<div class="m">'+escA(t.fecha||"")+(t.direccion ? " · "+escA(t.direccion) : "")
+            +(t.telefono ? " · ☎ "+escA(t.telefono) : "")+'</div></div></div>').join("")
+          + "</div>";
+      } else {
+        turnosHtml = '<p style="font-family:var(--sans);font-size:.68rem;color:var(--ink-faint);margin:12px 0 0">Todavía no hay turnos cargados para los próximos días.</p>';
+      }
+    }catch(e){
+      turnosHtml = "";
+    }
+    panel.innerHTML =
+      (filas || '<p style="font-family:var(--sans);font-size:.72rem;color:var(--ink-faint);margin:0 0 8px">Todavía no hay números de farmacia.</p>')
+      + '<div class="fecha-add">'
+      + '<input name="nombre" placeholder="Nombre (ej: Farmacia Del Pueblo)" maxlength="60">'
+      + '<input name="telefono" placeholder="Celular (ej: 3735 41-2345 o +54 9 …)" inputmode="tel">'
+      + '<p style="font-family:var(--sans);font-size:.68rem;color:var(--ink-faint);margin:0;flex:1 1 100%">El número se guarda hasheado: en Fonte solo se ven los últimos 4 dígitos. Ese celular solo podrá cargar turnos por WhatsApp.</p>'
+      + '<button class="btn-mini" style="width:100%;background:var(--barrio);color:#fff;border-color:var(--barrio)" data-add-farm="1">+ Agregar farmacia</button>'
+      + '</div>'
+      + turnosHtml;
+    panel.querySelectorAll(".fecha-row .del").forEach(btn=>{
+      btn.addEventListener("click", async ()=>{
+        const id = btn.closest(".fecha-row").getAttribute("data-oficial-id");
+        if(!id) return;
+        const nom = (btn.closest(".fecha-row").querySelector(".t")||{}).textContent || "esta farmacia";
+        if(!confirm("¿Quitar a “"+nom+"” de las farmacias del bot?")) return;
+        btn.disabled = true;
+        const { error } = await sb.rpc("quitar_oficial", { oficial: id });
+        if(error){ toast("No se pudo quitar: " + error.message); btn.disabled = false; return; }
+        toast("Farmacia quitada");
+        cargarFarmaciasAdmin(panel);
+      });
+    });
+    panel.querySelectorAll(".fecha-row .edit").forEach(btn=>{
+      btn.addEventListener("click", async ()=>{
+        const row = btn.closest(".fecha-row");
+        const id = row.getAttribute("data-oficial-id");
+        if(!id) return;
+        const nomAct = (row.querySelector(".t")||{}).textContent || "";
+        const nom = prompt("Nombre de la farmacia:", nomAct);
+        if(nom === null) return;
+        if(!nom.trim()){ toast("Poné un nombre."); return; }
+        btn.disabled = true;
+        const { error } = await sb.rpc("editar_oficial", { oficial: id, nombre: nom.trim(), rol: "farmacias" });
+        btn.disabled = false;
+        if(error){ toast("No se pudo guardar: " + error.message); return; }
+        toast("Guardado");
+        cargarFarmaciasAdmin(panel);
+      });
+    });
+    const addBtn = panel.querySelector("[data-add-farm]");
+    if(addBtn) addBtn.addEventListener("click", async ()=>{
+      const nombre = (panel.querySelector('[name="nombre"]').value||"").trim();
+      const telefono = (panel.querySelector('[name="telefono"]').value||"").trim();
+      if(!nombre || !telefono){ toast("Completá el nombre y el celular."); return; }
+      const ancla = instAnclaFarmacias();
+      if(!ancla){ toast("Primero cargá la Municipalidad en Ciudad (hace falta para guardar)."); return; }
+      addBtn.disabled = true;
+      const { data: r, error } = await sb.rpc("agregar_oficial", {
+        telefono, nombre, institucion: String(ancla.id), rol: "farmacias"
+      });
+      addBtn.disabled = false;
+      if(error){ toast("No se pudo agregar: " + error.message); return; }
+      toast("Farmacia agregada · •••• " + ((r && r.telefono_ult4) || "????"));
+      panel.querySelector('[name="nombre"]').value = "";
+      panel.querySelector('[name="telefono"]').value = "";
+      cargarFarmaciasAdmin(panel);
+    });
   }
 
   function abrirCiudadDetalle(inst){
@@ -2885,8 +3032,10 @@
     ciudadCargaActual = null;
     const lista = document.getElementById("ciudadLista");
     const det = document.getElementById("ciudadDetalle");
+    const farm = document.getElementById("ciudadFarmacias");
     if(lista) lista.classList.add("hide");
     if(det) det.classList.remove("hide");
+    if(farm) farm.classList.add("hide");
     const panel = document.getElementById("ciudadDetallePanel");
     if(panel){ panel.classList.add("hide"); panel.innerHTML = ""; }
     document.querySelectorAll("#ciudadAcciones .accion").forEach(b=> b.classList.remove("on"));
@@ -3000,7 +3149,7 @@
     panel.innerHTML = "Cargando…";
     const { data, error } = await sb.from("bot_oficiales")
       .select("id,nombre,telefono_ult4,activo,created_at,rol")
-      .eq("institucion_id", inst.id).eq("activo", true)
+      .eq("institucion_id", inst.id).eq("activo", true).or_("rol.eq.oficial,rol.is.null")
       .order("created_at", { ascending:true });
     if(error){
       const falta = /bot_oficiales|does not exist|PGRST/i.test(error.message||"");
@@ -3014,16 +3163,15 @@
     const filas = (data||[]).map(o=>
       '<div class="fecha-row" data-oficial-id="'+escA(o.id)+'">'
       + '<div><div class="t">'+escA(o.nombre)+'</div>'
-      + '<div class="m">'+(o.rol==="farmacias"?'💊 Farmacia':'🏛️ Institución')+' · •••• '+escA(o.telefono_ult4||"????")+'</div></div>'
-      + '<div class="acts"><button type="button" class="edit" data-rol="'+escA(o.rol||"oficial")+'" style="padding:4px 8px" title="Editar">✎</button><button type="button" class="del" style="padding:4px 8px" title="Quitar">✕</button></div></div>'
+      + '<div class="m">•••• '+escA(o.telefono_ult4||"????")+'</div></div>'
+      + '<div class="acts"><button type="button" class="edit" style="padding:4px 8px" title="Editar">✎</button><button type="button" class="del" style="padding:4px 8px" title="Quitar">✕</button></div></div>'
     ).join("");
     panel.innerHTML =
-      (filas || '<p style="font-family:var(--sans);font-size:.72rem;color:var(--ink-faint);margin:0 0 8px">Todavía no hay números cargados (institución o farmacia).</p>')
+      (filas || '<p style="font-family:var(--sans);font-size:.72rem;color:var(--ink-faint);margin:0 0 8px">Todavía no hay números del bot para esta institución.</p>')
       + '<div class="fecha-add">'
-      + '<select name="rol" style="flex:1 1 100%"><option value="oficial">🏛️ Institución (avisos, fechas)</option><option value="farmacias">💊 Farmacia (turnos de farmacia)</option></select>'
-      + '<input name="nombre" placeholder="Nombre (ej: Elías Gómez o Farmacia Del Pueblo)" maxlength="60">'
+      + '<input name="nombre" placeholder="Nombre (ej: Elías Gómez)" maxlength="60">'
       + '<input name="telefono" placeholder="Celular (ej: 3735 41-2345 o +54 9 …)" inputmode="tel">'
-      + '<p style="font-family:var(--sans);font-size:.68rem;color:var(--ink-faint);margin:0;flex:1 1 100%">El número se guarda hasheado: en Fonte solo se ven los últimos 4 dígitos.</p>'
+      + '<p style="font-family:var(--sans);font-size:.68rem;color:var(--ink-faint);margin:0;flex:1 1 100%">El número se guarda hasheado: en Fonte solo se ven los últimos 4 dígitos. Las farmacias se cargan en Ciudad → Farmacias.</p>'
       + '<button class="btn-mini" style="width:100%;background:var(--barrio);color:#fff;border-color:var(--barrio)" data-add-oficial="1">+ Agregar número</button>'
       + '</div>';
     panel.querySelectorAll(".fecha-row .del").forEach(btn=>{
@@ -3045,9 +3193,9 @@
         const nomAct = (row.querySelector(".t")||{}).textContent || "";
         const nom = prompt("Nombre:", nomAct);
         if(nom === null) return;
-        const esFarm = confirm("¿Es una FARMACIA?\n\nAceptar = Farmacia (manda turnos)\nCancelar = Institución");
+        if(!nom.trim()){ toast("Poné un nombre."); return; }
         btn.disabled = true;
-        const { error } = await sb.rpc("editar_oficial", { oficial: id, nombre: nom.trim(), rol: esFarm ? "farmacias" : "oficial" });
+        const { error } = await sb.rpc("editar_oficial", { oficial: id, nombre: nom.trim(), rol: "oficial" });
         btn.disabled = false;
         if(error){ toast("No se pudo guardar: " + error.message); return; }
         toast("Guardado");
@@ -3061,7 +3209,7 @@
       if(!nombre || !telefono){ toast("Completá el nombre y el celular."); return; }
       addBtn.disabled = true;
       const { data: r, error } = await sb.rpc("agregar_oficial", {
-        telefono, nombre, institucion: String(inst.id), rol: (panel.querySelector('[name="rol"]')||{}).value || "oficial"
+        telefono, nombre, institucion: String(inst.id), rol: "oficial"
       });
       addBtn.disabled = false;
       if(error){ toast("No se pudo agregar: " + error.message); return; }
@@ -6456,6 +6604,16 @@
   (function wireCiudadDetalle(){
     const volver = document.getElementById("ciudadVolverBtn");
     if(volver) volver.addEventListener("click", ()=> mostrarCiudadLista());
+    const farmVolver = document.getElementById("ciudadFarmVolverBtn");
+    if(farmVolver) farmVolver.addEventListener("click", ()=> mostrarCiudadLista());
+    const farmCard = document.getElementById("ciudadFarmCard");
+    if(farmCard){
+      const openFarm = ()=> abrirCiudadFarmacias();
+      farmCard.addEventListener("click", openFarm);
+      farmCard.addEventListener("keydown", e=>{
+        if(e.key === "Enter" || e.key === " "){ e.preventDefault(); openFarm(); }
+      });
+    }
     document.querySelectorAll("#ciudadAcciones .accion").forEach(btn=>{
       btn.addEventListener("click", ()=> abrirCargaInstitucion(btn.getAttribute("data-carga")));
     });
