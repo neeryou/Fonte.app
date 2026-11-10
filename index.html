@@ -4925,7 +4925,9 @@
     const dir = String(inst.direccion||"").trim();
     const horario = String(inst.horario||"").trim();
     const guardia = String(inst.guardia||"").trim();
-    const wa = telWaMe(tel);
+    // El botón WhatsApp sale solo si la institución marcó que su número tiene WhatsApp
+    // (un fijo no se distingue de un celular por el formato).
+    const wa = inst.tiene_whatsapp === true ? telWaMe(tel) : "";
     const maps = mapsUrlDe(dir);
     const comInst = comunicadosDe(id).slice().sort((a,b)=> new Date(b.created_at||0) - new Date(a.created_at||0));
     const avisosTop = comInst.slice(0, 3);
