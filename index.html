@@ -1102,6 +1102,9 @@
   .inst-fecha-block .m{ font-family:var(--sans); font-size:.52rem; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-faint); margin-top:3px; }
   .inst-fecha-tx .t{ font-family:var(--serif); font-weight:600; font-size:.92rem; line-height:1.2; color:var(--ink); }
   .inst-fecha-tx .s{ font-family:var(--sans); font-size:.68rem; color:var(--ink-soft); margin-top:3px; }
+  .inst-fecha-thumb{ width:44px; height:44px; object-fit:cover; border-radius:6px; flex:0 0 auto; background:var(--surface); }
+  .inst-fecha-row.con-foto{ grid-template-columns:48px 44px 1fr auto; }
+  .fe-flyer{ display:block; width:100%; max-height:280px; object-fit:contain; background:var(--surface); border-radius:6px; margin:0 0 14px; }
   /* Buscador de la ficha: discreto, una línea, a tono con la institución. Filtra fechas, avisos y servicios. */
   .inst-ficha .fb{ display:flex; align-items:center; gap:8px; margin:14px 0 0; padding:0 4px 0 12px; height:36px;
     border:1px solid var(--line); border-radius:999px; background:var(--paper-2); color:var(--ink-faint); transition:border-color .15s; }
@@ -1335,12 +1338,12 @@
 /* ===== Hoy en Quitilipi: clima + farmacia de turno ===== */
 .tick-hoy{ cursor:pointer; }
 .tick-hoy:focus-visible{ outline:2px solid var(--ink); outline-offset:-2px; }
-.tick.farm{ flex:1 1 0; min-width:0; background:color-mix(in srgb,#1F7A55 11%,var(--paper-3)); border-left:3px solid #1F7A55; }
-.tick.farm .lbl{ color:#1F7A55; font-weight:600; }
+.tick.farm{ flex:1 1 0; min-width:0; white-space:normal; background:color-mix(in srgb,#1F7A55 11%,var(--paper-3)); border-left:3px solid #1F7A55; }
+.tick.farm .lbl{ color:#1F7A55; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 [data-tema="oscuro"] .tick.farm .lbl{ color:#5FBF82; }
-.tick.farm .lbl, .tick.farm .val{ overflow:hidden; text-overflow:ellipsis; }
+.tick.farm .val{ overflow:visible; text-overflow:unset; white-space:normal; line-height:1.2; }
 @media (max-width:520px){ #ticker .tick{ padding:8px 10px; } #ticker .tick.farm .lbl .largo{ display:none; } }
-.tick.farm .val i{ font-style:normal; color:var(--ink-faint); font-weight:500; }
+.tick.farm .val i{ display:block; font-style:normal; color:var(--ink-faint); font-weight:500; }
 .tick.farm .val.gris{ color:var(--ink-faint); font-weight:500; }
 #sheetHoy .hoy-body{ overflow-y:auto; padding:12px 0 24px; flex:1; }
 #sheetHoy .seg{ display:flex; margin:0 16px 14px; border:.5px solid var(--line-strong); border-radius:20px; overflow:hidden; }
@@ -2110,6 +2113,20 @@
   const horaTurno = (iso, conMin)=> { const d = new Date(iso); if(isNaN(d)) return "";
     const [h, m] = new Intl.DateTimeFormat("en-GB", { timeZone:"America/Argentina/Buenos_Aires", hour:"2-digit", minute:"2-digit", hour12:false }).format(d).split(":");
     const hh = String(Number(h) % 24); return (conMin || m !== "00") ? hh + ":" + m : hh; };
+  function leyendaHastaFarm(iso){
+    const hora = horaTurno(iso);
+    if(!hora) return "";
+    const fin = new Date(iso);
+    if(isNaN(fin)) return "hasta " + hora + " h";
+    const dif = difDiasIso(fechaBA(new Date(ahoraServidor())), fechaBA(fin));
+    if(dif <= 0) return "hasta " + hora + " h";
+    if(dif === 1) return "hasta mañana " + hora + " h";
+    const en = new Intl.DateTimeFormat("en-US", { timeZone:"America/Argentina/Buenos_Aires", weekday:"short" }).format(fin);
+    const map = { Sun:"dom", Mon:"lun", Tue:"mar", Wed:"mié", Thu:"jue", Fri:"vie", Sat:"sáb" };
+    const wd = map[en] || en.toLowerCase();
+    const diaNum = new Intl.DateTimeFormat("en-CA", { timeZone:"America/Argentina/Buenos_Aires", day:"numeric" }).format(fin);
+    return "hasta " + wd + " " + diaNum + ", " + hora + " h";
+  }
   async function cargarFarmacia(){
     clearTimeout(farmTimer);
     try{
@@ -2126,9 +2143,9 @@
     if(!FARM.ahora.length){ el.className = "val gris"; el.textContent = "Ver cronograma"; return; }
     el.className = "val";
     const nombres = FARM.ahora.map(f => sinFarmacia(f.farmacia));
-    const hasta = horaTurno(FARM.ahora[0].hasta);
-    el.innerHTML = esc(nombres.slice(0, 2).join(" + ")) + (hasta ? ' <i>· hasta ' + esc(hasta) + ' h</i>' : '');
-    el.parentElement.title = nombres.join(" + ");
+    const hasta = leyendaHastaFarm(FARM.ahora[0].hasta);
+    el.innerHTML = esc(nombres.slice(0, 2).join(" + ")) + (hasta ? ' <i>' + esc(hasta) + '</i>' : '');
+    el.parentElement.title = nombres.join(" + ") + (hasta ? " · " + hasta : "");
   }
   const telLink = (t)=> { const d = String(t||"").replace(/[^\d+]/g, ""); return d.length >= 6 ? "tel:" + d : ""; };
   const mapaLink = (f)=> (typeof f.lat === "number" && typeof f.lng === "number")
@@ -4943,8 +4960,10 @@
         const fm = fmtFecha(f.fecha);
         const lugarParts = String(f.lugar||"").split(/\n+/).map(s=>s.trim()).filter(Boolean);
         const sub = [lugarParts.join(" · "), f.horario].filter(Boolean).join(" · ");
-        html += '<div class="inst-fecha-row con-share'+(String(opts.resaltar||"")===String(f.id)?' resaltada':'')+'" id="fecha-'+esc(f.id)+'" data-fecha-id="'+esc(f.id)+'">'
+        const fotoF = urlSegura(f.imagen_url);
+        html += '<div class="inst-fecha-row con-share'+(fotoF?' con-foto':'')+(String(opts.resaltar||"")===String(f.id)?' resaltada':'')+'" id="fecha-'+esc(f.id)+'" data-fecha-id="'+esc(f.id)+'">'
           + '<div class="inst-fecha-block"><div class="d">'+fm.d+'</div><div class="m">'+esc(fm.m)+'</div></div>'
+          + (fotoF ? '<img class="inst-fecha-thumb" src="'+esc(fotoF)+'" alt="" loading="lazy" decoding="async">' : '')
           + '<div class="inst-fecha-tx"><div class="t">'+esc(f.titulo||"Fecha")+'</div>'
           + (sub ? '<div class="s">'+esc(sub)+'</div>' : '')
           + '</div>'
@@ -5143,7 +5162,9 @@
         fF.forEach((f, i)=>{
           const fm = fmtFecha(f.fecha);
           const sub = [String(f.lugar||"").split(/\n+/).map(t=>t.trim()).filter(Boolean).join(" · "), f.horario].filter(Boolean).join(" · ");
-          h += '<div class="inst-fecha-row con-share" data-fb-f="'+i+'"><div class="inst-fecha-block"><div class="d">'+fm.d+'</div><div class="m">'+esc(fm.m)+'</div></div>'
+          const fotoFb = urlSegura(f.imagen_url);
+          h += '<div class="inst-fecha-row con-share'+(fotoFb?' con-foto':'')+'" data-fb-f="'+i+'"><div class="inst-fecha-block"><div class="d">'+fm.d+'</div><div class="m">'+esc(fm.m)+'</div></div>'
+            + (fotoFb ? '<img class="inst-fecha-thumb" src="'+esc(fotoFb)+'" alt="" loading="lazy" decoding="async">' : '')
             + '<div class="inst-fecha-tx"><div class="t">'+resaltarBusq(f.titulo||"Fecha", q)+'</div>'+(sub?'<div class="s">'+resaltarBusq(sub, q)+'</div>':'')+'</div>'
             + '<button type="button" class="fecha-share">↗ Compartir</button></div>';
         });
@@ -5270,6 +5291,7 @@
       + '<div>'+(pasada ? '<span class="fe-cd pasada">YA PASÓ</span>' : (cd ? '<span class="fe-cd">'+esc(cd)+'</span>' : ''))
       + '<div class="fe-full">'+esc(etiquetaFechaIso(f.fecha))+'</div></div></div>'
       + '<h3 class="com-tit">'+esc(f.titulo||"Fecha")+'</h3>'
+      + (urlSegura(f.imagen_url) ? '<img class="fe-flyer" src="'+esc(urlSegura(f.imagen_url))+'" alt="">' : '')
       + '<div class="fe-datos">'+(f.horario ? '<div><span>🕐</span><span>'+esc(f.horario)+'</span></div>' : '')
       + puntos.map(x=>'<div><span>📍</span><span>'+esc(x)+'</span></div>').join("") + '</div>';
     if(pasada){
