@@ -839,6 +839,19 @@
   .onb-btn.p{ background:var(--ink); color:var(--paper); }
   .onb-btn.s{ background:none; color:var(--ink-faint); }
   .onb-ondas{ display:flex; flex-direction:column; gap:7px; margin:16px 0 4px; }
+  /* bienvenida: lo oficial en un solo lugar */
+  .onb-logo{ font-family:var(--serif); font-weight:700; font-size:1.35rem; text-align:center; color:var(--ink); }
+  .onb-logo i{ color:var(--urgente); font-style:normal; }
+  .onb-lista{ margin:16px 0 0; text-align:left; }
+  .onb-it{ display:flex; align-items:center; gap:13px; padding:10px 0; border-bottom:.5px solid var(--line); }
+  .onb-it:last-child{ border-bottom:0; }
+  .onb-it .ic{ width:42px; height:42px; border-radius:11px; display:flex; align-items:center; justify-content:center; font-size:1.25rem; flex:0 0 auto; background:var(--paper-2); }
+  .onb-it b{ display:block; font-family:var(--serif); font-weight:700; font-size:.98rem; color:var(--ink); }
+  .onb-it span.tx{ font-family:var(--sans); font-size:.78rem; color:var(--ink-soft); }
+  .onb-nota{ font-family:var(--sans); font-size:.72rem; color:var(--ink-faint); text-align:center; margin-top:10px; }
+  .onb.uno .onb-dots{ display:none; }
+  .onb.uno .onb-btns{ margin-top:18px; }
+  .onb.uno #onbSaltar{ display:none; }
   .onb-onda{ display:flex; align-items:center; gap:9px; font-family:var(--sans); font-size:.8rem; color:var(--ink-soft); }
   .onb-onda .b{ width:10px; height:10px; border-radius:50%; flex:0 0 auto; }
   .onb-voz{ display:flex; align-items:flex-start; gap:9px; margin-top:11px; text-align:left; }
@@ -929,6 +942,7 @@
   .fe-cd.pasada{ color:var(--ink-faint); background:var(--paper-3); }
   .fe-full{ font-family:var(--sans); font-size:.86rem; font-weight:600; color:var(--ink); margin-top:6px; }
   .fe-datos{ border-top:.5px solid var(--line-strong); margin:4px 0 16px; }
+  .fe-desc{ font-family:var(--sans); font-size:1rem; line-height:1.45; color:var(--ink-soft); margin:0 0 14px; }
   .fe-datos div{ display:grid; grid-template-columns:22px 1fr; gap:8px; font-family:var(--sans); font-size:.92rem; color:var(--ink); padding:10px 0; border-bottom:.5px solid var(--line); }
   /* ?…&compartir=1 (botón «Compartir» del bot de WhatsApp): el botón Compartir late un momento */
   @keyframes ctaPulso{ 0%,100%{ box-shadow:0 0 0 0 rgba(26,24,20,0); } 50%{ box-shadow:0 0 0 7px rgba(26,24,20,.16); } }
@@ -1105,6 +1119,7 @@
   .inst-fecha-thumb{ width:44px; height:44px; object-fit:cover; border-radius:6px; flex:0 0 auto; background:var(--surface); }
   .inst-fecha-row.con-foto{ grid-template-columns:48px 44px 1fr auto; }
   .fe-flyer{ display:block; width:100%; max-height:280px; object-fit:contain; background:var(--surface); border-radius:6px; margin:0 0 14px; }
+  #fechaBody .fe-flyer{ max-height:640px; border:.5px solid var(--line-strong); margin:2px 0 16px; cursor:zoom-in; }
   /* Buscador de la ficha: discreto, una línea, a tono con la institución. Filtra fechas, avisos y servicios. */
   .inst-ficha .fb{ display:flex; align-items:center; gap:8px; margin:14px 0 0; padding:0 4px 0 12px; height:36px;
     border:1px solid var(--line); border-radius:999px; background:var(--paper-2); color:var(--ink-faint); transition:border-color .15s; }
@@ -1164,6 +1179,15 @@
   .aten-item .k{ font-size:.58rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-faint); }
   .aten-item .v{ font-size:.86rem; font-weight:600; color:var(--ink); margin-top:2px; line-height:1.3; }
   .aten-item a.v{ color:var(--instc); text-decoration:underline; text-underline-offset:2px; text-decoration-thickness:.5px; }
+  .aten-item .v.multi{ white-space:pre-line; font-weight:500; }
+  /* ficha: teléfono grande con botón Llamar (solo si la institución cargó teléfono) */
+  .inst-llamar{ margin:14px 0 4px; background:color-mix(in srgb,var(--ciudad) 12%,var(--paper)); border-radius:12px; padding:14px; font-family:var(--sans); }
+  .inst-llamar .g{ display:flex; align-items:center; gap:8px; font-weight:800; font-size:.9rem; color:var(--ciudad); margin-bottom:4px; }
+  .inst-llamar .g i{ width:9px; height:9px; border-radius:50%; background:var(--ciudad); display:inline-block; flex:0 0 auto; }
+  .inst-llamar .n{ font-family:var(--mono); font-size:1.3rem; font-weight:600; color:var(--ink); margin:2px 0 12px; letter-spacing:.01em; }
+  .inst-llamar-btn{ display:flex; align-items:center; justify-content:center; gap:8px; background:var(--ciudad); color:#fff !important; text-decoration:none;
+    font-family:var(--sans); font-weight:700; font-size:1.02rem; border-radius:11px; padding:15px; }
+  .inst-llamar-btn svg{ width:19px; height:19px; stroke:currentColor; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
   .inst-ficha .pag-pie{ margin-top:16px; padding-top:10px; border-top:.5px solid var(--line); font-size:.62rem; color:var(--ink-faint); }
   /* legacy (otras pantallas / no usados en la ficha nueva) */
   .pag-nm{ font-family:var(--serif); font-weight:700; font-size:2.05rem; line-height:1.05; letter-spacing:-.04em; margin:0 0 6px; }
@@ -1809,10 +1833,10 @@
     <div id="masSobreVista" class="hide">
       <button class="mas-volver" id="masVolver" type="button">‹ Volver</button>
       <div class="mas-sobre-txt">
-        <p><b>Fonte</b> es un diario hecho para Quitilipi — ordena las noticias por cercanía, no por qué tan virales son. Lo que pasa en tu barrio y tu ciudad va primero; la región, el país y el mundo, después.</p>
-        <p>Se arma con dos patas: una parte la aportan los propios vecinos — un corte de agua, una calle rota, algo que está pasando ahora — y otra la organiza inteligencia artificial a partir de fuentes locales y nacionales, siempre con alguien revisando antes de publicar.</p>
-        <p>No le vendemos exclusividad de información a nadie — ni a gobiernos, ni a nadie más.</p>
-        <p>Si ves algo que debería estar acá, avisanos con «Avisos de vecinos». Y si te copa contar lo que pasa en tu ciudad más seguido, sumate como reportero.</p>
+        <p><b>Fonte</b> junta en un solo lugar lo oficial y útil de Quitilipi: la farmacia de turno, los cortes y avisos, las fechas de vacunación, ferias y trámites, y la información de la Municipalidad, el Hospital, la Comisaría, Bomberos y otras instituciones.</p>
+        <p>Lo publican las propias instituciones, con su nombre y su sello de verificadas. Fonte no cambia los datos: solo los ordena para que se entiendan rápido y se puedan compartir.</p>
+        <p>Los vecinos también pueden avisar un bache, un corte de luz o algo que está pasando, y abajo están las noticias del pueblo con el link a su fuente.</p>
+        <p>Si ves algo que debería estar acá, avisanos con «Avisos de vecinos». Si sos de una institución y querés publicar, escribinos.</p>
       </div>
     </div>
   </div>
@@ -4900,6 +4924,7 @@
     const tel = String(inst.telefono||"").trim();
     const dir = String(inst.direccion||"").trim();
     const horario = String(inst.horario||"").trim();
+    const guardia = String(inst.guardia||"").trim();
     const wa = telWaMe(tel);
     const maps = mapsUrlDe(dir);
     const comInst = comunicadosDe(id).slice().sort((a,b)=> new Date(b.created_at||0) - new Date(a.created_at||0));
@@ -4921,9 +4946,18 @@
       + '</div></div>';
     html += '<hr class="inst-rule">';
 
+    // Teléfono grande con «Llamar» (solo si la institución lo tiene cargado)
+    if(tel){
+      html += '<div class="inst-llamar">'
+        + (guardia ? '<div class="g"><i></i>Guardia · '+esc(guardia)+'</div>' : '')
+        + '<div class="n">'+esc(tel)+'</div>'
+        + '<a class="inst-llamar-btn" href="tel:'+esc(telSoloDigitos(tel))+'">'+QA_SVG.llamar+'Llamar'+(guardia ? ' a la guardia' : '')+'</a>'
+        + '</div>';
+    }
+
     // acciones rápidas (se ocultan las que no tienen dato; Avisarme siempre)
     const qaItems = [];
-    if(tel) qaItems.push('<a class="qa-btn" href="tel:'+esc(telSoloDigitos(tel))+'" aria-label="Llamar">'+QA_SVG.llamar+'<span class="lbl">Llamar</span></a>');
+    // (Llamar ya está grande arriba)
     if(wa) qaItems.push('<a class="qa-btn" href="https://wa.me/'+esc(wa)+'" target="_blank" rel="noopener" aria-label="WhatsApp">'+QA_SVG.wa+'<span class="lbl">WhatsApp</span></a>');
     if(maps) qaItems.push('<a class="qa-btn" href="'+esc(maps)+'" target="_blank" rel="noopener" aria-label="Cómo llegar">'+QA_SVG.maps+'<span class="lbl">Cómo llegar</span></a>');
     qaItems.push('<button type="button" class="'+(sigue?"on":"")+'" id="btnSeguirInst" data-id="'+esc(inst.id)+'" aria-label="Avisarme">'+QA_SVG.avis+'<span class="lbl">'+(sigue?"Avisado":"Avisarme")+'</span></button>');
@@ -5025,8 +5059,11 @@
         + (maps ? '<a class="v" href="'+esc(maps)+'" target="_blank" rel="noopener">'+esc(dir)+'</a>' : '<div class="v">'+esc(dir)+'</div>')
         + '</div></div>';
     }
+    if(guardia){
+      aten += '<div class="aten-item">'+QA_SVG.reloj+'<div><div class="k">Guardia</div><div class="v">'+esc(guardia)+'</div></div></div>';
+    }
     if(horario){
-      aten += '<div class="aten-item">'+QA_SVG.reloj+'<div><div class="k">Horario</div><div class="v">'+esc(horario)+'</div></div></div>';
+      aten += '<div class="aten-item">'+QA_SVG.reloj+'<div><div class="k">'+(horario.includes("\n") ? "Horarios" : "Horario")+'</div><div class="v multi">'+esc(horario)+'</div></div></div>';
     }
     if(tel){
       aten += '<div class="aten-item">'+QA_SVG.llamar+'<div><div class="k">Teléfono</div>'
@@ -5285,15 +5322,18 @@
     const puntos = String(f.lugar||"").split(/\n+/).map(x=>x.trim()).filter(Boolean);
     const sh = document.getElementById("sheetFecha");
     sh.style.setProperty("--inst", n.color);
-    let h = '<div class="com-marca">Fonte directa · Fecha oficial</div><div class="com-regla"></div>'
+    const desc = String(f.descripcion||"").trim();
+    const flyer = urlSegura(f.imagen_url);
+    let h = '<div class="com-marca">Fecha oficial</div><div class="com-regla"></div>'
       + '<div class="com-head"><div class="com-chip" style="color:'+esc(n.color)+'"><span class="verif-badge" style="background:'+esc(n.color)+';width:14px;height:14px"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span>'+esc(inst.nombre||"Institución")+'</span></div></div>'
       + '<div class="fe-dia"><div class="fe-cal"><div class="w">'+esc(pf.weekday)+'</div><div class="d">'+esc(pf.dia)+'</div><div class="m">'+esc(pf.mes)+'</div></div>'
       + '<div>'+(pasada ? '<span class="fe-cd pasada">YA PASÓ</span>' : (cd ? '<span class="fe-cd">'+esc(cd)+'</span>' : ''))
       + '<div class="fe-full">'+esc(etiquetaFechaIso(f.fecha))+'</div></div></div>'
       + '<h3 class="com-tit">'+esc(f.titulo||"Fecha")+'</h3>'
-      + (urlSegura(f.imagen_url) ? '<img class="fe-flyer" src="'+esc(urlSegura(f.imagen_url))+'" alt="">' : '')
+      + (desc ? '<p class="fe-desc">'+esc(desc)+'</p>' : '')
       + '<div class="fe-datos">'+(f.horario ? '<div><span>🕐</span><span>'+esc(f.horario)+'</span></div>' : '')
-      + puntos.map(x=>'<div><span>📍</span><span>'+esc(x)+'</span></div>').join("") + '</div>';
+      + puntos.map(x=>'<div><span>📍</span><span>'+esc(x)+'</span></div>').join("") + '</div>'
+      + (flyer ? '<img class="fe-flyer" id="fechaFlyerImg" src="'+esc(flyer)+'" alt="Flyer de '+esc(f.titulo||"la fecha")+'">' : '');
     if(pasada){
       h += '<p class="com-cuerpo" style="color:var(--ink-soft)">Esta fecha ya pasó. En la página de la institución están las próximas.</p>';
     } else {
@@ -5309,6 +5349,10 @@
       document.getElementById("fechaCompartirBtn").addEventListener("click", ()=> abrirCompartirFecha(f));
       document.getElementById("fechaGuardarBtn").addEventListener("click", (e)=> guardarFlyerFecha(piezaDeFecha(f), e.currentTarget));
     }
+    const fImg = document.getElementById("fechaFlyerImg");
+    if(fImg) fImg.addEventListener("click", ()=>{
+      if(typeof abrirFoto === "function") abrirFoto(fImg.src);
+    });
     const fl = document.getElementById("fechaFichaLink");
     if(fl) fl.addEventListener("click", (e)=>{ e.preventDefault(); abrirInstitucion(f.institucion_id, { resaltar: f.id }); }); // igual que "Ver página" en un comunicado
     document.getElementById("sheetFecha").scrollTop = 0;
@@ -5801,32 +5845,15 @@
   // ================= ONBOARDING (primera visita) =================
   const ONB = [
     {
-      ico: "📍",
-      h: "Lo de acá primero",
-      p: "Fonte ordena las noticias por cercanía: primero lo que pasa en tu ciudad, después lo demás.",
-      extra: '<div class="onb-ondas">'
-        + '<div class="onb-onda"><span class="b" style="background:var(--ciudad)"></span>Tu ciudad — Quitilipi</div>'
-        + '<div class="onb-onda"><span class="b" style="background:var(--region)"></span>Tu región — Chaco y alrededores</div>'
-        + '<div class="onb-onda"><span class="b" style="background:var(--pais)"></span>Argentina</div>'
-        + '<div class="onb-onda"><span class="b" style="background:var(--mundo)"></span>Mundo</div>'
-        + '</div>'
-    },
-    {
-      ico: "✓",
-      h: "Siempre sabés quién lo dice",
-      p: "Cada cosa está marcada según de dónde viene. Nunca se mezclan.",
-      extra: '<div style="margin-top:4px">'
-        + '<div class="onb-voz"><span class="tg" style="color:var(--ciudad);background:color-mix(in srgb,var(--ciudad) 14%,var(--paper))">NOTICIA</span><span class="tx">Resumida por Fonte de un medio real, con link al original.</span></div>'
-        + '<div class="onb-voz"><span class="tg" style="color:var(--region);background:color-mix(in srgb,var(--region) 14%,var(--paper))">VECINO</span><span class="tx">Reportado por alguien del pueblo y revisado antes de publicarse.</span></div>'
-        + '<div class="onb-voz"><span class="tg" style="color:var(--barrio);background:color-mix(in srgb,var(--barrio) 14%,var(--paper))">OFICIAL</span><span class="tx">Publicado por el municipio u otra institución verificada.</span></div>'
-        + '<div class="onb-voz"><span class="tg" style="color:var(--int);background:color-mix(in srgb,var(--int) 14%,var(--paper))">COMERCIO</span><span class="tx">Espacio de un comercio local. Siempre marcado como tal.</span></div>'
-        + '</div>'
-    },
-    {
-      ico: "＋",
-      h: "Vos también contás",
-      p: "¿Un bache, un corte de luz, agua estancada? Tocá el botón + y avisale al resto del pueblo. Es anónimo.",
-      extra: '<p class="onb-p" style="margin-top:12px;font-size:.78rem;color:var(--ink-faint)">Podés seguir tus avisos desde “Mis avisos”, en Vecinos.</p>'
+      ico: '<div class="onb-logo">Fonte<i>.</i></div>',
+      h: "Lo oficial de Quitilipi<br>en un solo lugar",
+      p: "Lo publican las propias instituciones. Sin vueltas.",
+      extra: '<div class="onb-lista">'
+        + '<div class="onb-it"><span class="ic" style="background:color-mix(in srgb,var(--ciudad) 14%,var(--paper))">💊</span><div><b>Farmacia de turno</b><span class="tx">Cuál está abierta ahora, con teléfono</span></div></div>'
+        + '<div class="onb-it"><span class="ic" style="background:color-mix(in srgb,var(--urgente) 12%,var(--paper))">🚰</span><div><b>Cortes y avisos</b><span class="tx">Agua, luz, calles cortadas, urgencias</span></div></div>'
+        + '<div class="onb-it"><span class="ic" style="background:color-mix(in srgb,var(--int) 14%,var(--paper))">📅</span><div><b>Fechas</b><span class="tx">Vacunación, ferias, trámites y eventos</span></div></div>'
+        + '<div class="onb-it"><span class="ic" style="background:color-mix(in srgb,var(--region) 12%,var(--paper))">🏛️</span><div><b>Instituciones</b><span class="tx">Municipalidad, Hospital, Comisaría, Bomberos</span></div></div>'
+        + '</div><div class="onb-nota">También hay noticias del pueblo, más abajo.</div>'
     }
   ];
   let onbPaso = 0;
@@ -5834,6 +5861,7 @@
     const o = ONB[onbPaso];
     document.getElementById("onbCont").innerHTML =
       '<div class="onb-ico">'+o.ico+'</div><div class="onb-h">'+o.h+'</div><div class="onb-p">'+o.p+'</div>'+(o.extra||"");
+    document.getElementById("onb").classList.toggle("uno", ONB.length === 1);
     document.getElementById("onbDots").innerHTML = ONB.map((_,i)=>'<i class="'+(i===onbPaso?"on":"")+'"></i>').join("");
     document.getElementById("onbSiguiente").textContent = (onbPaso === ONB.length-1) ? "Empezar" : "Siguiente";
     document.getElementById("onbSaltar").style.visibility = (onbPaso === ONB.length-1) ? "hidden" : "visible";
