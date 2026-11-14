@@ -5036,7 +5036,8 @@
     // Fecha: link propio (?f=<id de institucion_fechas>) que abre esa fecha en la app.
     // Si no hay id (pieza sin guardar), queda la ficha de la institución.
     if(t === "f" || t === "fecha"){
-      if(n && n.id) return URL_FONTE + "?f=" + encodeURIComponent(n.id);
+      // página propia con sello y vista previa para redes (api/oficial.js); ?f=<id> sigue andando
+      if(n && n.id) return URL_FONTE + "fecha/" + encodeURIComponent(n.id);
       const iid = n && n.institucion_id;
       return iid ? URL_FONTE + "?i=" + encodeURIComponent(iid) : URL_FONTE;
     }
@@ -5045,6 +5046,7 @@
       return iid ? URL_FONTE + "?i=" + encodeURIComponent(iid) : URL_FONTE;
     }
     if(!n || !n.id) return URL_FONTE;
+    if(t === "c") return URL_FONTE + "aviso/" + encodeURIComponent(n.id);
     return URL_FONTE + "?" + t + "=" + encodeURIComponent(n.id);
   }
 

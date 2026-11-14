@@ -1,0 +1,6 @@
+{
+  "rewrites": [
+    { "source": "/aviso/:id", "destination": "/api/oficial?tipo=aviso&id=:id" },
+    { "source": "/fecha/:id", "destination": "/api/oficial?tipo=fecha&id=:id" }
+  ]
+}

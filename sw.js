@@ -96,6 +96,13 @@ self.addEventListener("fetch", (event)=>{
   // la app misma (HTML, manifest, íconos)
   if(url.origin === self.location.origin){
     if(ruta === "/sw.js") return;
+    if(ruta.startsWith("/api/")) return;
+    // páginas de aviso / fecha oficial: siempre lo último (si se borró o corrigió, que se vea);
+    // sin señal, la última copia guardada de esa misma página
+    if(req.mode === "navigate" && /^\/(aviso|fecha)\//.test(ruta)){
+      event.respondWith(networkFirst(req));
+      return;
+    }
     if(req.mode === "navigate" || req.destination === "image" || req.destination === "manifest" || /\.(png|ico|svg|webp|json)$/.test(ruta)){
       event.respondWith(staleWhileRevalidate(req, C_APP, event));
     }

@@ -3158,6 +3158,10 @@
   // Enlace directo: quien lo recibe abre esa nota, no la portada.
   function urlDe(n, tipo){
     if(!n || !n.id) return URL_FONTE;
+    // Comunicado y fecha oficial: página propia con sello y vista previa para redes
+    // (fonte.city/aviso/<id>, fonte.city/fecha/<id>; la arma api/oficial.js). Los ?c= / ?f= viejos siguen andando.
+    if(tipo === "c") return URL_FONTE + "aviso/" + encodeURIComponent(n.id);
+    if(tipo === "f") return URL_FONTE + "fecha/" + encodeURIComponent(n.id);
     return URL_FONTE + "?" + (tipo || "n") + "=" + encodeURIComponent(n.id);
   }
 
@@ -4571,7 +4575,7 @@
       sg.textContent = "";
     }
     const lk = document.getElementById("comunicadoLink");
-    if(lk) lk.textContent = "fonte.city/?c=" + c.id;
+    if(lk) lk.textContent = "fonte.city/aviso/" + c.id;
     const cf = document.getElementById("comunicadoFoto");
     if(cf){
       const fotoC = fotoDeComunicado(c);
@@ -5882,6 +5886,8 @@
     let visto = null;
     try{ visto = localStorage.getItem("fonte_onboarding_visto"); }catch(e){}
     if(visto) return;
+    // viene de «Bajar placa» (fonte.city/aviso/<id>): va directo a la placa, sin la bienvenida encima
+    try{ if(new URLSearchParams(location.search).get("placa") === "1") return; }catch(e){}
     pintarOnb();
     setTimeout(()=>{
       document.getElementById("onbBack").classList.add("show");
@@ -6308,9 +6314,10 @@
   }
   // Viene del botón «Compartir» del bot: lleva a la vista el botón Compartir de lo que se abrió
   // (fecha, comunicado o ficha) y lo hace latir. No comparte solo: eso necesita que la persona toque.
-  function resaltarCompartir(){
+  // Con &placa=1 (botón «Bajar placa» de fonte.city/aviso/<id>) late el botón de guardar la imagen.
+  function resaltarCompartir(ids){
     setTimeout(()=>{
-      const b = ["fechaCompartirBtn","comunicadoCompartirBtn","btnCompartirFicha"]
+      const b = (ids || ["fechaCompartirBtn","comunicadoCompartirBtn","btnCompartirFicha"])
         .map(id=> document.getElementById(id))
         .find(x=>{ const hoja = x && x.closest('[id^="sheet"]'); return !!(hoja && hoja.classList.contains("show")); });
       if(!b) return;
@@ -6329,7 +6336,8 @@
       enlaceEnCurso = null;
       if(!r) return;
       enlaceResuelto = true;
-      if(r === "ok" && paramsDeEnlace().get("compartir") === "1") resaltarCompartir();
+      if(r === "ok" && paramsDeEnlace().get("placa") === "1") resaltarCompartir(["comunicadoGuardarBtn","fechaGuardarBtn"]);
+      else if(r === "ok" && paramsDeEnlace().get("compartir") === "1") resaltarCompartir();
       try{ history.replaceState(history.state, "", location.pathname); }catch(e){}
       if(r === "no") toastFonte("Esta publicación ya no está disponible");
     }, ()=>{ enlaceEnCurso = null; });
