@@ -285,7 +285,7 @@ function paginaError(){
 }
 
 function bloqueCorreccion(r){
-  // Solo si la base tiene el campo (ver MIGRACION en el informe). Hoy no existe: no se afirma nada.
+  // editado_at lo pone la base (trigger fonte_marcar_editado) al cambiar contenido visible; si la columna no viene, no se afirma nada.
   if(!Object.prototype.hasOwnProperty.call(r, "editado_at")) return { meta: "", nota: "" };
   if(!r.editado_at) return { meta: " · sin cambios", nota: "" };
   return { meta: " · corregido " + fechaHora(r.editado_at),
@@ -344,7 +344,7 @@ function paginaAviso(o){
   </div>
   <div class="body">${etiqueta}<h1>${esc(titulo)}</h1>${cuerpo}</div>
   <div class="verif"><div class="ic">✓</div>
-    <div class="t"><b>Publicado por ${esc(nombreInst)} · verificado por Fonte.</b> Fonte comprobó que esta cuenta es de la institución y no reescribe su texto.${corr.nota}
+    <div class="t"><b>Publicado por ${esc(nombreInst)} · verificado por Fonte.</b> Fonte comprobó que esta cuenta es de la institución y solo corrige errores de ortografía.${corr.nota}
       ${publicado ? `<div class="meta">Publicado ${esc(fechaHora(publicado))} (hora de Quitilipi)${esc(corr.meta)}</div>` : ""}</div>
   </div>
 </article>
