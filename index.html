@@ -1480,6 +1480,22 @@
   .ofx-mas-lbl .t{ font-family:var(--sans); text-transform:uppercase; letter-spacing:.18em; font-weight:800; font-size:.62rem; color:var(--ink); white-space:nowrap; }
   .ofx-mas-lbl .ln{ flex:1; height:.5px; background:var(--ink); opacity:.5; }
   .ofx-mas-lbl .m{ font-family:var(--sans); font-size:.62rem; color:var(--ink-faint); white-space:nowrap; }
+  /* ===== Ciudad: saltos Quitilipi / Chaco, país y mundo ===== */
+  .ofx-salto{ position:sticky; top:var(--tabsH,62px); z-index:55; padding:8px 0;
+    background:color-mix(in srgb,var(--paper) 92%,transparent);
+    backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); border-bottom:1px solid var(--line); }
+  .ofx-salto-in{ display:flex; gap:8px; padding:0 18px; }
+  .ofx-sp{ flex:1 1 0; min-width:0; font-family:var(--sans); font-size:.78rem; font-weight:700; color:var(--ink-soft);
+    background:var(--paper); border:1.5px solid var(--line-strong); padding:8px 12px; border-radius:999px;
+    display:flex; align-items:center; justify-content:center; gap:7px; white-space:nowrap; cursor:pointer;
+    transition:background .18s,color .18s,border-color .18s; }
+  .ofx-sp .bd{ width:7px; height:7px; border-radius:50%; background:var(--terracota); flex:0 0 auto; }
+  .ofx-sp[data-salto="mas"] .bd{ background:var(--ink-faint); }
+  .ofx-sp.on{ background:var(--ink); border-color:var(--ink); color:var(--paper); }
+  .ofx-sp.on .bd{ background:var(--paper); }
+  .ofx-sp:focus-visible{ outline:2px solid var(--terracota); outline-offset:2px; }
+  #panelMas .waves{ top:var(--saltoTop,112px); z-index:54; }
+  #seccionLocal, #seccionMas{ scroll-margin-top:calc(var(--saltoTop,112px) + 6px); }
 </style>
 </head>
 <body>
@@ -1546,6 +1562,13 @@
 
 <div id="panelMas" style="display:none">
   <div class="ofx-sub wrap">Noticias de Quitilipi, avisos de vecinos y más</div>
+  <nav class="ofx-salto" id="saltoCiudad" aria-label="Ir a una sección">
+    <div class="ofx-salto-in">
+      <button type="button" class="ofx-sp on" data-salto="local" aria-current="true"><span class="bd"></span>Quitilipi</button>
+      <button type="button" class="ofx-sp" data-salto="mas"><span class="bd"></span>Chaco, país y mundo</button>
+    </div>
+  </nav>
+  <div id="seccionLocal"></div>
   <div class="wrap avh vec" id="avisosWrap" style="display:none">
     <div class="avh-label"><span class="t"><span class="avh-dot"></span>Avisos de vecinos</span><span class="ln"></span><a class="avh-more" id="avisosVerTodos" href="#">Ver todos ›</a></div>
     <div id="avisosRow"></div>
@@ -1558,7 +1581,7 @@
     <div class="state"><div class="spinner"></div><div class="big">Cargando noticias…</div></div>
   </main>
 
-  <div class="wrap ofx-mas-lbl"><span class="t">Más noticias</span><span class="ln"></span><span class="m">Chaco, el país y el mundo</span></div>
+  <div class="wrap ofx-mas-lbl" id="seccionMas"><span class="t">Más noticias</span><span class="ln"></span><span class="m">Chaco, el país y el mundo</span></div>
   <nav class="waves"><div class="waves-in" id="waveNav"></div></nav>
   <div class="cats"><div class="cats-in" id="catNav"></div></div>
   <div class="temas-bar">
@@ -2059,7 +2082,8 @@
     const m = esc(miniDe(fotoGrande(u, 480)));
     if(eager){
       try{ if(!document.querySelector('link[data-lcp="'+m+'"]')){ const l=document.createElement("link"); l.rel="preload"; l.as="image"; l.href=miniDe(fotoGrande(u, 480)); l.setAttribute("fetchpriority","high"); l.setAttribute("data-lcp", m); document.head.appendChild(l); } }catch(e){}
-      return "background-image:url('"+m+"');background-size:cover;background-position:center;";
+      // el degradé va debajo: si la foto no llega (medio que la bloquea), se ve el color y no un gris
+      return "background-image:url('"+m+"'),"+gradDe(n.id)+";background-size:cover;background-position:center;";
     }
     return "--lzbg:url('"+m+"');background:"+gradDe(n.id)+";background-size:cover;background-position:center;";
   };
@@ -2067,9 +2091,22 @@
     const io = ("IntersectionObserver" in window) ? new IntersectionObserver((ents)=>{
       ents.forEach(e=>{ if(e.isIntersecting){ cargarBg(e.target); io.unobserve(e.target); } });
     }, { rootMargin:"300px 0px" }) : null;
+    // La foto se prueba antes de ponerla: si el medio la bloquea (403, desafío de Cloudflare…)
+    // se intenta una vez por el proxy de imágenes y, si tampoco, queda el degradé de Fonte.
     function cargarBg(el){
       const v = el.style.getPropertyValue("--lzbg");
-      if(v){ el.style.backgroundImage = v; el.style.removeProperty("--lzbg"); }
+      if(!v) return;
+      el.style.removeProperty("--lzbg");
+      const u = (v.match(/url\(\s*['"]?(.*?)['"]?\s*\)/) || [])[1];
+      if(!u){ el.style.backgroundImage = v; return; }
+      const real = u.replace(/&amp;/g, "&");
+      const poner = (src)=>{ el.style.backgroundImage = "url('"+src.replace(/'/g, "%27")+"')"; };
+      const probar = (src, siFalla)=>{ const im = new Image(); im.decoding = "async"; im.onload = ()=>{ if(im.naturalWidth > 0) poner(src); else siFalla(); }; im.onerror = siFalla; im.src = src; };
+      probar(real, ()=>{
+        if(/^https?:\/\//i.test(real) && !/supabase\.co\/|fonte\.city\//i.test(real) && real.indexOf("wsrv.nl") === -1){
+          probar("https://wsrv.nl/?url=" + encodeURIComponent(real) + "&w=640&output=webp", ()=>{ el.classList.add("sin-foto"); });
+        } else el.classList.add("sin-foto");
+      });
     }
     function escanear(root){
       (root.querySelectorAll ? root.querySelectorAll('[style*="--lzbg"]') : []).forEach(el=>{ if(io) io.observe(el); else cargarBg(el); });
@@ -6044,6 +6081,44 @@
   }
   pedirOficial();
   setInterval(()=>{ if(document.visibilityState === "visible") pedirOficial(); }, 60000); // vencimientos y "hace X min"
+
+  // ================= CIUDAD: saltos Quitilipi / Chaco, país y mundo =================
+  (function(){
+    const nav = document.getElementById("saltoCiudad"), panel = document.getElementById("panelMas");
+    const loc = document.getElementById("seccionLocal"), mas = document.getElementById("seccionMas");
+    const tabs = document.querySelector(".tabs-main");
+    if(!nav || !panel || !loc || !mas) return;
+    const btns = [...nav.querySelectorAll("[data-salto]")];
+    let fijo = null, tFijo = 0;   // mientras dura el scroll suave, queda marcado el botón tocado
+    function medir(){
+      const th = tabs ? tabs.offsetHeight : 0, sh = nav.offsetHeight;
+      document.documentElement.style.setProperty("--tabsH", th + "px");
+      document.documentElement.style.setProperty("--saltoTop", (th + sh) + "px");
+      return th + sh;
+    }
+    function marcar(cual){
+      btns.forEach(b=>{ const on = b.dataset.salto === cual; b.classList.toggle("on", on); if(on) b.setAttribute("aria-current","true"); else b.removeAttribute("aria-current"); });
+    }
+    function actual(){
+      if(panel.style.display === "none") return;
+      if(fijo && Date.now() < tFijo){ marcar(fijo); return; }
+      fijo = null;
+      marcar(mas.getBoundingClientRect().top <= medir() + 60 ? "mas" : "local");
+    }
+    nav.addEventListener("click", (e)=>{
+      const b = e.target.closest("[data-salto]"); if(!b) return;
+      const cual = b.dataset.salto, dest = cual === "mas" ? mas : loc;
+      const top = Math.max(0, window.scrollY + dest.getBoundingClientRect().top - medir() - 6);
+      fijo = cual; tFijo = Date.now() + 900; marcar(cual);
+      const quieto = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      window.scrollTo({ top, behavior: quieto ? "auto" : "smooth" });
+    });
+    let pend = false;
+    window.addEventListener("scroll", ()=>{ if(pend) return; pend = true; requestAnimationFrame(()=>{ pend = false; actual(); }); }, { passive:true });
+    window.addEventListener("resize", ()=>{ medir(); actual(); });
+    medir(); setTimeout(()=>{ medir(); actual(); }, 600);
+    if(tabs && "ResizeObserver" in window) new ResizeObserver(()=>{ medir(); }).observe(tabs);
+  })();
 
   // ================= ONBOARDING (primera visita) =================
   const ONB = [
