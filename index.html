@@ -1422,6 +1422,64 @@
 .svc-oculta{ display:none!important; }
 .svc-card.filtrando .svc-vermas{ display:none!important; }
   .li-pair-item.foto .mini{ display:block; width:100% !important; height:auto !important; aspect-ratio:16/10; border-radius:9px; margin-bottom:6px; }
+
+  /* ===== Pestaña Oficial (solo instituciones verificadas) ===== */
+  #institucionesWrap{ display:none !important; } /* el bloque viejo queda en el código pero lo reemplaza la pestaña Oficial */
+  .ofx-tck{ display:inline-flex; width:15px; height:15px; border-radius:50%; background:var(--region); color:#fff; font-size:.52rem; font-weight:900; align-items:center; justify-content:center; margin-right:5px; vertical-align:1px; }
+  .tab-main.on .ofx-tck{ background:var(--paper); color:var(--ink); }
+  .ofx-tpip{ display:none; width:7px; height:7px; border-radius:50%; background:var(--urgente); margin-left:3px; vertical-align:2px; }
+  .ofx-tpip.on{ display:inline-block; }
+  .ofx-sub{ font-family:var(--sans); font-size:.66rem; color:var(--ink-faint); text-align:center; padding-top:2px; padding-bottom:4px; }
+  .ofx{ max-width:var(--wrap); margin:0 auto; padding:0 18px 8px; }
+  .ofx .state{ padding:40px 10px; }
+  .ofx-eb{ display:flex; align-items:center; gap:10px; margin:22px 0 10px; }
+  .ofx-eb .t{ font-family:var(--sans); text-transform:uppercase; letter-spacing:.18em; font-weight:800; font-size:.6rem; color:var(--ink); white-space:nowrap; }
+  .ofx-eb .ln{ flex:1; height:.5px; background:var(--ink); opacity:.5; }
+  .ofx-eb .m{ font-family:var(--sans); font-size:.66rem; font-weight:700; color:var(--ink-soft); background:none; border:0; padding:0; cursor:pointer; white-space:nowrap; }
+  .ofx-urg{ display:block; width:100%; text-align:left; margin-top:12px; border-radius:12px; border:1px solid color-mix(in srgb,var(--urgente) 35%,var(--line)); background:color-mix(in srgb,var(--urgente) 6%,var(--surface)); padding:12px 14px; cursor:pointer; color:var(--ink); font:inherit; }
+  .ofx-urg .hd{ display:flex; justify-content:space-between; gap:8px; align-items:center; }
+  .ofx-urg .bh{ font-family:var(--sans); font-size:.58rem; font-weight:800; letter-spacing:.14em; color:var(--urgente); text-transform:uppercase; }
+  .ofx-urg .vc{ font-family:var(--mono); font-size:.6rem; color:var(--urgente); white-space:nowrap; }
+  .ofx-urg .h{ font-size:1.08rem; line-height:1.22; margin:6px 0; }
+  .ofx-who{ display:flex; align-items:center; gap:5px; flex-wrap:wrap; font-family:var(--sans); font-size:.66rem; font-weight:700; color:var(--ink-soft); }
+  .ofx-who .avh-sello{ width:14px; height:14px; color:var(--region); flex:0 0 auto; }
+  .ofx-who .ver{ font-size:.58rem; font-weight:800; color:var(--region); letter-spacing:.02em; }
+  .ofx-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .ofx-tile{ text-align:left; background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:12px; cursor:pointer; color:var(--ink); font:inherit; min-width:0; }
+  .ofx-tile .l{ font-family:var(--sans); font-size:.56rem; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-faint); }
+  .ofx-tile .v{ font-family:var(--serif); font-weight:700; font-size:1rem; margin-top:5px; line-height:1.2; overflow-wrap:anywhere; }
+  .ofx-tile .s{ font-family:var(--sans); font-size:.66rem; color:var(--ink-faint); margin-top:4px; line-height:1.35; }
+  .ofx-tile .a{ font-family:var(--sans); font-size:.66rem; font-weight:700; color:var(--ink); margin-top:8px; }
+  .ofx-tile.gris .v{ color:var(--ink-faint); font-weight:600; font-size:.9rem; }
+  .ofx-list{ background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:0 14px; }
+  .ofx-it{ display:block; width:100%; text-align:left; background:none; border:0; border-bottom:1px solid var(--line); padding:12px 0; cursor:pointer; color:var(--ink); font:inherit; }
+  .ofx-it:last-child{ border-bottom:0; }
+  .ofx-it .h{ font-size:.98rem; line-height:1.25; margin-top:5px; }
+  .ofx-it .mt{ font-family:var(--mono); font-size:.6rem; color:var(--ink-faint); margin-top:4px; }
+  .ofx-it .nuevo{ display:inline-block; width:7px; height:7px; border-radius:50%; background:var(--terracota); margin-left:2px; }
+  .ofx-fe{ display:flex; gap:12px; align-items:center; width:100%; text-align:left; background:none; border:0; border-bottom:1px solid var(--line); padding:9px 0; cursor:pointer; color:var(--ink); font:inherit; }
+  .ofx-fe:last-child{ border-bottom:0; }
+  .ofx-fe .dt{ width:44px; flex:0 0 auto; text-align:center; border:1px solid var(--line-strong); border-radius:9px; overflow:hidden; background:var(--surface); }
+  .ofx-fe .dt .m{ font-family:var(--sans); font-size:.5rem; font-weight:800; letter-spacing:.1em; background:var(--inst,var(--region)); color:#fff; padding:2px 0; }
+  .ofx-fe .dt .d{ font-family:var(--serif); font-weight:700; font-size:1.1rem; padding:2px 0 3px; }
+  .ofx-fe .tt{ font-family:var(--sans); font-size:.8rem; font-weight:700; line-height:1.25; }
+  .ofx-fe .ss{ font-family:var(--sans); font-size:.68rem; color:var(--ink-faint); margin-top:2px; }
+  .ofx-fe .cd{ margin-left:auto; font-family:var(--sans); font-size:.54rem; font-weight:800; letter-spacing:.08em; color:var(--region); white-space:nowrap; }
+  .ofx-insts{ display:grid; grid-template-columns:repeat(4,1fr); gap:12px 6px; }
+  .ofx-in{ display:flex; flex-direction:column; align-items:center; gap:6px; text-align:center; background:none; border:0; padding:0; cursor:pointer; color:var(--ink); font:inherit; min-width:0; }
+  .ofx-in .lg{ width:52px; height:52px; border-radius:14px; background:var(--inst,var(--region)); color:#fff; display:flex; align-items:center; justify-content:center; font-family:var(--sans); font-weight:800; font-size:.72rem; position:relative; background-size:cover; background-position:center; }
+  .ofx-in .lg .c{ position:absolute; right:-4px; bottom:-4px; width:17px; height:17px; border-radius:50%; background:var(--region); color:#fff; font-size:.5rem; display:flex; align-items:center; justify-content:center; border:2px solid var(--paper); }
+  .ofx-in .lg .p{ position:absolute; right:-3px; top:-3px; width:11px; height:11px; border-radius:50%; background:var(--urgente); border:2px solid var(--paper); }
+  .ofx-in .nm{ font-family:var(--sans); font-size:.62rem; font-weight:600; color:var(--ink-soft); line-height:1.2; overflow:hidden; text-overflow:ellipsis; max-width:100%; }
+  .ofx-tel{ display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid var(--line); }
+  .ofx-tel .tt{ font-family:var(--sans); font-size:.8rem; font-weight:700; }
+  .ofx-tel .ss{ font-family:var(--sans); font-size:.66rem; color:var(--ink-faint); }
+  .ofx-tel a{ margin-left:auto; font-family:var(--sans); font-size:.7rem; font-weight:700; color:var(--ink); background:var(--paper-2); border:1px solid var(--line-strong); border-radius:999px; padding:6px 12px; text-decoration:none; white-space:nowrap; }
+  .ofx-vacio{ font-family:var(--sans); font-size:.78rem; color:var(--ink-faint); padding:14px 0; text-align:center; }
+  .ofx-mas-lbl{ display:flex; align-items:center; gap:10px; padding-top:26px; padding-bottom:6px; }
+  .ofx-mas-lbl .t{ font-family:var(--sans); text-transform:uppercase; letter-spacing:.18em; font-weight:800; font-size:.62rem; color:var(--ink); white-space:nowrap; }
+  .ofx-mas-lbl .ln{ flex:1; height:.5px; background:var(--ink); opacity:.5; }
+  .ofx-mas-lbl .m{ font-family:var(--sans); font-size:.62rem; color:var(--ink-faint); white-space:nowrap; }
 </style>
 </head>
 <body>
@@ -1452,8 +1510,8 @@
 <nav class="tabs-main">
   <div class="tabs-in" id="tabsIn">
     <span class="sl" id="tabsSlider"></span>
-    <button class="tab-main on" id="tabCiudad">Ciudad <span class="n" id="tabCiudadN"></span></button>
-    <button class="tab-main" id="tabMas">Más noticias <span class="n" id="tabMasN"></span></button>
+    <button class="tab-main on" id="tabCiudad"><span class="ofx-tck" aria-hidden="true">✓</span>Oficial <span class="ofx-tpip" id="tabOficialPip"></span><span class="n" id="tabCiudadN"></span></button>
+    <button class="tab-main" id="tabMas">Ciudad <span class="n" id="tabMasN"></span></button>
   </div>
   <div class="tabs-dots" id="tabsDots" aria-hidden="true">
     <span class="dot on" id="dotCiudad"></span>
@@ -1481,6 +1539,13 @@
     <div class="inst-home-hint" style="display:none"></div>
   </div>
 
+  <div id="panelOficial" class="ofx" aria-live="polite">
+    <div class="state"><div class="spinner"></div><div class="big">Cargando lo oficial…</div></div>
+  </div>
+</div>
+
+<div id="panelMas" style="display:none">
+  <div class="ofx-sub wrap">Noticias de Quitilipi, avisos de vecinos y más</div>
   <div class="wrap avh vec" id="avisosWrap" style="display:none">
     <div class="avh-label"><span class="t"><span class="avh-dot"></span>Avisos de vecinos</span><span class="ln"></span><a class="avh-more" id="avisosVerTodos" href="#">Ver todos ›</a></div>
     <div id="avisosRow"></div>
@@ -1489,13 +1554,11 @@
 
   <div class="wrap"><div class="urgent-band" id="urgentBand"><div class="band-head">⚡ Cerca tuyo ahora</div><div class="band-list"></div></div></div>
 
-
   <main class="wrap" id="feedCiudad">
     <div class="state"><div class="spinner"></div><div class="big">Cargando noticias…</div></div>
   </main>
-</div>
 
-<div id="panelMas" style="display:none">
+  <div class="wrap ofx-mas-lbl"><span class="t">Más noticias</span><span class="ln"></span><span class="m">Chaco, el país y el mundo</span></div>
   <nav class="waves"><div class="waves-in" id="waveNav"></div></nav>
   <div class="cats"><div class="cats-in" id="catNav"></div></div>
   <div class="temas-bar">
@@ -5848,6 +5911,140 @@
     }catch(e){}
   }
 
+  // ================= PESTAÑA OFICIAL =================
+  // Solo lo que publican las instituciones verificadas: urgentes, farmacia de turno y recolección
+  // de hoy, avisos oficiales, próximas fechas, instituciones y teléfonos (si hay cargados).
+  // Usa los mismos datos y las mismas hojas de siempre (abrirComunicado, abrirFecha, abrirInstitucion, abrirHoy).
+  const DIAS_CORTOS = ["dom","lun","mar","mié","jue","vie","sáb"];
+  function diaCortoHoyBA(){
+    const en = new Intl.DateTimeFormat("en-US", { timeZone:"America/Argentina/Buenos_Aires", weekday:"short" }).format(new Date(ahoraServidor()));
+    return ({ Sun:"dom", Mon:"lun", Tue:"mar", Wed:"mié", Thu:"jue", Fri:"vie", Sat:"sáb" })[en] || "";
+  }
+  function recoleccionHoy(){
+    const hoy = diaCortoHoyBA();
+    const sinTilde = (t)=> t.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    for(const inst of (INSTITUCIONES||[])){
+      const sv = Array.isArray(inst.servicios) ? inst.servicios : [];
+      const rec = sv.filter(x=> /recolecci|residuo|basura/i.test(String(x.seccion||"")));
+      if(!rec.length) continue;
+      const ORDEN = ["lun","mar","mie","jue","vie","sab","dom"], h = sinTilde(hoy);
+      const re = new RegExp("(^|[^a-z])" + h + "([^a-z]|$)", "i");
+      // "Lun, mié y vie 7 h" → por día; "Lun a vie 14 h" → rango
+      const pasaHoy = (v)=>{
+        const t = sinTilde(String(v||"").toLowerCase());
+        if(re.test(t)) return true;
+        const rg = /(lun|mar|mie|jue|vie|sab|dom)\w*\.? a (lun|mar|mie|jue|vie|sab|dom)/g; let m;
+        while((m = rg.exec(t))){ const a = ORDEN.indexOf(m[1]), b = ORDEN.indexOf(m[2]), i = ORDEN.indexOf(h); if(a > -1 && b > -1 && i >= Math.min(a,b) && i <= Math.max(a,b)) return true; }
+        return false;
+      };
+      const hoyZonas = rec.filter(x=> pasaHoy(x.valor));
+      return { inst, seccion: rec[0].seccion, total: rec.length, hoy: hoyZonas };
+    }
+    return null;
+  }
+  function quienOficial(nombre, instId){
+    return '<span class="ofx-who">' + esc(nombre || "Institución") + SELLO_OFICIAL() + '<span class="ver">Verificado</span></span>';
+  }
+  function logoInstHtml(i){
+    const col = colorInstVisible(i.id, i.nombre, i.color);
+    const foto = urlSegura(i.foto_url);
+    return '<span class="lg" style="--inst:' + esc(col) + (foto ? ';background-image:url(\'' + esc(foto) + '\')' : '') + '">' + (foto ? "" : esc(selloDeInst(i.id, i.nombre))) + '<span class="c">✓</span>';
+  }
+  function pintarOficial(){
+    const box = document.getElementById("panelOficial");
+    if(!box) return;
+    const vig = (typeof comunicadosVigentes === "function") ? comunicadosVigentes() : [];
+    const urg = vig.filter(c=> urgenteVigente(c)).sort((a,b)=> new Date(b.created_at||0) - new Date(a.created_at||0));
+    const avisos = vig.filter(c=> !urgenteVigente(c)).sort((a,b)=> new Date(b.created_at||0) - new Date(a.created_at||0));
+    const vistos = comunicadosVistos();
+    const pip = document.getElementById("tabOficialPip");
+    if(pip) pip.classList.toggle("on", urg.some(c=> !vistos.has(String(c.id))));
+    let h = "";
+    // 1) urgentes
+    urg.forEach(c=>{
+      h += '<button type="button" class="ofx-urg" data-ofx-c="' + esc(c.id) + '"><div class="hd"><span class="bh">⚡ Urgente</span>'
+        + (venceDe(c) != null ? '<span class="vc">' + esc(hastaTexto(venceDe(c))) + '</span>' : '') + '</div>'
+        + '<div class="h">' + esc(c.titulo || "") + '</div>' + quienOficial(c.institucion, c.institucion_id) + '</button>';
+    });
+    // 2) hoy: farmacia de turno + recolección
+    const tiles = [];
+    if(FARM.ahora && FARM.ahora.length){
+      const nombres = FARM.ahora.map(f=> f.farmacia).filter(Boolean);
+      tiles.push('<button type="button" class="ofx-tile" data-ofx-hoy="farmacia"><div class="l">💊 Farmacia de turno</div><div class="v">' + esc(nombres.slice(0,2).join(" + ")) + '</div>'
+        + '<div class="s">' + esc(leyendaHastaFarm(FARM.ahora[0].hasta)) + (FARM.ahora[0].direccion ? " · " + esc(FARM.ahora[0].direccion) : "") + '</div><div class="a">Ver cronograma ›</div></button>');
+    } else {
+      tiles.push('<button type="button" class="ofx-tile gris" data-ofx-hoy="farmacia"><div class="l">💊 Farmacia de turno</div><div class="v">' + (FARM.ok ? "Sin turno cargado ahora" : "Cronograma") + '</div><div class="a">Ver cronograma ›</div></button>');
+    }
+    const rec = recoleccionHoy();
+    if(rec){
+      const n = rec.hoy.length;
+      tiles.push('<button type="button" class="ofx-tile' + (n ? "" : " gris") + '" data-ofx-rec="' + esc(rec.inst.id) + '" data-sec="' + esc(rec.seccion) + '"><div class="l">🗑 Recolección hoy</div>'
+        + '<div class="v">' + (n ? n + (n === 1 ? " zona" : " zonas") : "Hoy no pasa") + '</div>'
+        + '<div class="s">' + esc(n ? rec.hoy.slice(0,3).map(x=> x.clave).join(", ") + (n > 3 ? "…" : "") : "Mirá los días de tu barrio") + '</div><div class="a">Ver mi barrio ›</div></button>');
+    }
+    h += '<div class="ofx-eb"><span class="t">Hoy</span><span class="ln"></span></div><div class="ofx-grid">' + tiles.join("") + '</div>';
+    // 3) avisos oficiales
+    h += '<div class="ofx-eb"><span class="t">Avisos oficiales</span><span class="ln"></span>' + (vig.length ? '<button type="button" class="m" data-ofx-todos="1">Ver todos ›</button>' : '') + '</div>';
+    if(avisos.length){
+      h += '<div class="ofx-list">' + avisos.slice(0, 5).map(c=>
+        '<button type="button" class="ofx-it" data-ofx-c="' + esc(c.id) + '">' + quienOficial(c.institucion, c.institucion_id)
+        + '<div class="h">' + esc(c.titulo || "") + (vistos.has(String(c.id)) ? "" : ' <span class="nuevo" aria-label="nuevo"></span>') + '</div>'
+        + '<div class="mt">' + esc(tiempoDesde(c.created_at)) + '</div></button>').join("") + '</div>';
+    } else {
+      h += '<div class="ofx-vacio">' + (urg.length ? "No hay otros avisos vigentes." : "Por ahora no hay avisos vigentes. Cuando una institución publique algo, lo vas a ver acá.") + '</div>';
+    }
+    // 4) próximas fechas
+    const fechas = (FECHAS_INST||[]).slice().sort((a,b)=> String(a.fecha).localeCompare(String(b.fecha))).slice(0, 4);
+    if(fechas.length){
+      h += '<div class="ofx-eb"><span class="t">Próximas fechas</span><span class="ln"></span></div><div class="ofx-list">' + fechas.map(f=>{
+        const inst = (INSTITUCIONES||[]).find(x=> String(x.id) === String(f.institucion_id)) || {};
+        const p = partesFechaFlyer(f.fecha);
+        const cd = diasHasta(f.fecha);
+        return '<button type="button" class="ofx-fe" data-ofx-f="' + esc(f.id) + '" style="--inst:' + esc(colorInstVisible(f.institucion_id, inst.nombre || "", inst.color)) + '">'
+          + '<span class="dt"><div class="m">' + esc(p.mes.slice(0,3)) + '</div><div class="d">' + esc(p.dia) + '</div></span>'
+          + '<span style="min-width:0"><div class="tt">' + esc(f.titulo || "Fecha") + '</div><div class="ss">' + esc([inst.nombre, f.horario, String(f.lugar||"").split(/\n+/)[0]].filter(Boolean).join(" · ")) + '</div></span>'
+          + (cd ? '<span class="cd">' + esc(cd) + '</span>' : '') + '</button>';
+      }).join("") + '</div>';
+    }
+    // 5) instituciones verificadas
+    if((INSTITUCIONES||[]).length){
+      h += '<div class="ofx-eb"><span class="t">Instituciones verificadas</span><span class="ln"></span></div><div class="ofx-insts">'
+        + INSTITUCIONES.map(i=>{
+          const nuevo = comunicadosDe(i.id).some(c=> comunicadoVigente(c) && !vistos.has(String(c.id)));
+          return '<button type="button" class="ofx-in" data-ofx-i="' + esc(i.id) + '">' + logoInstHtml(i) + (nuevo ? '<span class="p"></span>' : '') + '</span><span class="nm">' + esc(i.nombre || "") + '</span></button>';
+        }).join("") + '</div>';
+    }
+    // 6) teléfonos útiles: solo los que están cargados (nunca se inventan)
+    const tels = (INSTITUCIONES||[]).map(i=> ({ i, tel: telLink(i.guardia) || telLink(i.telefono) })).filter(x=> x.tel);
+    if(tels.length){
+      h += '<div class="ofx-eb"><span class="t">Teléfonos útiles</span><span class="ln"></span></div>' + tels.map(x=>
+        '<div class="ofx-tel"><div><div class="tt">' + esc(x.i.nombre || "") + '</div><div class="ss">' + esc(x.i.horario || (telLink(x.i.guardia) ? "Guardia" : "")) + '</div></div><a href="' + esc(x.tel) + '">Llamar</a></div>').join("");
+    }
+    // (paso 4: "Avisos por WhatsApp" — todavía no se muestra)
+    box.innerHTML = h;
+  }
+  document.getElementById("panelOficial").addEventListener("click", (e)=>{
+    const t = e.target.closest("[data-ofx-c],[data-ofx-f],[data-ofx-i],[data-ofx-hoy],[data-ofx-rec],[data-ofx-todos]");
+    if(!t) return;
+    if(t.dataset.ofxC){ abrirComunicado(t.dataset.ofxC); setTimeout(pintarOficial, 50); return; }
+    if(t.dataset.ofxF){ const f = (FECHAS_INST||[]).find(x=> String(x.id) === String(t.dataset.ofxF)); if(f) abrirFecha(f); return; }
+    if(t.dataset.ofxI){ abrirInstitucion(t.dataset.ofxI); return; }
+    if(t.dataset.ofxHoy){ abrirHoy(t.dataset.ofxHoy); return; }
+    if(t.dataset.ofxRec){ abrirInstitucion(t.dataset.ofxRec, { seccion: t.dataset.sec || "" }); return; }
+    if(t.dataset.ofxTodos){ abrirOficiales(); return; }
+  });
+  // Se repinta cada vez que se actualiza alguno de sus datos (mismas funciones de siempre).
+  let _ofxTimer = null;
+  function pedirOficial(){ clearTimeout(_ofxTimer); _ofxTimer = setTimeout(()=>{ try{ pintarOficial(); }catch(e){ console.warn("pestaña Oficial", e); } }, 30); }
+  {
+    const _rce = renderComunicadosEn, _pi = pintarInstituciones, _ptf = pintarTickFarm;
+    renderComunicadosEn = function(){ const r = _rce.apply(this, arguments); pedirOficial(); return r; };
+    pintarInstituciones = function(){ const r = _pi.apply(this, arguments); pedirOficial(); return r; };
+    pintarTickFarm = function(){ const r = _ptf.apply(this, arguments); pedirOficial(); return r; };
+  }
+  pedirOficial();
+  setInterval(()=>{ if(document.visibilityState === "visible") pedirOficial(); }, 60000); // vencimientos y "hace X min"
+
   // ================= ONBOARDING (primera visita) =================
   const ONB = [
     {
@@ -5859,7 +6056,7 @@
         + '<div class="onb-it"><span class="ic" style="background:color-mix(in srgb,var(--urgente) 12%,var(--paper))">🚰</span><div><b>Cortes y avisos</b><span class="tx">Agua, luz, calles cortadas, urgencias</span></div></div>'
         + '<div class="onb-it"><span class="ic" style="background:color-mix(in srgb,var(--int) 14%,var(--paper))">📅</span><div><b>Fechas</b><span class="tx">Vacunación, ferias, trámites y eventos</span></div></div>'
         + '<div class="onb-it"><span class="ic" style="background:color-mix(in srgb,var(--region) 12%,var(--paper))">🏛️</span><div><b>Instituciones</b><span class="tx">Municipalidad, Hospital, Comisaría, Bomberos</span></div></div>'
-        + '</div><div class="onb-nota">También hay noticias del pueblo, más abajo.</div>'
+        + '</div><div class="onb-nota">Las noticias del pueblo están en la pestaña Ciudad.</div>'
     }
   ];
   let onbPaso = 0;
