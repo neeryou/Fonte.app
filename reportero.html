@@ -174,6 +174,11 @@
   /* ===== botón compartir en el visor ===== */
   /* ===== editor de aporte ===== */
   /* ===== aviso urgente: ¿hasta cuándo? ===== */
+  .cat-pick{ display:flex; flex-wrap:wrap; gap:6px; margin:2px 0 6px; }
+  .cat-pick button{ font-family:var(--sans); font-size:.76rem; font-weight:700; padding:7px 12px; border-radius:999px; border:1px solid var(--line-strong); background:var(--paper); color:var(--ink-soft); cursor:pointer; }
+  .cat-pick button.on{ background:color-mix(in srgb,var(--c) 16%,var(--paper)); border-color:var(--c); color:color-mix(in srgb,var(--c) 80%,#000); }
+  .cat-pick button.sug::after{ content:" · sugerido"; font-weight:500; font-size:.66rem; }
+  .cat-nota{ font-family:var(--sans); font-size:.68rem; color:var(--ink-faint); margin:0 0 10px; line-height:1.35; }
   .urg-box{ margin-top:14px; padding:12px; background:color-mix(in srgb,#B23A2E 6%,var(--paper)); border:1px solid color-mix(in srgb,#B23A2E 25%,var(--line)); border-radius:10px; }
   .urg-box > label{ display:flex; gap:10px; align-items:flex-start; cursor:pointer; }
   .hc{ margin-top:12px; padding-top:11px; border-top:1px solid color-mix(in srgb,#B23A2E 18%,var(--line)); }
@@ -923,6 +928,9 @@
         <div class="field-label">Texto</div>
         <textarea id="coTexto" style="min-height:84px" placeholder="Pegá el texto exacto del comunicado. No lo mejore Fonte."></textarea>
         <p style="font-family:var(--sans);font-size:.68rem;color:var(--ink-faint);margin:-4px 0 10px;line-height:1.35">El vecino y la radio van a leer estas mismas palabras. No uses “Generar con Fonte” en un comunicado.</p>
+        <div class="field-label" style="margin-top:14px">Tipo de aviso</div>
+        <div class="cat-pick" id="coCatPick"></div>
+        <p class="cat-nota">Sale como etiqueta en la app. Si no elegís, Fonte sugiere uno según el título.</p>
         <div class="field-label" style="margin-top:14px">Foto (opcional)</div>
         <input class="inp" type="file" id="coFoto" accept="image/*" style="padding:9px">
         <img class="foto-preview" id="coFotoPreview">
@@ -2464,12 +2472,50 @@
     return { ms: Date.now() + st.modo*3600000 };
   }
   // Guarda (insert o update) y, si la base todavía no tiene vence_at o color/sello, reintenta sin esas columnas.
+  // ---- Tipo de aviso (columna comunicados.categoria; si la columna no existe se publica igual sin ella) ----
+  const CATS_AVISO = [["corte","Corte","#5B6B7A"],["salud","Salud","#2E7D4F"],["transito","Tránsito","#3567A6"],["evento","Evento","#7A4FA0"],["general","General","#6B6457"]];
+  const CATS_REGLAS = [
+    ["transito", /tr[aá]nsito|control vehicular|desv[ií]o|calle cortada|corte de calle|sem[aá]foro|\bvial\b/],
+    ["corte", /\bcortes?\b|sin (luz|agua|energ)|suministro|energ[ií]a el[eé]ctrica|secheep|sameep|baja (de )?presi[oó]n de agua/],
+    ["salud", /vacun|salud|hospital|glucemia|presi[oó]n arterial|m[eé]dic|dengue|odontol|pediatr|sanitari/],
+    ["transito", /operativo|patrullaje|alcoholemia|licencia de conducir|ruta \d/],
+    ["evento", /colonia|jornada|puertas abiertas|evento|inscripci|feria|festival|\bacto\b|charla|taller|torneo|muestra|concierto|desfile/]
+  ];
+  function adivinarCategoria(titulo, texto){
+    for(const t of [String(titulo||"").toLowerCase(), String(texto||"").toLowerCase()]){
+      const r = CATS_REGLAS.find(x=> x[1].test(t)); if(r) return r[0];
+    }
+    return "general";
+  }
+  // Monta los botones; devuelve { valor() } con lo elegido a mano o, si no, lo sugerido.
+  function montarCategoria(cont, leerTexto, inicial){
+    let elegida = inicial || "";
+    cont.innerHTML = CATS_AVISO.map(c=> '<button type="button" data-cat="'+c[0]+'" style="--c:'+c[2]+'">'+c[1]+'</button>').join("");
+    const pintar = ()=>{
+      const sug = elegida ? "" : adivinarCategoria.apply(null, leerTexto());
+      cont.querySelectorAll("button").forEach(b=>{
+        const k = b.getAttribute("data-cat");
+        b.classList.toggle("on", k === (elegida || sug));
+        b.classList.toggle("sug", !elegida && k === sug);
+        b.setAttribute("aria-pressed", k === (elegida || sug) ? "true" : "false");
+      });
+    };
+    cont.onclick = (e)=>{ const b = e.target.closest("[data-cat]"); if(!b) return; const k = b.getAttribute("data-cat"); elegida = (elegida === k) ? "" : k; pintar(); };
+    pintar();
+    return { valor: ()=> elegida || adivinarCategoria.apply(null, leerTexto()), repintar: pintar, reset: ()=>{ elegida = ""; pintar(); } };
+  }
+  function errorFaltaCategoria(err){
+    if(!err) return false;
+    const m = String(err.message||"") + " " + String(err.details||"") + " " + String(err.hint||"");
+    return /categoria/i.test(m);
+  }
   async function guardarComunicadoTolerante(op, registro){
     let r = await op(registro);
     let sinVence = false;
     for(let i = 0; i < 3 && r.error; i++){
       let cambio = false;
-      if("vence_at" in registro && errorFaltaVence(r.error)){ delete registro.vence_at; sinVence = true; cambio = true; }
+      if("categoria" in registro && errorFaltaCategoria(r.error)){ delete registro.categoria; cambio = true; }
+      else if("vence_at" in registro && errorFaltaVence(r.error)){ delete registro.vence_at; sinVence = true; cambio = true; }
       else if(/(color|sello)/i.test(r.error.message||"") && ("color" in registro || "sello" in registro)){ delete registro.color; delete registro.sello; cambio = true; }
       if(!cambio) break;
       r = await op(registro);
@@ -2803,6 +2849,7 @@
       video_url: document.getElementById("coVideo").value.trim() || null,
       imagen_url: coFotoUrl,
       titulo, texto,
+      categoria: coCat.valor(),
     };
     // Urgente: vence a la hora elegida. Común: no se manda y la base pone ahora + 48 h.
     if(esUrgente && venceSel.ms) registro.vence_at = new Date(venceSel.ms).toISOString();
@@ -2817,6 +2864,7 @@
     document.getElementById("coTitulo").value = "";
     document.getElementById("coTexto").value = "";
     document.getElementById("coUrgente").checked = false;
+    coCat.reset();
     montarHastaCuando("co", document.getElementById("coHastaWrap"), document.getElementById("coUrgente"), { modo:48 });
     document.getElementById("coVideo").value = "";
     document.getElementById("coFoto").value = "";
@@ -2833,6 +2881,10 @@
     if(coPublicado) abrirVisorComunicado(coPublicado); // pack de compartir al toque
   });
   montarHastaCuando("co", document.getElementById("coHastaWrap"), document.getElementById("coUrgente"), { modo:48 });
+  const coCat = montarCategoria(document.getElementById("coCatPick"),
+    ()=> [document.getElementById("coTitulo").value, document.getElementById("coTexto").value]);
+  document.getElementById("coTitulo").addEventListener("input", ()=> coCat.repintar());
+  document.getElementById("coTexto").addEventListener("input", ()=> coCat.repintar());
 
   // ================= INSTITUCIONES VERIFICADAS =================
   const ICONS_INST = { salud:"🏥", social:"📦", municipio:"🏛️", seguridad:"🚓", educacion:"🏫", cultura:"🎭", deporte:"⚽", otro:"📍" };
@@ -3572,7 +3624,7 @@
   // así que antes se podía guardar negro sin querer al editar y volver a guardar.
   function colorTipoInst(tipo, nombre){
     const nom = String(nombre||"").toLowerCase();
-    if(/bombero/.test(nom)) return "#9B2C2C";
+    if(/bombero/.test(nom)) return "#B7791F";
     if(/polic|comis/.test(nom)) return "#1B3A5C";
     const TIPO = {salud:"#2F6B45", municipio:"#5C5A54", seguridad:"#1B3A5C", educacion:"#63528C",
       cultura:"#9C7038", deporte:"#8A4A2A", social:"#3E6B8A", otro:"#5A5346"};
@@ -4335,6 +4387,7 @@
       + '<input class="inp" id="ecTitulo" value="'+escA(c.titulo||"")+'">'
       + '<div class="fl">Texto</div>'
       + '<textarea class="inp" id="ecTexto" style="min-height:100px">'+escA(c.texto||"")+'</textarea>'
+      + '<div class="fl">Tipo de aviso</div><div class="cat-pick" id="ecCatPick"></div>'
       + '<div class="urg-box"><label style="align-items:center;font-family:var(--sans);font-size:.82rem">'
       + '<input type="checkbox" id="ecUrgente" '+(c.urgente?"checked":"")+' style="width:18px;height:18px"> Es un aviso urgente</label>'
       + '<div id="ecHastaWrap"></div></div>'
@@ -4343,6 +4396,8 @@
       + '<button class="btn-guardar" id="ecGuardar">Guardar cambios</button></div></div>';
     // Ya urgente: no se toca el vencimiento salvo que elija otra opción.
     // No urgente: al tildarlo arranca en 48 h desde ahora (así se reinicia el plazo).
+    const ecCat = montarCategoria(document.getElementById("ecCatPick"),
+      ()=> [document.getElementById("ecTitulo").value, document.getElementById("ecTexto").value], c.categoria || "");
     const ecChk = document.getElementById("ecUrgente");
     montarHastaCuando("ec", document.getElementById("ecHastaWrap"), ecChk,
       c.urgente ? { modo:null, actualMs: venceDeCom(c) } : { modo:48 });
@@ -4362,6 +4417,7 @@
         titulo: document.getElementById("ecTitulo").value.trim(),
         texto: document.getElementById("ecTexto").value.trim(),
         urgente,
+        categoria: ecCat.valor(),
       };
       if(urgente && vSel.ms) cambios.vence_at = new Date(vSel.ms).toISOString();
       const rUp = await guardarComunicadoTolerante(reg=> sb.from("comunicados").update(reg).eq("id", c.id), cambios);
@@ -5217,7 +5273,7 @@
   function colorPorDefectoInst(id, nombre){
     const i = (INST_ADMIN||[]).find(x=>String(x.id)===String(id)) || null;
     const nom = ((i && i.nombre) || nombre || "").toLowerCase();
-    if(/bombero/.test(nom)) return "#9B2C2C";
+    if(/bombero/.test(nom)) return "#B7791F";
     if(/polic|comis/.test(nom)) return "#1B3A5C";
     const TIPO = {salud:"#2F6B45", municipio:"#5C5A54", seguridad:"#1B3A5C", educacion:"#63528C",
       cultura:"#9C7038", deporte:"#8A4A2A", social:"#3E6B8A", otro:"#5A5346"};

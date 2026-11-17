@@ -1,7 +1,7 @@
 // Fonte — service worker
 // Muestra las notificaciones, abre la app cuando se tocan y guarda una copia
 // en el celular para que Fonte abra rápido y funcione con mala señal.
-const VERSION = "fonte-v4-2026-11-16";
+const VERSION = "fonte-v5-2026-11-17";
 const C_APP = VERSION + "-app";     // HTML, íconos, manifest, tipografías
 const C_IMG = VERSION + "-img";     // fotos de las notas (máx. IMG_MAX)
 const C_API = VERSION + "-api";     // respuestas de lectura de Supabase (respaldo sin señal)
